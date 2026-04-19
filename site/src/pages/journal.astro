@@ -56,7 +56,7 @@ const getArtifactShadow = (index: number) => {
 
 <Layout
   title="The Road to Punk · Journal · Punk"
-  description="A repo-tracked chronology of the experiments, failures, and systems that led to Punk. Public memory, not marketing copy."
+  description="A repo-tracked chronology of the experiments, failures, and systems that led to Punk. Personal experiment. Built for researchers and experimenters. It may break at any time."
 >
   <div class="journalPage" data-journal-root>
     <header class="journalNav">
@@ -89,7 +89,7 @@ const getArtifactShadow = (index: number) => {
             </h1>
 
             <p class="journalHeroDescription">
-              A repo-tracked chronology of the experiments, failures, and systems that led to Punk. Not marketing copy. Public memory.
+              A repo-tracked chronology of the experiments, failures, and systems that led to Punk. Not marketing copy. Public memory. Personal experiment. Built for researchers and experimenters. It may break at any time.
             </p>
 
             <div class="journalStateCapsule">
@@ -111,6 +111,7 @@ const getArtifactShadow = (index: number) => {
               <div class="journalHeroReceiptMuted">$ punk journal --status</div>
               <div><span class="journalHeroReceiptKey--success">era:</span> punk · v0.4</div>
               <div><span class="journalHeroReceiptKey--warn">stage:</span> experimental</div>
+              <div><span class="journalHeroReceiptKey--danger">warning:</span> may break anytime</div>
               <div><span class="journalHeroReceiptKey--neutral">entries:</span> {journalEntries.length} logged</div>
               <div><span class="journalHeroReceiptKey--neutral">artifacts:</span> {artifactEntries.length} on shelf</div>
               <div><span class="journalHeroReceiptKey--danger">modules:</span> later</div>
@@ -355,9 +356,9 @@ const getArtifactShadow = (index: number) => {
         <div class="journalWrap journalCtaInner">
           <div>
             <div class="journalCtaKicker">// the build continues</div>
-            <h2 class="journalCtaTitle">This is a working runtime,<br />not a finished product.</h2>
+            <h2 class="journalCtaTitle">This is a personal experiment,<br />not a finished product.</h2>
             <p class="journalCtaDescription">
-              The journal is public memory. The runtime is open source. If you experiment, write a spec, or find a failure worth logging — that belongs here too.
+              The journal is public memory. The runtime is open source. It is built for researchers and experimenters, and it may be broken at any time. If you experiment, write a spec, or find a failure worth logging — that belongs here too.
             </p>
 
             <div class="journalCtaButtons">
@@ -369,6 +370,7 @@ const getArtifactShadow = (index: number) => {
             <div class="journalCtaStatus">
               <span class="ok">●</span> punk v0.4 · local runtime · experimental {' '}
               <span class="warn">●</span> not production-ready {' '}
+              <span class="warn">●</span> may break at any time {' '}
               <span class="muted">●</span> modules: later
             </div>
           </div>

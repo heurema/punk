@@ -17,6 +17,8 @@ export const navLinks = [
 
 export const heroStatus = [
   { label: 'core-first', tone: 'success' },
+  { label: 'personal experiment', tone: 'muted' },
+  { label: 'may break', tone: 'muted' },
   { label: 'modules later', tone: 'muted' },
   { label: 'building in public', tone: 'accent' },
 ] as const;
