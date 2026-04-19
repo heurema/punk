@@ -1,0 +1,546 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Mascot from '../components/Mascot.astro';
+import '../styles/journal.css';
+import {
+  journalEras,
+  journalEntries,
+  journalLinks,
+  journalSurvival,
+  journalTypeConfig,
+  type JournalEntry,
+} from '../data/journal';
+
+const artifactEntries = journalEntries.filter((entry) => entry.artifact);
+const typeEntries = Object.entries(journalTypeConfig);
+const stateCapsule = [
+  { label: 'CURRENT', value: 'v0.4', tone: 'success', current: true },
+  { label: 'STATUS', value: 'experimental', tone: 'warn' },
+  { label: 'ERAS', value: String(journalEras.length), tone: 'default' },
+  { label: 'ENTRIES', value: String(journalEntries.length), tone: 'default' },
+] as const;
+
+const eraCounts = new Map(
+  journalEras.map((era) => {
+    const eraEntries = journalEntries.filter((entry) => entry.era === era.id);
+    return [
+      era.id,
+      {
+        entries: eraEntries.length,
+        survived: eraEntries.filter((entry) => entry.survived && entry.survived !== false).length,
+      },
+    ];
+  }),
+);
+
+const eraMapById = new Map(journalEras.map((era) => [era.id, era]));
+
+const getSurvivalBadge = (survived: JournalEntry['survived']) => {
+  if (survived === false) {
+    return { text: '— dropped', bg: '#2a0a0a', color: '#ff6b62' };
+  }
+
+  if (survived === 'current') {
+    return { text: '● current', bg: '#0a1f14', color: '#3fe38d' };
+  }
+
+  return { text: `→ ${survived}`, bg: '#1a1000', color: '#ffc06b' };
+};
+
+const getArtifactShadow = (index: number) => {
+  if (index % 3 === 0) return '#ff2e88';
+  if (index % 3 === 1) return '#34323f';
+  return 'rgba(255, 192, 107, 0.2)';
+};
+---
+
+<Layout
+  title="The Road to Punk · Journal · Punk"
+  description="A repo-tracked chronology of the experiments, failures, and systems that led to Punk. Public memory, not marketing copy."
+>
+  <div class="journalPage" data-journal-root>
+    <header class="journalNav">
+      <div class="journalWrap journalNavInner">
+        <a class="journalWordmark" href={journalLinks.home} aria-label="punk home">
+          <span class="journalWordmarkBadge">[//]</span>
+          <span class="journalWordmarkText">Punk</span>
+        </a>
+
+        <nav class="journalNavLinks" aria-label="Journal navigation">
+          <a href={journalLinks.laws}>laws</a>
+          <a href={journalLinks.build}>build</a>
+          <a href={journalLinks.journal} class="isActive">journal</a>
+        </nav>
+
+        <a class="journalNavRepo" href={journalLinks.repo} target="_blank" rel="noreferrer">github ↗</a>
+      </div>
+    </header>
+
+    <main id="journal">
+      <section class="journalHero">
+        <div class="journalWrap journalHeroInner">
+          <div>
+            <div class="journalHeroEyebrow">
+              <span class="journalHeroSticker">Journal</span>
+              <span class="journalHeroMeta">// repo-tracked public memory</span>
+            </div>
+
+            <h1 class="journalHeroTitle">
+              The Road<br />
+              to <span class="journalHeroAccent">Punk</span>.
+            </h1>
+
+            <p class="journalHeroDescription">
+              A repo-tracked chronology of the experiments, failures, and systems that led to Punk. Not marketing copy. Public memory.
+            </p>
+
+            <div class="journalStateCapsule">
+              {stateCapsule.map((item) => (
+                <div class:list={['journalStateCell', item.current && 'journalStateCell--current']}>
+                  <div class="journalStateLabel">{item.label}</div>
+                  <div class:list={['journalStateValue', item.tone === 'success' && 'journalStateValue--success', item.tone === 'warn' && 'journalStateValue--warn']}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div class="journalHeroAside">
+            <Mascot class="journalHeroMascot" idPrefix="journal-hero" />
+
+            <div class="journalHeroReceipt">
+              <div class="journalHeroReceiptMuted">$ punk journal --status</div>
+              <div><span class="journalHeroReceiptKey--success">era:</span> punk · v0.4</div>
+              <div><span class="journalHeroReceiptKey--warn">stage:</span> experimental</div>
+              <div><span class="journalHeroReceiptKey--neutral">entries:</span> {journalEntries.length} logged</div>
+              <div><span class="journalHeroReceiptKey--neutral">artifacts:</span> {artifactEntries.length} on shelf</div>
+              <div><span class="journalHeroReceiptKey--danger">modules:</span> later</div>
+              <div><span class="journalHeroReceiptKey--success">runtime:</span> local-only</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="journalEraMap">
+        <div class="journalWrap">
+          <div class="journalEraMapGrid">
+            {journalEras.map((era) => (
+              <button
+                class="journalEraMapButton"
+                style={`--era-color:${era.color}; --era-bright:${era.colorBright};`}
+                data-era-map-button={era.id}
+                type="button"
+              >
+                <div class="journalEraMapStatus">
+                  <span class="journalEraMapDot"></span>
+                  <span>{era.statusLabel}</span>
+                </div>
+                <div class="journalEraMapTitle">{era.label}</div>
+                <div class="journalEraMapDate">{era.date}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div class="journalFilterBar">
+        <div class="journalWrap journalFilterInner">
+          <div class="journalFilterGroup">
+            <span class="journalFilterLabel">ERA</span>
+            <button class="journalFilterButton is-active" type="button" data-era-filter-all>ALL</button>
+            {journalEras.map((era) => (
+              <button
+                class="journalFilterButton"
+                type="button"
+                data-era-filter={era.id}
+                style={`--filter-color:${era.color}; --filter-bright:${era.colorBright};`}
+              >
+                {era.label}
+              </button>
+            ))}
+          </div>
+
+          <div class="journalFilterDivider"></div>
+
+          <div class="journalFilterGroup">
+            <span class="journalFilterLabel">TYPE</span>
+            {typeEntries.map(([type, config]) => (
+              <button
+                class="journalFilterButton is-active"
+                type="button"
+                data-type-filter={type}
+                style={`--filter-color:${config.color}; --filter-bright:${config.color};`}
+              >
+                {config.glyph} {config.label}
+              </button>
+            ))}
+          </div>
+
+          <span class="journalFilterCount" data-journal-count>{journalEntries.length} entries</span>
+        </div>
+      </div>
+
+      <section class="journalTimeline">
+        <div class="journalWrap journalTimelineInner">
+          {journalEras.map((era) => {
+            const eraEntries = journalEntries.filter((entry) => entry.era === era.id);
+            const artifacts = eraEntries.filter((entry) => entry.artifact);
+            const counts = eraCounts.get(era.id);
+
+            return (
+              <section
+                class="journalEraSection"
+                id={`era-${era.id}`}
+                data-era-section={era.id}
+                style={`--era-color:${era.color}; --era-bright:${era.colorBright};`}
+              >
+                <div class="journalEraHeader">
+                  <div>
+                    <div class="journalEraStatus">{era.statusLabel} · {era.date}</div>
+                    <div class="journalEraTitle">{era.label}</div>
+                    <div class="journalEraDescription">{era.desc}</div>
+                  </div>
+
+                  <div class="journalEraStats">
+                    <div data-era-count>{counts?.entries ?? 0} entries</div>
+                    <div class:list={['journalEraStatsSurvived', !(counts?.survived ?? 0) && 'is-muted']} data-era-survived>
+                      {counts?.survived ?? 0} survived
+                    </div>
+                  </div>
+                </div>
+
+                <div class="journalEraBody">
+                  <div class="journalTimelineRail">
+                    <div class="journalTimelineSpine"></div>
+
+                    {eraEntries.map((entry) => {
+                      const typeConfig = journalTypeConfig[entry.type];
+                      const survived = getSurvivalBadge(entry.survived);
+
+                      return (
+                        <div
+                          class="journalTimelineItem"
+                          data-entry-card="timeline"
+                          data-era={entry.era}
+                          data-type={entry.type}
+                          data-artifact={entry.artifact ? 'true' : 'false'}
+                          data-survived={String(entry.survived)}
+                          style={`--entry-color:${typeConfig.color}; --survived-bg:${survived.bg}; --survived-color:${survived.color};`}
+                        >
+                          <div class="journalTimelineDot"></div>
+                          <details class="journalCard">
+                            <summary class="journalCardSummary">
+                              <div class="journalCardHeader">
+                                <span class="journalCardType">{typeConfig.glyph} {typeConfig.label}</span>
+                                <span class="journalCardSeq">#{entry.seq} · {entry.date}</span>
+                              </div>
+                              <div class="journalCardTitle">{entry.title}</div>
+                            </summary>
+
+                            <div class="journalCardBody">
+                              <p class="journalCardText">{entry.body}</p>
+                              <div class="journalCardMeta">
+                                <span class="journalSurvivedPill">{survived.text}</span>
+                                {entry.tags.map((tag) => (
+                                  <span class="journalTag">#{tag}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </details>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <aside class="journalArtifactsCol" data-era-artifacts={era.id}>
+                    {artifacts.map((entry) => (
+                      <article
+                        class="journalArtifactCard"
+                        data-entry-card="artifact"
+                        data-era={entry.era}
+                        data-type={entry.type}
+                        data-artifact="true"
+                        data-survived={String(entry.survived)}
+                        style={`--artifact-color:${entry.type === 'artifact' ? '#ffc06b' : era.colorBright}; --artifact-shadow:#ff2e88;`}
+                      >
+                        <div class="journalArtifactLabel">{entry.artifactLabel ?? 'ARTIFACT'}</div>
+                        <pre class="journalArtifactFragment">{entry.artifactFragment}</pre>
+                        <div class="journalArtifactMeta">// {entry.title} · {entry.date}</div>
+                      </article>
+                    ))}
+
+                    <div class="journalArtifactsEmpty" data-era-empty-artifacts={era.id} hidden={artifacts.length > 0}>
+                      // no artifacts<br />// for this era
+                    </div>
+                  </aside>
+                </div>
+
+                <div class="journalVerdict"><strong>VERDICT</strong> {era.verdict}</div>
+              </section>
+            );
+          })}
+
+          <div class="journalEmpty" data-journal-empty>// no entries match this filter</div>
+        </div>
+      </section>
+
+      <section class="journalSurfaceSection">
+        <div class="journalWrap">
+          <div class="journalSectionEyebrow">// what survived</div>
+          <h2 class="journalSectionTitle">From experiment to principle.</h2>
+
+          <div class="journalSurvivalWrap">
+            <div class="journalSurvivalTable">
+              <div class="journalSurvivalHeader">
+                <div class="journalSurvivalHeaderCell">ERA</div>
+                <div class="journalSurvivalHeaderCell">EXPERIMENT / FAILURE</div>
+                <div class="journalSurvivalHeaderCell"></div>
+                <div class="journalSurvivalHeaderCell">→ PUNK PRINCIPLE</div>
+                <div class="journalSurvivalHeaderCell">STATUS</div>
+              </div>
+
+              {journalSurvival.map((row) => {
+                const era = journalEras.find((item) => item.label === row.from);
+                const dropped = row.status === 'dropped';
+
+                return (
+                  <div class="journalSurvivalRow">
+                    <div class="journalSurvivalCell journalSurvivalCell--era" style={`--era-bright:${era?.colorBright ?? '#a6a396'};`}>
+                      <span class="journalEraMapDot" style={`background:${era?.color ?? '#6c6a5e'};`}></span>
+                      {row.from}
+                    </div>
+                    <div class="journalSurvivalCell">{row.experiment}</div>
+                    <div class="journalSurvivalCell journalSurvivalCell--arrow">→</div>
+                    <div class:list={['journalSurvivalCell', 'journalSurvivalCell--principle', dropped && 'is-dropped']}>{row.principle}</div>
+                    <div class:list={['journalSurvivalCell', 'journalSurvivalCell--status', dropped ? 'is-dropped' : 'is-live']}>
+                      {dropped ? '✕ DROPPED' : '● LIVE'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="journalSurfaceSection journalSurfaceSection--ink">
+        <div class="journalWrap">
+          <div class="journalSectionEyebrow">// artifact shelf</div>
+          <h2 class="journalSectionTitle">Source fragments.</h2>
+          <p class="journalSectionDescription">
+            These documents, notes, and READMEs exist in the repo. They are not summaries. They are receipts.
+          </p>
+
+          <div class="journalArtifactsGrid">
+            {artifactEntries.map((entry, index) => {
+              const era = eraMapById.get(entry.era);
+
+              return (
+                <article
+                  class="journalShelfCard"
+                  style={`--artifact-color:${era?.color ?? '#6c6a5e'}; --artifact-shadow:${getArtifactShadow(index)};`}
+                >
+                  <div class="journalArtifactLabel" style={`color:${era?.colorBright ?? '#a6a396'};`}>
+                    {entry.artifactLabel ?? 'ARTIFACT'}
+                  </div>
+                  <pre class="journalArtifactFragment">{entry.artifactFragment}</pre>
+                  <div class="journalShelfMeta">{entry.date} · {era?.label}</div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section class="journalCta">
+        <div class="journalWrap journalCtaInner">
+          <div>
+            <div class="journalCtaKicker">// the build continues</div>
+            <h2 class="journalCtaTitle">This is a working runtime,<br />not a finished product.</h2>
+            <p class="journalCtaDescription">
+              The journal is public memory. The runtime is open source. If you experiment, write a spec, or find a failure worth logging — that belongs here too.
+            </p>
+
+            <div class="journalCtaButtons">
+              <a class="btn btn--primary" href={journalLinks.startHere} target="_blank" rel="noreferrer">Read start-here →</a>
+              <a class="btn btn--ghost" href={journalLinks.repo} target="_blank" rel="noreferrer">github ↗</a>
+              <a class="btn btn--ghost" href={journalLinks.publicArtifacts} target="_blank" rel="noreferrer">public artifacts ↗</a>
+            </div>
+
+            <div class="journalCtaStatus">
+              <span class="ok">●</span> punk v0.4 · local runtime · experimental {' '}
+              <span class="warn">●</span> not production-ready {' '}
+              <span class="muted">●</span> modules: later
+            </div>
+          </div>
+
+          <div class="journalCtaAside">
+            <Mascot class="journalCtaMascot" idPrefix="journal-cta" />
+            <div class="journalCtaAsideMeta">
+              // deny-by-default<br />
+              // stay local<br />
+              // read the diff
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="journalFooter">
+      <div class="journalWrap journalFooterInner">
+        <span>[//] Punk · Journal · 2026</span>
+        <span>// local-first. always has been.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.querySelector('[data-journal-root]');
+      if (!root) return;
+
+      const eraMapButtons = Array.from(root.querySelectorAll('[data-era-map-button]'));
+      const eraFilterButtons = Array.from(root.querySelectorAll('[data-era-filter]'));
+      const eraAllButton = root.querySelector('[data-era-filter-all]');
+      const typeButtons = Array.from(root.querySelectorAll('[data-type-filter]'));
+      const eraSections = Array.from(root.querySelectorAll('[data-era-section]'));
+      const countNode = root.querySelector('[data-journal-count]');
+      const emptyNode = root.querySelector('[data-journal-empty]');
+      const allTypes = typeButtons.map((button) => button.dataset.typeFilter).filter(Boolean);
+
+      let activeEra = null;
+      let activeTypes = new Set(allTypes);
+
+      const updateButtonState = () => {
+        eraMapButtons.forEach((button) => {
+          const isActive = button.dataset.eraMapButton === activeEra;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+
+        eraFilterButtons.forEach((button) => {
+          const isActive = button.dataset.eraFilter === activeEra;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+
+        if (eraAllButton) {
+          const allActive = activeEra === null;
+          eraAllButton.classList.toggle('is-active', allActive);
+          eraAllButton.setAttribute('aria-pressed', String(allActive));
+        }
+
+        typeButtons.forEach((button) => {
+          const type = button.dataset.typeFilter;
+          const isActive = type ? activeTypes.has(type) : false;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+      };
+
+      const applyFilters = () => {
+        let totalVisible = 0;
+
+        eraSections.forEach((section) => {
+          const eraId = section.dataset.eraSection;
+          const sectionVisible = !activeEra || eraId === activeEra;
+          section.hidden = !sectionVisible;
+          if (!sectionVisible) return;
+
+          const timelineCards = Array.from(section.querySelectorAll('[data-entry-card="timeline"]'));
+          const artifactCards = Array.from(section.querySelectorAll('[data-entry-card="artifact"]'));
+          let eraVisible = 0;
+          let survivedVisible = 0;
+          let artifactVisible = 0;
+
+          timelineCards.forEach((card) => {
+            const type = card.dataset.type;
+            const show = Boolean(type && activeTypes.has(type));
+            card.hidden = !show;
+            if (!show) return;
+            eraVisible += 1;
+            totalVisible += 1;
+            if (card.dataset.survived && card.dataset.survived !== 'false') survivedVisible += 1;
+          });
+
+          artifactCards.forEach((card) => {
+            const type = card.dataset.type;
+            const show = Boolean(type && activeTypes.has(type));
+            card.hidden = !show;
+            if (show) artifactVisible += 1;
+          });
+
+          const countEl = section.querySelector('[data-era-count]');
+          if (countEl) countEl.textContent = `${eraVisible} entries`;
+
+          const survivedEl = section.querySelector('[data-era-survived]');
+          if (survivedEl) {
+            survivedEl.textContent = `${survivedVisible} survived`;
+            survivedEl.classList.toggle('journalEraStatsSurvived', survivedVisible > 0);
+          }
+
+          const emptyArtifacts = section.querySelector(`[data-era-empty-artifacts="${eraId}"]`);
+          if (emptyArtifacts) emptyArtifacts.hidden = artifactVisible > 0;
+        });
+
+        if (countNode) countNode.textContent = `${totalVisible} entries`;
+        if (emptyNode) emptyNode.style.display = totalVisible === 0 ? 'block' : 'none';
+
+        updateButtonState();
+      };
+
+      const scrollToEra = (eraId) => {
+        const target = document.getElementById(`era-${eraId}`);
+        if (!target) return;
+        const top = target.getBoundingClientRect().top + window.scrollY - 120;
+        window.scrollTo({ top, behavior: 'smooth' });
+      };
+
+      eraMapButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const eraId = button.dataset.eraMapButton;
+          activeEra = activeEra === eraId ? null : eraId;
+          applyFilters();
+          if (activeEra) scrollToEra(activeEra);
+        });
+      });
+
+      eraFilterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeEra = button.dataset.eraFilter || null;
+          applyFilters();
+        });
+      });
+
+      if (eraAllButton) {
+        eraAllButton.addEventListener('click', () => {
+          activeEra = null;
+          applyFilters();
+        });
+      }
+
+      typeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const type = button.dataset.typeFilter;
+          if (!type) return;
+
+          if (activeTypes.has(type)) {
+            if (activeTypes.size > 1) {
+              activeTypes.delete(type);
+            } else {
+              activeTypes = new Set(allTypes);
+            }
+          } else {
+            activeTypes.add(type);
+          }
+
+          applyFilters();
+        });
+      });
+
+      updateButtonState();
+      applyFilters();
+    })();
+  </script>
+</Layout>
