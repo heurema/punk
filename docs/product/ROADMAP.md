@@ -73,6 +73,14 @@ Required eval direction:
 - ensure each allowed transition has event expectations
 - ensure illegal transitions leave no forbidden artifacts
 
+### Research intake additions
+
+- define `punk.event.v0.1` schema fixture
+- add append-only event writer for flow transitions and guard denials
+- add event replay smoke eval for flow state
+- add no-network default eval
+- add telemetry redaction fixture
+
 ## Phase 2 — Eval smoke harness
 
 Goal: create regression signal before adding features.
@@ -109,6 +117,12 @@ Initial smoke coverage:
 - parked capability not exposed through public CLI
 - waiver requires explicit reason and ledger entry
 
+### Research intake additions
+
+- eval runner writes machine JSON and human Markdown reports
+- eval reports include suite id, case id, status, duration, failure code, artifact refs, and hashes
+- eval events link to report artifacts
+
 See `docs/product/EVAL-PLANE.md`.
 
 ## Phase 3 — Contract loop without agents
@@ -136,6 +150,12 @@ Required eval additions:
 - proofpack schema conformance
 - proof link/hash integrity
 
+### Research intake additions
+
+- gate decisions link contract, run receipt, eval report, and proofpack
+- proofpack manifest records artifact hashes and event range/root
+- only `gate` can write final decision artifacts
+
 ## Phase 4 — Project Memory minimal
 
 Goal: add long-term project continuity without building a Jira clone.
@@ -160,6 +180,11 @@ Required eval additions:
 - speculative knowledge excluded from implementation truth
 - reports link goal/contract/eval/proof refs when relevant
 
+### Research intake additions
+
+- project memory links goals, contracts, reports, decisions, proofs, and public narrative
+- stale memory/doc detection becomes an inspectable derived view
+
 Additional constraints before promoting Knowledge Vault retrieval behavior:
 
 - define a markdown metadata convention for retrieval-relevant knowledge,
@@ -175,6 +200,18 @@ Still out of scope for Phase 4:
 - remote/org/global commons
 - autonomous memory capture
 - autonomous knowledge promotion
+
+## Still parked after research intake
+
+- remote telemetry export
+- OpenTelemetry export adapter
+- remote transparency log adapter
+- cloud sync
+- SaaS workspace
+- marketplace
+- agent execution
+- rich plugin API
+- UI-first workflow
 
 ## Phase 5 — Project coherence gate
 

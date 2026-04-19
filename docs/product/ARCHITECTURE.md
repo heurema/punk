@@ -51,6 +51,25 @@ Goal -> Contract -> Run -> Receipt -> ModuleAssessment -> DecisionObject -> Proo
 
 `DecisionObject` is final and is written only by `gate`.
 
+## Local trust evidence architecture
+
+`punk` active-core uses local trust evidence instead of remote control-plane truth.
+
+Canonical evidence surfaces:
+
+- `.punk/events/*.jsonl` for append-only audit events
+- `.punk/runs/` for run receipts
+- `.punk/evals/` and `work/reports/` for eval outputs and linked summaries
+- `.punk/decisions/` for gate decisions
+- `.punk/proofs/` for proofpack manifests
+- `.punk/views/` for derived, regenerable inspect views
+
+Events may reference artifacts by id, relative path, and hash.
+
+Events must not duplicate raw contract bodies, prompts, source snippets, secrets, environment values, provider payloads, or hidden remote-export state.
+
+Inspectable state should be reconstructable from canonical evidence. Derived views are convenience, not truth.
+
 ## Workspace activation model
 
 A crate or folder can exist before it is active.
@@ -98,6 +117,16 @@ Project memory has four repo-tracked truth surfaces:
 
 Runtime and derived data live under `.punk/`.
 
+### Project-memory link graph
+
+Project memory should keep explicit links across:
+
+```text
+goal -> contract -> report -> eval -> decision -> proof -> docs/public narrative
+```
+
+The link graph is bounded project memory, not a giant prompt. It should stay repo-tracked where possible and derive inspectable views from canonical artifacts when needed.
+
 ### Knowledge Vault architecture boundary
 
 Knowledge Vault owns the repo-tracked knowledge artifact contract under `knowledge/`.
@@ -130,6 +159,30 @@ The module host must remain Punk-owned: it invokes modules, validates module rec
 A future plugin runtime must not write final decisions, mutate the event log directly, create a hidden project memory store, bypass contract scope, bypass `gate`, or gain filesystem, network, environment, secret, process, shell, or publishing authority by default.
 
 See `docs/product/MODULE-HOST.md` and `docs/adr/ADR-0010-defer-wasm-plugin-host.md`.
+
+## Assessment vs decision boundary
+
+Rules, modules, policies, and adapters may assess.
+
+They may produce guard results, warnings, findings, patches, receipts, or recommendations.
+
+They must not write final acceptance. Only `gate` writes final decisions.
+
+Gate decisions may reference assessments, eval reports, run receipts, and proofpacks.
+
+## Minimal proofpack provenance
+
+A proofpack is a local provenance manifest. It should reference:
+
+- contract id and hash
+- run receipt id and hash
+- eval report id and hash, when applicable
+- gate decision id and hash
+- output artifact refs and hashes
+- relevant event range or event root
+- rule/guard version refs
+
+Remote transparency logs, release signing, and full supply-chain provenance are parked.
 
 ## Eval plane
 

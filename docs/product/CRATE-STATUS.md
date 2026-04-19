@@ -27,6 +27,21 @@
 | `punk-mod-dev` | parked | software-development module |
 | `punk-mod-pub` | parked | content/publishing module |
 
+## Research intake crate stance
+
+Do not add a standalone `punk-telemetry` product crate yet.
+
+Telemetry ownership is distributed across active-core crates:
+
+- `punk-events`: event schema, append-only writer, replay support
+- `punk-flow`: transition and guard events
+- `punk-eval`: eval run events and reports
+- `punk-gate`: final decision events
+- `punk-proof`: proofpack manifest and artifact hash refs
+- `punk-project`: project identity and memory-link boundaries
+
+Future export adapters, dashboards, or remote sinks are parked and must not be listed as active-core.
+
 ## Parked module docs
 
 Parked modules may exist as documentation folders before they become workspace crates.

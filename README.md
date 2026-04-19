@@ -53,6 +53,24 @@ The first active target is the stable core:
 
 See `docs/product/START-HERE.md`.
 
+## Research intake status
+
+`punk` copies mechanisms, not product surfaces.
+
+External research enters the project through `knowledge/research/`, then becomes either an idea in `knowledge/ideas/`, an ADR, an eval spec, a roadmap patch, or an explicit anti-pattern.
+
+Current active-core research intake focuses on local trust evidence:
+
+- append-only events
+- replayable inspect state
+- local eval reports
+- gate decisions
+- proofpack manifests
+- project-memory links
+- no-network defaults
+
+See `docs/product/RESEARCH-INTAKE.md` and `docs/product/TELEMETRY.md`.
+
 
 ## Dogfooding
 

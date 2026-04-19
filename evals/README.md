@@ -29,6 +29,8 @@ evals/
     eval-case.v1.yaml
   _templates/
     eval-case.v1.yaml
+  specs/
+    2026-04-19-core-trust-evals.md
   suites/
     smoke.yaml
     core.yaml
@@ -82,6 +84,12 @@ The first smoke suite should cover at least:
 10. parked capability is not exposed in public CLI
 11. baseline regression blocks promotion
 12. waiver requires explicit reason and ledger entry
+
+See also:
+
+- `evals/specs/2026-04-19-core-trust-evals.md`
+
+That backlog adds telemetry, replay, redaction, no-network, and proofpack-integrity eval directions needed for research-intake follow-up work.
 
 ## Report outputs
 

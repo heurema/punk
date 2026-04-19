@@ -38,6 +38,17 @@ Question
   -> ADR / Goal / Contract refs
 ```
 
+## Research intake classification
+
+Every non-trivial external idea must be classified as exactly one of:
+
+- `adopt` — belongs in active-core now
+- `defer` — valuable, but not needed for the current phase
+- `park` — out of scope until the roadmap explicitly promotes it
+- `avoid` — conflicts with Punk laws or trust posture
+
+See `docs/product/RESEARCH-INTAKE.md`.
+
 ## Storage
 
 Research notes are repo-tracked:
@@ -94,6 +105,7 @@ Tier C can inspire questions. It should not justify a core decision alone.
 - Failure modes found
 - Options considered
 - Recommendation
+- Adoption map: adopt / defer / park / avoid
 - What stays out of scope
 - Impact on roadmap
 - Required evals
@@ -181,6 +193,19 @@ Do not:
 - keep research only in chat
 - skip eval implications
 - skip failure modes
+
+## Research intake triggers
+
+A Research Gate is required before adopting ideas that change:
+
+- event-log shape or replay model
+- gate/proof boundaries
+- telemetry storage or export behavior
+- redaction/privacy model
+- project-memory link model
+- sandbox/permission semantics
+- public claims about trust evidence
+- active-core scope or parked/future boundaries
 
 ## Knowledge Vault research requirements
 

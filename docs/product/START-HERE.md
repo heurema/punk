@@ -85,6 +85,30 @@ Research is required when changing:
 
 See `docs/product/RESEARCH-GATE.md`.
 
+## Research intake rule
+
+Before adopting an idea from another project, classify it as `adopt`, `defer`, `park`, or `avoid`.
+
+Adopt only if it strengthens active-core trust surfaces:
+
+- project identity
+- flow state
+- event log
+- eval harness
+- contract lifecycle
+- gate decision
+- proofpack
+- inspectable state
+- project memory
+
+Parked and future-only ideas must not appear as the current operator path.
+
+See also:
+
+- `docs/product/RESEARCH-INTAKE.md`
+- `knowledge/research/2026-04-19-project-ideas-intake.md`
+- `knowledge/ideas/2026-04-19-research-idea-backlog.md`
+
 ## Public build from day zero
 
 The public narrative starts before code automation.

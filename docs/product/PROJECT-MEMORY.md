@@ -15,6 +15,16 @@ Project Memory Plane
 └─ Project Coherence Gate
 ```
 
+## Link graph
+
+Project memory should preserve explicit links across:
+
+```text
+goal -> contract -> report -> eval -> decision -> proof -> docs/public narrative
+```
+
+This keeps memory bounded and inspectable. The graph should be built from canonical artifacts, not from one giant prompt or hidden runtime state.
+
 ## Repo-tracked memory
 
 ```text
@@ -45,8 +55,10 @@ public/
 .punk/
   project/
   indexes/
+  events/
   contracts/
   runs/
+  evals/
   decisions/
   proofs/
   views/

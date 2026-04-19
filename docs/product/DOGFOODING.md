@@ -184,6 +184,18 @@ Every dogfooded work item must leave:
 - report
 - proof when available
 
+## Research intake dogfooding checks
+
+Each accepted dogfooding contract should answer:
+
+- Which event ids prove the lifecycle path?
+- Which guard results allowed or denied transitions?
+- Which eval reports ran?
+- Which gate decision accepted or rejected the work?
+- Which proofpack references the evidence?
+- Which project-memory docs were updated or explicitly waived?
+- Did the run avoid hidden network behavior?
+
 ## First dogfooding action
 
 Before code exists, create the first goal manually:

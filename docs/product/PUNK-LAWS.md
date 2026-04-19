@@ -61,3 +61,13 @@ Lower layers can narrow or specialize upper rules. They cannot weaken them.
 34. Metrics snapshots must identify source, channel, and collection time.
 35. PubPunk must adopt the repo-tracked public structure instead of creating a hidden content store.
 36. Public claims must be supported by canonical knowledge or framed as opinion.
+
+## Telemetry and research-intake laws
+
+37. Research may suggest mechanisms; it does not override active-core scope.
+38. Telemetry is local trust evidence, not hidden analytics.
+39. Remote export is parked until promoted through Research Gate and ADR.
+40. Guard results, module outputs, and adapter outputs are assessments, not final decisions.
+41. Proofpacks must reference verifiable artifacts and hashes.
+42. Derived inspect views are regenerable and must not become a second source of truth.
+43. Project memory links must preserve explicit refs between goals, contracts, reports, evals, decisions, proofs, and public narrative.
