@@ -277,6 +277,26 @@ Rules:
 - no provider zoo
 - adapters never own truth
 
+Candidate parked adapter boundary:
+
+- `docs/adapters/repo-search.md` — repo/code retrieval adapter boundary
+
+Repo-search adapter promotion requires:
+
+- R2 research note under `knowledge/research/`
+- explicit receipt schema
+- conformance evals for correctness, bounded search, latency,
+  reproducibility, and stale-index behavior
+- proof that retrieval state remains non-canonical
+- read-only retrieval before any editing/refactoring capability
+
+Out of scope for first adapter promotion:
+
+- autonomous code modification
+- symbolic editing
+- remote code search without external side-effect policy
+- treating frecency/history/vector indexes as project memory
+
 Required research before implementation:
 
 - adapter boundary research
@@ -321,6 +341,6 @@ Before implementation, run focused research for these phase decisions:
 | Phase 6 | R2 before module host API |
 | Phase 7 | R1 before dev module scope/check heuristics |
 | Phase 8 | R1/R2 before publishing side-effect model |
-| Phase 9 | R1/R2 per provider/adapter boundary |
+| Phase 9 | R1/R2 per provider/adapter boundary; R2 before repo-search adapter promotion |
 
 Research output must link to required eval cases.

@@ -64,6 +64,29 @@ Statuses:
 
 The public CLI must only expose active capabilities.
 
+## Parked adapter boundary: repo search
+
+Repo/code retrieval may later be exposed through adapters, not the core.
+
+A repo-search adapter may invoke local or remote retrieval tools such as text
+search, fuzzy file search, symbol search, language-server navigation, or code
+graph lookup. It must remain advisory evidence only.
+
+A repo-search adapter must not:
+
+- own project truth
+- write final decisions
+- bypass `gate`
+- promote retrieved content into canonical knowledge
+- hide non-canonical memory behind implementation truth
+- expose editing or external side effects as part of read-only retrieval
+
+If retrieval is used by a contract or module, the run should leave a retrieval
+receipt that records the backend, query, constraints, result summary, timing,
+and any index/cache provenance needed for inspection.
+
+The initial parked boundary is documented in `docs/adapters/repo-search.md`.
+
 ## Project memory plane
 
 Project memory has four repo-tracked truth surfaces:

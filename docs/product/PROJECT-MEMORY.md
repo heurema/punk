@@ -52,6 +52,35 @@ public/
   views/
 ```
 
+## Non-canonical retrieval memory
+
+Repo-search and code-retrieval systems may keep runtime state such as:
+
+- frecency databases
+- query history
+- file indexes
+- symbol indexes
+- vector indexes
+- language-server caches
+
+This state is retrieval memory, not project memory.
+
+Retrieval memory may help rank or locate evidence, but it must not become a
+source of implementation truth. It should be treated as runtime/derived state
+and should be inspectable through receipts or explicit index metadata when it
+affects a contract run.
+
+If a retrieval result should become durable project knowledge, it must be
+promoted through the normal path:
+
+```text
+retrieval receipt
+  -> report / research note
+  -> ADR or knowledge update
+  -> contract refs
+  -> gate/proof
+```
+
 ## Knowledge authority
 
 Every knowledge artifact has:
@@ -118,7 +147,6 @@ idea/research -> ADR or roadmap decision -> goal/contract -> implementation -> e
 ```
 
 Promotion is nomination, not move: the source artifact stays intact until a separate decision promotes or supersedes it.
-
 
 ## Research as input to project memory
 

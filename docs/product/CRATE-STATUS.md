@@ -39,6 +39,23 @@ Future crate name when promoted:
 
 - `punk-mod-pub`
 
+## Parked adapter docs
+
+Parked adapters may exist as documentation folders before they become active
+workspace behavior.
+
+Initial parked adapter docs:
+
+- `docs/adapters/repo-search.md`
+
+Future implementation location when promoted:
+
+- `punk-adapters::repo_search`
+
+Promotion requires a completed research note, receipt schema, conformance
+evals, and proof that the adapter cannot own project truth or write final
+decisions.
+
 ## Parked module host note
 
 `punk-module-host` is not a plugin runtime while parked.
