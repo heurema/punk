@@ -6,6 +6,8 @@
 
 `punk` is a local-first bounded work kernel with universal laws, installable domain modules, project memory, and proof-bearing contracts.
 
+Live landing: [punks.run](https://punks.run)
+
 ## Current decision
 
 Start core-first.

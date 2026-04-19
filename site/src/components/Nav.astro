@@ -1,0 +1,114 @@
+---
+import { externalLinks, navLinks } from '../data/content';
+---
+
+<header class="navShell">
+  <div class="wrap navWrap">
+    <a class="wordmark" href="/" aria-label="punk home">
+      <span class="wordmarkBadge">[//]</span>
+      <span class="wordmarkText">Punk</span>
+    </a>
+
+    <nav class="navLinks" aria-label="Primary">
+      {navLinks.map((link) => (
+        <a href={link.href}>{link.label}</a>
+      ))}
+    </nav>
+
+    <a class="btn btn--primary navCta" href={externalLinks.publicBuild} target="_blank" rel="noreferrer">
+      follow the build
+    </a>
+  </div>
+</header>
+
+<style>
+  .navShell {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    height: var(--nav-height);
+    border-bottom: 1px solid var(--border);
+    background: rgba(5, 4, 10, 0.88);
+    backdrop-filter: blur(8px);
+  }
+
+  .navWrap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 100%;
+  }
+
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .wordmarkBadge {
+    padding: 2px 6px 1px;
+    background: var(--fg);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .wordmarkText {
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  .navLinks {
+    display: flex;
+    gap: 26px;
+    margin-left: 24px;
+  }
+
+  .navLinks a {
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .navLinks a:hover {
+    color: var(--fg);
+  }
+
+  .navCta {
+    margin-left: auto;
+    width: auto;
+    padding: 9px 14px 8px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    box-shadow: 3px 3px 0 0 var(--fg);
+  }
+
+  @media (max-width: 720px) {
+    .navWrap {
+      gap: 12px;
+    }
+
+    .navLinks {
+      display: none;
+    }
+
+    .navCta {
+      padding: 7px 10px 6px;
+      font-size: 11px;
+      box-shadow: 2px 2px 0 0 var(--fg);
+    }
+
+    .wordmarkText {
+      font-size: 18px;
+    }
+  }
+</style>

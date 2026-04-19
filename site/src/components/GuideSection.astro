@@ -1,0 +1,328 @@
+---
+import { guideAnswers, guideRefusals, guideTranscript } from '../data/content';
+---
+
+<section class="section section--dark" id="guide">
+  <div class="wrap">
+    <div class="guideHeader">
+      <div>
+        <div class="guideTag">§ 06 · the guide</div>
+        <h2 class="guideTitle">A narrow assistant.</h2>
+      </div>
+      <p class="guideIntro">
+        Guide answers about Punk — laws, roadmap, build. It refuses the rest. The scope is the feature.
+      </p>
+    </div>
+
+    <div class="guideGrid">
+      <div class="guideContract">
+        <div class="guideMeta">the contract it reads from</div>
+        <blockquote class="guideQuote">"Answer about the kernel. Cite the law. When asked anything else, step back."</blockquote>
+
+        <div class="guideListBlock">
+          <div class="guideListTitle guideListTitle--success">answers</div>
+          {guideAnswers.map((item) => (
+            <div class="guideListItem guideListItem--success">
+              <span>+</span>
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <div class="guideListBlock">
+          <div class="guideListTitle guideListTitle--danger">refuses</div>
+          {guideRefusals.map((item) => (
+            <div class="guideListItem guideListItem--danger">
+              <span>−</span>
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <div class="guideMetaLine">
+          <span class="receiptAccent">//</span> guide.contract.md · network: <span class="receiptWarn">none</span> · cite:
+          <span class="receiptValue"> always</span>
+        </div>
+      </div>
+
+      <div class="guideTranscript">
+        <div class="guideTranscriptHeader">
+          <span>∎</span>
+          <span>transcript · punk/guide</span>
+          <span class="guideSpacer"></span>
+          <span><span class="dot dot--success"></span> online</span>
+        </div>
+
+        <div class="guideTranscriptBody">
+          {guideTranscript.map((item) =>
+            item.who === 'you' ? (
+              <div class="message message--user">
+                <div class="messageWho">you</div>
+                <div class="messageText">"{item.text}"</div>
+              </div>
+            ) : (
+              <div class="message message--guide">
+                <div class={`messageWho messageWho--${item.tone === 'warn' ? 'warn' : 'accent'}`}>guide · {item.cite}</div>
+                <div class={`messageReply messageReply--${item.tone === 'warn' ? 'warn' : 'accent'}`}>{item.text}</div>
+              </div>
+            )
+          )}
+        </div>
+
+        <div class="guidePrompt">
+          <span>&gt;</span>
+          <span>ask about a law, an ADR, or what is staged…</span>
+          <span class="caret"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .guideHeader {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: end;
+    margin-bottom: 56px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .guideTag {
+    margin-bottom: 18px;
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  .guideTitle {
+    margin: 0;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 60px;
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+  }
+
+  .guideIntro {
+    max-width: 460px;
+    margin: 0;
+    color: var(--fg-2);
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  .guideGrid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 72px;
+    align-items: start;
+  }
+
+  .guideMeta {
+    margin-bottom: 14px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .guideQuote {
+    margin: 0 0 28px;
+    padding-left: 18px;
+    border-left: 2px solid var(--accent);
+    color: var(--fg);
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  .guideListBlock {
+    margin-top: 18px;
+  }
+
+  .guideListTitle {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .guideListTitle--success {
+    color: var(--success);
+  }
+
+  .guideListTitle--danger {
+    color: var(--danger);
+  }
+
+  .guideListItem {
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    gap: 10px;
+    padding: 6px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .guideListItem--success {
+    color: var(--fg);
+  }
+
+  .guideListItem--success span {
+    color: var(--success);
+  }
+
+  .guideListItem--danger {
+    color: var(--fg-2);
+  }
+
+  .guideListItem--danger span {
+    color: var(--danger);
+  }
+
+  .guideMetaLine {
+    margin-top: 36px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .guideTranscript {
+    border: 1px solid var(--border);
+    background: #0a0912;
+  }
+
+  .guideTranscriptHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .guideTranscriptHeader span:first-child {
+    color: var(--accent-bright);
+  }
+
+  .guideSpacer {
+    flex: 1;
+  }
+
+  .guideTranscriptBody {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 22px 22px 10px;
+  }
+
+  .message--user {
+    align-self: flex-end;
+    max-width: 70%;
+  }
+
+  .messageWho {
+    margin-bottom: 4px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .messageText {
+    color: var(--fg);
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+
+  .message--guide {
+    max-width: 85%;
+  }
+
+  .messageWho--accent {
+    color: var(--accent-bright);
+  }
+
+  .messageWho--warn {
+    color: var(--warn);
+  }
+
+  .messageReply {
+    padding-left: 14px;
+    border-left: 2px solid var(--accent);
+    color: var(--fg);
+    font-family: var(--font-serif);
+    font-size: 15.5px;
+    line-height: 1.55;
+  }
+
+  .messageReply--warn {
+    border-left-color: var(--warn);
+  }
+
+  .guidePrompt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    background: #05040a;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  .guidePrompt span:first-child {
+    color: var(--accent-bright);
+  }
+
+  .guidePrompt span:nth-child(2) {
+    flex: 1;
+  }
+
+  @media (max-width: 1100px) {
+    .guideHeader,
+    .guideGrid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .guideTitle {
+      font-size: clamp(40px, 10vw, 54px);
+    }
+
+    .message--user,
+    .message--guide {
+      max-width: 100%;
+    }
+  }
+</style>

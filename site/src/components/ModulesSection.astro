@@ -1,0 +1,353 @@
+---
+import SectionHeader from './SectionHeader.astro';
+import { devpunkFacts, externalLinks, moduleTimeline, pubpunkNotes } from '../data/content';
+---
+
+<section class="section" id="modules">
+  <div class="wrap">
+    <SectionHeader
+      n="05"
+      kicker="roadmap · staged"
+      sub="Nothing below is shipping. Everything below is a commitment about order: the laws harden first, then a module gets to land."
+    >
+      <Fragment slot="title">Modules wait on the core.</Fragment>
+    </SectionHeader>
+
+    <div class="moduleTimeline">
+      {moduleTimeline.map((step) => (
+        <div class="moduleTimelineCell">
+          <div class="moduleTimelineKey">§ {step.key}</div>
+          <div class="moduleTimelineName">{step.name}</div>
+          <div class="moduleTimelineState">
+            <span class={`moduleTimelineDot moduleTimelineDot--${step.tone}`}></span>
+            {step.state}
+          </div>
+          <div class="moduleTimelineMeta">{step.meta}</div>
+        </div>
+      ))}
+    </div>
+
+    <div class="moduleGrid">
+      <article class="moduleCard moduleCard--devpunk">
+        <div class="moduleCardHeader">
+          <div class="moduleCardTag">§ 02 · devpunk</div>
+          <div class="moduleCardMeta">next · after kernel</div>
+        </div>
+        <h3 class="moduleCardTitle">DevPunk</h3>
+        <p class="moduleCardBody">
+          The engineering surface. Agents on your repo, your machine, under a signed contract. Editor and shell; no cloud.
+        </p>
+
+        <div class="moduleFacts">
+          {devpunkFacts.map(([key, value]) => (
+            <div class="moduleFact">
+              <div class="moduleFactKey">{key}</div>
+              <div class="moduleFactValue">{value}</div>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      <article class="moduleCard moduleCard--future">
+        <div class="moduleLaterStamp">LATER</div>
+        <div class="moduleCardTag moduleCardTag--muted">§ 03 · pubpunk</div>
+        <h3 class="moduleFutureTitle">PubPunk</h3>
+        <p class="moduleFutureBody">The public surface. Not in scope yet. Notes only.</p>
+        <div class="moduleOutline">
+          {pubpunkNotes.map((note) => (
+            <div class="moduleOutlineItem">
+              <span>○</span>
+              {note}
+            </div>
+          ))}
+        </div>
+        <div class="moduleBlocked">blocked on: kernel freeze</div>
+      </article>
+
+      <article class="moduleCard moduleCard--future moduleCard--open">
+        <div class="moduleCardTag moduleCardTag--muted">§ 04 · open slot</div>
+        <h3 class="moduleOpenTitle">—</h3>
+        <p class="moduleFutureBody">Reserved. If you have a module idea that needs a kernel this strict, write an RFC against the laws.</p>
+        <a class="moduleRfcLink" href={externalLinks.issues} target="_blank" rel="noreferrer">▸ propose a module on GitHub ↗</a>
+      </article>
+    </div>
+
+    <div class="moduleFootnote">
+      <span>∎</span>
+      <span>no dates, no waitlist. the order is the promise.</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .moduleTimeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+    background: #0a0912;
+  }
+
+  .moduleTimelineCell {
+    padding: 18px 20px;
+    border-right: 1px solid var(--border);
+  }
+
+  .moduleTimelineCell:last-child {
+    border-right: 0;
+  }
+
+  .moduleTimelineKey {
+    margin-bottom: 10px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+  }
+
+  .moduleTimelineName {
+    margin-bottom: 8px;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .moduleTimelineState {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #c6c2b4;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+  }
+
+  .moduleTimelineDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--fg-3);
+  }
+
+  .moduleTimelineDot--success {
+    background: var(--success);
+  }
+
+  .moduleTimelineDot--muted {
+    background: var(--fg-3);
+  }
+
+  .moduleTimelineDot--faded {
+    background: #3a3848;
+  }
+
+  .moduleTimelineMeta {
+    margin-top: 6px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  .moduleGrid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .moduleCard {
+    position: relative;
+    padding: 26px 26px 24px;
+    border: 1px solid var(--border);
+    background: #0a0912;
+  }
+
+  .moduleCard--future {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .moduleCardHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .moduleCardTag {
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .moduleCardTag--muted {
+    color: var(--fg-muted);
+  }
+
+  .moduleCardMeta {
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .moduleCardTitle,
+  .moduleFutureTitle,
+  .moduleOpenTitle {
+    margin: 0 0 12px;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .moduleCardTitle {
+    font-size: 34px;
+  }
+
+  .moduleFutureTitle {
+    font-size: 30px;
+    color: var(--fg-2);
+  }
+
+  .moduleOpenTitle {
+    font-size: 28px;
+    color: var(--fg-3);
+  }
+
+  .moduleCardBody,
+  .moduleFutureBody {
+    margin: 0 0 20px;
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+
+  .moduleFacts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--border);
+  }
+
+  .moduleFact {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .moduleFactKey {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .moduleFactValue {
+    margin-top: 3px;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  .moduleLaterStamp {
+    position: absolute;
+    top: 22px;
+    right: -36px;
+    padding: 4px 38px;
+    border: 1px solid var(--border-strong);
+    background: #05040a;
+    color: var(--fg-3);
+    transform: rotate(18deg);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.26em;
+  }
+
+  .moduleOutline {
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .moduleOutlineItem {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .moduleOutlineItem span {
+    color: var(--border-strong);
+  }
+
+  .moduleBlocked {
+    margin-top: 18px;
+    color: var(--border-strong);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .moduleCard--open {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .moduleRfcLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: #05040a;
+    color: var(--fg-2);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  .moduleRfcLink:hover {
+    color: var(--accent-bright);
+    border-color: var(--accent);
+  }
+
+  .moduleFootnote {
+    display: flex;
+    gap: 10px;
+    margin-top: 32px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .moduleFootnote span:first-child {
+    color: var(--accent-bright);
+  }
+
+  @media (max-width: 1100px) {
+    .moduleTimeline {
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      overflow-x: auto;
+    }
+
+    .moduleGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

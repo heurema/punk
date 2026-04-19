@@ -1,0 +1,130 @@
+---
+import SectionHeader from './SectionHeader.astro';
+---
+
+<section class="section section--dark" id="build">
+  <div class="wrap">
+    <SectionHeader
+      n="04"
+      kicker="the repo is the room"
+      sub="Everything in Punk is being built where you can read it. The repo layout mirrors the laws — and vice versa. The roadmap is the folder structure."
+    >
+      <Fragment slot="title">
+        Public build.<br />
+        Core-first. No ta-da.
+      </Fragment>
+    </SectionHeader>
+
+    <div class="buildGrid">
+      <div class="term">
+        <div class="termChrome">
+          <div class="termDots"><span></span><span></span><span></span></div>
+          <span>~ / punk / main</span>
+          <span class="buildChromeStatus buildChromeStatus--ok">● tree</span>
+        </div>
+        <div class="tree buildPane">
+          <div><span class="treeDir">punk/</span></div>
+          <div>├── <span class="treeDir">work/</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;└── <span class="treeDir">goals/</span> <span class="treeComment">// the 'why'</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="treeHighlight">payments-auth.md</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="treeFile">onboarding-v2.md</span></div>
+          <div>├── <span class="treeDir">knowledge/</span> <span class="treeComment">// project memory</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;├── <span class="treeFile">context.append.log</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;└── <span class="treeFile">glossary.md</span></div>
+          <div>├── <span class="treeDir">public/</span> <span class="treeComment">// build-in-the-open</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;├── <span class="treeHighlight">BUILDLOG.md</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;└── <span class="treeFile">weekly-digest/</span></div>
+          <div>├── <span class="treeDir">flows/</span> <span class="treeComment">// the 'how'</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;├── <span class="treeFile">goal-to-contract.yml</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;└── <span class="treeFile">run-to-proof.yml</span></div>
+          <div>├── <span class="treeDir">evals/</span> <span class="treeComment">// the gate</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;├── <span class="treeHighlight">gate.default.yml</span></div>
+          <div>│&nbsp;&nbsp;&nbsp;└── <span class="treeFile">checks/*.yml</span></div>
+          <div>└── <span class="treeDir">docs/</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="treeDir">adr/</span> <span class="treeComment">// decisions, dated</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="treeFile">ADR-001-contract-first.md</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="treeFile">ADR-002-gate-writes.md</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="treeHighlight">ADR-007-modules-later.md</span></div>
+        </div>
+      </div>
+
+      <div class="term">
+        <div class="termChrome">
+          <div class="termDots"><span></span><span></span><span></span></div>
+          <span>~ / punk · BUILDLOG.md · follow</span>
+          <span class="buildChromeStatus">week 003</span>
+        </div>
+        <div class="buildPane buildLog">
+          <div class="buildMuted">$ punk log --since=monday</div>
+          <div class="buildMuted"># week 003 · 2026-04-13 → 18</div>
+          <br />
+          <div><span class="buildAccent">mon</span> hashed first contract.lock format · ADR-001</div>
+          <div><span class="buildAccent">tue</span> wired gate.default.yml to block on red evals</div>
+          <div><span class="buildAccent">wed</span> wrote ADR-007: modules land after core freeze</div>
+          <div><span class="buildAccent">thu</span> receipt.v0 emits signed diff + seed</div>
+          <div><span class="buildAccent">fri</span> guide refuses out-of-scope questions (good)</div>
+          <br />
+          <div class="buildSoft">next: harden contract grants. no modules yet.</div>
+          <br />
+          <div class="buildMuted">— ∎ —</div>
+          <br />
+          <div class="buildMuted">$ punk status</div>
+          <div>kernel: <span class="buildOk">● compiling</span> · laws: 8/8 · gate: live</div>
+          <div>module: <span class="buildMuted">○ not yet</span> · devpunk / pubpunk staged</div>
+          <div>guide: <span class="buildOk">● online</span> · scope: laws only</div>
+          <br />
+          <div><span class="caret"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .buildGrid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .buildPane {
+    padding: 16px 20px 22px;
+  }
+
+  .buildChromeStatus {
+    margin-left: auto;
+  }
+
+  .buildChromeStatus--ok {
+    color: var(--success);
+  }
+
+  .buildLog {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.8;
+  }
+
+  .buildMuted {
+    color: var(--fg-3);
+  }
+
+  .buildSoft {
+    color: var(--fg-2);
+  }
+
+  .buildAccent {
+    color: var(--accent-bright);
+  }
+
+  .buildOk {
+    color: var(--success);
+  }
+
+  @media (max-width: 1100px) {
+    .buildGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

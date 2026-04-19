@@ -1,0 +1,33 @@
+---
+interface Props {
+  width?: number;
+  count?: number;
+  color?: string;
+  opacity?: number;
+}
+
+const {
+  width = 260,
+  count = 7,
+  color = '#ff2e88',
+  opacity = 0.9,
+} = Astro.props;
+
+const lengths = [10, 16, 22, 26, 22, 16, 10].slice(0, count);
+const step = width / (count + 1);
+---
+
+<svg width={width} height="28" viewBox={`0 0 ${width} 28`} aria-hidden="true">
+  {lengths.map((length, index) => (
+    <line
+      x1={step * (index + 1)}
+      y1="26"
+      x2={step * (index + 1)}
+      y2={26 - length}
+      stroke={color}
+      stroke-width="1.6"
+      stroke-linecap="round"
+      opacity={opacity}
+    />
+  ))}
+</svg>

@@ -1,0 +1,2038 @@
+<!doctype html>
+<html data-theme="ink">
+<head>
+<meta charset="utf-8">
+<title>Punk · a bounded work kernel for agents</title>
+<style>
+/* ==========================================================================
+   SpecPunk — Colors & Type
+   Local-first, stewarded multi-agent engineering runtime
+   ==========================================================================
+   Import once at the document root:
+     <link rel="stylesheet" href="/colors_and_type.css">
+   ========================================================================== */
+
+/* ---- Fonts ---------------------------------------------------------------
+   Three families, no more.
+     — JetBrains Mono: code, specs, agent transcripts, UI chrome
+     — Space Grotesk:  display, wordmark, marketing headlines
+     — IBM Plex Serif: long-form specs, essays, editorial
+   -------------------------------------------------------------------------- */
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('fonts/JetBrainsMono-400.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('fonts/JetBrainsMono-500.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('fonts/JetBrainsMono-700.woff2') format('woff2'); }
+
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('fonts/SpaceGrotesk-400.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('fonts/SpaceGrotesk-500.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('fonts/SpaceGrotesk-700.woff2') format('woff2'); }
+
+@font-face { font-family: 'IBM Plex Serif'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('fonts/IBMPlexSerif-400.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Serif'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('fonts/IBMPlexSerif-600.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Serif'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url('fonts/IBMPlexSerif-400Italic.woff2') format('woff2'); }
+
+/* ==========================================================================
+   TOKENS — root (paper mode, default)
+   ========================================================================== */
+:root {
+  /* ---- Font families -------------------------------------------------- */
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif:   'IBM Plex Serif', 'Iowan Old Style', Georgia, Cambria, 'Times New Roman', serif;
+
+  /* ---- Raw palette ---------------------------------------------------- */
+  /* Paper & ink — the "spec" half */
+  --ink-000:  #ffffff;
+  --ink-050:  #f7f5f0;   /* paper  — base background */
+  --ink-100:  #efece4;   /* paper warm shade         */
+  --ink-150:  #e4e0d4;   /* rule   — hairlines       */
+  --ink-200:  #cfcabb;   /* muted border             */
+  --ink-400:  #7a7668;   /* tertiary text            */
+  --ink-600:  #3a382f;   /* secondary text           */
+  --ink-900:  #0f0e0b;   /* ink — primary text       */
+  --ink-950:  #05040a;   /* pure ink / deep bg       */
+
+  /* Punk accents — the "punk" half. Use with discipline: one per screen. */
+  --punk-magenta:   #ff2e88;   /* PRIMARY accent. Hot pink, stencil energy.  */
+  --punk-magenta-ink: #c7005f; /* high-contrast on paper                     */
+  --punk-magenta-bg:  #ffe1ee; /* wash                                        */
+
+  --agent-green:    #12c06a;   /* agent active / success                      */
+  --agent-green-ink:#0a7d45;
+  --agent-green-bg: #d8f5e6;
+
+  --steward-amber:  #f7a93b;   /* stewardship / attention / awaiting human    */
+  --steward-amber-ink: #8a5a0c;
+  --steward-amber-bg:  #fdecce;
+
+  --error-red:      #e8433a;
+  --error-red-ink:  #a51b14;
+  --error-red-bg:   #fadbd9;
+
+  --spec-blue:      #2b6dfb;   /* info / spec links                           */
+  --spec-blue-ink:  #1043b8;
+  --spec-blue-bg:   #d9e3fc;
+
+  /* ---- Semantic surfaces & text -------------------------------------- */
+  --bg:         var(--ink-050);
+  --bg-raised: var(--ink-000);
+  --bg-sunken: var(--ink-100);
+  --bg-code:   var(--ink-100);
+
+  --fg:        var(--ink-900);
+  --fg-1:      var(--ink-900);  /* primary                                  */
+  --fg-2:      var(--ink-600);  /* secondary                                */
+  --fg-3:      var(--ink-400);  /* tertiary / meta / timestamps             */
+  --fg-on-accent: var(--ink-000);
+
+  --border:        var(--ink-150);
+  --border-strong: var(--ink-200);
+  --border-ink:    var(--ink-900);   /* intentional hard rule               */
+
+  --accent:        var(--punk-magenta);
+  --accent-ink:    var(--punk-magenta-ink);
+  --accent-bg:     var(--punk-magenta-bg);
+
+  --ok:   var(--agent-green);
+  --warn: var(--steward-amber);
+  --err:  var(--error-red);
+  --info: var(--spec-blue);
+
+  /* ---- Spacing (4px base) -------------------------------------------- */
+  --s-0:   0;
+  --s-1:   2px;
+  --s-2:   4px;
+  --s-3:   8px;
+  --s-4:   12px;
+  --s-5:   16px;
+  --s-6:   20px;
+  --s-7:   24px;
+  --s-8:   32px;
+  --s-9:   40px;
+  --s-10:  56px;
+  --s-11:  72px;
+  --s-12:  96px;
+
+  /* ---- Radii — small, deliberate.  SpecPunk is mostly square. -------- */
+  --r-0:   0;
+  --r-1:   2px;
+  --r-2:   4px;
+  --r-3:   6px;
+  --r-pill: 999px;
+
+  /* ---- Borders -------------------------------------------------------- */
+  --bw-1: 1px;
+  --bw-2: 2px;
+  --bw-3: 3px;
+
+  /* ---- Shadows — flat by default. Offset shadows only as a motif. ---- */
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 var(--ink-150);
+  --shadow-card: 3px 3px 0 0 var(--ink-900);     /* offset "sticker" shadow */
+  --shadow-card-lg: 6px 6px 0 0 var(--ink-900);
+  --shadow-pop: 0 4px 16px -4px rgba(15,14,11,0.18);
+
+  /* ---- Motion --------------------------------------------------------- */
+  --dur-1: 80ms;
+  --dur-2: 160ms;
+  --dur-3: 240ms;
+  --ease:  cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-snap: cubic-bezier(0.3, 1.4, 0.5, 1);   /* small overshoot; punk   */
+
+  /* ---- Type scale (rem, 16px base) ----------------------------------- */
+  --fs-xs:    12px;
+  --fs-sm:    13px;
+  --fs-base:  15px;
+  --fs-md:    17px;
+  --fs-lg:    20px;
+  --fs-xl:    24px;
+  --fs-2xl:   32px;
+  --fs-3xl:   44px;
+  --fs-4xl:   60px;
+  --fs-5xl:   84px;
+
+  --lh-tight: 1.05;
+  --lh-snug:  1.2;
+  --lh-base:  1.45;
+  --lh-long:  1.65;
+
+  --tracking-tight:  -0.02em;
+  --tracking-snug:   -0.01em;
+  --tracking-base:   0;
+  --tracking-wide:    0.04em;
+  --tracking-caps:    0.12em;   /* ALL-CAPS LABELS                        */
+}
+
+/* ==========================================================================
+   DARK / TERMINAL MODE
+   Apply via <html data-theme="ink"> or the prefers-color-scheme media query.
+   ========================================================================== */
+[data-theme="ink"], .specpunk-ink {
+  --bg:        var(--ink-950);
+  --bg-raised: #11101a;
+  --bg-sunken: #000006;
+  --bg-code:   #0a0912;
+
+  --fg:    #ebe7da;
+  --fg-1:  #ebe7da;
+  --fg-2:  #a6a396;
+  --fg-3:  #6c6a5e;
+
+  --border:        #22202b;
+  --border-strong: #34323f;
+  --border-ink:    #ebe7da;
+
+  --accent:     #ff48a1;            /* magenta pops brighter on ink       */
+  --accent-ink: #ffb7d5;
+  --accent-bg:  #2a0f1c;
+
+  --ok:   #3fe38d;
+  --warn: #ffc06b;
+  --err:  #ff6b62;
+  --info: #77a9ff;
+
+  --shadow-card:    3px 3px 0 0 #ff2e88;  /* accent offset on dark        */
+  --shadow-card-lg: 6px 6px 0 0 #ff2e88;
+  --shadow-pop:     0 8px 24px -4px rgba(0,0,0,0.6);
+}
+
+/* Respect system pref unless explicitly overridden */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="paper"]) {
+    --bg:        var(--ink-950);
+    --bg-raised: #11101a;
+    --bg-sunken: #000006;
+    --bg-code:   #0a0912;
+    --fg: #ebe7da; --fg-1: #ebe7da; --fg-2: #a6a396; --fg-3: #6c6a5e;
+    --border: #22202b; --border-strong: #34323f; --border-ink: #ebe7da;
+    --accent: #ff48a1; --accent-ink: #ffb7d5; --accent-bg: #2a0f1c;
+    --ok: #3fe38d; --warn: #ffc06b; --err: #ff6b62; --info: #77a9ff;
+    --shadow-card: 3px 3px 0 0 #ff2e88; --shadow-card-lg: 6px 6px 0 0 #ff2e88;
+    --shadow-pop: 0 8px 24px -4px rgba(0,0,0,0.6);
+  }
+}
+
+/* ==========================================================================
+   BASE ELEMENT STYLES
+   These apply globally — opt out by scoping inside .specpunk-reset-off.
+   ========================================================================== */
+html, body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display headings use Space Grotesk with tight tracking.
+   Marketing + hero moments. Lean on weight, not size. */
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-4xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--s-6);
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-snug);
+  margin: 0 0 var(--s-5);
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-snug);
+  margin: 0 0 var(--s-4);
+}
+h4, .h4 {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-base);
+  margin: 0 0 var(--s-3);
+}
+
+/* Body copy is mono by default — SpecPunk is a developer brand.
+   Use .prose for long-form reading (swaps to Plex Serif). */
+p, .p {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  margin: 0 0 var(--s-4);
+  max-width: 70ch;
+}
+
+.prose {
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: var(--lh-long);
+}
+.prose p { font-family: var(--font-serif); font-size: var(--fs-md); max-width: 62ch; }
+.prose em { font-style: italic; }
+.prose strong { font-weight: 600; }
+
+/* All-caps labels. Common across the system — section headers,
+   status pills, technical metadata. */
+.eyebrow, .label-caps {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* Code + pre — native medium. Paper mode shows a subtle inset wash. */
+code, .code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--bg-code);
+  padding: 1px 6px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border);
+}
+pre, .pre {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  background: var(--bg-code);
+  color: var(--fg-1);
+  padding: var(--s-5) var(--s-6);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  overflow-x: auto;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: 1em; }
+
+/* Links — underline offset is intentional; we like the rule showing. */
+a, .link {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--dur-2) var(--ease);
+}
+a:hover { color: var(--accent); }
+a:active { color: var(--fg-1); }
+
+/* CTA buttons are NOT subject to the generic link hover rule — keep their ink color */
+a.btn, a.btn:hover, a.btn:focus, a.btn:active { text-decoration: none; }
+a.btn-primary, a.btn-primary:link, a.btn-primary:visited,
+a.btn-primary:hover, a.btn-primary:focus, a.btn-primary:active {
+  color: #0f0e0b !important;
+}
+a.nav-cta, a.nav-cta:link, a.nav-cta:visited,
+a.nav-cta:hover, a.nav-cta:focus, a.nav-cta:active {
+  color: #0f0e0b !important;
+}
+
+/* Horizontal rules are a brand motif — used as section dividers. */
+hr {
+  border: 0;
+  border-top: 1px solid var(--border-ink);
+  margin: var(--s-8) 0;
+}
+
+/* Small helper: an ASCII bullet, sticker-style. */
+.sticker {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-on-accent);
+  background: var(--accent);
+  padding: 3px 8px 2px;
+  border-radius: var(--r-1);
+  transform: rotate(-1.5deg);
+  box-shadow: 2px 2px 0 0 var(--ink-900);
+}
+
+/* Selection */
+::selection { background: var(--accent); color: var(--fg-on-accent); }
+
+/* Focus ring — visible, square, accented. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+</style>
+<style>
+  html, body { margin: 0; padding: 0; background: #05040a; }
+  * { box-sizing: border-box; }
+  ::selection { background: #ff2e88; color: #0f0e0b; }
+
+  /* page-scoped tweaks */
+  body { color: #ebe7da; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+  .rule-ink { border-top: 1px solid #2a2835; }
+  .hair { border-top: 1px solid #1a1924; }
+
+  /* mono-link utility */
+  .mono-link {
+    font-family: var(--font-mono); font-size: 13px;
+    color: #ebe7da; text-decoration: none;
+    border-bottom: 1px dashed #3a3848;
+    padding-bottom: 1px;
+  }
+  .mono-link:hover { color: #ff48a1; border-bottom-color: #ff48a1; }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-weight: 700; font-size: 14px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 14px 20px 13px;
+    border: 1.5px solid #ebe7da; color: #ebe7da;
+    background: transparent; text-decoration: none; cursor: pointer;
+    transition: transform 120ms var(--ease), box-shadow 120ms var(--ease), background 120ms var(--ease);
+  }
+  .btn-primary {
+    background: #ff2e88; color: #0f0e0b; border-color: #ff2e88;
+    box-shadow: 4px 4px 0 0 #ebe7da;
+  }
+  .btn-primary:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 0 #ebe7da; }
+  .btn-primary:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 #ebe7da; }
+  .btn-ghost:hover { background: #11101a; }
+
+  /* eyebrow */
+  .eyebrow {
+    font-family: var(--font-mono); font-weight: 700; font-size: 11px;
+    letter-spacing: 0.16em; text-transform: uppercase; color: #a6a396;
+  }
+  .eyebrow .accent { color: #ff48a1; }
+
+  /* status dot */
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+  /* grid line ornament */
+  .gridlines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(235,231,218,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(235,231,218,0.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 75%);
+    pointer-events: none;
+  }
+
+  /* shimmer quill */
+  @keyframes blink { 0%, 94%, 100% { opacity: 1 } 97% { opacity: 0.35 } }
+  .eye-blink { animation: blink 4.2s infinite; }
+
+  @keyframes quill-pulse {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 1; filter: drop-shadow(0 0 6px #ff2e88); }
+  }
+  .quill { animation: quill-pulse 5s ease-in-out infinite; }
+  .quill:nth-child(2) { animation-delay: 0.3s }
+  .quill:nth-child(3) { animation-delay: 0.6s }
+  .quill:nth-child(4) { animation-delay: 0.9s }
+  .quill:nth-child(5) { animation-delay: 1.2s }
+  .quill:nth-child(6) { animation-delay: 1.5s }
+  .quill:nth-child(7) { animation-delay: 1.8s }
+
+  @keyframes cursor-blink { 50% { opacity: 0 } }
+  .caret { display: inline-block; background: #ff48a1; width: 8px; height: 14px; vertical-align: -2px; animation: cursor-blink 1s step-end infinite; }
+
+  /* magenta wash on hover card */
+  .card {
+    background: #0a0912;
+    border: 1px solid #22202b;
+    transition: border-color 160ms var(--ease), transform 160ms var(--ease);
+  }
+  .card:hover { border-color: #ff2e88; }
+
+  /* law card accent rule */
+  .law-num {
+    font-family: var(--font-mono); font-weight: 700; font-size: 11px;
+    letter-spacing: 0.14em; color: #ff48a1;
+  }
+
+  /* terminal pane */
+  .term {
+    background: #000006; border: 1px solid #22202b;
+    font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65;
+    color: #ebe7da;
+  }
+  .term .chrome {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-bottom: 1px solid #22202b;
+    color: #6c6a5e; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .term .chrome .dots { display: flex; gap: 5px; }
+  .term .chrome .dots span { width: 9px; height: 9px; border-radius: 50%; background: #22202b; }
+
+  /* line of flow */
+  .flow-arrow { color: #ff48a1; font-family: var(--font-mono); }
+
+  /* lifecycle rail */
+  .rail {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
+    border: 1px solid #22202b;
+  }
+  .rail > div { padding: 22px 18px; border-right: 1px solid #22202b; position: relative; }
+  .rail > div:last-child { border-right: 0; }
+  .rail .idx { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; color: #6c6a5e; text-transform: uppercase; }
+  .rail .name { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin-top: 10px; letter-spacing: -0.01em; }
+  .rail .sub { font-family: var(--font-mono); font-size: 11.5px; color: #a6a396; margin-top: 6px; line-height: 1.5; }
+  .rail .tick { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); color: #ff48a1; font-size: 14px; background: #05040a; padding: 0 2px; z-index: 2; }
+  .rail > div:last-child .tick { display: none; }
+
+  /* file tree */
+  .tree { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.75; color: #a6a396; }
+  .tree .f { color: #ebe7da; }
+  .tree .hi { color: #ff48a1; }
+  .tree .d { color: #77a9ff; }
+  .tree .c { color: #6c6a5e; }
+
+  /* scanline subtle */
+  .scan {
+    position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 3px,
+      rgba(255,46,136,0.012) 3px,
+      rgba(255,46,136,0.012) 4px
+    );
+  }
+
+  /* little receipt */
+  .receipt {
+    background: #11101a; border: 1px solid #22202b;
+    font-family: var(--font-mono); font-size: 11.5px; color: #a6a396;
+    padding: 10px 14px; line-height: 1.7;
+  }
+  .receipt .k { color: #6c6a5e; }
+  .receipt .v { color: #ebe7da; }
+  .receipt .ok { color: #3fe38d; }
+  .receipt .warn { color: #ffc06b; }
+  .receipt .mag { color: #ff48a1; }
+
+  /* guide chat */
+  .guide {
+    background: #0a0912; border: 1px solid #22202b;
+  }
+  .guide .bubble-user { background: #11101a; border: 1px solid #22202b; }
+  .guide .bubble-assistant { background: transparent; border-left: 2px solid #ff2e88; }
+
+  /* section label */
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #6c6a5e;
+    padding-bottom: 4px; border-bottom: 1px solid #22202b;
+  }
+  .section-tag::before {
+    content: ''; width: 6px; height: 6px; background: #ff2e88; display: inline-block;
+  }
+
+  /* responsive: assume desktop but keep flex */
+  @media (max-width: 1100px) {
+    .hero-grid { grid-template-columns: 1fr !important; }
+    .rail { grid-template-columns: repeat(7, minmax(140px, 1fr)); overflow-x: auto; }
+  }
+
+  /* ============ MOBILE PASS (<=720px) ============ */
+  @media (max-width: 720px) {
+    html, body { overflow-x: hidden; }
+    * { min-width: 0; }
+    img, svg { max-width: 100%; height: auto; }
+
+    .wrap { padding: 0 20px !important; max-width: 100% !important; }
+
+    /* Section vertical rhythm */
+    section { padding-top: 56px !important; padding-bottom: 56px !important; }
+
+    /* Header — compress nav, hide secondary links, shrink CTA */
+    header[style] { padding: 10px 16px !important; gap: 12px !important; height: 56px !important; }
+    header nav { display: none !important; }
+    .nav-cta { padding: 7px 10px 6px !important; font-size: 11px !important; box-shadow: 2px 2px 0 0 #ebe7da !important; }
+
+    /* Buttons — full width, wrap */
+    .btn { font-size: 13px !important; padding: 10px 14px !important; }
+
+    /* Headline clamping */
+    h1, h2 { letter-spacing: -0.02em !important; word-break: break-word; }
+    .hero-h1 { font-size: clamp(40px, 11vw, 68px) !important; line-height: 1.02 !important; }
+    h2 { font-size: clamp(30px, 8vw, 52px) !important; line-height: 1.03 !important; }
+
+    /* UNIVERSAL: any inline grid collapses to single column on mobile */
+    [style*="display: grid"][style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+      gap: 20px !important;
+    }
+    /* Keep a few 2-col grids that stay OK on mobile — small inline rows */
+    [style*="grid-template-columns: 16px 1fr"] {
+      grid-template-columns: 16px 1fr !important;
+      gap: 10px !important;
+    }
+
+    /* Hero CTAs stack */
+    .hero-ctas { flex-direction: column !important; align-items: stretch !important; width: 100% !important; }
+    .hero-ctas > a { width: 100% !important; justify-content: center !important; }
+
+    /* Mascot shrinks */
+    .mascot-wrap { justify-content: center !important; }
+    .mascot-wrap svg { width: 100% !important; height: auto !important; max-width: 320px !important; }
+
+    /* Horizontal rails allow scroll */
+    .rail, [style*="repeat(7"] { overflow-x: auto !important; }
+
+    /* Law list row stacks */
+    .law-row { grid-template-columns: 1fr !important; gap: 6px !important; }
+
+    /* Footer bottom line text-align fix */
+    footer .wrap > span { text-align: left !important; }
+  }
+
+  @media (max-width: 430px) {
+    .hero-h1 { font-size: clamp(34px, 11.2vw, 48px) !important; }
+    .wrap { padding: 0 16px !important; }
+    section { padding-top: 48px !important; padding-bottom: 48px !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+/* globals React */
+/* Porcupine mascot — side view, 6-9 magenta quills, one bright eye.
+   Serious, calm, disciplined. No cute. */
+
+function Mascot({ size = 440 }) {
+  // Cleaner silhouette. 7 quills. Calm. One bright eye.
+  return (
+    <svg viewBox="0 0 440 340" width={size} height={size * (340/440)} style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffcde0" />
+          <stop offset="40%" stopColor="#ff2e88" />
+          <stop offset="100%" stopColor="#8a0040" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#161524" />
+          <stop offset="100%" stopColor="#070612" />
+        </linearGradient>
+        <radialGradient id="floorGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ff2e88" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#ff2e88" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* floor glow */}
+      <ellipse cx="220" cy="300" rx="170" ry="20" fill="url(#floorGrad)" />
+      <ellipse cx="220" cy="305" rx="140" ry="6" fill="#000" opacity="0.55" />
+
+      {/* 7 quills — readable, evenly rhythmed, behind body */}
+      <g stroke="#ff2e88" strokeWidth="2.6" strokeLinecap="round" fill="none">
+        <line className="quill" x1="108" y1="168" x2="56"  y2="92"  />
+        <line className="quill" x1="140" y1="148" x2="120" y2="52"  />
+        <line className="quill" x1="178" y1="132" x2="186" y2="28"  />
+        <line className="quill" x1="222" y1="126" x2="240" y2="22"  />
+        <line className="quill" x1="266" y1="130" x2="292" y2="36"  />
+        <line className="quill" x1="306" y1="142" x2="344" y2="58"  />
+        <line className="quill" x1="340" y1="162" x2="386" y2="96"  />
+      </g>
+
+      {/* body silhouette — clean side-view, calmer arc, less armor */}
+      <path
+        d="M 108 232
+           C 108 188, 148 158, 198 154
+           C 232 152, 266 152, 300 160
+           C 338 170, 360 194, 362 232
+           C 362 260, 346 278, 316 282
+           L 146 282
+           C 120 282, 104 262, 108 232 Z"
+        fill="url(#bodyGrad)"
+        stroke="#2a2835"
+        strokeWidth="1.4"
+      />
+
+      {/* face snout — softer, less angular */}
+      <path
+        d="M 108 234
+           C 82 232, 64 244, 60 260
+           C 58 274, 70 282, 90 282
+           C 108 282, 122 276, 134 268
+           L 128 240 Z"
+        fill="#0b0a12"
+        stroke="#2a2835"
+        strokeWidth="1.4"
+      />
+
+      {/* nose */}
+      <circle cx="64" cy="262" r="4.5" fill="#ff2e88" />
+      <circle cx="64" cy="262" r="1.6" fill="#0f0e0b" />
+
+      {/* mouth — tiny, relaxed, no scowl */}
+      <path d="M 80 272 C 90 272, 100 271, 108 270" stroke="#2a2835" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+
+      {/* eye — larger, brighter, calm */}
+      <circle cx="122" cy="232" r="22" fill="url(#eyeGlow)" opacity="0.7" />
+      <circle cx="122" cy="232" r="9.5" fill="#ebe7da" />
+      <circle className="eye-blink" cx="122" cy="232" r="6" fill="#ff2e88" />
+      <circle cx="122" cy="232" r="2.8" fill="#0f0e0b" />
+      <circle cx="124.4" cy="229.6" r="1.3" fill="#ebe7da" />
+
+      {/* brow — soft, not angry. slight curve, neutral. */}
+      <path d="M 104 214 C 120 210, 138 212, 146 216" stroke="#ebe7da" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity="0.5" />
+
+      {/* feet — simple */}
+      <rect x="170" y="282" width="26" height="12" fill="#0b0a12" stroke="#2a2835" strokeWidth="1.1" />
+      <rect x="284" y="282" width="26" height="12" fill="#0b0a12" stroke="#2a2835" strokeWidth="1.1" />
+
+      {/* subtle protocol band — small, low contrast */}
+      <g opacity="0.35" transform="translate(236, 222)">
+        <rect x="-22" y="-7" width="44" height="14" fill="none" stroke="#ff2e88" strokeWidth="0.7" strokeDasharray="2 3" />
+        <text x="0" y="3" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="7" fill="#ff2e88" letterSpacing="1.6">PROOF · 0x8A</text>
+      </g>
+    </svg>
+  );
+}
+
+/* Small wordmark used in hero */
+function WordmarkPunk({ size = 22 }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span style={{
+        fontFamily: 'var(--font-mono)', fontWeight: 700,
+        background: '#ebe7da', color: '#ff2e88',
+        padding: '2px 6px 1px', fontSize: size * 0.62,
+        letterSpacing: '0.04em',
+      }}>[//]</span>
+      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: size, letterSpacing: '-0.015em', color: '#ebe7da' }}>Punk</span>
+    </span>
+  );
+}
+
+Object.assign(window, { Mascot, WordmarkPunk });
+
+</script>
+<script type="text/babel">
+/* globals React, Mascot, WordmarkPunk */
+
+function NavBar() {
+  const links = [
+    ['laws',     '#laws'],
+    ['how',      '#how'],
+    ['build',    '#build'],
+    ['modules',  '#modules'],
+  ];
+  return (
+    <header style={{
+      position: 'sticky', top: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', gap: 24,
+      padding: '14px 40px', height: 64,
+      background: 'rgba(5,4,10,0.88)',
+      backdropFilter: 'blur(8px)',
+      borderBottom: '1px solid #22202b',
+    }}>
+      <WordmarkPunk size={20} />
+
+      <nav style={{ display: 'flex', gap: 26, marginLeft: 32, fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+        {links.map(([name, href]) => (
+          <a key={name} href={href} style={{ color: '#a6a396', textDecoration: 'none', paddingBottom: 2 }}
+             onMouseEnter={e => e.currentTarget.style.color = '#ebe7da'}
+             onMouseLeave={e => e.currentTarget.style.color = '#a6a396'}>{name}</a>
+        ))}
+      </nav>
+
+      <div style={{ flex: 1 }} />
+
+      <a href="#cta" className="nav-cta" style={{
+        fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12,
+        letterSpacing: '0.08em', textTransform: 'uppercase',
+        padding: '9px 14px 8px', border: '1.5px solid #ff2e88',
+        background: '#ff2e88', textDecoration: 'none',
+        boxShadow: '3px 3px 0 0 #ebe7da',
+      }}>follow the build</a>
+    </header>
+  );
+}
+
+function Hero() {
+  return (
+    <section style={{
+      position: 'relative', overflow: 'hidden',
+      borderBottom: '1px solid #22202b',
+    }}>
+      <div className="gridlines" />
+      <div className="scan" />
+
+      <div className="wrap" style={{ position: 'relative', paddingTop: 76, paddingBottom: 88 }}>
+
+        <div className="hero-grid" style={{
+          display: 'grid', gridTemplateColumns: '1fr 1.05fr', gap: 48,
+          alignItems: 'center',
+        }}>
+          {/* LEFT */}
+          <div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              fontFamily: 'var(--font-mono)', fontSize: 11,
+              letterSpacing: '0.18em', textTransform: 'uppercase',
+              color: '#ff48a1', marginBottom: 24,
+            }}>
+              <span style={{ width: 6, height: 6, background: '#ff2e88' }} />
+              <span>v0.0.1-pre · public build</span>
+            </div>
+
+            <h1 className="hero-h1" style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700,
+              fontSize: 78, lineHeight: 0.96, letterSpacing: '-0.035em',
+              margin: '0 0 22px', color: '#ebe7da',
+            }}>
+              Agents do the work.<br />
+              <span style={{ color: '#ff2e88' }}>Punk</span> keeps it{' '}
+              <span style={{ position: 'relative', display: 'inline-block' }}>
+                bounded.
+                <svg width="300" height="14" viewBox="0 0 300 14" style={{ position: 'absolute', left: 0, bottom: -6, display: 'block' }}>
+                  <path d="M 4 9 C 60 4, 150 12, 296 6" stroke="#ff2e88" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+            </h1>
+
+            <p style={{
+              fontFamily: 'var(--font-mono)', fontSize: 16.5, lineHeight: 1.55,
+              color: '#a6a396', maxWidth: 520, margin: '0 0 32px',
+            }}>
+              A local-first work kernel for <span style={{ color: '#ebe7da' }}>contract-tracked</span>,{' '}
+              <span style={{ color: '#ebe7da' }}>eval-gated</span>,{' '}
+              <span style={{ color: '#ebe7da' }}>proof-bearing</span> AI work.
+            </p>
+
+            <div className="hero-ctas" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <a href="#cta" className="btn btn-primary">▸ follow the build</a>
+              <a href="#how" className="btn btn-ghost">read the roadmap →</a>
+            </div>
+
+            <div style={{
+              marginTop: 32, display: 'flex', gap: 20, flexWrap: 'wrap',
+              fontFamily: 'var(--font-mono)', fontSize: 11.5, color: '#6c6a5e',
+              letterSpacing: '0.04em',
+            }}>
+              <span><span className="dot" style={{ background: '#3fe38d' }} />&nbsp;&nbsp;core-first</span>
+              <span style={{ color: '#3a3848' }}>/</span>
+              <span><span className="dot" style={{ background: '#3a3848' }} />&nbsp;&nbsp;modules later</span>
+              <span style={{ color: '#3a3848' }}>/</span>
+              <span><span className="dot" style={{ background: '#ff48a1' }} />&nbsp;&nbsp;building in public</span>
+            </div>
+          </div>
+
+          {/* RIGHT — mascot-anchored */}
+          <HeroArtifacts />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroArtifacts() {
+  return (
+    <div className="mascot-wrap" style={{ position: 'relative' }}>
+      {/* Main anchor: mascot on a framed stage */}
+      <div style={{
+        position: 'relative',
+        border: '1px solid #22202b',
+        background: 'radial-gradient(ellipse at 60% 70%, #0d0b18 0%, #05040a 70%)',
+        padding: '12px 12px 0',
+        boxShadow: '8px 8px 0 0 #ff2e88',
+      }}>
+        {/* top meta strip */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '6px 6px 10px',
+          fontFamily: 'var(--font-mono)', fontSize: 10.5,
+          letterSpacing: '0.16em', textTransform: 'uppercase',
+          color: '#6c6a5e', borderBottom: '1px solid #22202b',
+        }}>
+          <span style={{ color: '#ff48a1' }}>∎</span>
+          <span>punk / guide</span>
+          <span style={{ flex: 1 }} />
+          <span><span className="dot" style={{ background: '#3fe38d' }} />&nbsp;&nbsp;online · local</span>
+        </div>
+
+        {/* mascot stage */}
+        <div style={{ position: 'relative', padding: '16px 6px 0', minHeight: 340 }}>
+          {/* corner marks */}
+          {[
+            { t: 8, l: 8 }, { t: 8, r: 8 }, { b: 8, l: 8 }, { b: 8, r: 8 },
+          ].map((c, i) => (
+            <svg key={i} width="16" height="16" style={{ position: 'absolute', ...c }} viewBox="0 0 16 16">
+              <path d={i === 0 ? 'M 0 4 L 0 0 L 4 0' : i === 1 ? 'M 12 0 L 16 0 L 16 4' : i === 2 ? 'M 0 12 L 0 16 L 4 16' : 'M 12 16 L 16 16 L 16 12'} stroke="#ff2e88" strokeWidth="1.5" fill="none" />
+            </svg>
+          ))}
+          <Mascot size={440} />
+          {/* floating label */}
+          <div style={{
+            position: 'absolute', top: 22, right: 18,
+            fontFamily: 'var(--font-mono)', fontSize: 10, color: '#ff48a1',
+            letterSpacing: '0.18em', textAlign: 'right',
+          }}>
+            PUNK<br/>
+            <span style={{ color: '#6c6a5e' }}>KERNEL · 0x8A…F4</span>
+          </div>
+          {/* bottom caption */}
+          <div style={{
+            position: 'absolute', bottom: 16, left: 18,
+            fontFamily: 'var(--font-serif)', fontStyle: 'italic',
+            fontSize: 13, color: '#a6a396', letterSpacing: '-0.005em',
+          }}>
+            quills out. scope tight.
+          </div>
+        </div>
+
+        {/* compact flow strip INSIDE the stage — GOAL → CONTRACT → RUN → GATE → PROOF */}
+        <div style={{
+          borderTop: '1px solid #22202b', marginTop: 4,
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+        }}>
+          {[
+            { k: 'goal',     c: '#6c6a5e' },
+            { k: 'contract', c: '#ff2e88' },
+            { k: 'run',      c: '#ffc06b' },
+            { k: 'gate',     c: '#3fe38d' },
+            { k: 'proof',    c: '#ff2e88' },
+          ].map((s, i, arr) => (
+            <div key={s.k} style={{
+              padding: '12px 10px',
+              borderRight: i < arr.length - 1 ? '1px solid #22202b' : 'none',
+              textAlign: 'center',
+            }}>
+              <div style={{ width: 6, height: 6, background: s.c, margin: '0 auto 6px' }} />
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#ebe7da',
+                letterSpacing: '0.14em', textTransform: 'uppercase',
+              }}>{s.k}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* receipt excerpt — sits just below stage, small */}
+      <div style={{
+        marginTop: 18, padding: '12px 14px',
+        border: '1px dashed #22202b', background: '#0a0912',
+        fontFamily: 'var(--font-mono)', fontSize: 11.5, color: '#6c6a5e',
+        lineHeight: 1.7,
+      }}>
+        <span style={{ color: '#ff48a1' }}>//</span> receipt.0x8a2f &nbsp;·&nbsp;
+        spec <span style={{ color: '#ebe7da' }}>a4c1</span> &nbsp;·&nbsp;
+        gate <span style={{ color: '#3fe38d' }}>14/14 ✓</span> &nbsp;·&nbsp;
+        by <span style={{ color: '#ff48a1' }}>@mira</span>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NavBar, Hero });
+
+</script>
+<script type="text/babel">
+/* globals React */
+
+function SectionHeader({ n, kicker, title, sub, children }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 32, alignItems: 'start', marginBottom: 44 }}>
+      <div>
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 10.5,
+          letterSpacing: '0.2em', color: '#ff48a1',
+        }}>§ {n}</div>
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#6c6a5e',
+          letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 6,
+        }}>{kicker}</div>
+      </div>
+      <div>
+        <h2 style={{
+          fontFamily: 'var(--font-display)', fontWeight: 700,
+          fontSize: 46, letterSpacing: '-0.025em', lineHeight: 1.02,
+          margin: 0, color: '#ebe7da', maxWidth: 820,
+        }}>{title}</h2>
+        {sub && (
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 14.5, color: '#a6a396',
+            lineHeight: 1.55, maxWidth: 640, margin: '18px 0 0',
+          }}>{sub}</p>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- PROBLEM ---------- */
+function Problem() {
+  const drift = [
+    { k: 'chat',   t: '“we said tuesday?”',              l: 'slack · 3 threads'    },
+    { k: 'task',   t: 'ticket AUTH-42 · stale 11d',      l: 'jira · unowned'       },
+    { k: 'diff',   t: '+382 −190 across 14 files',       l: 'PR #219 · in review'  },
+    { k: 'memory', t: 'lost context from last session',  l: 'nowhere · evaporated' },
+    { k: 'docs',   t: 'ADR-007 contradicts ADR-004',     l: 'docs/ · unresolved'   },
+  ];
+  return (
+    <section id="problem" style={{ borderBottom: '1px solid #22202b', padding: '88px 0' }}>
+      <div className="wrap">
+        <SectionHeader
+          n="01"
+          kicker="the drift"
+          title={<>AI agents are powerful.<br />Projects still <span style={{ color: '#ff2e88' }}>drift</span>.</>}
+          sub={<>A model can write the patch in 12 seconds. The project takes three weeks because decisions, context, and proof live in five different places — and none of them trust each other.</>}
+        />
+
+        {/* Drift diagram: five broken cards being pulled into one bounded flow */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr auto 1fr', gap: 32, alignItems: 'center' }}>
+
+          {/* Left: scattered fragments */}
+          <div style={{ position: 'relative', minHeight: 360 }}>
+            {drift.map((d, i) => {
+              const pos = [
+                { top: 10,  left: 0,   rot: -2.5 },
+                { top: 70,  left: 140, rot: 1.2  },
+                { top: 150, left: 20,  rot: -1.5 },
+                { top: 220, left: 170, rot: 2.8  },
+                { top: 290, left: 40,  rot: -1.8 },
+              ][i];
+              return (
+                <div key={d.k} style={{
+                  position: 'absolute',
+                  top: pos.top, left: pos.left,
+                  transform: `rotate(${pos.rot}deg)`,
+                  background: '#0a0912', border: '1px solid #22202b',
+                  padding: '10px 14px 12px', width: 250,
+                  boxShadow: '3px 3px 0 0 #000006',
+                }}>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 10,
+                    letterSpacing: '0.16em', textTransform: 'uppercase',
+                    color: '#ff48a1', marginBottom: 6,
+                  }}>{d.k}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 13, color: '#ebe7da',
+                    lineHeight: 1.45,
+                  }}>{d.t}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 11, color: '#6c6a5e',
+                    marginTop: 4,
+                  }}>{d.l}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* pull arrows */}
+          <div style={{ textAlign: 'center' }}>
+            <svg width="120" height="360" viewBox="0 0 120 360">
+              {[40, 100, 180, 260, 320].map((y, i) => (
+                <g key={i}>
+                  <path d={`M 0 ${y} C 40 ${y}, 70 180, 110 180`} stroke="#ff2e88" strokeWidth="1.25" fill="none" strokeDasharray="3 4" opacity="0.8" />
+                </g>
+              ))}
+              <polygon points="110,180 100,174 100,186" fill="#ff2e88" />
+            </svg>
+          </div>
+
+          {/* Right: bounded kernel */}
+          <div style={{
+            border: '1.5px solid #ff2e88',
+            background: '#0a0912',
+            padding: '22px 22px',
+            boxShadow: '6px 6px 0 0 #ebe7da',
+            position: 'relative',
+          }}>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#ff48a1',
+              letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 10,
+            }}>one bounded flow</div>
+            <div style={{
+              fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700,
+              letterSpacing: '-0.02em', lineHeight: 1.1, color: '#ebe7da',
+              marginBottom: 14,
+            }}>goal → contract → run → gate → proof</div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#a6a396',
+              lineHeight: 1.55,
+            }}>One markdown goal. One signed contract. One replayable run. One gate that either passes or doesn't. One proof that survives the people.</div>
+
+            <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {['contract hashed', 'run budgeted', 'gate automated', 'proof receipted', 'memory appended'].map(x => (
+                <div key={x} style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 12, color: '#ebe7da',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{ color: '#3fe38d' }}>✓</span>{x}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- PUNK LAWS ---------- */
+function Laws() {
+  const laws = [
+    { k: '01', h: 'Contract first',            b: 'Nothing runs until the spec is hashed, signed, and scope-bound.' },
+    { k: '02', h: 'Flow before features',      b: 'Harden the work loop before you decorate it. Kernels before cosmetics.' },
+    { k: '03', h: 'Eval before expansion',     b: 'A capability ships the gate first. No eval, no merge.' },
+    { k: '04', h: 'Gate writes the decision',  b: 'Deterministic checks decide accept/reject. Humans review the exceptions.' },
+    { k: '05', h: 'Proof before acceptance',   b: 'Every accepted run emits a replayable receipt: spec + seed + diff + checks.' },
+    { k: '06', h: 'Research before decisions', b: 'Major moves ride on written memos. ADRs are mandatory, not optional.' },
+    { k: '07', h: 'Memory from day zero',      b: 'Context is a first-class, append-only artifact. It outlives people.' },
+    { k: '08', h: 'Public build from day zero',b: 'The repo is the source of truth. Work happens where strangers can read it.' },
+  ];
+  return (
+    <section id="laws" style={{ borderBottom: '1px solid #22202b', padding: '96px 0', background: '#07060e', position: 'relative' }}>
+      <div className="wrap">
+
+        {/* editorial kicker */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ff48a1',
+          letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 28,
+        }}>
+          <span style={{ width: 40, height: 1, background: '#ff48a1' }} />
+          <span>§ 02 · the eight laws · a manifesto</span>
+        </div>
+
+        {/* editorial title */}
+        <h2 style={{
+          fontFamily: 'var(--font-display)', fontWeight: 700,
+          fontSize: 96, letterSpacing: '-0.04em', lineHeight: 0.92,
+          margin: '0 0 32px', color: '#ebe7da', maxWidth: 1000,
+        }}>
+          Principles most teams print{' '}
+          <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontWeight: 400, color: '#a6a396' }}>on a wall.</span>
+          {' '}Punk{' '}
+          <span style={{ color: '#ff2e88' }}>runs them</span>.
+        </h2>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: 48, alignItems: 'start', marginBottom: 60 }}>
+          <p style={{
+            fontFamily: 'var(--font-serif)', fontSize: 20, lineHeight: 1.45,
+            color: '#a6a396', margin: 0, fontStyle: 'italic',
+          }}>
+            They are not prompts. They are runtime boundaries — the kernel refuses work that violates them.
+          </p>
+          <div style={{
+            fontFamily: 'var(--font-mono)', fontSize: 13.5, color: '#6c6a5e',
+            lineHeight: 1.7,
+          }}>
+            A principle a team can ignore is decoration.<br/>
+            A principle the runtime enforces is a law.<br/>
+            <span style={{ color: '#ebe7da' }}>Punk ships the second kind.</span>
+          </div>
+        </div>
+
+        {/* editorial list — not a card grid */}
+        <ol style={{
+          listStyle: 'none', padding: 0, margin: 0,
+          borderTop: '1px solid #22202b',
+        }}>
+          {laws.map((l, i) => (
+            <li key={l.k} className="law-row" style={{
+              display: 'grid',
+              gridTemplateColumns: '90px 1fr 1.3fr 80px',
+              gap: 28, alignItems: 'baseline',
+              padding: '26px 0',
+              borderBottom: '1px solid #22202b',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ff48a1',
+                letterSpacing: '0.22em',
+              }}>LAW · {l.k}</div>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30,
+                letterSpacing: '-0.02em', color: '#ebe7da', lineHeight: 1.05,
+              }}>{l.h}</div>
+              <div style={{
+                fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.5,
+                color: '#a6a396',
+              }}>{l.b}</div>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#3a3848',
+                textAlign: 'right', letterSpacing: '0.14em',
+              }}>{String(i + 1).padStart(2, '0')} / 08</div>
+            </li>
+          ))}
+        </ol>
+
+        <div style={{
+          marginTop: 32, display: 'flex', alignItems: 'center', gap: 12,
+          fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#6c6a5e',
+        }}>
+          <span style={{ color: '#ff48a1' }}>∎</span>
+          <span>enforced at: <span style={{ color: '#ebe7da' }}>contract.lock</span> · <span style={{ color: '#ebe7da' }}>gate.default.yml</span> · <span style={{ color: '#ebe7da' }}>receipt.v0</span></span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- HOW IT WORKS ---------- */
+function How() {
+  const steps = [
+    { k: 'goal',     s: 'plain-markdown promise',   c: '#6c6a5e' },
+    { k: 'contract', s: 'hashed · signed · scoped', c: '#ff2e88' },
+    { k: 'run',      s: 'agents on a leash',         c: '#ffc06b' },
+    { k: 'receipt',  s: 'tool calls · diff · seed',  c: '#a6a396' },
+    { k: 'gate',     s: 'deterministic evals',       c: '#3fe38d' },
+    { k: 'proof',    s: 'replayable artifact',       c: '#ff2e88' },
+    { k: 'memory',   s: 'append to the kernel',      c: '#77a9ff' },
+  ];
+  return (
+    <section id="how" style={{ borderBottom: '1px solid #22202b', padding: '96px 0' }}>
+      <div className="wrap">
+        <SectionHeader
+          n="03"
+          kicker="lifecycle"
+          title={<>One loop. Seven artifacts.</>}
+          sub={<>Every piece of work travels the same path. When it closes, the project's memory is a little longer and a little more honest.</>}
+        />
+
+        {/* BIG FLOW DIAGRAM */}
+        <div style={{
+          position: 'relative',
+          border: '1px solid #22202b',
+          background: 'radial-gradient(ellipse at 50% 50%, #0a0912 0%, #05040a 80%)',
+          padding: '48px 32px 40px',
+          marginBottom: 32,
+        }}>
+          <div style={{
+            position: 'absolute', top: 12, left: 16,
+            fontFamily: 'var(--font-mono)', fontSize: 10, color: '#3a3848',
+            letterSpacing: '0.18em',
+          }}>∎ work.flow.v0</div>
+          <div style={{
+            position: 'absolute', top: 12, right: 16,
+            fontFamily: 'var(--font-mono)', fontSize: 10, color: '#3a3848',
+            letterSpacing: '0.18em',
+          }}>loop closes → memory grows</div>
+
+          {/* horizontal flow */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, alignItems: 'stretch', position: 'relative' }}>
+            {/* connector line behind nodes */}
+            <svg width="100%" height="2" style={{ position: 'absolute', top: 42, left: 0, pointerEvents: 'none' }}>
+              <line x1="6%" y1="1" x2="94%" y2="1" stroke="#ff2e88" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+            </svg>
+
+            {steps.map((s, i) => (
+              <div key={s.k} style={{ textAlign: 'center', position: 'relative', padding: '0 6px' }}>
+                {/* node */}
+                <div style={{
+                  width: 56, height: 56, margin: '0 auto 14px',
+                  border: `1.5px solid ${s.c}`,
+                  background: '#05040a',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14,
+                  color: s.c, letterSpacing: '0.04em',
+                  boxShadow: `0 0 0 4px #05040a, 0 0 24px ${s.c}22`,
+                  position: 'relative', zIndex: 2,
+                }}>
+                  {String(i + 1).padStart(2, '0')}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16,
+                  color: '#ebe7da', letterSpacing: '-0.01em', marginBottom: 4,
+                }}>{s.k}</div>
+                <div style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#6c6a5e',
+                  letterSpacing: '0.06em', lineHeight: 1.4, minHeight: 28,
+                }}>{s.s}</div>
+
+                {/* arrow between */}
+                {i < steps.length - 1 && (
+                  <div style={{
+                    position: 'absolute', top: 24, right: -6,
+                    color: '#ff2e88', fontFamily: 'var(--font-mono)', fontSize: 14, opacity: 0.8,
+                  }}>→</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* loopback curve */}
+          <div style={{ position: 'relative', marginTop: 32, height: 50 }}>
+            <svg width="100%" height="50" viewBox="0 0 1000 50" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0 }}>
+              <path d="M 940 0 C 940 40, 940 46, 500 46 C 60 46, 60 40, 60 0" stroke="#ff48a1" strokeWidth="1.2" strokeDasharray="3 4" fill="none" opacity="0.75" />
+              <polygon points="60,0 54,12 66,12" fill="#ff48a1" />
+            </svg>
+            <div style={{
+              position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)',
+              background: '#05040a', padding: '0 12px',
+              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ff48a1',
+              letterSpacing: '0.16em', textTransform: 'uppercase',
+            }}>next run reads the memory</div>
+          </div>
+        </div>
+
+        {/* two receipts, smaller — supporting evidence, not hero */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div className="receipt">
+            <div className="k">// receipt.0x8a2f</div>
+            <div><span className="k">spec:</span> <span className="v">goals/payments-auth.md@a4c1</span></div>
+            <div><span className="k">seed:</span> <span className="v">0x00e7…3b</span></div>
+            <div><span className="k">agents:</span> <span className="v">2</span> · <span className="k">tool_calls:</span> <span className="v">18</span></div>
+            <div><span className="k">budget:</span> <span className="v">$0.42 / $5.00</span></div>
+            <div><span className="k">diff:</span> <span className="v">+182 −94 · sha256:ff…91</span></div>
+            <div><span className="k">gate:</span> <span className="ok">14/14 ✓</span></div>
+            <div><span className="k">status:</span> <span className="ok">accepted</span> · <span className="k">by</span> <span className="mag">@mira</span></div>
+          </div>
+          <div className="receipt" style={{ borderColor: '#22202b' }}>
+            <div className="k">// contract.lock</div>
+            <div><span className="k">hash:</span> <span className="v">sha256:c2…9a</span></div>
+            <div><span className="k">grants:</span></div>
+            <div>&nbsp;&nbsp;<span className="v">fs:rw</span> on src/auth/**</div>
+            <div>&nbsp;&nbsp;<span className="v">fs:ro</span> on docs/**</div>
+            <div>&nbsp;&nbsp;<span className="warn">no-net</span></div>
+            <div><span className="k">checks:</span> <span className="v">tests/auth/** · p99 &lt; 180ms · 0 new 401s</span></div>
+            <div><span className="k">budget:</span> <span className="v">$5.00 hard cap</span></div>
+            <div><span className="k">signed:</span> <span className="mag">@mira</span> · 2026-04-18T14:02Z</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- PUBLIC BUILD ---------- */
+function Build() {
+  return (
+    <section id="build" style={{ borderBottom: '1px solid #22202b', padding: '88px 0', background: '#07060e' }}>
+      <div className="wrap">
+        <SectionHeader
+          n="04"
+          kicker="the repo is the room"
+          title={<>Public build.<br/>Core-first. No ta-da.</>}
+          sub={<>Everything in Punk is being built where you can read it. The repo layout mirrors the laws — and vice versa. The roadmap is the folder structure.</>}
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: 28, alignItems: 'start' }}>
+
+          {/* File tree panel */}
+          <div className="term">
+            <div className="chrome">
+              <div className="dots"><span /><span /><span /></div>
+              <span>~ / punk / main</span>
+              <span style={{ flex: 1 }} />
+              <span style={{ color: '#3fe38d' }}>● tree</span>
+            </div>
+            <div className="tree" style={{ padding: '16px 20px 22px' }}>
+              <div><span className="d">punk/</span></div>
+              <div>├── <span className="d">work/</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;└── <span className="d">goals/</span>  <span className="c">// the 'why'</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span className="hi">payments-auth.md</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span className="f">onboarding-v2.md</span></div>
+              <div>├── <span className="d">knowledge/</span>     <span className="c">// project memory</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;├── <span className="f">context.append.log</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;└── <span className="f">glossary.md</span></div>
+              <div>├── <span className="d">public/</span>        <span className="c">// build-in-the-open</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;├── <span className="hi">BUILDLOG.md</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;└── <span className="f">weekly-digest/</span></div>
+              <div>├── <span className="d">flows/</span>         <span className="c">// the 'how'</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;├── <span className="f">goal-to-contract.yml</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;└── <span className="f">run-to-proof.yml</span></div>
+              <div>├── <span className="d">evals/</span>         <span className="c">// the gate</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;├── <span className="hi">gate.default.yml</span></div>
+              <div>│&nbsp;&nbsp;&nbsp;└── <span className="f">checks/*.yml</span></div>
+              <div>└── <span className="d">docs/</span></div>
+              <div>&nbsp;&nbsp;&nbsp;&nbsp;└── <span className="d">adr/</span>       <span className="c">// decisions, dated</span></div>
+              <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span className="f">ADR-001-contract-first.md</span></div>
+              <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span className="f">ADR-002-gate-writes.md</span></div>
+              <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span className="hi">ADR-007-modules-later.md</span></div>
+            </div>
+          </div>
+
+          {/* Terminal / build log */}
+          <div className="term">
+            <div className="chrome">
+              <div className="dots"><span /><span /><span /></div>
+              <span>~ / punk · BUILDLOG.md · follow</span>
+              <span style={{ flex: 1 }} />
+              <span>week 003</span>
+            </div>
+            <div style={{ padding: '16px 20px 22px', fontFamily: 'var(--font-mono)', fontSize: 12.5, lineHeight: 1.8 }}>
+              <div style={{ color: '#6c6a5e' }}>$ punk log --since=monday</div>
+              <div style={{ color: '#6c6a5e', marginTop: 4 }}># week 003 · 2026-04-13 → 18</div>
+              <br/>
+              <div><span style={{ color: '#ff48a1' }}>mon</span> &nbsp;hashed first contract.lock format · ADR-001</div>
+              <div><span style={{ color: '#ff48a1' }}>tue</span> &nbsp;wired gate.default.yml to block on red evals</div>
+              <div><span style={{ color: '#ff48a1' }}>wed</span> &nbsp;wrote ADR-007: modules land after core freeze</div>
+              <div><span style={{ color: '#ff48a1' }}>thu</span> &nbsp;receipt.v0 emits signed diff + seed</div>
+              <div><span style={{ color: '#ff48a1' }}>fri</span> &nbsp;guide refuses out-of-scope questions (good)</div>
+              <br/>
+              <div style={{ color: '#a6a396' }}>next: harden contract grants. no modules yet.</div>
+              <br/>
+              <div style={{ color: '#6c6a5e' }}>— ∎ —</div>
+              <br/>
+              <div style={{ color: '#6c6a5e' }}>$ punk status</div>
+              <div>kernel:&nbsp;&nbsp;<span style={{ color: '#3fe38d' }}>● compiling</span> &nbsp; laws: 8/8 · gate: live</div>
+              <div>module:&nbsp;<span style={{ color: '#6c6a5e' }}>○ not yet</span> &nbsp;&nbsp; devpunk / pubpunk staged</div>
+              <div>guide:&nbsp;&nbsp;&nbsp;<span style={{ color: '#3fe38d' }}>● online</span>&nbsp;&nbsp;&nbsp; scope: laws only</div>
+              <br/>
+              <div><span className="caret" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- MODULES ---------- */
+function Modules() {
+  return (
+    <section id="modules" style={{ borderBottom: '1px solid #22202b', padding: '88px 0' }}>
+      <div className="wrap">
+        <SectionHeader
+          n="05"
+          kicker="roadmap · staged"
+          title={<>Modules wait on the core.</>}
+          sub={<>Nothing below is shipping. Everything below is a commitment about order: the laws harden first, then a module gets to land.</>}
+        />
+
+        {/* Release-order timeline strip */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          border: '1px solid #22202b', background: '#0a0912',
+          marginBottom: 32,
+        }}>
+          {[
+            { k: '01', name: 'kernel',  state: 'compiling', dot: '#3fe38d', meta: 'now · v0.0.1-pre' },
+            { k: '02', name: 'devpunk', state: 'staged',    dot: '#6c6a5e', meta: 'after kernel freeze' },
+            { k: '03', name: 'pubpunk', state: 'staged',    dot: '#3a3848', meta: 'after devpunk' },
+            { k: '04', name: '—',       state: 'open',      dot: '#3a3848', meta: 'rfc window' },
+          ].map((s, i, arr) => (
+            <div key={s.k} style={{
+              padding: '18px 20px',
+              borderRight: i < arr.length - 1 ? '1px solid #22202b' : 'none',
+              position: 'relative',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#8a8779',
+                letterSpacing: '0.22em', marginBottom: 10, fontWeight: 700,
+              }}>§ {s.k}</div>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20,
+                letterSpacing: '-0.01em', color: '#ebe7da', marginBottom: 8,
+              }}>{s.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-mono)', fontSize: 11.5, color: '#c6c2b4', letterSpacing: '0.06em' }}>
+                <span style={{ width: 6, height: 6, background: s.dot, borderRadius: '50%' }} />
+                {s.state}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8a8779', marginTop: 6, letterSpacing: '0.04em' }}>{s.meta}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Differentiated module cards — DevPunk is the detailed one, PubPunk is an outline, the third is barely a sketch. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 20, alignItems: 'stretch' }}>
+
+          {/* DevPunk — the concrete one */}
+          <div style={{
+            border: '1px solid #22202b', background: '#0a0912',
+            padding: '26px 26px 24px', position: 'relative',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ff48a1', letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 700 }}>§ 02 · devpunk</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8a8779', letterSpacing: '0.08em' }}>next · after kernel</div>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 34,
+              letterSpacing: '-0.02em', color: '#ebe7da', marginBottom: 12, lineHeight: 1.05,
+            }}>DevPunk</div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 13, color: '#a6a396',
+              lineHeight: 1.6, marginBottom: 22, maxWidth: 460,
+            }}>The engineering surface. Agents on your repo, your machine, under a signed contract. Editor and shell; no cloud.</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid #22202b' }}>
+              {[
+                ['grants',   'fs:rw · scoped'],
+                ['runtime',  'local · bring-your-own model'],
+                ['output',   'signed receipt · replayable'],
+                ['intent',   'merge only on gate-pass'],
+              ].map(([k, v]) => (
+                <div key={k} style={{
+                  padding: '12px 0', borderBottom: '1px solid #22202b',
+                }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6c6a5e', letterSpacing: '0.18em', textTransform: 'uppercase' }}>{k}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#ebe7da', marginTop: 3 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* PubPunk — obviously future. Skeleton + 'LATER' stamp. */}
+          <div style={{
+            border: '1px dashed #34323f', background: 'transparent',
+            padding: '26px 22px 24px', position: 'relative', overflow: 'hidden',
+          }}>
+            {/* LATER diagonal stamp */}
+            <div style={{
+              position: 'absolute', top: 22, right: -36,
+              transform: 'rotate(18deg)',
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 10,
+              letterSpacing: '0.26em',
+              color: '#6c6a5e', border: '1px solid #34323f',
+              padding: '4px 38px', background: '#05040a',
+            }}>LATER</div>
+
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8a8779', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 14, fontWeight: 700 }}>§ 03 · pubpunk</div>
+
+            <div style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30,
+              letterSpacing: '-0.02em', color: '#a6a396', marginBottom: 10, lineHeight: 1.05,
+            }}>PubPunk</div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#6c6a5e',
+              lineHeight: 1.6, marginBottom: 20,
+            }}>The public surface. Not in scope yet. Notes only.</div>
+
+            {/* Faint outline list — deliberately low-fi */}
+            <div style={{ borderTop: '1px solid #22202b', paddingTop: 14 }}>
+              {[
+                'weekly digest of the build',
+                'signed public receipts',
+                'read-only · no telemetry',
+              ].map(x => (
+                <div key={x} style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 12, color: '#6c6a5e',
+                  padding: '5px 0', display: 'flex', gap: 10,
+                }}>
+                  <span style={{ color: '#34323f' }}>○</span>{x}
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: 18, fontFamily: 'var(--font-mono)', fontSize: 10.5,
+              color: '#34323f', letterSpacing: '0.14em', textTransform: 'uppercase',
+            }}>blocked on: kernel freeze</div>
+          </div>
+
+          {/* Third slot — barely a sketch. RFC invite. */}
+          <div style={{
+            border: '1px dashed #22202b', background: 'transparent',
+            padding: '26px 22px 24px', position: 'relative',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8a8779', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 14, fontWeight: 700 }}>§ 04 · open slot</div>
+
+            <div style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28,
+              letterSpacing: '-0.02em', color: '#6c6a5e', marginBottom: 10, lineHeight: 1.05,
+            }}>—</div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#6c6a5e',
+              lineHeight: 1.6, marginBottom: 20,
+            }}>Reserved. If you have a module idea that needs a kernel this strict, write an RFC against the laws.</div>
+
+            <div style={{ flex: 1 }} />
+
+            <div style={{
+              padding: '10px 12px', border: '1px solid #22202b',
+              background: '#05040a',
+              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a6a396',
+              letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ color: '#ff48a1' }}>▸</span>
+              propose a module · rfc only
+            </div>
+          </div>
+        </div>
+
+        {/* Honest footnote */}
+        <div style={{
+          marginTop: 32, fontFamily: 'var(--font-mono)', fontSize: 12.5,
+          color: '#8a8779', letterSpacing: '0.04em',
+        }}>
+          <span style={{ color: '#ff48a1' }}>∎</span>&nbsp;&nbsp;no dates, no waitlist. the order is the promise.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- GUIDE ---------- */
+function Guide() {
+  const transcript = [
+    { who: 'you',   t: 'what is law 04?' },
+    { who: 'guide', cite: 'cites § laws/04', tone: 'ok',
+      t: 'Gate writes the decision. Runs land on pass/fail from a deterministic eval. Humans only review exceptions.' },
+    { who: 'you',   t: 'write me a React login form.' },
+    { who: 'guide', cite: 'out of scope', tone: 'warn',
+      t: 'Not my contract. For code, open a goal, sign a contract, and run an agent under it.' },
+    { who: 'you',   t: 'when does pubpunk ship?' },
+    { who: 'guide', cite: 'cites § ADR-007', tone: 'ok',
+      t: 'After the kernel freezes. No date. Modules are explicitly a later problem.' },
+  ];
+  return (
+    <section id="guide" style={{ borderBottom: '1px solid #22202b', padding: '96px 0 104px', background: '#07060e' }}>
+      <div className="wrap">
+        {/* Editorial header */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'end',
+          marginBottom: 56, paddingBottom: 28, borderBottom: '1px solid #22202b',
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#ff48a1',
+              letterSpacing: '0.24em', textTransform: 'uppercase', marginBottom: 18,
+            }}>§ 06 · the guide</div>
+            <h2 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700,
+              fontSize: 60, letterSpacing: '-0.03em', lineHeight: 0.98,
+              margin: 0, color: '#ebe7da',
+            }}>A narrow assistant.</h2>
+          </div>
+          <div>
+            <p style={{
+              fontFamily: 'var(--font-serif)', fontSize: 18, lineHeight: 1.55,
+              color: '#a6a396', margin: 0, maxWidth: 460, fontStyle: 'italic',
+            }}>
+              Guide answers about Punk — laws, roadmap, build. It refuses the rest. The scope is the feature.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 72, alignItems: 'start' }}>
+
+          {/* LEFT — editorial ledger */}
+          <div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8a8779',
+              letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 14, fontWeight: 700,
+            }}>the contract it reads from</div>
+
+            <div style={{
+              fontFamily: 'var(--font-serif)', fontSize: 19, lineHeight: 1.55,
+              color: '#ebe7da', marginBottom: 28, fontStyle: 'italic',
+              borderLeft: '2px solid #ff2e88', paddingLeft: 18,
+            }}>
+              "Answer about the kernel. Cite the law. When asked anything else, step back."
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#3fe38d',
+                letterSpacing: '0.18em', textTransform: 'uppercase',
+                paddingBottom: 8, borderBottom: '1px solid #22202b', marginBottom: 10,
+              }}>answers</div>
+              {[
+                'what a law means',
+                'why a law exists',
+                'what is staged next',
+                'which ADR to read',
+              ].map(x => (
+                <div key={x} style={{
+                  display: 'grid', gridTemplateColumns: '16px 1fr',
+                  gap: 10, padding: '6px 0',
+                  fontFamily: 'var(--font-mono)', fontSize: 13, color: '#ebe7da',
+                }}>
+                  <span style={{ color: '#3fe38d' }}>+</span>
+                  <span>{x}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 28 }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#ff6b62',
+                letterSpacing: '0.18em', textTransform: 'uppercase',
+                paddingBottom: 8, borderBottom: '1px solid #22202b', marginBottom: 10,
+              }}>refuses</div>
+              {[
+                'generic coding help',
+                'roadmap dates',
+                'opinions on other tools',
+                'anything off-contract',
+              ].map(x => (
+                <div key={x} style={{
+                  display: 'grid', gridTemplateColumns: '16px 1fr',
+                  gap: 10, padding: '6px 0',
+                  fontFamily: 'var(--font-mono)', fontSize: 13, color: '#a6a396',
+                }}>
+                  <span style={{ color: '#ff6b62' }}>−</span>
+                  <span>{x}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: 36, paddingTop: 18, borderTop: '1px solid #22202b',
+              fontFamily: 'var(--font-mono)', fontSize: 12, color: '#8a8779',
+              lineHeight: 1.7,
+            }}>
+              <span style={{ color: '#ff48a1' }}>//</span> guide.contract.md &nbsp;·&nbsp; network: <span style={{ color: '#ffc06b' }}>none</span> &nbsp;·&nbsp; cite: <span style={{ color: '#ebe7da' }}>always</span>
+            </div>
+          </div>
+
+          {/* RIGHT — transcript */}
+          <div style={{ border: '1px solid #22202b', background: '#0a0912' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 16px', borderBottom: '1px solid #22202b',
+              fontFamily: 'var(--font-mono)', fontSize: 11,
+              letterSpacing: '0.22em', textTransform: 'uppercase', color: '#8a8779',
+              fontWeight: 700,
+            }}>
+              <span style={{ color: '#ff48a1' }}>∎</span>
+              <span>transcript · punk/guide</span>
+              <span style={{ flex: 1 }} />
+              <span><span className="dot" style={{ background: '#3fe38d' }} />&nbsp;&nbsp;online</span>
+            </div>
+
+            <div style={{ padding: '22px 22px 10px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {transcript.map((m, i) => m.who === 'you' ? (
+                <div key={i} style={{ alignSelf: 'flex-end', maxWidth: '70%' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#8a8779', marginBottom: 4, letterSpacing: '0.2em', textTransform: 'uppercase', textAlign: 'right', fontWeight: 700 }}>you</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: '#ebe7da', textAlign: 'right', lineHeight: 1.45 }}>"{m.t}"</div>
+                </div>
+              ) : (
+                <div key={i} style={{ maxWidth: '85%' }}>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 10.5, marginBottom: 7,
+                    letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 700,
+                    color: m.tone === 'warn' ? '#ffc06b' : '#ff48a1',
+                  }}>guide · {m.cite}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-serif)', fontSize: 15.5,
+                    color: '#ebe7da', lineHeight: 1.55,
+                    borderLeft: '2px solid ' + (m.tone === 'warn' ? '#ffc06b' : '#ff2e88'),
+                    paddingLeft: 14,
+                  }}>{m.t}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 18px', marginTop: 8, borderTop: '1px solid #22202b',
+              background: '#05040a',
+            }}>
+              <span style={{ color: '#ff48a1', fontFamily: 'var(--font-mono)', fontSize: 13 }}>&gt;</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#6c6a5e', flex: 1 }}>
+                ask about a law, an ADR, or what is staged…
+              </span>
+              <span className="caret" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- FINAL CTA ---------- */
+function FinalCTA() {
+  return (
+    <section id="cta" style={{ padding: '144px 0 128px', position: 'relative', overflow: 'hidden' }}>
+      <div className="gridlines" />
+      <div className="wrap" style={{ position: 'relative' }}>
+
+        {/* Asymmetric editorial CTA — not centered */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 72,
+          alignItems: 'end', marginBottom: 72,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ff48a1',
+              letterSpacing: '0.28em', textTransform: 'uppercase', marginBottom: 24,
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+            }}>
+              <span style={{ width: 24, height: 1, background: '#ff2e88' }} />
+              <span>§ 07 · the invitation</span>
+            </div>
+
+            <h2 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700,
+              fontSize: 108, letterSpacing: '-0.04em', lineHeight: 0.92,
+              margin: 0, color: '#ebe7da',
+            }}>
+              Read the{' '}
+              <span style={{ color: '#ff2e88', position: 'relative', display: 'inline-block' }}>
+                kernel
+                <svg width="280" height="12" viewBox="0 0 280 12" style={{ position: 'absolute', left: 0, bottom: -4, display: 'block' }}>
+                  <path d="M 4 8 C 60 3, 160 11, 276 5" stroke="#ff2e88" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+              <br/>while it is still wet.
+            </h2>
+          </div>
+
+          <div style={{ paddingBottom: 12 }}>
+            <p style={{
+              fontFamily: 'var(--font-serif)', fontSize: 19, lineHeight: 1.55,
+              color: '#b6b2a4', margin: 0, fontStyle: 'italic', maxWidth: 380,
+              borderLeft: '2px solid #22202b', paddingLeft: 18,
+            }}>
+              Punk is a kernel, not a product. We ship one law at a time, in the open. If that's your speed — walk in.
+            </p>
+            {/* quill echo — tied to mascot */}
+            <div style={{ marginTop: 20, paddingLeft: 18, opacity: 0.75 }}>
+              <QuillRule width={160} count={7} opacity={0.9} />
+            </div>
+          </div>
+        </div>
+
+        {/* Three honest channels, flat row */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          border: '1px solid #22202b', borderBottom: 'none',
+          background: '#0a0912',
+        }}>
+          {[
+            {
+              tag: 'primary',
+              title: 'Follow the build',
+              sub: 'weekly dispatch from the repo',
+              href: '#',
+              cta: '▸ subscribe',
+              accent: '#ff2e88',
+            },
+            {
+              tag: 'secondary',
+              title: 'Read the laws',
+              sub: 'all eight, with ADRs',
+              href: '#laws',
+              cta: 'open §02 →',
+              accent: '#a6a396',
+            },
+            {
+              tag: 'secondary',
+              title: 'Open the repo',
+              sub: 'main · v0.0.1-pre',
+              href: '#',
+              cta: 'clone ↗',
+              accent: '#a6a396',
+            },
+          ].map((c, i, arr) => (
+            <a key={c.title} href={c.href} style={{
+              display: 'block', padding: '28px 28px 30px', textDecoration: 'none',
+              borderRight: i < arr.length - 1 ? '1px solid #22202b' : 'none',
+              borderBottom: '1px solid #22202b',
+              transition: 'background 160ms',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#11101a'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10.5, color: c.accent,
+                letterSpacing: '0.24em', textTransform: 'uppercase', marginBottom: 14,
+                fontWeight: 700,
+              }}>{c.tag}</div>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26,
+                letterSpacing: '-0.02em', color: '#ebe7da', lineHeight: 1.1,
+                marginBottom: 8,
+              }}>{c.title}</div>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#8a8779',
+                marginBottom: 24,
+              }}>{c.sub}</div>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12, color: c.accent,
+                letterSpacing: '0.08em', fontWeight: 700,
+              }}>{c.cta}</div>
+            </a>
+          ))}
+        </div>
+
+        {/* Honest status strip — narrow, typographic, not in a box */}
+        <div style={{
+          marginTop: 64,
+          display: 'grid', gridTemplateColumns: 'auto 1fr auto',
+          gap: 32, alignItems: 'center',
+          paddingTop: 28, borderTop: '1px solid #22202b',
+          fontFamily: 'var(--font-mono)', fontSize: 12, color: '#8a8779',
+          letterSpacing: '0.04em',
+        }}>
+          <div style={{ color: '#ff48a1', letterSpacing: '0.22em', textTransform: 'uppercase', fontSize: 11, fontWeight: 700 }}>
+            // honest status
+          </div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', color: '#c6c2b4' }}>
+            <span><span style={{ color: '#3fe38d' }}>●</span>&nbsp;&nbsp;v0.0.1-pre · kernel compiling</span>
+            <span style={{ color: '#3a3848' }}>/</span>
+            <span>no waitlist</span>
+            <span style={{ color: '#3a3848' }}>/</span>
+            <span>no pricing</span>
+            <span style={{ color: '#3a3848' }}>/</span>
+            <span>no download yet</span>
+          </div>
+          <div style={{ color: '#6c6a5e' }}>
+            the repo is the product until the core freezes
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- FOOTER ---------- */
+/* Subtle quill motif — echoes the hero mascot language, used sparingly. */
+function QuillRule({ count = 7, width = 260, color = '#ff2e88', opacity = 0.9 }) {
+  // Evenly-spaced short verticals of varying length, like the mascot's quills laid flat.
+  const lens = [10, 16, 22, 26, 22, 16, 10].slice(0, count);
+  const step = width / (count + 1);
+  return (
+    <svg width={width} height="28" viewBox={`0 0 ${width} 28`} aria-hidden="true" style={{ display: 'block' }}>
+      {lens.map((l, i) => (
+        <line key={i}
+          x1={step * (i + 1)} y1={26}
+          x2={step * (i + 1)} y2={26 - l}
+          stroke={color} strokeWidth="1.6" strokeLinecap="round" opacity={opacity}
+        />
+      ))}
+    </svg>
+  );
+}
+
+function Footer() {
+  const cols = [
+    ['kernel', ['laws', 'how it works', 'receipts', 'memory']],
+    ['build',  ['repo', 'buildlog', 'adrs', 'weekly digest']],
+    ['reach',  ['guide', 'mailing list', 'rfcs', 'contact']],
+  ];
+  return (
+    <footer style={{
+      padding: '72px 0 28px',
+      background: '#000006',
+      borderTop: '1px solid #22202b',
+      color: '#c6c2b4',
+      position: 'relative',
+    }}>
+      {/* Quill motif echo — one, quiet, left-aligned above content */}
+      <div className="wrap" style={{ marginBottom: 36, opacity: 0.55 }}>
+        <QuillRule width={180} count={7} opacity={0.85} />
+      </div>
+
+      <div className="wrap" style={{
+        display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1fr', gap: 48,
+        alignItems: 'start',
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontWeight: 700,
+              background: '#ebe7da', color: '#ff2e88',
+              padding: '2px 6px 1px', fontSize: 13,
+            }}>[//]</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: '#ebe7da' }}>Punk</span>
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-mono)', fontSize: 12.5, color: '#a6a396',
+            marginTop: 16, maxWidth: 340, lineHeight: 1.65,
+          }}>
+            A local-first work kernel for contract-tracked, eval-gated, proof-bearing AI work. Public build. Core-first. Modules later.
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-mono)', fontSize: 11, color: '#6c6a5e',
+            marginTop: 22, letterSpacing: '0.1em',
+          }}>
+            // stay local. stay suspicious of defaults.
+          </div>
+        </div>
+
+        {cols.map(([k, items]) => (
+          <div key={k}>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 10.5,
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              color: '#ff48a1', marginBottom: 14,
+              paddingBottom: 10, borderBottom: '1px solid #22202b',
+            }}>{k}</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {items.map(i => (
+                <li key={i}>
+                  <a href="#" style={{
+                    display: 'block', padding: '5px 0',
+                    fontFamily: 'var(--font-mono)', fontSize: 13, color: '#ebe7da',
+                    textDecoration: 'none',
+                    transition: 'color 160ms',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#ff48a1'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#ebe7da'}
+                  >{i}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="wrap" style={{
+        marginTop: 56, paddingTop: 20,
+        borderTop: '1px solid #22202b',
+        display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 24,
+        fontFamily: 'var(--font-mono)', fontSize: 11.5, color: '#8a8779',
+        letterSpacing: '0.04em',
+      }}>
+        <span>© Punk collective · 2026 · v0.0.1-pre</span>
+        <span style={{ textAlign: 'center', color: '#6c6a5e' }}>
+          <span style={{ color: '#ff48a1' }}>∎</span>&nbsp;&nbsp;the repo is the product
+        </span>
+        <span style={{ textAlign: 'right' }}>kernel = sha256(laws).0xff2e88</span>
+      </div>
+    </footer>
+  );
+}
+
+Object.assign(window, { Problem, Laws, How, Build, Modules, Guide, FinalCTA, Footer, QuillRule });
+
+</script>
+<script type="text/babel">
+/* globals React, ReactDOM, NavBar, Hero, Problem, Laws, How, Build, Modules, Guide, FinalCTA, Footer */
+
+function App() {
+  return (
+    <div style={{ background: '#05040a', color: '#ebe7da', minHeight: '100vh' }}>
+      <NavBar />
+      <Hero />
+      <Problem />
+      <Laws />
+      <How />
+      <Build />
+      <Modules />
+      <Guide />
+      <FinalCTA />
+      <Footer />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+</body>
+</html>

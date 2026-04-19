@@ -1,0 +1,359 @@
+/* ==========================================================================
+   SpecPunk — Colors & Type
+   Local-first, stewarded multi-agent engineering runtime
+   ==========================================================================
+   Import once at the document root:
+     <link rel="stylesheet" href="/colors_and_type.css">
+   ========================================================================== */
+
+/* ---- Fonts ---------------------------------------------------------------
+   Three families, no more.
+     — JetBrains Mono: code, specs, agent transcripts, UI chrome
+     — Space Grotesk:  display, wordmark, marketing headlines
+     — IBM Plex Serif: long-form specs, essays, editorial
+   -------------------------------------------------------------------------- */
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('fonts/JetBrainsMono-400.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('fonts/JetBrainsMono-500.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('fonts/JetBrainsMono-700.woff2') format('woff2'); }
+
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('fonts/SpaceGrotesk-400.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('fonts/SpaceGrotesk-500.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('fonts/SpaceGrotesk-700.woff2') format('woff2'); }
+
+@font-face { font-family: 'IBM Plex Serif'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('fonts/IBMPlexSerif-400.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Serif'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('fonts/IBMPlexSerif-600.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Serif'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url('fonts/IBMPlexSerif-400Italic.woff2') format('woff2'); }
+
+/* ==========================================================================
+   TOKENS — root (paper mode, default)
+   ========================================================================== */
+:root {
+  /* ---- Font families -------------------------------------------------- */
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif:   'IBM Plex Serif', 'Iowan Old Style', Georgia, Cambria, 'Times New Roman', serif;
+
+  /* ---- Raw palette ---------------------------------------------------- */
+  /* Paper & ink — the "spec" half */
+  --ink-000:  #ffffff;
+  --ink-050:  #f7f5f0;   /* paper  — base background */
+  --ink-100:  #efece4;   /* paper warm shade         */
+  --ink-150:  #e4e0d4;   /* rule   — hairlines       */
+  --ink-200:  #cfcabb;   /* muted border             */
+  --ink-400:  #7a7668;   /* tertiary text            */
+  --ink-600:  #3a382f;   /* secondary text           */
+  --ink-900:  #0f0e0b;   /* ink — primary text       */
+  --ink-950:  #05040a;   /* pure ink / deep bg       */
+
+  /* Punk accents — the "punk" half. Use with discipline: one per screen. */
+  --punk-magenta:   #ff2e88;   /* PRIMARY accent. Hot pink, stencil energy.  */
+  --punk-magenta-ink: #c7005f; /* high-contrast on paper                     */
+  --punk-magenta-bg:  #ffe1ee; /* wash                                        */
+
+  --agent-green:    #12c06a;   /* agent active / success                      */
+  --agent-green-ink:#0a7d45;
+  --agent-green-bg: #d8f5e6;
+
+  --steward-amber:  #f7a93b;   /* stewardship / attention / awaiting human    */
+  --steward-amber-ink: #8a5a0c;
+  --steward-amber-bg:  #fdecce;
+
+  --error-red:      #e8433a;
+  --error-red-ink:  #a51b14;
+  --error-red-bg:   #fadbd9;
+
+  --spec-blue:      #2b6dfb;   /* info / spec links                           */
+  --spec-blue-ink:  #1043b8;
+  --spec-blue-bg:   #d9e3fc;
+
+  /* ---- Semantic surfaces & text -------------------------------------- */
+  --bg:         var(--ink-050);
+  --bg-raised: var(--ink-000);
+  --bg-sunken: var(--ink-100);
+  --bg-code:   var(--ink-100);
+
+  --fg:        var(--ink-900);
+  --fg-1:      var(--ink-900);  /* primary                                  */
+  --fg-2:      var(--ink-600);  /* secondary                                */
+  --fg-3:      var(--ink-400);  /* tertiary / meta / timestamps             */
+  --fg-on-accent: var(--ink-000);
+
+  --border:        var(--ink-150);
+  --border-strong: var(--ink-200);
+  --border-ink:    var(--ink-900);   /* intentional hard rule               */
+
+  --accent:        var(--punk-magenta);
+  --accent-ink:    var(--punk-magenta-ink);
+  --accent-bg:     var(--punk-magenta-bg);
+
+  --ok:   var(--agent-green);
+  --warn: var(--steward-amber);
+  --err:  var(--error-red);
+  --info: var(--spec-blue);
+
+  /* ---- Spacing (4px base) -------------------------------------------- */
+  --s-0:   0;
+  --s-1:   2px;
+  --s-2:   4px;
+  --s-3:   8px;
+  --s-4:   12px;
+  --s-5:   16px;
+  --s-6:   20px;
+  --s-7:   24px;
+  --s-8:   32px;
+  --s-9:   40px;
+  --s-10:  56px;
+  --s-11:  72px;
+  --s-12:  96px;
+
+  /* ---- Radii — small, deliberate.  SpecPunk is mostly square. -------- */
+  --r-0:   0;
+  --r-1:   2px;
+  --r-2:   4px;
+  --r-3:   6px;
+  --r-pill: 999px;
+
+  /* ---- Borders -------------------------------------------------------- */
+  --bw-1: 1px;
+  --bw-2: 2px;
+  --bw-3: 3px;
+
+  /* ---- Shadows — flat by default. Offset shadows only as a motif. ---- */
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 var(--ink-150);
+  --shadow-card: 3px 3px 0 0 var(--ink-900);     /* offset "sticker" shadow */
+  --shadow-card-lg: 6px 6px 0 0 var(--ink-900);
+  --shadow-pop: 0 4px 16px -4px rgba(15,14,11,0.18);
+
+  /* ---- Motion --------------------------------------------------------- */
+  --dur-1: 80ms;
+  --dur-2: 160ms;
+  --dur-3: 240ms;
+  --ease:  cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-snap: cubic-bezier(0.3, 1.4, 0.5, 1);   /* small overshoot; punk   */
+
+  /* ---- Type scale (rem, 16px base) ----------------------------------- */
+  --fs-xs:    12px;
+  --fs-sm:    13px;
+  --fs-base:  15px;
+  --fs-md:    17px;
+  --fs-lg:    20px;
+  --fs-xl:    24px;
+  --fs-2xl:   32px;
+  --fs-3xl:   44px;
+  --fs-4xl:   60px;
+  --fs-5xl:   84px;
+
+  --lh-tight: 1.05;
+  --lh-snug:  1.2;
+  --lh-base:  1.45;
+  --lh-long:  1.65;
+
+  --tracking-tight:  -0.02em;
+  --tracking-snug:   -0.01em;
+  --tracking-base:   0;
+  --tracking-wide:    0.04em;
+  --tracking-caps:    0.12em;   /* ALL-CAPS LABELS                        */
+}
+
+/* ==========================================================================
+   DARK / TERMINAL MODE
+   Apply via <html data-theme="ink"> or the prefers-color-scheme media query.
+   ========================================================================== */
+[data-theme="ink"], .specpunk-ink {
+  --bg:        var(--ink-950);
+  --bg-raised: #11101a;
+  --bg-sunken: #000006;
+  --bg-code:   #0a0912;
+
+  --fg:    #ebe7da;
+  --fg-1:  #ebe7da;
+  --fg-2:  #a6a396;
+  --fg-3:  #6c6a5e;
+
+  --border:        #22202b;
+  --border-strong: #34323f;
+  --border-ink:    #ebe7da;
+
+  --accent:     #ff48a1;            /* magenta pops brighter on ink       */
+  --accent-ink: #ffb7d5;
+  --accent-bg:  #2a0f1c;
+
+  --ok:   #3fe38d;
+  --warn: #ffc06b;
+  --err:  #ff6b62;
+  --info: #77a9ff;
+
+  --shadow-card:    3px 3px 0 0 #ff2e88;  /* accent offset on dark        */
+  --shadow-card-lg: 6px 6px 0 0 #ff2e88;
+  --shadow-pop:     0 8px 24px -4px rgba(0,0,0,0.6);
+}
+
+/* Respect system pref unless explicitly overridden */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="paper"]) {
+    --bg:        var(--ink-950);
+    --bg-raised: #11101a;
+    --bg-sunken: #000006;
+    --bg-code:   #0a0912;
+    --fg: #ebe7da; --fg-1: #ebe7da; --fg-2: #a6a396; --fg-3: #6c6a5e;
+    --border: #22202b; --border-strong: #34323f; --border-ink: #ebe7da;
+    --accent: #ff48a1; --accent-ink: #ffb7d5; --accent-bg: #2a0f1c;
+    --ok: #3fe38d; --warn: #ffc06b; --err: #ff6b62; --info: #77a9ff;
+    --shadow-card: 3px 3px 0 0 #ff2e88; --shadow-card-lg: 6px 6px 0 0 #ff2e88;
+    --shadow-pop: 0 8px 24px -4px rgba(0,0,0,0.6);
+  }
+}
+
+/* ==========================================================================
+   BASE ELEMENT STYLES
+   These apply globally — opt out by scoping inside .specpunk-reset-off.
+   ========================================================================== */
+html, body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display headings use Space Grotesk with tight tracking.
+   Marketing + hero moments. Lean on weight, not size. */
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-4xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--s-6);
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-snug);
+  margin: 0 0 var(--s-5);
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-snug);
+  margin: 0 0 var(--s-4);
+}
+h4, .h4 {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-base);
+  margin: 0 0 var(--s-3);
+}
+
+/* Body copy is mono by default — SpecPunk is a developer brand.
+   Use .prose for long-form reading (swaps to Plex Serif). */
+p, .p {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  margin: 0 0 var(--s-4);
+  max-width: 70ch;
+}
+
+.prose {
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: var(--lh-long);
+}
+.prose p { font-family: var(--font-serif); font-size: var(--fs-md); max-width: 62ch; }
+.prose em { font-style: italic; }
+.prose strong { font-weight: 600; }
+
+/* All-caps labels. Common across the system — section headers,
+   status pills, technical metadata. */
+.eyebrow, .label-caps {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* Code + pre — native medium. Paper mode shows a subtle inset wash. */
+code, .code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--bg-code);
+  padding: 1px 6px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border);
+}
+pre, .pre {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  background: var(--bg-code);
+  color: var(--fg-1);
+  padding: var(--s-5) var(--s-6);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  overflow-x: auto;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: 1em; }
+
+/* Links — underline offset is intentional; we like the rule showing. */
+a, .link {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--dur-2) var(--ease);
+}
+a:hover { color: var(--accent); }
+a:active { color: var(--fg-1); }
+
+/* Horizontal rules are a brand motif — used as section dividers. */
+hr {
+  border: 0;
+  border-top: 1px solid var(--border-ink);
+  margin: var(--s-8) 0;
+}
+
+/* Small helper: an ASCII bullet, sticker-style. */
+.sticker {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-on-accent);
+  background: var(--accent);
+  padding: 3px 8px 2px;
+  border-radius: var(--r-1);
+  transform: rotate(-1.5deg);
+  box-shadow: 2px 2px 0 0 var(--ink-900);
+}
+
+/* Selection */
+::selection { background: var(--accent); color: var(--fg-on-accent); }
+
+/* Focus ring — visible, square, accented. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

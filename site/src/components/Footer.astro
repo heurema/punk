@@ -1,0 +1,166 @@
+---
+import QuillRule from './QuillRule.astro';
+import { footerColumns } from '../data/content';
+---
+
+<footer class="footer">
+  <div class="wrap footerTop">
+    <QuillRule width={180} count={7} opacity={0.85} />
+  </div>
+
+  <div class="wrap footerGrid">
+    <div class="footerBrand">
+      <div class="footerWordmark">
+        <span class="footerBadge">[//]</span>
+        <span class="footerName">Punk</span>
+      </div>
+      <p class="footerDescription">
+        A local-first work kernel for contract-tracked, eval-gated, proof-bearing AI work. Public build. Core-first. Modules later.
+      </p>
+      <div class="footerMotto">// stay local. stay suspicious of defaults.</div>
+    </div>
+
+    {footerColumns.map((column) => (
+      <div class="footerColumn">
+        <div class="footerColumnTitle">{column.key}</div>
+        <ul class="footerList">
+          {column.links.map((link) => (
+            <li><a href={link.href} target={link.href.startsWith('#') ? undefined : '_blank'} rel={link.href.startsWith('#') ? undefined : 'noreferrer'}>{link.label}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  <div class="wrap footerBottom">
+    <span>© Punk collective · 2026 · v0.0.1-pre</span>
+    <span class="footerBottomCenter"><span>∎</span> the repo is the product</span>
+    <span>kernel = sha256(laws).0xff2e88</span>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding: 72px 0 28px;
+    border-top: 1px solid var(--border);
+    background: #000006;
+    color: #c6c2b4;
+  }
+
+  .footerTop {
+    margin-bottom: 36px;
+    opacity: 0.55;
+  }
+
+  .footerGrid {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .footerWordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .footerBadge {
+    padding: 2px 6px 1px;
+    background: var(--fg);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .footerName {
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .footerDescription {
+    max-width: 340px;
+    margin: 16px 0 0;
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+
+  .footerMotto {
+    margin-top: 22px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .footerColumnTitle {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .footerList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .footerList li a {
+    display: block;
+    padding: 5px 0;
+    color: var(--fg);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .footerList li a:hover {
+    color: var(--accent-bright);
+  }
+
+  .footerBottom {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: center;
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .footerBottomCenter {
+    text-align: center;
+    color: var(--fg-3);
+  }
+
+  .footerBottomCenter span {
+    color: var(--accent-bright);
+  }
+
+  @media (max-width: 1100px) {
+    .footerGrid,
+    .footerBottom {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .footerBottomCenter {
+      text-align: left;
+    }
+  }
+</style>

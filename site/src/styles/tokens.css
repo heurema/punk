@@ -1,0 +1,116 @@
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSerif-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Serif';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSerif-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSerif-400Italic.woff2') format('woff2');
+}
+
+:root {
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'IBM Plex Serif', Georgia, serif;
+
+  --ink-000: #ffffff;
+  --ink-050: #f7f5f0;
+  --ink-100: #efece4;
+  --ink-150: #e4e0d4;
+  --ink-200: #cfcabb;
+  --ink-400: #7a7668;
+  --ink-600: #3a382f;
+  --ink-900: #0f0e0b;
+  --ink-950: #05040a;
+
+  --punk-magenta: #ff2e88;
+  --punk-magenta-bright: #ff48a1;
+  --agent-green: #3fe38d;
+  --steward-amber: #ffc06b;
+  --error-red: #ff6b62;
+  --spec-blue: #77a9ff;
+
+  --bg: var(--ink-950);
+  --fg: #ebe7da;
+  --fg-2: #a6a396;
+  --fg-3: #6c6a5e;
+  --fg-muted: #8a8779;
+  --border: #22202b;
+  --border-strong: #34323f;
+  --accent: var(--punk-magenta);
+  --accent-bright: var(--punk-magenta-bright);
+  --success: var(--agent-green);
+  --warn: var(--steward-amber);
+  --danger: var(--error-red);
+  --info: var(--spec-blue);
+
+  --wrap: 1280px;
+  --page-pad: 40px;
+  --section-pad: 88px;
+  --nav-height: 64px;
+  --dur-1: 120ms;
+  --dur-2: 160ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}

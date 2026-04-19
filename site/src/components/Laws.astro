@@ -1,0 +1,197 @@
+---
+import { laws } from '../data/content';
+---
+
+<section class="section section--dark" id="laws">
+  <div class="wrap">
+    <div class="lawsTag">§ 02 · the eight laws · a manifesto</div>
+    <h2 class="lawsTitle">
+      Principles most teams print <span>on a wall.</span> Punk <strong>runs them</strong>.
+    </h2>
+
+    <div class="lawsLead">
+      <p class="lawsIntro">They are not prompts. They are runtime boundaries — the kernel refuses work that violates them.</p>
+      <div class="lawsMeta">
+        A principle a team can ignore is decoration.<br />
+        A principle the runtime enforces is a law.<br />
+        <span>Punk ships the second kind.</span>
+      </div>
+    </div>
+
+    <ol class="lawsList">
+      {laws.map((law, index) => (
+        <li class="lawsRow">
+          <div class="lawsKey">LAW · {law.key}</div>
+          <div class="lawsHeading">{law.title}</div>
+          <div class="lawsBody">{law.body}</div>
+          <div class="lawsProgress">{String(index + 1).padStart(2, '0')} / 08</div>
+        </li>
+      ))}
+    </ol>
+
+    <div class="lawsFooter">
+      <span>∎</span>
+      <span>enforced at: <strong>contract.lock</strong> · <strong>gate.default.yml</strong> · <strong>receipt.v0</strong></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .lawsTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .lawsTag::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--accent-bright);
+  }
+
+  .lawsTitle {
+    max-width: 1000px;
+    margin: 0 0 32px;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 96px;
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+  }
+
+  .lawsTitle span {
+    color: var(--fg-2);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .lawsTitle strong {
+    color: var(--accent);
+  }
+
+  .lawsLead {
+    display: grid;
+    grid-template-columns: 1fr 1.8fr;
+    gap: 48px;
+    align-items: start;
+    margin-bottom: 60px;
+  }
+
+  .lawsIntro {
+    margin: 0;
+    color: var(--fg-2);
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-style: italic;
+    line-height: 1.45;
+  }
+
+  .lawsMeta {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+
+  .lawsMeta span {
+    color: var(--fg);
+  }
+
+  .lawsList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .lawsRow {
+    display: grid;
+    grid-template-columns: 90px 1fr 1.3fr 80px;
+    gap: 28px;
+    align-items: baseline;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lawsKey {
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+  }
+
+  .lawsHeading {
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .lawsBody {
+    color: var(--fg-2);
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.5;
+  }
+
+  .lawsProgress {
+    color: #3a3848;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+  }
+
+  .lawsFooter {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    align-items: center;
+  }
+
+  .lawsFooter span:first-child {
+    color: var(--accent-bright);
+  }
+
+  .lawsFooter strong {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  @media (max-width: 1100px) {
+    .lawsLead {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .lawsTitle {
+      font-size: clamp(44px, 12vw, 72px);
+      line-height: 0.96;
+    }
+
+    .lawsRow {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .lawsProgress {
+      text-align: left;
+    }
+  }
+</style>

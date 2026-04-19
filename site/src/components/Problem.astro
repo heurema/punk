@@ -1,0 +1,219 @@
+---
+import SectionHeader from './SectionHeader.astro';
+import { driftCards } from '../data/content';
+---
+
+<section class="section" id="problem">
+  <div class="wrap">
+    <SectionHeader
+      n="01"
+      kicker="the drift"
+      sub="A model can write the patch in 12 seconds. The project takes three weeks because decisions, context, and proof live in five different places — and none of them trust each other."
+    >
+      <Fragment slot="title">
+        AI agents are powerful.<br />
+        Projects still <span class="problemAccent">drift</span>.
+      </Fragment>
+    </SectionHeader>
+
+    <div class="problemGrid">
+      <div class="problemPile" aria-hidden="true">
+        {driftCards.map((card, index) => (
+          <article class={`problemCard problemCard--${index}`}>
+            <div class="problemCardKey">{card.key}</div>
+            <div class="problemCardTitle">{card.title}</div>
+            <div class="problemCardMeta">{card.meta}</div>
+          </article>
+        ))}
+      </div>
+
+      <div class="problemArrows" aria-hidden="true">
+        <svg width="120" height="360" viewBox="0 0 120 360">
+          {[40, 100, 180, 260, 320].map((y) => (
+            <path d={`M 0 ${y} C 40 ${y}, 70 180, 110 180`} stroke="#ff2e88" stroke-width="1.25" fill="none" stroke-dasharray="3 4" opacity="0.8"></path>
+          ))}
+          <polygon points="110,180 100,174 100,186" fill="#ff2e88"></polygon>
+        </svg>
+      </div>
+
+      <div class="problemKernel">
+        <div class="problemKernelTag">one bounded flow</div>
+        <div class="problemKernelTitle">goal → contract → run → gate → proof</div>
+        <p class="problemKernelBody">
+          One markdown goal. One signed contract. One replayable run. One gate that either passes or does not. One proof that survives
+          the people.
+        </p>
+
+        <div class="problemChecklist">
+          {['contract hashed', 'run budgeted', 'gate automated', 'proof receipted', 'memory appended'].map((item) => (
+            <div class="problemChecklistItem">
+              <span>✓</span>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .problemAccent {
+    color: var(--accent);
+  }
+
+  .problemGrid {
+    display: grid;
+    grid-template-columns: 1.2fr auto 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+
+  .problemPile {
+    position: relative;
+    min-height: 360px;
+  }
+
+  .problemCard {
+    position: absolute;
+    width: 250px;
+    padding: 10px 14px 12px;
+    border: 1px solid var(--border);
+    background: #0a0912;
+    box-shadow: 3px 3px 0 0 #000006;
+  }
+
+  .problemCard--0 {
+    top: 10px;
+    left: 0;
+    transform: rotate(-2.5deg);
+  }
+
+  .problemCard--1 {
+    top: 70px;
+    left: 140px;
+    transform: rotate(1.2deg);
+  }
+
+  .problemCard--2 {
+    top: 150px;
+    left: 20px;
+    transform: rotate(-1.5deg);
+  }
+
+  .problemCard--3 {
+    top: 220px;
+    left: 170px;
+    transform: rotate(2.8deg);
+  }
+
+  .problemCard--4 {
+    top: 290px;
+    left: 40px;
+    transform: rotate(-1.8deg);
+  }
+
+  .problemCardKey {
+    margin-bottom: 6px;
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .problemCardTitle {
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .problemCardMeta {
+    margin-top: 4px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .problemKernel {
+    position: relative;
+    padding: 22px;
+    border: 1.5px solid var(--accent);
+    background: #0a0912;
+    box-shadow: 6px 6px 0 0 var(--fg);
+  }
+
+  .problemKernelTag {
+    margin-bottom: 10px;
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .problemKernelTitle {
+    margin-bottom: 14px;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .problemKernelBody {
+    margin: 0;
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .problemChecklist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 18px;
+  }
+
+  .problemChecklistItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .problemChecklistItem span {
+    color: var(--success);
+  }
+
+  @media (max-width: 1100px) {
+    .problemGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .problemArrows {
+      display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .problemPile {
+      min-height: auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .problemCard {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: 100%;
+      transform: none;
+    }
+  }
+</style>

@@ -1,0 +1,266 @@
+---
+import QuillRule from './QuillRule.astro';
+import { finalCtaCards } from '../data/content';
+---
+
+<section class="section finalSection" id="cta">
+  <div class="gridlines"></div>
+  <div class="wrap finalWrap">
+    <div class="finalIntro">
+      <div>
+        <div class="finalTag">§ 07 · the invitation</div>
+        <h2 class="finalTitle">
+          Read the <span>kernel</span><br />
+          while it is still wet.
+        </h2>
+      </div>
+      <div class="finalAside">
+        <p>
+          Punk is a kernel, not a product. We ship one law at a time, in the open. If that is your speed — walk in.
+        </p>
+        <div class="finalQuills">
+          <QuillRule width={160} count={7} opacity={0.9} />
+        </div>
+      </div>
+    </div>
+
+    <div class="finalCards">
+      {finalCtaCards.map((card) => (
+        <a class="finalCard" href={card.href} target="_blank" rel="noreferrer">
+          <div class={`finalCardTag finalCardTag--${card.tone}`}>{card.tag}</div>
+          <div class="finalCardTitle">{card.title}</div>
+          <div class="finalCardSub">{card.subtitle}</div>
+          <div class={`finalCardCta finalCardCta--${card.tone}`}>{card.cta}</div>
+        </a>
+      ))}
+    </div>
+
+    <div class="finalStatus">
+      <div class="finalStatusTag">// honest status</div>
+      <div class="finalStatusBody">
+        <span><span class="dot dot--success"></span> v0.0.1-pre · kernel compiling</span>
+        <span>/</span>
+        <span>no waitlist</span>
+        <span>/</span>
+        <span>no pricing</span>
+        <span>/</span>
+        <span>no download yet</span>
+      </div>
+      <div class="finalStatusNote">the repo is the product until the core freezes</div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .finalSection {
+    overflow: hidden;
+    padding-top: 144px;
+    padding-bottom: 128px;
+  }
+
+  .finalWrap {
+    position: relative;
+  }
+
+  .finalIntro {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 72px;
+    align-items: end;
+    margin-bottom: 72px;
+  }
+
+  .finalTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+
+  .finalTag::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .finalTitle {
+    margin: 0;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 108px;
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+  }
+
+  .finalTitle span {
+    position: relative;
+    color: var(--accent);
+    display: inline-block;
+  }
+
+  .finalTitle span::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 8px;
+    background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 12'%3E%3Cpath d='M 4 8 C 60 3, 160 11, 276 5' stroke='%23ff2e88' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+
+  .finalAside p {
+    margin: 0;
+    max-width: 380px;
+    padding-left: 18px;
+    border-left: 2px solid var(--border);
+    color: #b6b2a4;
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  .finalQuills {
+    margin-top: 20px;
+    padding-left: 18px;
+    opacity: 0.75;
+  }
+
+  .finalCards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--border);
+    border-bottom: 0;
+    background: #0a0912;
+  }
+
+  .finalCard {
+    display: block;
+    padding: 28px 28px 30px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+  }
+
+  .finalCard:last-child {
+    border-right: 0;
+  }
+
+  .finalCard:hover {
+    background: #11101a;
+  }
+
+  .finalCardTag {
+    margin-bottom: 14px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  .finalCardTag--accent,
+  .finalCardCta--accent {
+    color: var(--accent);
+  }
+
+  .finalCardTag--default,
+  .finalCardCta--default {
+    color: var(--fg-2);
+  }
+
+  .finalCardTitle {
+    margin-bottom: 8px;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .finalCardSub {
+    margin-bottom: 24px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  .finalCardCta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .finalStatus {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 32px;
+    align-items: center;
+    margin-top: 64px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    color: #c6c2b4;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  .finalStatusTag {
+    color: var(--accent-bright);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .finalStatusBody {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .finalStatusBody span:nth-child(even) {
+    color: #3a3848;
+  }
+
+  .finalStatusNote {
+    color: var(--fg-3);
+  }
+
+  @media (max-width: 1100px) {
+    .finalIntro,
+    .finalStatus {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+
+    .finalCards {
+      grid-template-columns: 1fr;
+    }
+
+    .finalCard {
+      border-right: 0;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .finalSection {
+      padding-top: 72px;
+      padding-bottom: 64px;
+    }
+
+    .finalTitle {
+      font-size: clamp(54px, 13vw, 72px);
+      line-height: 0.96;
+    }
+  }
+</style>

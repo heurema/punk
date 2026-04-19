@@ -1,0 +1,405 @@
+---
+import Mascot from './Mascot.astro';
+import { externalLinks, heroStatus, kernelFlow } from '../data/content';
+---
+
+<section class="section heroSection">
+  <div class="gridlines"></div>
+  <div class="scan"></div>
+  <div class="wrap heroWrap">
+    <div class="heroGrid">
+      <div class="heroCopy">
+        <div class="heroKicker">
+          <span class="heroKickerDot"></span>
+          <span>v0.0.1-pre · public build</span>
+        </div>
+
+        <h1 class="heroTitle">
+          Agents do the work.<br />
+          <span class="heroAccent">Punk</span> keeps it
+          <span class="heroBounded">
+            bounded.
+            <svg width="300" height="14" viewBox="0 0 300 14" aria-hidden="true">
+              <path d="M 4 9 C 60 4, 150 12, 296 6" stroke="#ff2e88" stroke-width="2.5" fill="none" stroke-linecap="round"></path>
+            </svg>
+          </span>
+        </h1>
+
+        <p class="heroDescription">
+          A local-first work kernel for <strong>contract-tracked</strong>, <strong>eval-gated</strong>, <strong>proof-bearing</strong> AI work.
+        </p>
+
+        <div class="heroCtas">
+          <a class="btn btn--primary" href={externalLinks.publicBuild} target="_blank" rel="noreferrer">▸ follow the build</a>
+          <a class="btn btn--ghost" href={externalLinks.roadmap} target="_blank" rel="noreferrer">read the roadmap →</a>
+        </div>
+
+        <div class="heroStatus">
+          {heroStatus.map((item, index) => (
+            <>
+              <span class={`heroStatusItem heroStatusItem--${item.tone}`}>
+                <span class={`dot dot--${item.tone === 'success' ? 'success' : item.tone === 'accent' ? 'accent' : 'muted'}`}></span>
+                {item.label}
+              </span>
+              {index < heroStatus.length - 1 && <span class="heroDivider">/</span>}
+            </>
+          ))}
+        </div>
+      </div>
+
+      <div class="heroStageWrap">
+        <div class="heroStage">
+          <div class="heroStageMeta">
+            <span class="heroStageBullet">∎</span>
+            <span>punk / guide</span>
+            <span class="heroStageSpacer"></span>
+            <span><span class="dot dot--success"></span> online · local</span>
+          </div>
+
+          <div class="heroMascotStage">
+            <span class="corner corner--tl"></span>
+            <span class="corner corner--tr"></span>
+            <span class="corner corner--bl"></span>
+            <span class="corner corner--br"></span>
+            <Mascot class="heroMascot" />
+            <div class="heroFloatingLabel">
+              PUNK
+              <span>KERNEL · 0x8A…F4</span>
+            </div>
+            <div class="heroCaption">quills out. scope tight.</div>
+          </div>
+
+          <div class="heroFlowStrip">
+            {kernelFlow.map((step) => (
+              <div class="heroFlowCell">
+                <span class={`heroFlowDot heroFlowDot--${step.tone}`}></span>
+                <span>{step.key}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="heroReceipt">
+          <span class="receiptAccent">//</span> receipt.0x8a2f · spec <span class="receiptValue">a4c1</span> · gate <span class="receiptOk">14/14 ✓</span> · by
+          <span class="receiptAccent"> @mira</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .heroSection {
+    overflow: hidden;
+  }
+
+  .heroWrap {
+    position: relative;
+    padding-top: 76px;
+    padding-bottom: 88px;
+  }
+
+  .heroGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(440px, 1.05fr);
+    gap: 48px;
+    align-items: center;
+  }
+
+  .heroKicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .heroKickerDot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+  }
+
+  .heroTitle {
+    margin: 0 0 22px;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 78px;
+    font-weight: 700;
+    line-height: 0.96;
+    letter-spacing: -0.035em;
+  }
+
+  .heroAccent {
+    color: var(--accent);
+  }
+
+  .heroBounded {
+    position: relative;
+    display: inline-block;
+  }
+
+  .heroBounded svg {
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+  }
+
+  .heroDescription {
+    max-width: 520px;
+    margin: 0 0 32px;
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .heroDescription strong {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  .heroCtas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .heroStatus {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 32px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .heroStatusItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .heroStatusItem--success {
+    color: var(--fg-2);
+  }
+
+  .heroStatusItem--accent {
+    color: var(--fg-2);
+  }
+
+  .heroDivider {
+    color: #3a3848;
+  }
+
+  .heroStageWrap {
+    position: relative;
+  }
+
+  .heroStage {
+    position: relative;
+    padding: 12px 12px 0;
+    border: 1px solid var(--border);
+    background: radial-gradient(ellipse at 60% 70%, #0d0b18 0%, #05040a 70%);
+    box-shadow: 8px 8px 0 0 var(--accent);
+  }
+
+  .heroStageMeta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .heroStageBullet {
+    color: var(--accent-bright);
+  }
+
+  .heroStageSpacer {
+    flex: 1;
+  }
+
+  .heroMascotStage {
+    position: relative;
+    min-height: 340px;
+    padding: 16px 6px 0;
+  }
+
+  .corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--accent);
+    border-style: solid;
+    pointer-events: none;
+  }
+
+  .corner--tl {
+    top: 8px;
+    left: 8px;
+    border-width: 1.5px 0 0 1.5px;
+  }
+
+  .corner--tr {
+    top: 8px;
+    right: 8px;
+    border-width: 1.5px 1.5px 0 0;
+  }
+
+  .corner--bl {
+    bottom: 8px;
+    left: 8px;
+    border-width: 0 0 1.5px 1.5px;
+  }
+
+  .corner--br {
+    right: 8px;
+    bottom: 8px;
+    border-width: 0 1.5px 1.5px 0;
+  }
+
+  .heroMascot {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .heroFloatingLabel {
+    position: absolute;
+    top: 22px;
+    right: 18px;
+    color: var(--accent-bright);
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+
+  .heroFloatingLabel span {
+    display: block;
+    margin-top: 4px;
+    color: var(--fg-3);
+  }
+
+  .heroCaption {
+    position: absolute;
+    bottom: 16px;
+    left: 18px;
+    color: var(--fg-2);
+    font-family: var(--font-serif);
+    font-size: 13px;
+    font-style: italic;
+    letter-spacing: -0.005em;
+  }
+
+  .heroFlowStrip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+  }
+
+  .heroFlowCell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 10px;
+    border-right: 1px solid var(--border);
+    color: var(--fg);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .heroFlowCell:last-child {
+    border-right: 0;
+  }
+
+  .heroFlowDot {
+    width: 6px;
+    height: 6px;
+    background: var(--fg-3);
+  }
+
+  .heroFlowDot--accent {
+    background: var(--accent);
+  }
+
+  .heroFlowDot--success {
+    background: var(--success);
+  }
+
+  .heroFlowDot--warn {
+    background: var(--warn);
+  }
+
+  .heroReceipt {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border: 1px dashed var(--border);
+    background: #0a0912;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 1100px) {
+    .heroGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .heroWrap {
+      padding-top: 52px;
+      padding-bottom: 56px;
+    }
+
+    .heroGrid {
+      gap: 28px;
+    }
+
+    .heroTitle {
+      font-size: clamp(40px, 11vw, 68px);
+      line-height: 1.02;
+      letter-spacing: -0.02em;
+    }
+
+    .heroCtas {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .heroStatus {
+      gap: 10px;
+    }
+
+    .heroFlowStrip {
+      grid-template-columns: repeat(5, minmax(104px, 1fr));
+      overflow-x: auto;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .heroTitle {
+      font-size: clamp(34px, 11.2vw, 48px);
+    }
+  }
+</style>
