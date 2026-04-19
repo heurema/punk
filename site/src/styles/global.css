@@ -282,8 +282,10 @@ a:hover {
   animation: cursor-blink 1s step-end infinite;
 }
 
-.eyeBlink {
-  animation: eye-blink 4.2s infinite;
+.eyeBlinkGroup {
+  animation: eye-blink-group 4.2s infinite;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .quill {
@@ -314,15 +316,18 @@ a:hover {
   animation-delay: 1.8s;
 }
 
-@keyframes eye-blink {
+@keyframes eye-blink-group {
   0%,
   94%,
   100% {
     opacity: 1;
+    transform: scaleY(1);
   }
 
-  97% {
-    opacity: 0.35;
+  96%,
+  98% {
+    opacity: 0.92;
+    transform: scaleY(0.08);
   }
 }
 
