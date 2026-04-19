@@ -1,7 +1,7 @@
 # punk
 
 <p align="center">
-  <img src="brand/landing/punk-readme.png" width="440" alt="punk mascot" />
+  <img src="brand/landing/punk-readme.svg" width="440" alt="punk mascot" />
 </p>
 
 `punk` is an experimental, early-stage, local-first bounded work kernel and sandbox for developers, researchers, and experimenters.
