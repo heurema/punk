@@ -32,6 +32,11 @@ knowledge/
   ops/
   ideas/
   code/
+
+docs/
+  adr/
+
+public/
 ```
 
 ## Runtime/derived memory
@@ -62,6 +67,8 @@ Recommended authorities:
 
 Implementation retrieval excludes speculative knowledge by default.
 
+When retrieval grows beyond manual repo inspection, the artifact contract should make source refs, review windows, supersession, contradiction, and proof/decision links explicit instead of hiding them in chat or runtime state.
+
 ## Project coherence
 
 The project-level gate asks:
@@ -77,6 +84,40 @@ It checks:
 - stale docs
 - unresolved cleanup obligations
 - blocked/escalated work
+
+## Knowledge Vault operating boundary
+
+Knowledge Vault is the repo-tracked knowledge surface of the Project Memory Plane.
+
+It is not:
+
+- a runtime memory engine
+- a vector DB source of truth
+- hidden agent memory
+- a remote/shared commons
+- a module-owned decision surface
+
+Repo-tracked truth lives in `work/`, `knowledge/`, `docs/adr/`, and `public/`.
+
+`.punk/` may hold derived indexes and views, but derived state is rebuildable and non-authoritative.
+
+Future retrieval must:
+
+- stay advisory-only
+- cite repo artifact paths
+- exclude speculative knowledge by default
+- flag stale or superseded knowledge
+- surface contradictions instead of flattening them
+- never write final decisions
+- never bypass `plot / cut / gate`
+
+Promotion path:
+
+```text
+idea/research -> ADR or roadmap decision -> goal/contract -> implementation -> eval result -> proof/knowledge update
+```
+
+Promotion is nomination, not move: the source artifact stays intact until a separate decision promotes or supersedes it.
 
 
 ## Research as input to project memory

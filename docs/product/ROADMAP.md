@@ -160,6 +160,22 @@ Required eval additions:
 - speculative knowledge excluded from implementation truth
 - reports link goal/contract/eval/proof refs when relevant
 
+Additional constraints before promoting Knowledge Vault retrieval behavior:
+
+- define a markdown metadata convention for retrieval-relevant knowledge,
+- validate `status` and `authority`,
+- represent stale/superseded/contradictory knowledge explicitly,
+- define proof/decision/contract reference fields,
+- add at least one knowledge lint or fixture-based eval.
+
+Still out of scope for Phase 4:
+
+- embeddings or vector DB as active surface
+- MCP memory
+- remote/org/global commons
+- autonomous memory capture
+- autonomous knowledge promotion
+
 ## Phase 5 — Project coherence gate
 
 Goal: detect drift across many individually valid contracts.
@@ -182,6 +198,16 @@ Required eval additions:
 - missing knowledge update detection
 - stale docs detection
 - drift report shape
+
+Possible later Knowledge Vault inputs:
+
+- missing knowledge updates after accepted contracts
+- stale architecture/product docs
+- repeated workaround units
+- tool gap signals
+- contradictions between accepted decisions and active knowledge
+
+These inputs stay advisory until `gate` writes a final decision.
 
 ## Phase 6 — Module host
 

@@ -181,3 +181,23 @@ Do not:
 - keep research only in chat
 - skip eval implications
 - skip failure modes
+
+## Knowledge Vault research requirements
+
+Changes to Knowledge Vault storage, retrieval, indexing, promotion, or external sharing require a research note unless they are narrow implementations of an already accepted ADR or contract.
+
+Because these changes affect project memory and decision boundaries, they will usually require R2 or R3 depth.
+
+A Knowledge Vault research note must include:
+
+- source quality table
+- prior-art comparison
+- failure modes
+- authority/trust model implications
+- local-first implications
+- privacy/security implications
+- eval requirements
+- adoption map: adopt / defer / park / avoid
+- explicit out-of-scope list
+
+Research output remains advisory until promoted through ADR, roadmap, contract, implementation, eval, and proof.

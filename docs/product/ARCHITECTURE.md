@@ -66,12 +66,35 @@ The public CLI must only expose active capabilities.
 
 ## Project memory plane
 
-Project memory has two repo-tracked sources:
+Project memory has four repo-tracked truth surfaces:
 
 - `work/` — goals, reports, generated views
 - `knowledge/` — product truth, architecture truth, decisions, research, ideas
+- `docs/adr/` — tracked architecture decisions
+- `public/` — public-build narrative and receipts
 
 Runtime and derived data live under `.punk/`.
+
+### Knowledge Vault architecture boundary
+
+Knowledge Vault owns the repo-tracked knowledge artifact contract under `knowledge/`.
+
+Retrieval is an inspectable advisory view over project memory. It can provide evidence to `plot`, `cut`, and `gate`, but it cannot approve work, execute work, or write final decisions.
+
+Future storage and retrieval must preserve these boundaries:
+
+- repo artifacts remain source inputs,
+- `.punk/` indexes and views are derived and rebuildable,
+- modules may assess memory relevance,
+- modules cannot decide authority,
+- adapters may invoke external systems,
+- adapters cannot own project truth.
+
+This does not change the lifecycle:
+
+```text
+plot -> cut -> gate
+```
 
 ## Eval plane
 
