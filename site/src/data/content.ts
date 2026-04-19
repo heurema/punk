@@ -12,7 +12,7 @@ export const navLinks = [
   { label: 'how', href: '#how' },
   { label: 'build', href: '#build' },
   { label: 'modules', href: '#modules' },
-  { label: 'journal', href: '/journal' },
+  { label: 'journal', href: '/journal', featured: true },
 ] as const;
 
 export const heroStatus = [

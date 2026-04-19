@@ -11,7 +11,9 @@ import { externalLinks, navLinks } from '../data/content';
 
     <nav class="navLinks" aria-label="Primary">
       {navLinks.map((link) => (
-        <a href={link.href}>{link.label}</a>
+        <a href={link.href} class:list={{ navLink: true, 'navLink--featured': !!link.featured }}>
+          {link.label}
+        </a>
       ))}
     </nav>
 
@@ -72,14 +74,30 @@ import { externalLinks, navLinks } from '../data/content';
     margin-left: 24px;
   }
 
-  .navLinks a {
+  .navLink {
     color: var(--fg-2);
     font-family: var(--font-mono);
     font-size: 13px;
     text-decoration: none;
   }
 
-  .navLinks a:hover {
+  .navLink:hover {
+    color: var(--fg);
+  }
+
+  .navLink--featured {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 8px 4px;
+    border: 1px solid rgba(255, 46, 136, 0.55);
+    background: rgba(255, 46, 136, 0.08);
+    color: var(--fg);
+    box-shadow: 2px 2px 0 0 rgba(255, 46, 136, 0.35);
+  }
+
+  .navLink--featured:hover {
+    border-color: rgba(255, 46, 136, 0.8);
+    background: rgba(255, 46, 136, 0.14);
     color: var(--fg);
   }
 
