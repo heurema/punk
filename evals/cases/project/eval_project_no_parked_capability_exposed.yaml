@@ -1,0 +1,44 @@
+id: eval_project_no_parked_capability_exposed
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["18", "19"]
+flow_refs: []
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - docs/product/CRATE-STATUS.md
+  - fixtures/cli/help_output.txt
+command_under_test:
+  cli: "punk --help"
+pre_state:
+  parked_capabilities:
+    - punk-module-host
+    - punk-adapters
+    - punk-mod-dev
+    - punk-mod-pub
+    - MCP integration
+expected_result:
+  exit_code: 0
+  public_cli_excludes_parked: true
+expected_events:
+  []
+expected_artifacts:
+  required: []
+  forbidden:
+    - cli_command:punk module
+    - cli_command:punk adapters
+    - cli_command:punk dev
+    - cli_command:punk pub
+hard_gate: true
+scorecard_metrics:
+  - parked_status_table_checked
+  - public_cli_surface_checked
+waiver_policy:
+  allowed: false
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - Typo guard: forbidden command names are placeholders until CLI naming is final; runner should map to real public CLI output.

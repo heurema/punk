@@ -1,0 +1,69 @@
+id: punk.eval_case.v1
+status: draft
+kind: schema
+required_fields:
+  - id
+  - phase
+  - status
+  - scope_status
+  - law_refs
+  - fixture_refs
+  - command_under_test
+  - pre_state
+  - expected_result
+  - expected_events
+  - expected_artifacts
+  - hard_gate
+  - scorecard_metrics
+  - waiver_policy
+  - report_output
+fields:
+  id:
+    type: string
+    description: Stable eval case id. Should match filename stem.
+  phase:
+    type: integer
+    description: Roadmap phase that requires this case.
+  status:
+    type: enum
+    values: [draft, active, parked, retired]
+  scope_status:
+    type: enum
+    values: [active-core, incubating, parked, retired]
+  law_refs:
+    type: list[string]
+    description: Punk Law numbers or named law refs.
+  flow_refs:
+    type: list[string]
+    optional: true
+  research_refs:
+    type: list[string]
+    optional: true
+  decision_refs:
+    type: list[string]
+    optional: true
+  fixture_refs:
+    type: list[string]
+  command_under_test:
+    type: object
+    required: [cli]
+  pre_state:
+    type: object
+  expected_result:
+    type: object
+  expected_events:
+    type: list[object|string]
+  expected_artifacts:
+    type: object
+  hard_gate:
+    type: boolean
+  scorecard_metrics:
+    type: list[string]
+  waiver_policy:
+    type: object
+  report_output:
+    type: object
+notes:
+  - The schema is descriptive until the runner implements validation.
+  - Phase 2 active-core cases should migrate to this format first; older non-smoke sketches may temporarily remain lighter.
+  - Deterministic fields must not depend on network, hosted models, wall-clock content, or hidden state.

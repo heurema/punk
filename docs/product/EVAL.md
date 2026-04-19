@@ -6,13 +6,20 @@ Eval answers one question:
 
 Did the system get better or worse after a change?
 
-## Decision
+## Current source of truth
 
-Start with a local, repo-stored, deterministic-first regression suite.
+For active-core policy, use:
 
-Recommended external runner layer for the first Python harness: Pydantic Evals.
+- `docs/product/EVAL-PLANE.md`
+- `docs/adr/ADR-0008-eval-plane.md`
 
-Use external benchmarks only as calibration, not as the core release gate.
+Current decision:
+
+- the core eval harness is Punk-native
+- the active path is local-first, repo-stored, deterministic-first, and fixture-based
+- Pydantic-compatible vocabulary is useful later, but not a core dependency
+- external frameworks and benchmarks are calibration or bridge layers later, not the release gate
+- evals report evidence and can block promotion, but only `gate` writes final decisions
 
 ## Eval layers
 
@@ -20,6 +27,12 @@ Use external benchmarks only as calibration, not as the core release gate.
 - core — product-value regression tasks
 - stretch — longer/noisier long-horizon tasks
 - external calibration — optional monthly public benchmark slices
+
+## Case migration note
+
+Phase 2 smoke cases should follow `evals/_schema/eval-case.v1.yaml`.
+
+Older non-smoke sketches may remain in a lightweight format until the runner and the rest of the suite are migrated.
 
 ## Initial suites
 
@@ -57,20 +70,6 @@ No single composite score can override a hard gate.
 ## Initial policy
 
 Every new capability must add or update at least one eval case, or include an explicit no-eval rationale in the decision record.
-
-
-## Runner strategy
-
-Recommended first external runner layer:
-
-- Pydantic Evals as a Python harness around the `punk` CLI
-- local datasets stored in `evals/`
-- deterministic checks first
-- rubric/LLM judging only for narrow secondary checks
-
-The Rust core should define the stable CLI, artifacts, and result formats.
-
-The Python harness can provide fast iteration on datasets, repeated runs, reports, and comparison.
 
 ## Public benchmark policy
 

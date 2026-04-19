@@ -1,0 +1,39 @@
+id: eval_waiver_requires_reason_and_ledger
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["20"]
+flow_refs: []
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - fixtures/evals/waiver_without_reason.yaml
+command_under_test:
+  cli: "punk eval waive --case eval_baseline_regression_blocks_promotion --waiver fixtures/evals/waiver_without_reason.yaml"
+pre_state:
+  waiver:
+    case_id: eval_baseline_regression_blocks_promotion
+    reason: null
+    approver: null
+expected_result:
+  exit_code: 1
+  denied: true
+  reason_contains: "explicit reason"
+expected_events:
+  []
+expected_artifacts:
+  required: []
+  forbidden:
+    - .punk/evals/waivers/{waiver_id}.yaml
+hard_gate: true
+scorecard_metrics:
+  - waiver_reason_checked
+  - waiver_ledger_guard_checked
+waiver_policy:
+  allowed: false
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - Overrides must be inspectable, not implicit.

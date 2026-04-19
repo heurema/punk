@@ -1,0 +1,46 @@
+id: eval_baseline_regression_blocks_promotion
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["19", "20"]
+flow_refs: []
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - fixtures/evals/baseline_green.json
+  - fixtures/evals/report_regression.json
+command_under_test:
+  cli: "punk eval run smoke --baseline fixtures/evals/baseline_green.json --report fixtures/evals/report_regression.json"
+pre_state:
+  baseline:
+    hard_gate_failures: 0
+  current_report:
+    hard_gate_failures: 1
+expected_result:
+  exit_code: 1
+  promotion_blocked: true
+  reason_contains: "baseline regression"
+expected_events:
+  []
+expected_artifacts:
+  required:
+    - .punk/evals/runs/{run_id}/report.json
+  forbidden:
+    - phase_promotion_ref
+hard_gate: true
+scorecard_metrics:
+  - baseline_compared
+  - regression_detected
+waiver_policy:
+  allowed: true
+  requires:
+    - explicit_reason
+    - approver
+    - followup_goal_or_expiry
+    - ledger_entry
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - A red hard gate cannot silently become the new baseline.

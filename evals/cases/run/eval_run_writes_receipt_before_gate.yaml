@@ -1,0 +1,42 @@
+id: eval_run_writes_receipt_before_gate
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["7", "9", "10", "18", "19"]
+flow_refs: ["run_contract", "gate_run"]
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - fixtures/contracts/approved_in_scope.yaml
+command_under_test:
+  cli: "punk cut run --contract fixtures/contracts/approved_in_scope.yaml"
+pre_state:
+  flow_state: approved
+  contract:
+    status: approved
+    allowed_scope:
+      - fixtures/workspace/**
+expected_result:
+  exit_code: 0
+  to_state: receipt_written
+expected_events:
+  - receipt.written
+expected_artifacts:
+  required:
+    - run_ref
+    - receipt_ref
+  forbidden:
+    - decision_ref
+    - proof_ref
+hard_gate: true
+scorecard_metrics:
+  - receipt_schema_valid
+  - decision_not_written_by_cut
+waiver_policy:
+  allowed: false
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - Ensures cut emits receipt evidence but does not decide.

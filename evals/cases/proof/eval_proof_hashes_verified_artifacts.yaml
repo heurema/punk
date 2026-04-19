@@ -1,0 +1,44 @@
+id: eval_proof_hashes_verified_artifacts
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["11", "12", "18", "19"]
+flow_refs: ["write_proof"]
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - fixtures/decisions/accepted_with_contract_receipt.yaml
+command_under_test:
+  cli: "punk gate proof --decision fixtures/decisions/accepted_with_contract_receipt.yaml"
+pre_state:
+  flow_state: decision_written
+  contract:
+    exists: true
+  receipt:
+    exists: true
+  decision:
+    exists: true
+expected_result:
+  exit_code: 0
+  to_state: proof_written
+expected_events:
+  - proofpack.written
+expected_artifacts:
+  required:
+    - proof_ref
+    - proofpack.hashes.contract_ref
+    - proofpack.hashes.receipt_ref
+    - proofpack.hashes.decision_ref
+  forbidden: []
+hard_gate: true
+scorecard_metrics:
+  - hash_refs_complete
+  - proof_links_verified_artifacts
+waiver_policy:
+  allowed: false
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - Proof is useful only if it links and hashes the artifacts that were verified.

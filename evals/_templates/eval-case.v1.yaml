@@ -1,0 +1,26 @@
+id: eval_category_short_behavior
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: []
+flow_refs: []
+research_refs: []
+decision_refs: []
+fixture_refs: []
+command_under_test:
+  cli: "punk ..."
+pre_state: {}
+expected_result:
+  exit_code: 0
+expected_events: []
+expected_artifacts:
+  required: []
+  forbidden: []
+hard_gate: true
+scorecard_metrics: []
+waiver_policy:
+  allowed: false
+  requires: []
+report_output:
+  include_in: [machine_json, human_markdown]
+notes: []

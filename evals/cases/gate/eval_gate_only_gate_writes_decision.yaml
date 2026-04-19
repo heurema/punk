@@ -1,9 +1,9 @@
-id: eval_flow_cannot_proof_before_decision
+id: eval_gate_only_gate_writes_decision
 phase: 2
 status: draft
 scope_status: active-core
-law_refs: ["6", "10", "11", "18", "19"]
-flow_refs: ["write_proof"]
+law_refs: ["10", "13", "14", "18", "19"]
+flow_refs: ["gate_run"]
 research_refs:
   - knowledge/research/2026-04-19-eval-plane-prior-art.md
 decision_refs:
@@ -11,7 +11,7 @@ decision_refs:
 fixture_refs:
   - fixtures/runs/receipt_written.yaml
 command_under_test:
-  cli: "punk gate proof --receipt fixtures/runs/receipt_written.yaml"
+  cli: "punk gate run --receipt fixtures/runs/receipt_written.yaml"
 pre_state:
   flow_state: receipt_written
   receipt:
@@ -19,21 +19,22 @@ pre_state:
   decision:
     exists: false
 expected_result:
-  exit_code: 1
-  denied: true
-  reason_contains: "decision"
-expected_events: []
+  exit_code: 0
+  to_state: decision_written
+expected_events:
+  - decision.written
 expected_artifacts:
-  required: []
+  required:
+    - decision_ref
   forbidden:
     - proof_ref
 hard_gate: true
 scorecard_metrics:
-  - transition_guard_checked
-  - forbidden_artifacts_absent
+  - decision_writer_is_gate
+  - module_assessment_is_advisory_only
 waiver_policy:
   allowed: false
 report_output:
   include_in: [machine_json, human_markdown]
 notes:
-  - Proof must stay blocked until a gate decision exists.
+  - Confirms decision exclusivity: neither cut, modules, nor adapters can write final decision.

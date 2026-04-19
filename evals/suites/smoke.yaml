@@ -1,9 +1,30 @@
 id: smoke
 status: draft
-description: Fast must-pass checks for core stability.
-
+scope_status: active-core
+description: Fast must-pass deterministic checks for core stability.
+runner_policy:
+  local_first: true
+  deterministic_first: true
+  network_allowed: false
+  llm_judge_allowed: false
+  hidden_state_allowed: false
+reports:
+  machine_json: ".punk/evals/runs/{run_id}/report.json"
+  human_markdown: ".punk/evals/runs/{run_id}/report.md"
+promotion_policy:
+  hard_gate_failures_block: true
+  baseline_regressions_block: true
+  waiver_required_for_override: true
 cases:
   - eval_flow_cannot_cut_before_approve
   - eval_flow_cannot_proof_before_decision
   - eval_flow_every_transition_writes_event
   - eval_flow_resume_from_persisted_state
+  - eval_contract_scope_required_for_cut
+  - eval_run_writes_receipt_before_gate
+  - eval_gate_only_gate_writes_decision
+  - eval_proof_hashes_verified_artifacts
+  - eval_eval_report_writes_machine_and_human_outputs
+  - eval_project_no_parked_capability_exposed
+  - eval_baseline_regression_blocks_promotion
+  - eval_waiver_requires_reason_and_ledger

@@ -1,14 +1,36 @@
 id: eval_flow_every_transition_writes_event
-suite: smoke
-kind: flow
-title: "every valid transition writes an event"
-
-given:
-  state: goal_created
-
-when:
-  command: "punk start --from work/goals/example.md"
-
-expect:
-  status: success
-  writes_event: contract.drafted
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["6", "7", "18", "19"]
+flow_refs: ["start_goal"]
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - work/goals/example.md
+command_under_test:
+  cli: "punk start --from work/goals/example.md"
+pre_state:
+  flow_state: goal_created
+  goal_ref: work/goals/example.md
+expected_result:
+  exit_code: 0
+  to_state: contract_drafted
+expected_events:
+  - contract.drafted
+expected_artifacts:
+  required:
+    - contract_ref
+  forbidden: []
+hard_gate: true
+scorecard_metrics:
+  - event_appended
+  - contract_artifact_present
+waiver_policy:
+  allowed: false
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - A valid transition without an event is a broken flow.

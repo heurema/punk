@@ -1,16 +1,37 @@
 id: eval_flow_resume_from_persisted_state
-suite: smoke
-kind: flow
-title: "flow resumes from persisted state"
-
-given:
-  persisted_state: receipt_written
-
-when:
-  command: "punk flow inspect"
-
-expect:
-  status: success
+phase: 2
+status: draft
+scope_status: active-core
+law_refs: ["6", "7", "18", "19"]
+flow_refs: ["flow_inspect"]
+research_refs:
+  - knowledge/research/2026-04-19-eval-plane-prior-art.md
+decision_refs:
+  - docs/adr/ADR-0008-eval-plane.md
+fixture_refs:
+  - fixtures/flow/receipt_written_state.yaml
+command_under_test:
+  cli: "punk flow inspect --state fixtures/flow/receipt_written_state.yaml"
+pre_state:
+  flow_state: receipt_written
+  persisted_state_ref: fixtures/flow/receipt_written_state.yaml
+expected_result:
+  exit_code: 0
   current_state: receipt_written
   next_allowed_commands:
     - "punk gate run <run-id>"
+expected_events: []
+expected_artifacts:
+  required: []
+  forbidden:
+    - state_mutation_without_transition
+hard_gate: true
+scorecard_metrics:
+  - persisted_state_loaded
+  - next_allowed_commands_reported
+waiver_policy:
+  allowed: false
+report_output:
+  include_in: [machine_json, human_markdown]
+notes:
+  - Inspect should recover persisted truth without mutating state.

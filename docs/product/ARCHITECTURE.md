@@ -28,6 +28,7 @@ The core owns:
 - proofpacks
 - event log
 - inspectable views
+- active-core eval definitions and deterministic reports
 
 The core must not own:
 
@@ -36,22 +37,19 @@ The core must not own:
 - marketplace behavior
 - hidden memory
 - unbounded autonomy
+- hosted eval or tracing truth
 
 ## Universal lifecycle
 
 All modules use the same grammar:
 
 ```text
-Goal
-  -> Contract
-    -> Run
-      -> Receipt
-      -> ModuleAssessment
-      -> DecisionObject
-      -> Proofpack
+Goal -> Contract -> Run -> Receipt -> ModuleAssessment -> DecisionObject -> Proofpack
 ```
 
-`ModuleAssessment` is advisory evidence. `DecisionObject` is final and is written only by `gate`.
+`ModuleAssessment` is advisory evidence.
+
+`DecisionObject` is final and is written only by `gate`.
 
 ## Workspace activation model
 
@@ -79,7 +77,31 @@ Runtime and derived data live under `.punk/`.
 
 Eval is not a later feature. Minimal evals are part of the core.
 
-The initial eval plane is local, repo-stored, deterministic-first, and fixture-based.
+The initial eval plane is:
+
+- local-first
+- repo-stored
+- deterministic-first
+- fixture-based
+- hard-gate plus scorecard
+- Pydantic Evals-compatible later, but not dependent on Python/web/SaaS in the core path
+
+The eval plane assesses evidence. It does not accept work. Only `gate` writes final decisions.
+
+Phase 2 active-core evals must check:
+
+- state transition validity
+- append-only event writing
+- `cut` scope and approval guards
+- run receipt existence
+- gate decision exclusivity
+- proofpack artifact links and hashes
+- report schema shape
+- baseline regressions
+- waiver ledgering
+- parked capability isolation
+
+See `docs/product/EVAL-PLANE.md` and `docs/adr/ADR-0008-eval-plane.md`.
 
 ## Flow controller
 
@@ -87,12 +109,9 @@ Commands are transitions over persisted state.
 
 The LLM can suggest a next step, but runtime flow state decides whether the step is allowed.
 
-
 ## Research gate
 
-Research is a governance layer before important architecture changes.
-
-It is not an execution mode and does not add a fourth runtime phase.
+Research is a governance layer before important architecture changes. It is not an execution mode and does not add a fourth runtime phase.
 
 The lifecycle stays:
 
