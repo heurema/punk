@@ -96,6 +96,18 @@ This does not change the lifecycle:
 plot -> cut -> gate
 ```
 
+## Module host boundary
+
+The module host is an architectural boundary, not an active plugin runtime.
+
+A module is a Punk lifecycle participant. A plugin is only a possible future packaging or execution mechanism for a module.
+
+The module host must remain Punk-owned: it invokes modules, validates module receipts and assessments, records allowed events, and leaves final decision writing to `gate`.
+
+A future plugin runtime must not write final decisions, mutate the event log directly, create a hidden project memory store, bypass contract scope, bypass `gate`, or gain filesystem, network, environment, secret, process, shell, or publishing authority by default.
+
+See `docs/product/MODULE-HOST.md` and `docs/adr/ADR-0010-defer-wasm-plugin-host.md`.
+
 ## Eval plane
 
 Eval is not a later feature. Minimal evals are part of the core.

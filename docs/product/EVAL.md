@@ -81,3 +81,22 @@ Initial policy:
 - public slices run monthly or manually
 - SWE-bench Verified-like slices can calibrate issue-resolution ability later
 - terminal benchmarks are relevant only if terminal autonomy becomes a core product surface
+
+## Future module/plugin conformance evals
+
+When the Module Host phase begins, module conformance must cover the host boundary before any module or plugin runtime becomes active.
+
+Required future eval candidates:
+
+- module/plugin cannot write a final decision
+- module/plugin cannot mutate the event log directly
+- module/plugin cannot bypass contract scope
+- invalid receipt or assessment schema fails closed
+- missing receipt fails the run
+- undeclared filesystem, network, environment, secret, or publishing access is denied
+- declared capabilities are recorded in the run receipt
+- resource limits are enforced and receipted
+- oversized output is denied or bounded with an explicit receipt
+- plugin-local state cannot become canonical project memory
+
+These are candidate evals until Phase 6 promotes concrete Module Host work.

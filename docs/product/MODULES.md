@@ -59,3 +59,17 @@ When activated, PubPunk must connect to:
 - `public/metrics/`
 
 It should not create a second content truth store.
+
+## Plugin packaging rule
+
+A plugin is not a Punk lifecycle primitive.
+
+If plugins are introduced later, a plugin is only a packaging or execution mechanism for a module. The module still uses the universal lifecycle:
+
+```text
+Goal -> Contract -> Run -> Receipt -> ModuleAssessment -> DecisionObject -> Proofpack
+```
+
+The host may accept a plugin-produced receipt or assessment only after host validation. The plugin cannot become a second kernel, second event log, second memory system, or second decision authority.
+
+Future plugin capabilities must be deny-by-default: no filesystem, network, environment, secrets, external publishing, direct event-log mutation, or final decision writing unless a later promoted architecture grants a scoped and receipted capability.

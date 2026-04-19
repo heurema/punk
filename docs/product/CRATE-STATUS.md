@@ -38,3 +38,9 @@ Initial parked module docs:
 Future crate name when promoted:
 
 - `punk-mod-pub`
+
+## Parked module host note
+
+`punk-module-host` is not a plugin runtime while parked.
+
+The parked boundary may document module manifests, hook types, permissions, and conformance expectations. It must not add a Wasm runtime dependency, plugin installer, plugin marketplace, or public `punk plugin` command until a later ADR promotes that scope.

@@ -163,3 +163,16 @@ Mitigation:
 - `public/` is the repo-tracked source for public narrative
 - PubPunk must adopt `public/`
 - metrics indexes may be derived, not canonical
+
+### R13 - Plugin sandbox theatre
+
+Risk: a future Wasm/plugin host looks safe because it is sandboxed, but still becomes a second kernel through hidden state, ambient capabilities, direct event writes, or unbounded host calls.
+
+Mitigation:
+
+- keep plugin runtime work parked until Module Host phase
+- require R2 before choosing Wasm, Extism, native modules, or another runtime
+- keep capabilities deny-by-default
+- host validates plugin-produced receipts and assessments
+- only `gate` writes final decisions
+- conformance evals must prove scope, capability, resource, receipt, and decision boundaries
