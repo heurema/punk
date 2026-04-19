@@ -1,0 +1,16 @@
+id: eval_flow_cannot_proof_before_decision
+suite: smoke
+kind: flow
+title: "proof cannot be written before decision"
+
+given:
+  state: receipt_written
+
+when:
+  command: "punk gate proof <run-id>"
+
+expect:
+  status: denied
+  reason_contains: "decision"
+  suggests:
+    - "punk gate run <run-id>"

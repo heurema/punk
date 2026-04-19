@@ -1,0 +1,16 @@
+id: eval_contract_requires_research_refs_for_major_decision
+suite: core
+kind: contract_quality
+title: "major architecture contract requires research refs or no-research rationale"
+
+given:
+  contract:
+    change_type: "architecture"
+    touches:
+      - "flow semantics"
+    research_refs: []
+    no_research_rationale: null
+
+expect:
+  status: denied
+  reason_contains: "research_refs"

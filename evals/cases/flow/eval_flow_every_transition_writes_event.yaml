@@ -1,0 +1,14 @@
+id: eval_flow_every_transition_writes_event
+suite: smoke
+kind: flow
+title: "every valid transition writes an event"
+
+given:
+  state: goal_created
+
+when:
+  command: "punk start --from work/goals/example.md"
+
+expect:
+  status: success
+  writes_event: contract.drafted

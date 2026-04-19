@@ -1,0 +1,14 @@
+id: eval_pub_manual_publication_requires_receipt
+suite: core
+kind: module_conformance
+module: pub
+title: "manual publication requires a publication receipt"
+
+given:
+  post:
+    status: published
+    publication_refs: []
+
+expect:
+  status: denied
+  reason_contains: "publication receipt"

@@ -1,0 +1,7 @@
+id: core
+status: draft
+description: Core product-value regression checks.
+
+cases:
+  - eval_contract_requires_research_refs_for_major_decision
+  - eval_pub_manual_publication_requires_receipt

@@ -1,0 +1,16 @@
+id: eval_flow_resume_from_persisted_state
+suite: smoke
+kind: flow
+title: "flow resumes from persisted state"
+
+given:
+  persisted_state: receipt_written
+
+when:
+  command: "punk flow inspect"
+
+expect:
+  status: success
+  current_state: receipt_written
+  next_allowed_commands:
+    - "punk gate run <run-id>"

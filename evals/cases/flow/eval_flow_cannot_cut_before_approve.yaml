@@ -1,0 +1,16 @@
+id: eval_flow_cannot_cut_before_approve
+suite: smoke
+kind: flow
+title: "cut cannot run before contract approval"
+
+given:
+  state: contract_drafted
+
+when:
+  command: "punk cut run <contract-id>"
+
+expect:
+  status: denied
+  reason_contains: "approved"
+  suggests:
+    - "punk plot approve <contract-id>"

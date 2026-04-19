@@ -1,0 +1,67 @@
+id: punk.core.workflow.v1
+status: draft
+
+states:
+  - project_initialized
+  - goal_created
+  - contract_drafted
+  - approved
+  - running
+  - receipt_written
+  - decision_written
+  - proof_written
+  - reported
+  - closed
+  - blocked
+  - escalated
+  - cancelled
+
+transitions:
+  - id: draft_contract
+    from: [goal_created]
+    command: "punk start"
+    to: contract_drafted
+    writes:
+      - contract_ref
+      - event: contract.drafted
+
+  - id: approve_contract
+    from: [contract_drafted]
+    command: "punk plot approve"
+    to: approved
+    requires:
+      - contract.status == draft
+    writes:
+      - event: contract.approved
+
+  - id: run_contract
+    from: [approved]
+    command: "punk cut run"
+    to: receipt_written
+    requires:
+      - contract.status == approved
+      - contract.allowed_scope.non_empty
+    writes:
+      - run_ref
+      - receipt_ref
+      - event: receipt.written
+
+  - id: gate_run
+    from: [receipt_written]
+    command: "punk gate run"
+    to: decision_written
+    requires:
+      - receipt.exists
+    writes:
+      - decision_ref
+      - event: decision.written
+
+  - id: write_proof
+    from: [decision_written]
+    command: "punk gate proof"
+    to: proof_written
+    requires:
+      - decision.exists
+    writes:
+      - proof_ref
+      - event: proofpack.written

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Public Post",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "status",
+    "owner",
+    "created_at",
+    "updated_at",
+    "target_channels"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "idea",
+        "draft",
+        "ready",
+        "published",
+        "archived"
+      ]
+    },
+    "authority": {
+      "enum": [
+        "advisory",
+        "canonical"
+      ]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "story_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target_channels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "publication_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metrics_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_goals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_knowledge": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

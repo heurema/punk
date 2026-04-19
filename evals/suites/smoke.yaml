@@ -1,0 +1,9 @@
+id: smoke
+status: draft
+description: Fast must-pass checks for core stability.
+
+cases:
+  - eval_flow_cannot_cut_before_approve
+  - eval_flow_cannot_proof_before_decision
+  - eval_flow_every_transition_writes_event
+  - eval_flow_resume_from_persisted_state
