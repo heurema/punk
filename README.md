@@ -4,7 +4,11 @@
   <img src="brand/landing/punk-readme.svg" width="440" alt="punk mascot" />
 </p>
 
-`punk` is a local-first bounded work kernel with universal laws, installable domain modules, project memory, and proof-bearing contracts.
+`punk` is an experimental, early-stage, local-first bounded work kernel and sandbox for developers, researchers, and experimenters.
+
+It exists to explore bounded AI work, project memory, contracts, evals, and proof-bearing workflows.
+
+It is not a finished product, not production-ready, and not guaranteed to work end-to-end out of the box.
 
 Live landing: [punks.run](https://punks.run)
 
