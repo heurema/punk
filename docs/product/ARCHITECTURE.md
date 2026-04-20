@@ -1,3 +1,34 @@
+---
+id: docs_product_architecture
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - architecture-boundaries
+  - core-ownership
+  - lifecycle-shape
+  - local-trust-evidence-architecture
+  - project-memory-plane-boundary
+  - module-host-boundary
+  - adapter-boundary
+  - assessment-vs-decision-boundary
+  - proofpack-provenance-boundary
+  - eval-plane-boundary
+related_docs:
+  - docs/product/PUNK-LAWS.md
+  - docs/product/PROJECT-MEMORY.md
+  - docs/product/MODULE-HOST.md
+related_adrs:
+  - docs/adr/ADR-0003-project-memory-plane.md
+  - docs/adr/ADR-0012-minimal-proofpack-provenance.md
+  - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
+supersedes: []
+superseded_by: null
+---
 # Architecture
 
 ## Target shape

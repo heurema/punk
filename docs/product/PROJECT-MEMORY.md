@@ -1,3 +1,29 @@
+---
+id: docs_product_project_memory
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - project-memory-model
+  - repo-tracked-memory-surfaces
+  - runtime-derived-memory-boundary
+  - knowledge-authority-model
+  - project-coherence-boundary
+  - documentation-as-project-memory
+related_docs:
+  - docs/product/ARCHITECTURE.md
+  - docs/product/DOC-GOVERNANCE.md
+  - docs/product/PUBLIC-NARRATIVE.md
+related_adrs:
+  - docs/adr/ADR-0003-project-memory-plane.md
+  - docs/adr/ADR-0008-knowledge-vault-boundaries.md
+supersedes: []
+superseded_by: null
+---
 # Project Memory
 
 ## Purpose

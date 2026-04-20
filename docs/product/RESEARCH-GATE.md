@@ -1,3 +1,27 @@
+---
+id: docs_product_research_gate
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - research-gate-policy
+  - research-depth-levels
+  - research-lifecycle
+  - research-promotion-rule
+  - research-note-requirements
+related_docs:
+  - docs/product/ROADMAP.md
+  - docs/product/RESEARCH-INTAKE.md
+  - docs/product/START-HERE.md
+related_adrs:
+  - docs/adr/ADR-0006-research-gate-before-major-decisions.md
+supersedes: []
+superseded_by: null
+---
 # Research Gate
 
 ## Purpose

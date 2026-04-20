@@ -1,3 +1,28 @@
+---
+id: docs_product_research_intake
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - research-intake-classification
+  - adopt-defer-park-avoid-policy
+  - research-idea-artifact-flow
+  - research-intake-storage
+related_docs:
+  - docs/product/RESEARCH-GATE.md
+  - docs/product/ROADMAP.md
+  - docs/product/TELEMETRY.md
+related_adrs:
+  - docs/adr/ADR-0011-local-first-trust-telemetry.md
+  - docs/adr/ADR-0012-minimal-proofpack-provenance.md
+  - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
+supersedes: []
+superseded_by: null
+---
 # Research Intake
 
 Status: active-core process doc

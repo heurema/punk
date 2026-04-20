@@ -1,3 +1,27 @@
+---
+id: docs_product_roadmap
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - roadmap-phase-gates
+  - phase-exit-criteria
+  - cross-phase-gates
+  - dogfooding-roadmap
+  - research-gates-by-phase
+related_docs:
+  - docs/product/START-HERE.md
+  - docs/product/CRATE-STATUS.md
+  - docs/product/RESEARCH-GATE.md
+related_evals:
+  - evals/specs/docs-consistency.v0.1.md
+supersedes: []
+superseded_by: null
+---
 # Roadmap
 
 This is a phase-gated roadmap, not a feature wishlist.

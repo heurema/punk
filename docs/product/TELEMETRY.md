@@ -1,3 +1,31 @@
+---
+id: docs_product_telemetry
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - local-first-trust-telemetry
+  - event-schema-v0.1
+  - telemetry-redaction-rules
+  - no-network-default
+  - telemetry-export-boundary
+related_docs:
+  - docs/product/ARCHITECTURE.md
+  - docs/product/RESEARCH-INTAKE.md
+  - docs/product/PROJECT-MEMORY.md
+related_adrs:
+  - docs/adr/ADR-0011-local-first-trust-telemetry.md
+  - docs/adr/ADR-0012-minimal-proofpack-provenance.md
+  - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
+related_evals:
+  - evals/specs/2026-04-19-core-trust-evals.md
+supersedes: []
+superseded_by: null
+---
 # Telemetry
 
 Status: accepted design direction for local trust telemetry; remote export is parked

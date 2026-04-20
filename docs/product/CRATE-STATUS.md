@@ -1,3 +1,24 @@
+---
+id: docs_product_crate_status
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - crate-status
+  - workspace-status-vocabulary
+  - active-core-crate-boundaries
+  - parked-crate-boundaries
+related_docs:
+  - docs/product/START-HERE.md
+  - docs/product/ROADMAP.md
+  - docs/product/ARCHITECTURE.md
+supersedes: []
+superseded_by: null
+---
 # Crate Status
 
 ## Status vocabulary

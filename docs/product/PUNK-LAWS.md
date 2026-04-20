@@ -1,3 +1,26 @@
+---
+id: docs_product_punk_laws
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - core-laws
+  - rule-precedence
+  - dogfooding-laws
+  - research-laws
+  - public-narrative-laws
+  - telemetry-and-research-intake-laws
+related_docs:
+  - docs/product/START-HERE.md
+  - docs/product/ARCHITECTURE.md
+  - docs/product/DOC-GOVERNANCE.md
+supersedes: []
+superseded_by: null
+---
 # Punk Laws
 
 ## Core laws
