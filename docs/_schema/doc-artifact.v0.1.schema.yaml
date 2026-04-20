@@ -1,0 +1,74 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Punk Documentation Artifact
+type: object
+required:
+  - id
+  - kind
+  - status
+  - authority
+  - owner
+  - created_at
+  - updated_at
+properties:
+  id:
+    type: string
+  kind:
+    enum:
+      - product-doc
+      - process-doc
+      - documentation-map
+      - glossary
+      - adr
+      - archive-doc
+      - public-doc
+  status:
+    enum:
+      - draft
+      - active
+      - accepted
+      - superseded
+      - archived
+      - retired
+  authority:
+    enum:
+      - canonical
+      - historical
+      - advisory
+  owner:
+    type: string
+  created_at:
+    type: string
+  updated_at:
+    type: string
+  review_after:
+    type: string
+  canonical_for:
+    type: array
+    items:
+      type: string
+  related_docs:
+    type: array
+    items:
+      type: string
+  related_adrs:
+    type: array
+    items:
+      type: string
+  related_evals:
+    type: array
+    items:
+      type: string
+  supersedes:
+    type: array
+    items:
+      type: string
+  superseded_by:
+    type:
+      - string
+      - 'null'
+  archived_at:
+    type: string
+  archived_reason:
+    type: string
+  retired_reason:
+    type: string

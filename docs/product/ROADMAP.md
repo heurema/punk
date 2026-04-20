@@ -246,6 +246,16 @@ Possible later Knowledge Vault inputs:
 
 These inputs stay advisory until `gate` writes a final decision.
 
+## Documentation integrity rollout
+
+This is a cross-phase discipline, not a separate runtime phase.
+
+- Phase 1: define doc governance, owner registry, glossary, and report discipline for `DocImpact`.
+- Phase 2: add deterministic docs smoke checks for touched/current docs.
+- Phase 3: require `doc_impact` or explicit `classification: none` rationale in accepted contracts for meaningful changes.
+- Phase 4: project-memory link graph includes doc impact, supersession, and archive refs.
+- Phase 5: project coherence gate reports stale docs, missing updates, and superseded docs still used as current truth.
+
 ## Phase 6 — Module host
 
 Goal: prepare installable modules without enabling product modules yet.

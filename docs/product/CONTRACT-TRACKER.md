@@ -59,6 +59,7 @@ Definitions:
 - `Cut` is the bounded executable slice inside approved scope.
 - `Run` is one execution attempt.
 - `Receipt` records what the run actually did.
+- `DocImpact` declares whether the contract changes docs truth, ADR history, public claims, or archive/supersession state.
 - `Proofpack` bundles verifiable evidence.
 - `GateDecision` is the only final closure artifact.
 - `EventLog` preserves the lifecycle as append-only project memory.
@@ -102,6 +103,7 @@ goal -> contract -> approve -> cut -> run -> gate -> proof
 Required ledger facts:
 
 - accepted contract has scope;
+- meaningful contracts declare `DocImpact` or explicit `classification: none`;
 - run writes receipt;
 - gate writes decision;
 - proofpack links or hashes the verified artifacts.

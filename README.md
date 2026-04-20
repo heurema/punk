@@ -53,6 +53,14 @@ The first active target is the stable core:
 
 See `docs/product/START-HERE.md`.
 
+## Documentation integrity
+
+Documentation is part of project memory, not side text.
+
+Meaningful changes should declare doc impact, update the canonical owner, and preserve superseded truth instead of silently deleting it.
+
+See `docs/product/DOC-GOVERNANCE.md`, `docs/product/DOCUMENTATION-MAP.md`, and `docs/product/GLOSSARY.md`.
+
 ## Research intake status
 
 `punk` copies mechanisms, not product surfaces.

@@ -103,7 +103,19 @@ Adopt only if it strengthens active-core trust surfaces:
 
 Parked and future-only ideas must not appear as the current operator path.
 
-See also:
+## Documentation integrity
+
+Documentation is part of project memory.
+
+Meaningful changes should declare `DocImpact`, update the canonical truth owner, and move replaced truth into `superseded`, `archived`, or `retired` state instead of silently deleting it.
+
+Documentation refs:
+
+- `docs/product/DOC-GOVERNANCE.md`
+- `docs/product/DOCUMENTATION-MAP.md`
+- `docs/product/GLOSSARY.md`
+
+Research intake refs:
 
 - `docs/product/RESEARCH-INTAKE.md`
 - `knowledge/research/2026-04-19-project-ideas-intake.md`
