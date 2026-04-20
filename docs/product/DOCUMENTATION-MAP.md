@@ -59,7 +59,7 @@ For product and architecture work, read in this order:
 17. `knowledge/research/`
 18. `knowledge/ideas/`
 19. `work/goals/` and `work/reports/`
-20. `public/`
+20. `publishing/`
 
 ## Canonical owners
 
@@ -78,7 +78,8 @@ For product and architecture work, read in this order:
 | Research gate policy | `docs/product/RESEARCH-GATE.md` | `knowledge/research/` | When research is required before implementation. |
 | Research intake classification | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | `adopt / defer / park / avoid` intake discipline. |
 | Telemetry/privacy and audit evidence | `docs/product/TELEMETRY.md` | `docs/adr/ADR-0011-local-first-trust-telemetry.md` | Event/redaction/no-network truth. |
-| Public narrative/public memory | `docs/product/PUBLIC-NARRATIVE.md` | `public/`, `docs/adr/ADR-0007-public-narrative-plane.md` | Public receipts and publication boundaries. |
+| Public narrative/public memory | `docs/product/PUBLIC-NARRATIVE.md` | `publishing/`, `docs/adr/ADR-0007-public-narrative-plane.md` | Public receipts and publication boundaries. |
+| Journal surface and artifact model | `docs/product/JOURNAL.md` | `publishing/`, `docs/product/PUBLIC-NARRATIVE.md` | Public origin chronicle and journal storage shape. |
 | Module boundaries | `docs/product/MODULES.md` | `docs/product/MODULE-HOST.md`, `docs/modules/` | Product-level module status and non-goals. |
 | Documentation governance | `docs/product/DOC-GOVERNANCE.md` | `evals/specs/docs-consistency.v0.1.md` | Lifecycle, ownership, supersession, `DocImpact`. |
 | Documentation reading order and organization policy | `docs/product/DOCUMENTATION-MAP.md` | n/a | This file is the reader-facing registry/view; authoritative owner declarations live in canonical doc frontmatter. |
@@ -107,7 +108,7 @@ When two docs disagree, resolve in this order:
 6. Accepted research notes in `knowledge/research/`
 7. Ideas in `knowledge/ideas/`
 8. Work reports in `work/reports/`
-9. Public narrative in `public/`
+9. Public narrative in `publishing/`
 
 Research and ideas do not become product truth until promoted through ADR, roadmap, contract, implementation, eval, and proof.
 

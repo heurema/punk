@@ -61,7 +61,7 @@ For now, the repo owns the content structure and humans update it manually.
 Repo-tracked public artifacts live under:
 
 ```text
-public/
+publishing/
   narrative/
   stories/
   posts/
@@ -72,6 +72,8 @@ public/
   _templates/
   _schema/
 ```
+
+The top-level directory is named `publishing/` so this truth surface is not confused with the common frontend/static-assets `public/` directory name.
 
 Runtime/derived PubPunk indexes may later live under:
 
@@ -162,8 +164,8 @@ It should include:
 Before implementation starts, create placeholders:
 
 ```text
-public/stories/story-0001-origin.md
-public/posts/0001-first-public-build-note.md
+publishing/stories/story-0001-origin.md
+publishing/posts/0001-first-public-build-note.md
 ```
 
 These are templates/placeholders, not final copy.
@@ -171,7 +173,7 @@ These are templates/placeholders, not final copy.
 If a post is published manually, add a receipt:
 
 ```text
-public/publications/YYYY-MM-DD-0001-<channel>.md
+publishing/publications/YYYY-MM-DD-0001-<channel>.md
 ```
 
 ## What stays out of scope now

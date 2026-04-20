@@ -246,7 +246,7 @@ A convenience view generated from canonical artifacts. A derived view must be re
 
 ### public narrative
 
-Repo-tracked public-build memory under `public/`: stories, drafts, channel notes, publication receipts, and metrics snapshots.
+Repo-tracked public-build memory under `publishing/`: stories, drafts, channel notes, publication receipts, and metrics snapshots.
 
 ### publication receipt
 

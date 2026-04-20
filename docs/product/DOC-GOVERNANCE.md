@@ -60,7 +60,7 @@ History should remain inspectable.
 | Research notes | `knowledge/research/` | advisory | `draft -> accepted -> superseded|archived` |
 | Ideas | `knowledge/ideas/` | speculative | `raw -> draft -> accepted|superseded|archived` |
 | Reports | `work/reports/` | handoff/evidence | historical; append new reports instead of rewriting old truth |
-| Public docs/receipts | `public/` | public memory | `draft -> published -> archived` via receipt |
+| Public docs/receipts | `publishing/` | public memory | `draft -> published -> archived` via receipt |
 
 `superseded` means the artifact is still part of history but is no longer current truth.
 

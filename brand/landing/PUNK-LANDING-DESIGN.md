@@ -547,7 +547,7 @@ Show repo-like structure:
 ```text
 work/goals/
 knowledge/
-public/
+publishing/
 flows/
 evals/
 docs/adr/

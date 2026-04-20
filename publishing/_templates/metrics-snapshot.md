@@ -1,6 +1,6 @@
 ---
 id: metrics_example
-publication_ref: public/publications/example.md
+publication_ref: publishing/publications/example.md
 channel: blog
 collected_at: 2026-04-18T00:00:00Z
 collector: vitaly

@@ -49,7 +49,7 @@ MEANINGFUL_CHANGE_PREFIXES = (
     "docs/archive/",
     "docs/_schema/",
     "docs/adr/",
-    "public/",
+    "publishing/",
     "crates/",
     "evals/specs/",
 )
@@ -78,7 +78,7 @@ NEGATING_PHRASES = (
     "parked",
 )
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
-DOC_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])((?:docs|knowledge|public)/[^\s`)]*\.md(?:#[^\s`)]+)?)")
+DOC_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])((?:docs|knowledge|publishing)/[^\s`)]*\.md(?:#[^\s`)]+)?)")
 HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$", re.MULTILINE)
 STATUS_LINE_RE = re.compile(r"^Status:\s*(.+)$", re.MULTILINE | re.IGNORECASE)
 DOCUMENTATION_MAP_PATH = "docs/product/DOCUMENTATION-MAP.md"
@@ -380,7 +380,7 @@ def check_superseded_refs(repo: Path, rel_path: str, text: str, issues: list[dic
         return
     for ref in sorted(collect_doc_refs(text)):
         target_part = ref.split("#", 1)[0]
-        if not target_part.startswith(("docs/", "knowledge/", "public/")):
+        if not target_part.startswith(("docs/", "knowledge/", "publishing/")):
             continue
         target_path = (repo / target_part).resolve()
         if not target_path.exists() or not target_path.is_file():

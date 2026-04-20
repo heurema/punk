@@ -6,7 +6,7 @@ authority: advisory
 owner: vitaly
 created_at: 2026-04-18
 updated_at: 2026-04-18
-story_ref: public/stories/story-0001-origin.md
+story_ref: publishing/stories/story-0001-origin.md
 target_channels:
   - blog
   - x
@@ -63,7 +63,7 @@ TODO
 
 Publish manually to one or more channels.
 
-After publishing, create receipts in `public/publications/`.
+After publishing, create receipts in `publishing/publications/`.
 
 ## Notes
 

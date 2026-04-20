@@ -74,15 +74,15 @@ PubPunk is the future content-engineering module.
 
 It is parked for now.
 
-Current public narrative data lives under `public/`.
+Current public narrative data lives under `publishing/`.
 
 When activated, PubPunk must connect to:
 
-- `public/stories/`
-- `public/posts/`
-- `public/channels/`
-- `public/publications/`
-- `public/metrics/`
+- `publishing/stories/`
+- `publishing/posts/`
+- `publishing/channels/`
+- `publishing/publications/`
+- `publishing/metrics/`
 
 It should not create a second content truth store.
 

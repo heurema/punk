@@ -45,8 +45,8 @@ Use this before every manual publication.
 
 ## 5. Channel fit check
 
-- [ ] Channel-specific rules from `public/channels/*.md` were applied.
-- [ ] Shared style source from `public/channels/_shared/` was applied.
+- [ ] Channel-specific rules from `publishing/channels/*.md` were applied.
+- [ ] Shared style source from `publishing/channels/_shared/` was applied.
 - [ ] Blog: title and long-form structure are clear.
 - [ ] X: one idea per post or thread; no threadbait.
 - [ ] Telegram: direct value sentence first; no title line by default.
@@ -54,6 +54,6 @@ Use this before every manual publication.
 
 ## 6. Publication discipline
 
-- [ ] Final variant is saved in `public/posts/`.
-- [ ] After publishing, create a receipt in `public/publications/`.
-- [ ] If metrics are collected later, save a manual snapshot in `public/metrics/`.
+- [ ] Final variant is saved in `publishing/posts/`.
+- [ ] After publishing, create a receipt in `publishing/publications/`.
+- [ ] If metrics are collected later, save a manual snapshot in `publishing/metrics/`.

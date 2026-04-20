@@ -43,7 +43,7 @@ export const journalLinks = {
   journal: '/journal',
   repo: 'https://github.com/heurema/punk',
   startHere: 'https://github.com/heurema/punk/blob/main/docs/product/START-HERE.md',
-  publicArtifacts: 'https://github.com/heurema/punk/tree/main/public',
+  publicArtifacts: 'https://github.com/heurema/punk/tree/main/publishing',
 } as const;
 
 export const journalTypeConfig = {

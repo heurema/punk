@@ -1,3 +1,24 @@
+---
+id: docs_product_journal
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - journal-surface
+  - origin-journal-model
+  - journal-artifact-structure
+related_docs:
+  - docs/product/PUBLIC-NARRATIVE.md
+  - docs/product/PROJECT-MEMORY.md
+related_adrs: []
+supersedes: []
+superseded_by: null
+---
+
 # Journal
 
 ## Purpose
@@ -71,7 +92,7 @@ Main risks:
 - turning the Journal into a generic blog
 - overclaiming product readiness
 - presenting legacy experiments as current Punk behavior
-- creating a site-only content source outside `public/`
+- creating a site-only content source outside `publishing/`
 - making a visually impressive but hard-to-navigate graph
 - letting comics become decoration instead of memory-bearing artifacts
 
@@ -79,7 +100,7 @@ Main risks:
 
 Adopt the Journal concept now, but keep the first implementation small and manual.
 
-The first version should be a static `/journal` page backed by repo-tracked Markdown/frontmatter under `public/journal/`.
+The first version should be a static `/journal` page backed by repo-tracked Markdown/frontmatter under `publishing/journal/`.
 
 It should support:
 
@@ -155,7 +176,7 @@ Metrics Snapshot
 ### Suggested storage
 
 ```text
-public/
+publishing/
   journal/
     README.md
     eras/

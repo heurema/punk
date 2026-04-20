@@ -10,7 +10,7 @@ created_at: 2026-04-18
 updated_at: 2026-04-18
 scope:
   include:
-    - "public/**"
+    - "publishing/**"
     - "docs/product/PUBLIC-NARRATIVE.md"
     - "docs/adr/ADR-0007-public-narrative-plane.md"
   exclude:
@@ -25,7 +25,7 @@ acceptance:
   - "No automation or external API integration is required."
 knowledge_refs:
   - "docs/product/PUBLIC-NARRATIVE.md"
-  - "public/stories/story-0001-origin.md"
+  - "publishing/stories/story-0001-origin.md"
 contract_refs: []
 latest_proof_ref: null
 ---

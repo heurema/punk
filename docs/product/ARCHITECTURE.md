@@ -144,7 +144,7 @@ Project memory has four repo-tracked truth surfaces:
 - `work/` — goals, reports, generated views
 - `knowledge/` — product truth, architecture truth, decisions, research, ideas
 - `docs/adr/` — tracked architecture decisions
-- `public/` — public-build narrative and receipts
+- `publishing/` — public-build narrative and receipts
 
 Runtime and derived data live under `.punk/`.
 

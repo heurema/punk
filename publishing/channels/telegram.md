@@ -25,11 +25,11 @@ Short updates and community notes.
 
 Use:
 
-- `public/channels/_shared/style.toml`
-- `public/channels/_shared/voice.md`
-- `public/channels/_shared/normalize.toml`
-- `public/channels/_shared/lexicon.toml`
-- `public/channels/_shared/review-checklist.md`
+- `publishing/channels/_shared/style.toml`
+- `publishing/channels/_shared/voice.md`
+- `publishing/channels/_shared/normalize.toml`
+- `publishing/channels/_shared/lexicon.toml`
+- `publishing/channels/_shared/review-checklist.md`
 
 ## Format rules
 
@@ -48,10 +48,10 @@ Before manual publication, run the shared review checklist and normalization rul
 
 ## Manual publication steps
 
-1. Finalize the channel variant in `public/posts/`.
+1. Finalize the channel variant in `publishing/posts/`.
 2. Apply shared normalization and review checks.
 3. Publish manually.
-4. Record publication receipt in `public/publications/`.
+4. Record publication receipt in `publishing/publications/`.
 5. Add metrics snapshot manually when useful.
 
 ## Metrics to collect

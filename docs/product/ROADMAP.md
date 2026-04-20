@@ -34,7 +34,7 @@ Goal: preserve the first public-build story before implementation.
 
 Deliverables:
 
-- `public/` structure
+- `publishing/` structure
 - first story artifact
 - first post draft
 - manual channel descriptor

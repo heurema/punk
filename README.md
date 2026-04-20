@@ -106,7 +106,7 @@ See `docs/product/DOGFOODING.md`.
 
 `punk` is a public build from day zero.
 
-Stories, post drafts, manual publication receipts, and metrics snapshots live under `public/`.
+Stories, post drafts, manual publication receipts, and metrics snapshots live under `publishing/`.
 
 Future PubPunk automation must adopt that structure instead of creating a hidden content store.
 

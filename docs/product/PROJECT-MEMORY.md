@@ -74,7 +74,7 @@ docs/
   adr/
   archive/
 
-public/
+publishing/
 ```
 
 ## Documentation as project memory
@@ -180,7 +180,7 @@ It is not:
 - a remote/shared commons
 - a module-owned decision surface
 
-Repo-tracked truth lives in `work/`, `knowledge/`, `docs/adr/`, and `public/`.
+Repo-tracked truth lives in `work/`, `knowledge/`, `docs/adr/`, and `publishing/`.
 
 `.punk/` may hold derived indexes and views, but derived state is rebuildable and non-authoritative.
 
@@ -222,7 +222,7 @@ Research is not canonical truth until promoted.
 
 Public narrative is part of project memory.
 
-Public-facing artifacts live under `public/`.
+Public-facing artifacts live under `publishing/`.
 
 They are separate from internal `knowledge/`, but can link to canonical knowledge and goals.
 

@@ -60,7 +60,7 @@ Canonical examples:
 - `docs/product/PUBLIC-NARRATIVE.md`
 - `docs/product/JOURNAL.md`
 - `docs/product/PROJECT-MEMORY.md`
-- `public/README.md`
+- `publishing/README.md`
 
 These define what the public surface is for `punk`.
 
@@ -68,11 +68,11 @@ These define what the public surface is for `punk`.
 
 Current shared files:
 
-- `public/channels/_shared/style.toml`
-- `public/channels/_shared/voice.md`
-- `public/channels/_shared/normalize.toml`
-- `public/channels/_shared/lexicon.toml`
-- `public/channels/_shared/review-checklist.md`
+- `publishing/channels/_shared/style.toml`
+- `publishing/channels/_shared/voice.md`
+- `publishing/channels/_shared/normalize.toml`
+- `publishing/channels/_shared/lexicon.toml`
+- `publishing/channels/_shared/review-checklist.md`
 
 These are project-local manual rules for the current phase.
 
@@ -82,10 +82,10 @@ They are not a separate product contract.
 
 Current files:
 
-- `public/channels/blog.md`
-- `public/channels/x.md`
-- `public/channels/telegram.md`
-- `public/channels/linkedin.md`
+- `publishing/channels/blog.md`
+- `publishing/channels/x.md`
+- `publishing/channels/telegram.md`
+- `publishing/channels/linkedin.md`
 
 These narrow the shared manual rules for each channel.
 
@@ -93,7 +93,7 @@ These narrow the shared manual rules for each channel.
 
 Current surface:
 
-- `public/posts/*.md`
+- `publishing/posts/*.md`
 
 These are the most specific instructions for an individual draft or channel variant.
 

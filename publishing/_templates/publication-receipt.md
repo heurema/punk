@@ -1,6 +1,6 @@
 ---
 id: publication_example
-post_ref: public/posts/example.md
+post_ref: publishing/posts/example.md
 channel: blog
 external_url: null
 external_id: null

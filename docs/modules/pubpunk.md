@@ -31,7 +31,7 @@ There is no automation in the new `punk` core yet.
 However, the public artifact structure exists from day zero under:
 
 ```text
-public/
+publishing/
 ```
 
 PubPunk must later connect to this structure instead of inventing a second content store.

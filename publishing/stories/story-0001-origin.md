@@ -15,7 +15,7 @@ related_knowledge:
   - docs/product/DOGFOODING.md
   - docs/product/JOURNAL.md
 related_posts:
-  - public/posts/0001-first-public-build-note.md
+  - publishing/posts/0001-first-public-build-note.md
 ---
 
 # Why Punk exists

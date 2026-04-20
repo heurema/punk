@@ -22,7 +22,7 @@ This spec checks documentation consistency only. It does not decide product acce
 - `knowledge/ideas/*.md`
 - `work/goals/*.md`
 - `work/reports/*.md`
-- `public/**/*.md`
+- `publishing/**/*.md`
 
 ## Hard-gate cases
 

@@ -179,7 +179,7 @@ See `docs/product/DOGFOODING.md`.
 
 The public narrative starts before code automation.
 
-Use `public/` to preserve stories, posts, manual publication receipts, and metrics snapshots.
+Use `publishing/` to preserve stories, posts, manual publication receipts, and metrics snapshots.
 
 PubPunk automation may later adopt this structure.
 

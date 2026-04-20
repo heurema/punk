@@ -12,7 +12,9 @@ However, the project needs to preserve the first public story, channel artifacts
 
 ## Decision
 
-Add a repo-tracked Public Narrative Plane under `public/`.
+Add a repo-tracked Public Narrative Plane under `publishing/`.
+
+Use `publishing/` instead of `public/` so the repo-tracked publication plane is not confused with the conventional frontend static-assets directory name.
 
 This plane stores:
 

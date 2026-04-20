@@ -4,8 +4,8 @@ export const externalLinks = {
   repo: 'https://github.com/heurema/punk',
   roadmap: 'https://github.com/heurema/punk/blob/main/docs/product/ROADMAP.md',
   lawsDoc: 'https://github.com/heurema/punk/blob/main/docs/product/PUNK-LAWS.md',
-  publicBuild: 'https://github.com/heurema/punk/tree/main/public',
-  publicStories: 'https://github.com/heurema/punk/tree/main/public/stories',
+  publicBuild: 'https://github.com/heurema/punk/tree/main/publishing',
+  publicStories: 'https://github.com/heurema/punk/tree/main/publishing/stories',
   issues: 'https://github.com/heurema/punk/issues',
 } as const;
 

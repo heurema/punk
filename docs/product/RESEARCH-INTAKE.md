@@ -149,7 +149,7 @@ Accepted project work lives in `work/` and relevant product docs.
 
 Runtime or derived evidence lives under `.punk/`.
 
-Public narrative derived from accepted work lives in `public/`.
+Public narrative derived from accepted work lives in `publishing/`.
 
 ## Review cadence
 

@@ -29,7 +29,7 @@ Status: active
 
 Primary story:
 
-- `public/stories/story-0001-origin.md`
+- `publishing/stories/story-0001-origin.md`
 
 Journal sources:
 
@@ -52,7 +52,7 @@ Status: active
 
 Primary story:
 
-- `public/stories/story-0002-core-first.md`
+- `publishing/stories/story-0002-core-first.md`
 
 Journal sources:
 
@@ -75,7 +75,7 @@ Status: active
 
 Primary story:
 
-- `public/stories/story-0003-public-memory.md`
+- `publishing/stories/story-0003-public-memory.md`
 
 Journal sources:
 

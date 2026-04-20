@@ -1,3 +1,24 @@
+---
+id: docs_product_red_team_review
+kind: product-doc
+status: active
+authority: advisory
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - architectural-risk-review
+  - failure-mode-review
+related_docs:
+  - docs/product/ARCHITECTURE.md
+  - docs/product/ROADMAP.md
+  - docs/product/MODULES.md
+related_adrs: []
+supersedes: []
+superseded_by: null
+---
+
 # Red-Team Review
 
 ## Purpose
@@ -160,8 +181,8 @@ Risk: future PubPunk creates a separate content database and ignores early publi
 
 Mitigation:
 
-- `public/` is the repo-tracked source for public narrative
-- PubPunk must adopt `public/`
+- `publishing/` is the repo-tracked source for public narrative
+- PubPunk must adopt `publishing/`
 - metrics indexes may be derived, not canonical
 
 ### R13 - Plugin sandbox theatre

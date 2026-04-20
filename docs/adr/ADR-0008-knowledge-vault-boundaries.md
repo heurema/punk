@@ -37,7 +37,7 @@ Knowledge Vault is not:
 
 ## Rules
 
-1. Repo artifacts under `work/`, `knowledge/`, `docs/adr/`, and `public/` are truth surfaces.
+1. Repo artifacts under `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are truth surfaces.
 2. Runtime indexes and views under `.punk/` are derived and disposable.
 3. Retrieval is advisory evidence only.
 4. Implementation retrieval excludes `authority: speculative` by default.
