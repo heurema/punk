@@ -56,6 +56,36 @@ Preferred framing:
 - what is active now
 - what stays out of scope
 
+## Serial storytelling rules
+
+For story posts, do not explain everything at once.
+
+Preferred cadence:
+
+- open with tension
+- show one concrete point from the history
+- explain why that point mattered
+- stop early enough to leave forward motion
+
+Use one post to move one step.
+
+Do not collapse the whole origin story into a single explanatory block.
+
+The ending should usually create an open loop:
+
+- a next question
+- a missing piece
+- a shift that is about to happen
+- a reason to return for the next part
+
+Good ending shape:
+
+- "That was the easy part. The harder question came next."
+- "At that point the real problem still had no answer."
+- "That idea survived, but it forced a more difficult change later."
+
+Avoid endings that fully close the arc too early.
+
 ## Useful phrases
 
 - experimental, early-stage
