@@ -4,7 +4,7 @@ name: "Blog"
 status: draft
 owner: vitaly
 created_at: 2026-04-18
-updated_at: 2026-04-18
+updated_at: 2026-04-20
 channel_type: blog
 external_url: null
 ---
@@ -17,11 +17,26 @@ Long-form canonical public notes.
 
 ## Audience
 
-TODO
+- researchers and experimenters following the Journal
+- technical builders evaluating the ideas behind `punk`
+- founders/operators interested in bounded AI work and project memory
+
+## Shared style source
+
+Use:
+
+- `public/channels/_shared/style.toml`
+- `public/channels/_shared/voice.md`
 
 ## Format rules
 
-TODO
+- Prefer 600-1400 words for ordinary notes; go longer only when extra detail is useful.
+- Start with a concrete observation or tension, not a slogan.
+- Use a clear title; no clickbait.
+- Cover: what changed, why it matters, tradeoffs, current status, and what stays out of scope.
+- Distinguish active-core from parked or future surfaces.
+- Use 1-3 links max; prefer repo, Journal, ADR, or canonical docs.
+- End with one explicit next action, question, or invitation to follow the build.
 
 ## Manual publication steps
 
