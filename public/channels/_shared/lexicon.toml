@@ -1,0 +1,29 @@
+schema_version = "1"
+
+[lexicon]
+preferred = [
+  "experimental",
+  "early-stage",
+  "core-first",
+  "local-first",
+  "bounded work",
+  "project memory",
+  "proof before acceptance",
+  "manual now, structured now, automated later"
+]
+
+banned = [
+  "production-ready",
+  "fully automated",
+  "autonomous platform",
+  "ready to scale",
+  "revolutionary",
+  "game-changing",
+  "ship with one click",
+  "works out of the box"
+]
+
+[policy]
+forbid_overclaiming = true
+forbid_hidden_automation_claims = true
+forbid_future_as_current = true
