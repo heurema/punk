@@ -12,69 +12,80 @@ It is not a finished product, not production-ready, and not guaranteed to work e
 
 Live landing: [punks.run](https://punks.run)
 
-## Current decision
+## Current direction
 
 Start core-first.
 
-Create the workspace and documentation boundaries early, but activate behavior slowly.
+Create the workspace and documentation boundaries early. Activate behavior slowly.
 
-A crate or folder may exist without being part of the active operator surface.
+A crate, folder, module, adapter, or public narrative surface may exist before it is part of the active operator path.
 
 ## First principle
 
 One CLI. Many modules. Shared laws. Project memory. Proof-bearing work.
 
-## Active now
+The lifecycle grammar is:
 
-The first active target is not DevPunk, PubPunk, provider adapters, or a marketplace.
+```text
+plot -> cut -> gate
+```
 
-The first active target is the stable core:
+## Active target
+
+The current active target is the stable core:
 
 - project identity
 - flow state machine
-- event log
+- append-only event log
 - minimal local eval harness
 - simple contract lifecycle
 - gate decision
 - proofpack
 - inspectable state
+- project memory links
+
+See:
+
+- `docs/product/START-HERE.md`
+- `docs/product/ROADMAP.md`
+- `docs/product/CRATE-STATUS.md`
 
 ## Not active yet
 
+The following may be documented or parked, but they are not current operator surfaces:
+
 - LLM contract drafting
 - coding agent execution
-- PubPunk publishing
+- PubPunk publishing automation
 - provider adapters
 - MCP integration
 - knowledge embeddings
 - plugin marketplace
 - council
 - skill auto-promotion
+- cloud sync or SaaS control plane
 
-See `docs/product/START-HERE.md`.
+## Documentation map
 
-## Research intake status
+Punk docs follow a source-of-truth map to avoid duplicate or conflicting claims.
 
-`punk` copies mechanisms, not product surfaces.
+Start with:
 
-External research enters the project through `knowledge/research/`, then becomes either an idea in `knowledge/ideas/`, an ADR, an eval spec, a roadmap patch, or an explicit anti-pattern.
+- `docs/product/START-HERE.md`
+- `docs/product/DOCUMENTATION-MAP.md`
+- `docs/product/PUNK-LAWS.md`
+- `docs/product/ARCHITECTURE.md`
 
-Current active-core research intake focuses on local trust evidence:
+Research and ideas are stored separately:
 
-- append-only events
-- replayable inspect state
-- local eval reports
-- gate decisions
-- proofpack manifests
-- project-memory links
-- no-network defaults
+- research notes: `knowledge/research/`
+- idea backlog: `knowledge/ideas/`
 
-See `docs/product/RESEARCH-INTAKE.md` and `docs/product/TELEMETRY.md`.
-
+Research and ideas do not become product truth until promoted through ADR, roadmap, contract, implementation, eval, and proof.
 
 ## Dogfooding
 
-`punk` is developed with `punk`.
+`punk` is developed with `punk`, but only at the trust level it has earned.
 
 At first this means self-tracking:
 
@@ -87,11 +98,12 @@ Self-execution comes later, after flow, eval, contract, gate, and proof are stab
 
 See `docs/product/DOGFOODING.md`.
 
-
-## Public narrative
+## Public build
 
 `punk` is a public build from day zero.
 
 Stories, post drafts, manual publication receipts, and metrics snapshots live under `public/`.
 
-Future PubPunk automation must adopt that structure instead of creating a separate content store.
+Future PubPunk automation must adopt that structure instead of creating a hidden content store.
+
+See `docs/product/PUBLIC-NARRATIVE.md`.
