@@ -119,6 +119,8 @@ Rules:
 - every current truth surface has one canonical owner declared in canonical doc frontmatter;
 - `DOCUMENTATION-MAP.md` may summarize owner declarations, but it must not become a competing source of owner truth;
 - entry docs may summarize but must not redefine the owner;
+- `README.md` is the repo/public entry surface and is intentionally outside canonical product-doc frontmatter migration for now;
+- `README.md` may summarize identity, active target, non-active warnings, and links, but it must not own canonical product truth;
 - glossary terms may be narrowed by module docs but not contradicted;
 - superseded docs must not remain the default inbound reference.
 

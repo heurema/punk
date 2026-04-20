@@ -117,6 +117,10 @@ Research and ideas do not become product truth until promoted through ADR, roadm
 
 Use `README.md` as the public entry.
 
+`README.md` is intentionally outside canonical product-doc frontmatter migration for now.
+
+It is the repo/public entry surface, not a canonical product-truth owner.
+
 Allowed:
 
 - short identity
@@ -126,6 +130,7 @@ Allowed:
 
 Avoid:
 
+- owning canonical product truth
 - schema details
 - roadmap phase details
 - research rationale
