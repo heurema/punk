@@ -10,6 +10,7 @@ Scope:
 - warning-level consistency checks between DOCUMENTATION-MAP.md and canonical doc frontmatter
 - warning-level review_after freshness checks for touched/new canonical docs
 - warning-level glossary term consistency checks for touched/new canonical docs
+- warning-level duplicate definition candidate checks for touched/new canonical docs
 
 This is internal tooling, not a public CLI contract.
 """
@@ -357,6 +358,19 @@ def looks_like_term_heading(title: str, level: int) -> bool:
     return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z][A-Za-z0-9-]*){0,2}", normalized))
 
 
+def looks_like_definition_candidate_heading(title: str, level: int) -> bool:
+    if level != 2:
+        return False
+    normalized = normalize_term_heading(title)
+    if not normalized:
+        return False
+    if markdown_slug(normalized) in STRUCTURAL_HEADING_SLUGS:
+        return False
+    if len(normalized.split()) > 4:
+        return False
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z][A-Za-z0-9-]*){0,3}", normalized))
+
+
 def parse_documentation_map_owner_rows(text: str) -> list[dict[str, str]]:
     start = text.find("## Canonical owners")
     if start == -1:
@@ -590,6 +604,28 @@ def check_glossary_terms(repo: Path, rel_path: str, text: str, issues: list[dict
             )
 
 
+def check_duplicate_definition_candidates(rel_path: str, text: str, issues: list[dict[str, object]]) -> None:
+    if rel_path == GLOSSARY_PATH:
+        return
+    for section in extract_heading_sections(text):
+        title = str(section["title"])
+        level = int(section["level"])
+        if not looks_like_definition_candidate_heading(title, level):
+            continue
+        paragraph = intro_paragraph(str(section["body"]))
+        if not looks_definition_like(title, paragraph):
+            continue
+        add_issue(
+            issues,
+            "warning",
+            "DOC_DUPLICATE_DEFINITION_CANDIDATE",
+            rel_path,
+            f"Definition-like section may duplicate shared term authority outside GLOSSARY.md: {title}.",
+            term=title,
+            heading_level=level,
+        )
+
+
 def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[str], issues: list[dict[str, object]]) -> None:
     meaningful = [path for path in changed_files if is_meaningful_change(path)]
     if not meaningful:
@@ -789,6 +825,7 @@ def main() -> int:
         check_parked_as_active(rel_path, text, issues)
         check_review_window(rel_path, text, today, issues)
         check_glossary_terms(repo, rel_path, text, issues)
+        check_duplicate_definition_candidates(rel_path, text, issues)
 
     check_doc_impact(repo, changed_files, report_paths, issues)
     check_map_frontmatter_consistency(repo, changed_files, issues)
