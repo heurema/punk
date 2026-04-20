@@ -1,0 +1,30 @@
+schema_version = "1"
+
+[normalize]
+unicode_normalization = "NFC"
+replace_em_dash_with = "-"
+replace_ellipsis_with = "..."
+strip_zero_width = true
+strip_nbsp = true
+trim_trailing_spaces = true
+ensure_final_newline = true
+replace_yo_with_e = true
+
+[forbid]
+chars = ["—", "…", "Ё", "ё"]
+
+[[replace]]
+from = "—"
+to = "-"
+
+[[replace]]
+from = "…"
+to = "..."
+
+[[replace]]
+from = "ё"
+to = "е"
+
+[[replace]]
+from = "Ё"
+to = "Е"
