@@ -18,12 +18,16 @@ humor = 0.04
 [policy]
 ban_fluff = true
 ban_em_dash = true
+ban_letter_yo = true
 prefer_short_paragraphs = true
 prefer_specific_dates = true
 require_tradeoffs = true
 require_concrete_claims = true
 require_scope_honesty = true
 require_active_vs_parked_distinction = true
+require_deterministic_cleanup = true
+require_pre_publish_review = true
+require_manual_publication_receipt = true
 forbid_production_ready_claims = true
 forbid_hidden_automation_claims = true
 
