@@ -1,0 +1,58 @@
+name: docs-governance
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  changed-files-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run docs governance check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+            head_sha="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
+          else
+            base_sha="HEAD~1"
+            head_sha="${{ github.sha }}"
+          fi
+
+          scripts/check.sh docs-governance \
+            --base "$base_sha" \
+            --head "$head_sha" \
+            --json-out "$RUNNER_TEMP/docs-governance.json" \
+            --summary-out "$RUNNER_TEMP/docs-governance.txt"
+
+          cat "$RUNNER_TEMP/docs-governance.txt"
+
+      - name: Upload docs governance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-governance-report
+          path: |
+            ${{ runner.temp }}/docs-governance.json
+            ${{ runner.temp }}/docs-governance.txt
+          if-no-files-found: ignore
