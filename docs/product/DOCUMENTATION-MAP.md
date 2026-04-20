@@ -8,7 +8,8 @@ created_at: 2026-04-20
 updated_at: 2026-04-20
 review_after: 2026-07-20
 canonical_for:
-  - documentation-owner-registry
+  - documentation-reading-order
+  - documentation-organization
 related_docs:
   - docs/product/START-HERE.md
   - docs/product/DOC-GOVERNANCE.md
@@ -30,6 +31,10 @@ The goal is to avoid duplicate truth, drift, and conflicting claims.
 Define once. Link elsewhere.
 
 A document should own one kind of truth. Other documents may summarize it briefly, but must point back to the canonical owner.
+
+Authoritative owner declarations belong in the frontmatter of canonical docs.
+
+This map is the human-readable registry/view over those declarations, plus the canonical reading-order and documentation-organization policy.
 
 ## Canonical reading order
 
@@ -76,7 +81,7 @@ For product and architecture work, read in this order:
 | Public narrative/public memory | `docs/product/PUBLIC-NARRATIVE.md` | `public/`, `docs/adr/ADR-0007-public-narrative-plane.md` | Public receipts and publication boundaries. |
 | Module boundaries | `docs/product/MODULES.md` | `docs/product/MODULE-HOST.md`, `docs/modules/` | Product-level module status and non-goals. |
 | Documentation governance | `docs/product/DOC-GOVERNANCE.md` | `evals/specs/docs-consistency.v0.1.md` | Lifecycle, ownership, supersession, `DocImpact`. |
-| Documentation owner registry | `docs/product/DOCUMENTATION-MAP.md` | n/a | This file. |
+| Documentation reading order and organization policy | `docs/product/DOCUMENTATION-MAP.md` | n/a | This file is the reader-facing registry/view; authoritative owner declarations live in canonical doc frontmatter. |
 | Shared term meanings | `docs/product/GLOSSARY.md` | canonical owners above | Prevents term drift across docs. |
 
 ## Historical surfaces
@@ -96,7 +101,7 @@ When two docs disagree, resolve in this order:
 
 1. `docs/product/PUNK-LAWS.md`
 2. Accepted ADRs in `docs/adr/`
-3. Product docs by ownership from the canonical owner registry
+3. Product docs by canonical ownership, summarized here for readers
 4. `docs/product/START-HERE.md`
 5. `README.md`
 6. Accepted research notes in `knowledge/research/`

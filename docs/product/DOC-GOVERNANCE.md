@@ -108,13 +108,16 @@ Meaningful changes include:
 
 ## Canonical owner and term authority
 
-Canonical owners live in `docs/product/DOCUMENTATION-MAP.md`.
+Canonical owner declarations live in the frontmatter of canonical docs.
+
+`docs/product/DOCUMENTATION-MAP.md` is the human-readable registry/view that summarizes those owners for readers and defines reading order plus documentation organization policy.
 
 Shared term meanings live in `docs/product/GLOSSARY.md`.
 
 Rules:
 
-- every current truth surface has one canonical owner;
+- every current truth surface has one canonical owner declared in canonical doc frontmatter;
+- `DOCUMENTATION-MAP.md` may summarize owner declarations, but it must not become a competing source of owner truth;
 - entry docs may summarize but must not redefine the owner;
 - glossary terms may be narrowed by module docs but not contradicted;
 - superseded docs must not remain the default inbound reference.
