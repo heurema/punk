@@ -1,6 +1,6 @@
 ---
 import QuillRule from './QuillRule.astro';
-import { footerColumns } from '../data/content';
+import { footerColumns, releaseVersion } from '../data/content';
 ---
 
 <footer class="footer">
@@ -33,7 +33,7 @@ import { footerColumns } from '../data/content';
   </div>
 
   <div class="wrap footerBottom">
-    <span>© Punk collective · 2026 · v0.0.1-pre</span>
+    <span>© Punk collective · 2026 · {releaseVersion}</span>
     <span class="footerBottomCenter"><span>∎</span> the repo is the product</span>
     <span>kernel = sha256(laws).0xff2e88</span>
   </div>

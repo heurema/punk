@@ -172,6 +172,10 @@ a:hover {
   background: var(--accent-bright);
 }
 
+.dot--warn {
+  background: var(--warn);
+}
+
 .dot--muted {
   background: #3a3848;
 }

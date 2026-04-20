@@ -1,6 +1,6 @@
 ---
 import QuillRule from './QuillRule.astro';
-import { finalCtaCards } from '../data/content';
+import { finalCtaCards, releaseVersion } from '../data/content';
 ---
 
 <section class="section finalSection" id="cta">
@@ -38,7 +38,7 @@ import { finalCtaCards } from '../data/content';
     <div class="finalStatus">
       <div class="finalStatusTag">// honest status</div>
       <div class="finalStatusBody">
-        <span><span class="dot dot--success"></span> v0.0.1-pre · kernel compiling</span>
+        <span><span class="dot dot--success"></span> {releaseVersion} · kernel compiling</span>
         <span>/</span>
         <span>no waitlist</span>
         <span>/</span>

@@ -2,38 +2,36 @@
 import Layout from '../layouts/Layout.astro';
 import Mascot from '../components/Mascot.astro';
 import '../styles/journal.css';
+import { releaseVersion } from '../data/content';
 import {
+  journalArtifactEntries,
+  journalEntriesByEra,
+  journalEraById,
+  journalEraByLabel,
   journalEras,
-  journalEntries,
   journalLinks,
+  journalMetrics,
+  journalMetricsByEra,
   journalSurvival,
   journalTypeConfig,
   type JournalEntry,
 } from '../data/journal';
 
-const artifactEntries = journalEntries.filter((entry) => entry.artifact);
 const typeEntries = Object.entries(journalTypeConfig);
 const stateCapsule = [
-  { label: 'CURRENT', value: 'v0.4', tone: 'success', current: true },
+  { label: 'CURRENT', value: releaseVersion, tone: 'success', current: true },
   { label: 'STATUS', value: 'experimental', tone: 'warn' },
-  { label: 'ERAS', value: String(journalEras.length), tone: 'default' },
-  { label: 'ENTRIES', value: String(journalEntries.length), tone: 'default' },
+  { label: 'ERAS', value: String(journalMetrics.eras), tone: 'default' },
+  { label: 'ENTRIES', value: String(journalMetrics.entries), tone: 'default' },
 ] as const;
-
-const eraCounts = new Map(
-  journalEras.map((era) => {
-    const eraEntries = journalEntries.filter((entry) => entry.era === era.id);
-    return [
-      era.id,
-      {
-        entries: eraEntries.length,
-        survived: eraEntries.filter((entry) => entry.survived && entry.survived !== false).length,
-      },
-    ];
-  }),
-);
-
-const eraMapById = new Map(journalEras.map((era) => [era.id, era]));
+const journalStatusItems = [
+  { tone: 'accent', label: `punk ${releaseVersion}` },
+  { tone: 'ok', label: 'local runtime' },
+  { tone: 'info', label: 'experimental' },
+  { tone: 'warn', label: 'not production-ready' },
+  { tone: 'danger', label: 'may break at any time' },
+  { tone: 'muted', label: 'modules: later' },
+] as const;
 
 const getSurvivalBadge = (survived: JournalEntry['survived']) => {
   if (survived === false) {
@@ -109,11 +107,11 @@ const getArtifactShadow = (index: number) => {
 
             <div class="journalHeroReceipt">
               <div class="journalHeroReceiptMuted">$ punk journal --status</div>
-              <div><span class="journalHeroReceiptKey--success">era:</span> punk · v0.4</div>
+              <div><span class="journalHeroReceiptKey--success">era:</span> punk · {releaseVersion}</div>
               <div><span class="journalHeroReceiptKey--warn">stage:</span> experimental</div>
               <div><span class="journalHeroReceiptKey--danger">warning:</span> may break anytime</div>
-              <div><span class="journalHeroReceiptKey--neutral">entries:</span> {journalEntries.length} logged</div>
-              <div><span class="journalHeroReceiptKey--neutral">artifacts:</span> {artifactEntries.length} on shelf</div>
+              <div><span class="journalHeroReceiptKey--neutral">entries:</span> {journalMetrics.entries} logged</div>
+              <div><span class="journalHeroReceiptKey--neutral">artifacts:</span> {journalMetrics.artifacts} on shelf</div>
               <div><span class="journalHeroReceiptKey--danger">modules:</span> later</div>
               <div><span class="journalHeroReceiptKey--success">runtime:</span> local-only</div>
             </div>
@@ -176,16 +174,16 @@ const getArtifactShadow = (index: number) => {
             ))}
           </div>
 
-          <span class="journalFilterCount" data-journal-count>{journalEntries.length} entries</span>
+          <span class="journalFilterCount" data-journal-count>{journalMetrics.entries} entries</span>
         </div>
       </div>
 
       <section class="journalTimeline">
         <div class="journalWrap journalTimelineInner">
           {journalEras.map((era) => {
-            const eraEntries = journalEntries.filter((entry) => entry.era === era.id);
+            const eraEntries = journalEntriesByEra.get(era.id) ?? [];
             const artifacts = eraEntries.filter((entry) => entry.artifact);
-            const counts = eraCounts.get(era.id);
+            const counts = journalMetricsByEra.get(era.id);
 
             return (
               <section
@@ -300,7 +298,7 @@ const getArtifactShadow = (index: number) => {
               </div>
 
               {journalSurvival.map((row) => {
-                const era = journalEras.find((item) => item.label === row.from);
+                const era = journalEraByLabel.get(row.from);
                 const dropped = row.status === 'dropped';
 
                 return (
@@ -332,8 +330,8 @@ const getArtifactShadow = (index: number) => {
           </p>
 
           <div class="journalArtifactsGrid">
-            {artifactEntries.map((entry, index) => {
-              const era = eraMapById.get(entry.era);
+            {journalArtifactEntries.map((entry, index) => {
+              const era = journalEraById.get(entry.era);
 
               return (
                 <article
@@ -368,10 +366,12 @@ const getArtifactShadow = (index: number) => {
             </div>
 
             <div class="journalCtaStatus">
-              <span class="ok">●</span> punk v0.4 · local runtime · experimental {' '}
-              <span class="warn">●</span> not production-ready {' '}
-              <span class="warn">●</span> may break at any time {' '}
-              <span class="muted">●</span> modules: later
+              {journalStatusItems.map((item) => (
+                <span class="journalCtaStatusItem">
+                  <span class={item.tone}>●</span>
+                  {item.label}
+                </span>
+              ))}
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 ---
 import Mascot from './Mascot.astro';
-import { externalLinks, heroStatus, kernelFlow } from '../data/content';
+import { externalLinks, heroStatus, kernelFlow, releaseVersion } from '../data/content';
 ---
 
 <section class="section heroSection">
@@ -11,7 +11,7 @@ import { externalLinks, heroStatus, kernelFlow } from '../data/content';
       <div class="heroCopy">
         <div class="heroKicker">
           <span class="heroKickerDot"></span>
-          <span>v0.0.1-pre · public build</span>
+          <span>{releaseVersion} · public build</span>
         </div>
 
         <h1 class="heroTitle">

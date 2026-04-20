@@ -868,18 +868,39 @@
 
 .journalCtaStatus {
   margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
   color: #34323f;
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.8;
 }
 
+.journalCtaStatusItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .journalCtaStatus .ok {
   color: var(--success);
 }
 
+.journalCtaStatus .accent {
+  color: var(--accent-bright);
+}
+
+.journalCtaStatus .info {
+  color: var(--info);
+}
+
 .journalCtaStatus .warn {
   color: var(--warn);
+}
+
+.journalCtaStatus .danger {
+  color: var(--danger);
 }
 
 .journalCtaStatus .muted {

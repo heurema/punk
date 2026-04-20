@@ -443,3 +443,88 @@ export const journalSurvival: JournalSurvivalRow[] = [
   { from: 'Punk', experiment: 'Core-first workspace', principle: 'Scaffold boundaries early, activate behavior slowly', status: 'current' },
   { from: 'Punk', experiment: 'Boundary docs before feature growth', principle: 'Inspectable state and clear boundaries before expansion', status: 'current' },
 ];
+
+const countSurvivedEntries = (entries: readonly JournalEntry[]) =>
+  entries.filter((entry) => entry.survived && entry.survived !== false).length;
+
+const assertUniqueValues = (label: string, values: readonly string[]) => {
+  const seen = new Set<string>();
+
+  values.forEach((value) => {
+    if (seen.has(value)) {
+      throw new Error(`Duplicate ${label}: ${value}`);
+    }
+
+    seen.add(value);
+  });
+};
+
+const assertJournalConsistency = () => {
+  const eraIds = journalEras.map((era) => era.id);
+  const eraLabels = journalEras.map((era) => era.label);
+  const currentEras = journalEras.filter((era) => era.status === 'current');
+  const eraIdSet = new Set(eraIds);
+  const eraLabelSet = new Set(eraLabels);
+
+  assertUniqueValues('journal era id', eraIds);
+  assertUniqueValues('journal era label', eraLabels);
+  assertUniqueValues('journal entry id', journalEntries.map((entry) => entry.id));
+  assertUniqueValues('journal entry seq', journalEntries.map((entry) => entry.seq));
+
+  if (currentEras.length !== 1) {
+    throw new Error(`Expected exactly one current journal era, got ${currentEras.length}`);
+  }
+
+  journalEntries.forEach((entry) => {
+    if (!eraIdSet.has(entry.era)) {
+      throw new Error(`Journal entry ${entry.id} points to unknown era: ${entry.era}`);
+    }
+
+    if (entry.artifact && (!entry.artifactLabel || !entry.artifactFragment)) {
+      throw new Error(`Artifact entry ${entry.id} must define artifactLabel and artifactFragment`);
+    }
+  });
+
+  journalSurvival.forEach((row) => {
+    if (!eraLabelSet.has(row.from)) {
+      throw new Error(`Journal survival row points to unknown era label: ${row.from}`);
+    }
+  });
+};
+
+assertJournalConsistency();
+
+export const journalEraById = new Map(journalEras.map((era) => [era.id, era]));
+export const journalEraByLabel = new Map(journalEras.map((era) => [era.label, era]));
+export const journalArtifactEntries = journalEntries.filter((entry) => entry.artifact);
+export const journalEntriesByEra = new Map(
+  journalEras.map((era) => [era.id, journalEntries.filter((entry) => entry.era === era.id)]),
+);
+export const journalMetricsByEra = new Map(
+  journalEras.map((era) => {
+    const entries = journalEntriesByEra.get(era.id) ?? [];
+
+    return [
+      era.id,
+      {
+        entries: entries.length,
+        survived: countSurvivedEntries(entries),
+        artifacts: entries.filter((entry) => entry.artifact).length,
+      },
+    ];
+  }),
+);
+
+const currentJournalEra = journalEras.find((era) => era.status === 'current');
+
+if (!currentJournalEra) {
+  throw new Error('Expected one current journal era');
+}
+
+export const journalMetrics = {
+  eras: journalEras.length,
+  entries: journalEntries.length,
+  artifacts: journalArtifactEntries.length,
+  currentEraId: currentJournalEra.id,
+  currentEraLabel: currentJournalEra.label,
+} as const;

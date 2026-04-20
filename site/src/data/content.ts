@@ -1,3 +1,5 @@
+export const releaseVersion = 'v0.0.1-pre';
+
 export const externalLinks = {
   repo: 'https://github.com/heurema/punk',
   roadmap: 'https://github.com/heurema/punk/blob/main/docs/product/ROADMAP.md',
@@ -61,7 +63,7 @@ export const lifecycleSteps = [
 ] as const;
 
 export const moduleTimeline = [
-  { key: '01', name: 'kernel', state: 'compiling', tone: 'success', meta: 'now · v0.0.1-pre' },
+  { key: '01', name: 'kernel', state: 'compiling', tone: 'success', meta: `now · ${releaseVersion}` },
   { key: '02', name: 'devpunk', state: 'staged', tone: 'muted', meta: 'after kernel freeze' },
   { key: '03', name: 'pubpunk', state: 'staged', tone: 'faded', meta: 'after devpunk' },
   { key: '04', name: '—', state: 'open', tone: 'faded', meta: 'rfc window' },
@@ -167,7 +169,7 @@ export const finalCtaCards = [
   {
     tag: 'secondary',
     title: 'Open the repo',
-    subtitle: 'main · v0.0.1-pre',
+    subtitle: `main · ${releaseVersion}`,
     href: externalLinks.repo,
     cta: 'clone / inspect ↗',
     tone: 'default',
