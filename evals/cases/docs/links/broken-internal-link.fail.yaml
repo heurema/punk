@@ -1,0 +1,27 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.links.broken_internal_link.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Broken internal links in touched docs must fail."
+
+input:
+  changed_files:
+    - docs/product/EXAMPLE.md
+  files:
+    docs/product/EXAMPLE.md: |
+      # Example
+
+      See [Missing target](MISSING.md).
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_BROKEN_LINK
+      source_path: docs/product/EXAMPLE.md
+      target: docs/product/MISSING.md
+  warnings: []
+
+checks:
+  - docs_no_broken_links

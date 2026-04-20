@@ -1,0 +1,26 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.doc_impact.code_change_without_doc_impact.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Meaningful code changes without DocImpact must fail."
+
+input:
+  changed_files:
+    - crates/punk-gate/src/lib.rs
+  changed_surfaces:
+    - gate
+    - architecture
+  report_doc_impact: null
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_IMPACT_REQUIRED
+      path: crates/punk-gate/src/lib.rs
+      expected_check: docs_code_surface_requires_doc_impact
+  warnings: []
+
+checks:
+  - docs_code_surface_requires_doc_impact

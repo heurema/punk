@@ -1,0 +1,37 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.research.promoted_through_adr.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Research used as input and promoted through an ADR should pass."
+
+input:
+  changed_files:
+    - docs/product/ARCHITECTURE.md
+    - docs/adr/ADR-0014-use-library-b.md
+  files:
+    knowledge/research/2026-04-20-library-b-scan.md: |
+      ---
+      status: accepted
+      authority: advisory
+      ---
+      # Library B scan
+    docs/adr/ADR-0014-use-library-b.md: |
+      # ADR-0014
+
+      Research refs:
+
+      - `knowledge/research/2026-04-20-library-b-scan.md`
+    docs/product/ARCHITECTURE.md: |
+      # Architecture
+
+      Current dependency choice follows `docs/adr/ADR-0014-use-library-b.md`.
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_research_not_truth

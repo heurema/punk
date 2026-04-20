@@ -1,0 +1,41 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.supersession.superseded_doc_current_ref.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Current docs pointing at a superseded ADR must fail."
+
+input:
+  changed_files:
+    - docs/product/ARCHITECTURE.md
+  files:
+    docs/adr/ADR-0009-use-library-a.md: |
+      ---
+      status: superseded
+      superseded_by: docs/adr/ADR-0014-use-library-b.md
+      ---
+      # ADR-0009
+    docs/adr/ADR-0014-use-library-b.md: |
+      ---
+      status: accepted
+      supersedes:
+        - docs/adr/ADR-0009-use-library-a.md
+      superseded_by: null
+      ---
+      # ADR-0014
+    docs/product/ARCHITECTURE.md: |
+      # Architecture
+
+      Current dependency choice: see `docs/adr/ADR-0009-use-library-a.md`.
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_SUPERSEDED_DOC_REFERENCED_AS_CURRENT
+      path: docs/product/ARCHITECTURE.md
+      target: docs/adr/ADR-0009-use-library-a.md
+  warnings: []
+
+checks:
+  - docs_superseded_not_current

@@ -1,0 +1,29 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.status.parked_capability_described_as_active.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Parked capabilities described as current operator path must fail."
+
+input:
+  changed_files:
+    - docs/product/MODULES.md
+  files:
+    docs/product/MODULES.md: |
+      # Modules
+
+      Module Host is part of the current default operator path.
+
+      Provider adapters are active by default in the core workflow.
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_PARKED_CAPABILITY_DESCRIBED_AS_ACTIVE
+      path: docs/product/MODULES.md
+      capability: module-host
+  warnings: []
+
+checks:
+  - docs_no_parked_as_active

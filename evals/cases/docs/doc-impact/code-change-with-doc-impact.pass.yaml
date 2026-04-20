@@ -1,0 +1,37 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.doc_impact.code_change_with_doc_impact.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Meaningful code changes with an explicit DocImpact declaration should pass."
+
+input:
+  changed_files:
+    - crates/punk-gate/src/lib.rs
+  changed_surfaces:
+    - gate
+    - architecture
+  report_doc_impact:
+    classification: architecture
+    reason: "Gate wording changed; documentation must stay aligned."
+    touched_surfaces:
+      - contract-tracker
+      - eval
+      - project-memory
+    required_updates:
+      - docs/product/DOC-GOVERNANCE.md
+      - docs/product/CONTRACT-TRACKER.md
+      - evals/specs/docs-consistency.v0.1.md
+    supersedes: []
+    archive_plan: []
+    evals_required:
+      - docs-governance-checks
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_code_surface_requires_doc_impact

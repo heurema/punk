@@ -1,0 +1,26 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.status.parked_capability_not_active.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Parked capabilities that remain clearly non-active should pass."
+
+input:
+  changed_files:
+    - docs/product/MODULES.md
+  files:
+    docs/product/MODULES.md: |
+      # Modules
+
+      Module Host remains parked.
+
+      Do not describe modules or provider adapters as the default operator path.
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_no_parked_as_active

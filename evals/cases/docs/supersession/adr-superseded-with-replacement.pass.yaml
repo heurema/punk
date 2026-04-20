@@ -1,0 +1,40 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.supersession.adr_superseded_with_replacement.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "A superseded ADR with a replacement and updated current refs should pass."
+
+input:
+  changed_files:
+    - docs/adr/ADR-0009-use-library-a.md
+    - docs/adr/ADR-0014-use-library-b.md
+    - docs/product/ARCHITECTURE.md
+  files:
+    docs/adr/ADR-0009-use-library-a.md: |
+      ---
+      status: superseded
+      superseded_by: docs/adr/ADR-0014-use-library-b.md
+      ---
+      # ADR-0009
+    docs/adr/ADR-0014-use-library-b.md: |
+      ---
+      status: accepted
+      supersedes:
+        - docs/adr/ADR-0009-use-library-a.md
+      superseded_by: null
+      ---
+      # ADR-0014
+    docs/product/ARCHITECTURE.md: |
+      # Architecture
+
+      Current dependency choice: see `docs/adr/ADR-0014-use-library-b.md`.
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_superseded_not_current

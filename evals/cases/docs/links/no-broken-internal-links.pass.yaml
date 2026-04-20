@@ -1,0 +1,29 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.links.no_broken_internal_links.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Touched docs with only valid internal links should pass."
+
+input:
+  changed_files:
+    - docs/product/EXAMPLE.md
+    - docs/product/TARGET.md
+  files:
+    docs/product/EXAMPLE.md: |
+      # Example
+
+      See [Target](TARGET.md) and [Glossary](GLOSSARY.md).
+    docs/product/TARGET.md: |
+      # Target
+    docs/product/GLOSSARY.md: |
+      # Glossary
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_no_broken_links

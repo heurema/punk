@@ -1,0 +1,33 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.research.used_as_truth_without_promotion.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Research cited as current implementation truth without promotion must fail."
+
+input:
+  changed_files:
+    - docs/product/ARCHITECTURE.md
+  files:
+    knowledge/research/2026-04-20-library-b-scan.md: |
+      ---
+      status: accepted
+      authority: advisory
+      ---
+      # Library B scan
+    docs/product/ARCHITECTURE.md: |
+      # Architecture
+
+      Punk uses Library B because `knowledge/research/2026-04-20-library-b-scan.md` says it is the best option.
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_RESEARCH_USED_AS_TRUTH_WITHOUT_PROMOTION
+      path: docs/product/ARCHITECTURE.md
+      source_ref: knowledge/research/2026-04-20-library-b-scan.md
+  warnings: []
+
+checks:
+  - docs_research_not_truth
