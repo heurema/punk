@@ -30,9 +30,20 @@ require_pre_publish_review = true
 require_manual_publication_receipt = true
 forbid_production_ready_claims = true
 forbid_hidden_automation_claims = true
+forbid_full_exposition_in_intro_posts = true
+
+[series]
+mode = "slow_reveal"
+start_with_tension = true
+keep_one_core_idea_per_post = true
+require_open_loop_ending = true
+prefer_forward_motion_over_summary = true
 
 [structure.story]
 required_sections = ["hook", "context", "what_broke", "what_survived", "current_status", "cta"]
 
 [structure.short_post]
 required_sections = ["hook", "body", "cta"]
+
+[structure.intro_post]
+required_sections = ["hook", "origin_point", "why_it_mattered", "open_loop"]
