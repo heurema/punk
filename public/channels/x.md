@@ -27,6 +27,9 @@ Use:
 
 - `public/channels/_shared/style.toml`
 - `public/channels/_shared/voice.md`
+- `public/channels/_shared/normalize.toml`
+- `public/channels/_shared/lexicon.toml`
+- `public/channels/_shared/review-checklist.md`
 
 ## Format rules
 
@@ -39,12 +42,17 @@ Use:
 - If the post mentions the product state, make the experimental/early-stage status clear when omission could mislead.
 - Avoid threadbait, hype language, and vague founder-posturing.
 
+## Pre-publish checks
+
+Before manual publication, run the shared review checklist and normalization rules.
+
 ## Manual publication steps
 
 1. Finalize the channel variant in `public/posts/`.
-2. Publish manually.
-3. Record publication receipt in `public/publications/`.
-4. Add metrics snapshot manually when useful.
+2. Apply shared normalization and review checks.
+3. Publish manually.
+4. Record publication receipt in `public/publications/`.
+5. Add metrics snapshot manually when useful.
 
 ## Metrics to collect
 
