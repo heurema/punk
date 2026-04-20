@@ -1,3 +1,31 @@
+---
+id: docs_product_eval_plane
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - eval-runtime-report-shape
+  - deterministic-eval-architecture
+  - eval-signal-model
+  - eval-storage-model
+  - eval-runner-shape
+related_docs:
+  - docs/product/EVAL.md
+  - docs/product/ROADMAP.md
+  - docs/product/START-HERE.md
+related_adrs:
+  - docs/adr/ADR-0008-eval-plane.md
+related_evals:
+  - evals/_schema/eval-case.v1.yaml
+  - evals/specs/2026-04-19-core-trust-evals.md
+supersedes: []
+superseded_by: null
+---
+
 # Eval Plane
 
 Status: accepted design direction for active-core, implementation still phase-gated.

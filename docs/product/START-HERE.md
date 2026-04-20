@@ -1,3 +1,28 @@
+---
+id: docs_product_start_here
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - product-entry-path
+  - internal-orientation
+  - active-operator-surface
+  - current-build-posture
+  - not-active-now-boundary
+related_docs:
+  - docs/product/DOCUMENTATION-MAP.md
+  - docs/product/GLOSSARY.md
+  - docs/product/PUNK-LAWS.md
+related_adrs:
+  - docs/adr/ADR-0004-dogfooding-from-day-zero.md
+supersedes: []
+superseded_by: null
+---
+
 # Start Here
 
 ## Purpose

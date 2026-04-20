@@ -1,3 +1,27 @@
+---
+id: docs_product_flow
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - flow-semantics
+  - lifecycle-state-machine
+  - command-transition-rules
+  - expert-override-boundary
+related_docs:
+  - docs/product/PUNK-LAWS.md
+  - docs/product/ARCHITECTURE.md
+  - docs/product/ROADMAP.md
+related_adrs:
+  - docs/adr/ADR-0002-flow-and-eval-before-features.md
+supersedes: []
+superseded_by: null
+---
+
 # Flow
 
 ## Purpose

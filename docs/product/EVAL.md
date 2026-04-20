@@ -1,3 +1,28 @@
+---
+id: docs_product_eval
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - eval-operator-contract
+  - eval-suite-layers
+  - eval-promotion-policy
+  - eval-hard-gate-policy
+  - public-benchmark-calibration-policy
+related_docs:
+  - docs/product/EVAL-PLANE.md
+  - docs/product/FLOW.md
+  - docs/product/ROADMAP.md
+related_adrs:
+  - docs/adr/ADR-0008-eval-plane.md
+supersedes: []
+superseded_by: null
+---
+
 # Eval
 
 ## Purpose

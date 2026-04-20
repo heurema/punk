@@ -1,3 +1,28 @@
+---
+id: docs_product_contract_tracker
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - contract-work-ledger-direction
+  - contract-tracker-primitives
+  - lifecycle-ledger-view
+  - contract-truth-model
+  - doc-impact-carrier-direction
+related_docs:
+  - docs/product/FLOW.md
+  - docs/product/PROJECT-MEMORY.md
+  - docs/product/DOC-GOVERNANCE.md
+related_adrs:
+  - docs/adr/ADR-0009-contract-tracker-core-primitives.md
+supersedes: []
+superseded_by: null
+---
+
 # Contract Tracker
 
 ## Status

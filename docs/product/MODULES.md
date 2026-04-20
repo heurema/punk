@@ -1,3 +1,29 @@
+---
+id: docs_product_modules
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - module-boundaries
+  - module-lifecycle
+  - module-authority-boundary
+  - parked-module-strategy
+  - plugin-packaging-boundary
+related_docs:
+  - docs/product/ARCHITECTURE.md
+  - docs/product/MODULE-HOST.md
+  - docs/product/CRATE-STATUS.md
+related_adrs:
+  - docs/adr/ADR-0010-defer-wasm-plugin-host.md
+  - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
+supersedes: []
+superseded_by: null
+---
+
 # Modules
 
 ## Purpose

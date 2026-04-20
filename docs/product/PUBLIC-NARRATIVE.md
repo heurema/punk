@@ -1,3 +1,28 @@
+---
+id: docs_product_public_narrative
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - public-narrative-plane
+  - public-artifact-storage
+  - publication-receipt-model
+  - manual-metrics-snapshot-policy
+  - pubpunk-adoption-boundary
+related_docs:
+  - docs/product/PROJECT-MEMORY.md
+  - docs/product/MODULES.md
+  - docs/product/START-HERE.md
+related_adrs:
+  - docs/adr/ADR-0007-public-narrative-plane.md
+supersedes: []
+superseded_by: null
+---
+
 # Public Narrative Plane
 
 ## Purpose
