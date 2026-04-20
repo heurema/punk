@@ -9,6 +9,7 @@ Scope:
 - simple parked-as-active wording checks
 - warning-level consistency checks between DOCUMENTATION-MAP.md and canonical doc frontmatter
 - warning-level review_after freshness checks for touched/new canonical docs
+- warning-level glossary term consistency checks for touched/new canonical docs
 
 This is internal tooling, not a public CLI contract.
 """
@@ -82,9 +83,39 @@ DOC_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])((?:docs|knowledge|publishing)/[^\s`
 HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$", re.MULTILINE)
 STATUS_LINE_RE = re.compile(r"^Status:\s*(.+)$", re.MULTILINE | re.IGNORECASE)
 DOCUMENTATION_MAP_PATH = "docs/product/DOCUMENTATION-MAP.md"
+GLOSSARY_PATH = "docs/product/GLOSSARY.md"
 MAP_OWNER_ROW_RE = re.compile(r"`?(docs/product/[^`| ]+\.md)`?")
 TOKEN_RE = re.compile(r"[a-z0-9]+")
 IGNORED_SURFACE_TOKENS = {"and", "or", "the", "a", "an", "of"}
+HEADING_WITH_LEVEL_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+NON_DEFINITION_PREFIXES = ("see ", "use ", "refer ", "link ", "links ", "source: ", "sources: ")
+STRUCTURAL_HEADING_SLUGS = {
+    "purpose",
+    "status",
+    "scope",
+    "goal",
+    "goals",
+    "what-changed",
+    "doc-impact",
+    "checks-run",
+    "what-remains",
+    "risks",
+    "knowledge-updates-needed",
+    "rules",
+    "examples",
+    "example",
+    "allowed",
+    "avoid",
+    "storage",
+    "storage-model",
+    "source-status",
+    "hard-gates",
+    "scorecard",
+    "waivers",
+    "non-goals",
+    "first-artifacts",
+    "first-commands",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -242,6 +273,88 @@ def parse_doc_impact_from_report(text: str) -> dict[str, object] | None:
         "classification": parse_scalar(classification.group(1).strip()),
         "reason": parse_scalar(reason.group(1).strip()),
     }
+
+
+def normalize_term_heading(value: str) -> str:
+    cleaned = re.sub(r"[`*_~]+", "", value).strip().lower()
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def extract_heading_sections(text: str) -> list[dict[str, object]]:
+    matches = list(HEADING_WITH_LEVEL_RE.finditer(text))
+    sections: list[dict[str, object]] = []
+    for index, match in enumerate(matches):
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        sections.append(
+            {
+                "level": len(match.group(1)),
+                "title": match.group(2).strip(),
+                "body": text[start:end],
+            }
+        )
+    return sections
+
+
+def extract_glossary_terms(text: str) -> set[str]:
+    return {
+        normalize_term_heading(section["title"])
+        for section in extract_heading_sections(text)
+        if section["level"] == 3 and normalize_term_heading(section["title"])
+    }
+
+
+def intro_paragraph(body: str) -> str:
+    lines = body.splitlines()
+    started = False
+    collected: list[str] = []
+    for raw in lines:
+        stripped = raw.strip()
+        if not started and not stripped:
+            continue
+        if not started and (stripped.startswith("```") or re.match(r"^[-*+]\s", stripped) or re.match(r"^\d+\.\s", stripped)):
+            return ""
+        if not stripped:
+            break
+        if stripped.startswith("```") or re.match(r"^#{1,6}\s", stripped):
+            break
+        started = True
+        collected.append(stripped)
+    return " ".join(collected).strip()
+
+
+def looks_definition_like(title: str, paragraph: str) -> bool:
+    if not paragraph:
+        return False
+    lowered = paragraph.lower()
+    if any(lowered.startswith(prefix) for prefix in NON_DEFINITION_PREFIXES):
+        return False
+    normalized_title = normalize_term_heading(title)
+    if lowered.startswith(("a ", "an ", "the ")):
+        return True
+    return any(
+        lowered.startswith(prefix)
+        for prefix in (
+            f"{normalized_title} is",
+            f"{normalized_title} are",
+            f"{normalized_title} means",
+            f"{normalized_title} defines",
+            f"{normalized_title} refers to",
+        )
+    )
+
+
+def looks_like_term_heading(title: str, level: int) -> bool:
+    if level < 3:
+        return False
+    normalized = normalize_term_heading(title)
+    if not normalized:
+        return False
+    if markdown_slug(normalized) in STRUCTURAL_HEADING_SLUGS:
+        return False
+    if len(normalized.split()) > 3:
+        return False
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z][A-Za-z0-9-]*){0,2}", normalized))
 
 
 def parse_documentation_map_owner_rows(text: str) -> list[dict[str, str]]:
@@ -437,6 +550,44 @@ def check_review_window(rel_path: str, text: str, today: date, issues: list[dict
             review_after=review_after.isoformat(),
             today=today.isoformat(),
         )
+
+
+def check_glossary_terms(repo: Path, rel_path: str, text: str, issues: list[dict[str, object]]) -> None:
+    if rel_path == GLOSSARY_PATH:
+        return
+    glossary_file = repo / GLOSSARY_PATH
+    if not glossary_file.exists():
+        return
+    glossary_terms = extract_glossary_terms(load_text(glossary_file))
+    if not glossary_terms:
+        return
+    for section in extract_heading_sections(text):
+        title = str(section["title"])
+        level = int(section["level"])
+        if not looks_like_term_heading(title, level):
+            continue
+        paragraph = intro_paragraph(str(section["body"]))
+        if not looks_definition_like(title, paragraph):
+            continue
+        normalized_title = normalize_term_heading(title)
+        if normalized_title in glossary_terms:
+            add_issue(
+                issues,
+                "warning",
+                "DOC_GLOSSARY_TERM_REDEFINED",
+                rel_path,
+                f"Glossary term appears to be redefined outside GLOSSARY.md: {title}.",
+                term=title,
+            )
+        else:
+            add_issue(
+                issues,
+                "warning",
+                "DOC_GLOSSARY_TERM_UNDECLARED",
+                rel_path,
+                f"Definition-like term heading is not declared in GLOSSARY.md: {title}.",
+                term=title,
+            )
 
 
 def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[str], issues: list[dict[str, object]]) -> None:
@@ -637,6 +788,7 @@ def main() -> int:
         check_superseded_refs(repo, rel_path, text, issues)
         check_parked_as_active(rel_path, text, issues)
         check_review_window(rel_path, text, today, issues)
+        check_glossary_terms(repo, rel_path, text, issues)
 
     check_doc_impact(repo, changed_files, report_paths, issues)
     check_map_frontmatter_consistency(repo, changed_files, issues)

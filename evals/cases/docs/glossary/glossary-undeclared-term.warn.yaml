@@ -1,0 +1,61 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.glossary_term_consistency.undeclared_term.warn
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Definition-like term headings absent from GLOSSARY.md should warn, not fail."
+
+input:
+  changed_files:
+    - docs/product/EXAMPLE.md
+  files:
+    docs/product/GLOSSARY.md: |
+      ---
+      id: docs_product_glossary
+      kind: glossary
+      status: active
+      authority: canonical
+      owner: vitaly
+      created_at: 2026-04-20
+      updated_at: 2026-04-20
+      canonical_for:
+        - shared-terms
+      supersedes: []
+      superseded_by: null
+      ---
+      # Glossary
+
+      ### gate
+
+      The phase that verifies evidence and writes the final decision.
+    docs/product/EXAMPLE.md: |
+      ---
+      id: docs_product_example
+      kind: product-doc
+      status: active
+      authority: canonical
+      owner: vitaly
+      created_at: 2026-04-20
+      updated_at: 2026-04-20
+      canonical_for:
+        - example-surface
+      supersedes: []
+      superseded_by: null
+      ---
+      # Example
+
+      ### Story
+
+      A durable narrative arc.
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings:
+    - code: DOC_GLOSSARY_TERM_UNDECLARED
+      path: docs/product/EXAMPLE.md
+      term: Story
+
+checks:
+  - docs_glossary_term_consistency
