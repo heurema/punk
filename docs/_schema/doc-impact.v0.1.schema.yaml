@@ -1,0 +1,74 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Punk DocImpact
+type: object
+required:
+  - classification
+  - reason
+properties:
+  classification:
+    enum:
+      - none
+      - docs-only
+      - code-doc
+      - architecture
+      - dependency
+      - public-claim
+      - research-promotion
+  reason:
+    type: string
+  touched_surfaces:
+    type: array
+    items:
+      enum:
+        - architecture
+        - roadmap
+        - crate-status
+        - telemetry
+        - project-memory
+        - contract-tracker
+        - eval
+        - research
+        - adr
+        - public-narrative
+        - documentation-map
+        - glossary
+  required_updates:
+    type: array
+    items:
+      type: string
+  supersedes:
+    type: array
+    items:
+      type: object
+      required:
+        - old_ref
+        - new_ref
+        - action
+      properties:
+        old_ref:
+          type: string
+        new_ref:
+          type: string
+        action:
+          enum:
+            - mark_superseded
+            - mark_retired
+  archive_plan:
+    type: array
+    items:
+      type: object
+      required:
+        - old_ref
+        - archive_ref
+        - reason
+      properties:
+        old_ref:
+          type: string
+        archive_ref:
+          type: string
+        reason:
+          type: string
+  evals_required:
+    type: array
+    items:
+      type: string

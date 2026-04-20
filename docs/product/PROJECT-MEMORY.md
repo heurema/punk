@@ -44,10 +44,26 @@ knowledge/
   code/
 
 docs/
+  product/
   adr/
+  archive/
 
 public/
 ```
+
+## Documentation as project memory
+
+Canonical product and process docs live under `docs/product/`.
+
+Decision history lives under `docs/adr/`.
+
+Historical-only docs live under `docs/archive/` when a current surface is replaced.
+
+Documentation should carry explicit owner, status, authority, and supersession/archive markers as the docs lifecycle matures.
+
+`DocImpact` links meaningful changes to the docs surfaces they must update.
+
+See `docs/product/DOC-GOVERNANCE.md`.
 
 ## Runtime/derived memory
 

@@ -98,8 +98,24 @@ Read in this order for architecture/product work:
 8. `docs/product/EVAL-PLANE.md` — eval semantics
 9. `docs/product/PROJECT-MEMORY.md` — repo-tracked memory and authority
 10. `docs/product/PUBLIC-NARRATIVE.md` — public-build artifacts
+11. `docs/product/DOC-GOVERNANCE.md` — documentation lifecycle and `DocImpact`
+12. `docs/product/DOCUMENTATION-MAP.md` — canonical owner registry
+13. `docs/product/GLOSSARY.md` — shared term authority
 
 Use `docs/product/DOCUMENTATION-MAP.md` when editing docs or resolving conflicts.
+
+## Documentation integrity
+
+Documentation is part of project memory.
+
+Meaningful changes should declare `DocImpact`, update the canonical truth owner, and move replaced truth into `superseded`, `archived`, or `retired` state instead of silently deleting it.
+
+See:
+
+- `docs/product/DOC-GOVERNANCE.md`
+- `docs/product/DOCUMENTATION-MAP.md`
+- `docs/product/GLOSSARY.md`
+- `evals/specs/docs-consistency.v0.1.md`
 
 ## Research intake rule
 

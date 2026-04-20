@@ -1,7 +1,23 @@
-# Documentation Map
+---
+id: docs_product_documentation_map
+kind: documentation-map
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-20
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - documentation-owner-registry
+related_docs:
+  - docs/product/START-HERE.md
+  - docs/product/DOC-GOVERNANCE.md
+  - docs/product/GLOSSARY.md
+supersedes: []
+superseded_by: null
+---
 
-Status: proposed active-core process doc  
-Last updated: 2026-04-19
+# Documentation Map
 
 ## Purpose
 
@@ -22,45 +38,57 @@ For product and architecture work, read in this order:
 1. `README.md`
 2. `docs/product/START-HERE.md`
 3. `docs/product/DOCUMENTATION-MAP.md`
-4. `docs/product/PUNK-LAWS.md`
-5. `docs/product/ARCHITECTURE.md`
-6. `docs/product/ROADMAP.md`
-7. `docs/product/CRATE-STATUS.md`
-8. `docs/product/RESEARCH-GATE.md`
-9. `docs/product/RESEARCH-INTAKE.md`
-10. `docs/product/TELEMETRY.md`
-11. `docs/product/EVAL-PLANE.md`
-12. `docs/product/PROJECT-MEMORY.md`
-13. `docs/product/PUBLIC-NARRATIVE.md`
-14. `docs/adr/`
-15. `knowledge/research/`
-16. `knowledge/ideas/`
-17. `work/goals/` and `work/reports/`
-18. `public/`
+4. `docs/product/GLOSSARY.md`
+5. `docs/product/PUNK-LAWS.md`
+6. `docs/product/ARCHITECTURE.md`
+7. `docs/product/ROADMAP.md`
+8. `docs/product/CRATE-STATUS.md`
+9. `docs/product/RESEARCH-GATE.md`
+10. `docs/product/RESEARCH-INTAKE.md`
+11. `docs/product/TELEMETRY.md`
+12. `docs/product/EVAL-PLANE.md`
+13. `docs/product/PROJECT-MEMORY.md`
+14. `docs/product/DOC-GOVERNANCE.md`
+15. `docs/product/PUBLIC-NARRATIVE.md`
+16. `docs/adr/`
+17. `knowledge/research/`
+18. `knowledge/ideas/`
+19. `work/goals/` and `work/reports/`
+20. `public/`
 
-## Source-of-truth matrix
+## Canonical owners
 
-| Question | Canonical owner | Supporting docs | Must not duplicate |
+| Truth surface | Canonical owner | Supporting/history refs | Notes |
 |---|---|---|---|
-| What is Punk? | `README.md` + `docs/product/START-HERE.md` | `PUBLIC-NARRATIVE.md` | Full roadmap, schemas, ADR rationale |
-| What are the hard laws? | `docs/product/PUNK-LAWS.md` | ADRs, architecture docs | Phase details, implementation plans |
-| What is active, incubating, parked, or retired? | `docs/product/ROADMAP.md` + `docs/product/CRATE-STATUS.md` | `START-HERE.md` | Product hype or future-only operator paths |
-| What is the runtime/lifecycle model? | `docs/product/ARCHITECTURE.md` | `PUNK-LAWS.md`, `ROADMAP.md` | Research rationale, phase schedules |
-| What does the core own? | `docs/product/ARCHITECTURE.md` | `CRATE-STATUS.md` | Crate-by-crate implementation detail unless needed |
-| What crates/folders are active? | `docs/product/CRATE-STATUS.md` | `ROADMAP.md` | Product thesis or long rationale |
-| When is research required? | `docs/product/RESEARCH-GATE.md` | `RESEARCH-INTAKE.md` | Full competitor notes or idea backlog |
-| How are external ideas classified? | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | Architecture decisions without ADR promotion |
-| What did research find? | `knowledge/research/` | `RESEARCH-GATE.md` | Product truth before promotion |
-| Where do speculative ideas live? | `knowledge/ideas/` | `RESEARCH-INTAKE.md` | Current operator docs |
-| What is local trust telemetry? | `docs/product/TELEMETRY.md` | ADR-0011, architecture, roadmap | Product analytics or remote export claims |
-| What are eval semantics? | `docs/product/EVAL-PLANE.md` | `ROADMAP.md`, eval specs | Final acceptance decisions |
-| What is proofpack provenance? | `docs/adr/ADR-0012-*` + `docs/product/ARCHITECTURE.md` | `TELEMETRY.md`, `ROADMAP.md` | Full supply-chain compliance claims |
-| What is the gate/assessment boundary? | `docs/product/PUNK-LAWS.md` + ADR-0013 | `ARCHITECTURE.md` | Language implying modules/adapters decide |
-| What is project memory? | `docs/product/PROJECT-MEMORY.md` | `DOGFOODING.md`, `PUBLIC-NARRATIVE.md` | Hidden runtime memory or giant prompt memory |
-| What is public narrative? | `docs/product/PUBLIC-NARRATIVE.md` | `README.md`, `PROJECT-MEMORY.md` | PubPunk automation claims before promotion |
-| Why was an architecture decision made? | `docs/adr/` | `knowledge/research/` | Current-state summaries outside the ADR |
-| What work is being dogfooded? | `work/goals/`, `work/reports/` | `DOGFOODING.md` | Canonical architecture truth |
-| What runtime evidence exists? | `.punk/` | `TELEMETRY.md`, `ARCHITECTURE.md` | Hand-edited product docs |
+| Product entry path | `docs/product/START-HERE.md` | `README.md` | `README.md` is the repo entry, not the deep canonical owner for every surface. |
+| Core laws | `docs/product/PUNK-LAWS.md` | `docs/adr/` | Law statements outrank lower-level docs. |
+| Architecture boundaries | `docs/product/ARCHITECTURE.md` | `docs/adr/`, `docs/modules/`, `docs/adapters/` | Defines planes, boundaries, and truth ownership. |
+| Flow semantics | `docs/product/FLOW.md` | `docs/adr/ADR-0002-flow-and-eval-before-features.md` | `plot / cut / gate` lifecycle source. |
+| Eval operator contract | `docs/product/EVAL.md` | `docs/product/EVAL-PLANE.md`, `evals/` | Product direction for eval behavior. |
+| Eval runtime/report shape | `docs/product/EVAL-PLANE.md` | `evals/specs/`, `evals/cases/` | Architecture and report expectations. |
+| Contract/work ledger direction | `docs/product/CONTRACT-TRACKER.md` | `docs/adr/ADR-0009-contract-tracker-core-primitives.md` | Phase-gated contract loop and ledger view. |
+| Roadmap and phase gates | `docs/product/ROADMAP.md` | `work/goals/`, `docs/adr/` | Current phase order and exit criteria. |
+| Crate maturity/status | `docs/product/CRATE-STATUS.md` | `docs/product/ROADMAP.md` | Current crate boundary vocabulary. |
+| Project memory model | `docs/product/PROJECT-MEMORY.md` | `docs/adr/ADR-0003-project-memory-plane.md`, `docs/adr/ADR-0008-knowledge-vault-boundaries.md` | Repo-tracked memory surfaces and authority rules. |
+| Research gate policy | `docs/product/RESEARCH-GATE.md` | `knowledge/research/` | When research is required before implementation. |
+| Research intake classification | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | `adopt / defer / park / avoid` intake discipline. |
+| Telemetry/privacy and audit evidence | `docs/product/TELEMETRY.md` | `docs/adr/ADR-0011-local-first-trust-telemetry.md` | Event/redaction/no-network truth. |
+| Public narrative/public memory | `docs/product/PUBLIC-NARRATIVE.md` | `public/`, `docs/adr/ADR-0007-public-narrative-plane.md` | Public receipts and publication boundaries. |
+| Module boundaries | `docs/product/MODULES.md` | `docs/product/MODULE-HOST.md`, `docs/modules/` | Product-level module status and non-goals. |
+| Documentation governance | `docs/product/DOC-GOVERNANCE.md` | `evals/specs/docs-consistency.v0.1.md` | Lifecycle, ownership, supersession, `DocImpact`. |
+| Documentation owner registry | `docs/product/DOCUMENTATION-MAP.md` | n/a | This file. |
+| Shared term meanings | `docs/product/GLOSSARY.md` | canonical owners above | Prevents term drift across docs. |
+
+## Historical surfaces
+
+| Surface | Location | Rule |
+|---|---|---|
+| ADR history | `docs/adr/` | Never delete accepted ADRs; mark them superseded instead. |
+| Archived docs | `docs/archive/` | Historical-only; must point to replacement or retirement reason. |
+| Research snapshots | `knowledge/research/` | Advisory until promoted. |
+| Idea backlog | `knowledge/ideas/` | Speculative; never current implementation truth by itself. |
+| Reports | `work/reports/` | Evidence/handoff, not canonical product truth. |
+| Runtime evidence | `.punk/` | Inspectable runtime/derived state, never hand-edited product truth. |
 
 ## Precedence for conflicts
 
@@ -68,7 +96,7 @@ When two docs disagree, resolve in this order:
 
 1. `docs/product/PUNK-LAWS.md`
 2. Accepted ADRs in `docs/adr/`
-3. Product docs by ownership from the source-of-truth matrix
+3. Product docs by ownership from the canonical owner registry
 4. `docs/product/START-HERE.md`
 5. `README.md`
 6. Accepted research notes in `knowledge/research/`
@@ -153,15 +181,6 @@ Not allowed:
 - research conclusions presented as accepted architecture without ADR/roadmap promotion
 - public claims that exceed canonical docs
 
-## Status vocabulary
-
-Use these terms exactly:
-
-- `active-core` — part of the current stability target; must stay green
-- `incubating` — exists and may be tested, but is not default/user-facing
-- `parked` — boundary exists; minimal stub/docs only
-- `retired` — removed or legacy-only
-
 ## Documentation consolidation checklist
 
 Before editing docs, check:
@@ -175,13 +194,11 @@ Before editing docs, check:
 7. Does it create or remove a source of truth?
 8. Are ADR/research/idea/work refs updated?
 
-## Current consolidation gaps
+## Documentation integrity rule
 
-The current docs are directionally coherent, but the following improvements should be made:
+When a meaningful change touches one of these surfaces:
 
-1. Add this documentation map.
-2. Add a shared glossary for lifecycle, evidence, memory, and status terms.
-3. Shorten `README.md` and `START-HERE.md` so they point to owners rather than restating details.
-4. Add a docs consistency eval spec.
-5. Keep competitor and prior-art findings in `knowledge/research/` and `knowledge/ideas/`, not in operator docs.
-
+1. declare it in `DocImpact`;
+2. update the canonical owner, not only an entry doc;
+3. mark any replaced truth as superseded, archived, or retired;
+4. keep links and glossary terms aligned.

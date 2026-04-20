@@ -65,16 +65,20 @@ The following may be documented or parked, but they are not current operator sur
 - skill auto-promotion
 - cloud sync or SaaS control plane
 
-## Documentation map
+## Documentation system
 
 Punk docs follow a source-of-truth map to avoid duplicate or conflicting claims.
+
+Meaningful changes should declare `DocImpact`, update the canonical owner, and preserve superseded truth instead of silently deleting it.
 
 Start with:
 
 - `docs/product/START-HERE.md`
 - `docs/product/DOCUMENTATION-MAP.md`
+- `docs/product/GLOSSARY.md`
 - `docs/product/PUNK-LAWS.md`
 - `docs/product/ARCHITECTURE.md`
+- `docs/product/DOC-GOVERNANCE.md`
 
 Research and ideas are stored separately:
 

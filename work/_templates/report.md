@@ -10,6 +10,19 @@ kind: handoff
 
 ## What changed
 
+## Doc impact
+
+```yaml
+doc_impact:
+  classification: none
+  reason: "why docs are or are not affected"
+  touched_surfaces: []
+  required_updates: []
+  supersedes: []
+  archive_plan: []
+  evals_required: []
+```
+
 ## Checks run
 
 ## What remains

@@ -1,7 +1,22 @@
-# Glossary
+---
+id: docs_product_glossary
+kind: glossary
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-20
+updated_at: 2026-04-20
+review_after: 2026-07-20
+canonical_for:
+  - shared-terms
+related_docs:
+  - docs/product/DOCUMENTATION-MAP.md
+  - docs/product/DOC-GOVERNANCE.md
+supersedes: []
+superseded_by: null
+---
 
-Status: proposed active-core product doc  
-Last updated: 2026-04-19
+# Glossary
 
 ## Purpose
 
@@ -26,6 +41,18 @@ A capability or boundary that may have minimal docs/stubs, but is out of current
 ### retired
 
 Removed, superseded, or legacy-only.
+
+### raw
+
+Captured but not yet shaped into stable knowledge.
+
+### draft
+
+Proposed but not yet accepted as current truth.
+
+### accepted
+
+Explicitly adopted artifact or decision.
 
 ## Lifecycle terms
 
@@ -56,6 +83,8 @@ The phase that verifies evidence, writes the final decision, and links proof. On
 ### contract
 
 A scoped executable agreement for work. Every executable goal resolves to a contract before work runs.
+
+A meaningful contract will eventually carry `DocImpact` when docs truth may change.
 
 ### scope
 
@@ -103,7 +132,7 @@ A reference to a repo-tracked or runtime artifact, usually using a relative path
 
 A digest used to make artifacts verifiable. Hash stability and path normalization must be defined by the relevant schema or ADR.
 
-## Memory terms
+## Documentation and memory terms
 
 ### project memory
 
@@ -129,9 +158,33 @@ goal -> contract -> report -> eval -> decision -> proof -> docs/public narrative
 
 A tag describing how a knowledge artifact should be treated. Recommended authorities include `canonical`, `advisory`, and `speculative`.
 
+### canonical
+
+The current owner of truth for a surface. Canonical docs may be summarized elsewhere, but they should not be contradicted.
+
+### advisory
+
+Useful evidence or guidance that can support decisions but is not current implementation truth by itself.
+
+### speculative
+
+Idea-level content that must stay out of default implementation truth until promoted.
+
 ### status
 
 A tag describing the lifecycle of a knowledge or work artifact, such as draft, accepted, superseded, parked, or retired.
+
+### DocImpact
+
+The explicit declaration of whether and how a change affects docs truth, ownership, supersession, archives, or public claims.
+
+### superseded
+
+Still inspectable history, but no longer the current truth because another artifact replaced it.
+
+### archived
+
+Preserved historical artifact that should not be treated as current truth.
 
 ## Research terms
 
@@ -150,6 +203,10 @@ The process that classifies external ideas as `adopt`, `defer`, `park`, or `avoi
 ### idea
 
 A speculative or deferred item stored under `knowledge/ideas/`. Ideas are not implementation truth by default.
+
+### promotion
+
+The path by which research or ideas become roadmap, ADR, contract, docs, or implementation truth. Promotion does not erase the source artifact.
 
 ### anti-pattern
 
@@ -198,4 +255,3 @@ A record that a public artifact was published manually or automatically. Manual 
 ### metrics snapshot
 
 A manual or future automated record of public content performance. Metrics must identify source, channel, and collection time.
-
