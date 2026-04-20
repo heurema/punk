@@ -6,6 +6,18 @@ This folder exists before PubPunk automation.
 
 Humans update it manually. Later PubPunk must adopt it as its source of truth.
 
+Important:
+
+These are `punk` public-memory artifacts and `punk` manual publication rules.
+
+They are not a one-to-one import of the standalone `pubpunk` project contract.
+
+If ideas from `pubpunk` are reused, they must be adapted under the `punk` rule hierarchy and current project boundaries.
+
+See:
+
+- `public/channels/_shared/RULE-HIERARCHY.md`
+
 ## Layout
 
 ```text
@@ -27,3 +39,5 @@ public/
 - Metrics are manual for now.
 - Prefer one receipt per channel publication.
 - Do not automate publishing before core stability.
+- Shared publication rules under `public/channels/_shared/` are subordinate to `punk` laws and project docs.
+- Channel-specific rules may narrow shared rules, but must not weaken higher-level `punk` rules.
