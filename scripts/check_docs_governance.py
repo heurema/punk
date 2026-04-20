@@ -8,6 +8,7 @@ Scope:
 - simple superseded/current-ref checks
 - simple parked-as-active wording checks
 - warning-level consistency checks between DOCUMENTATION-MAP.md and canonical doc frontmatter
+- warning-level review_after freshness checks for touched/new canonical docs
 
 This is internal tooling, not a public CLI contract.
 """
@@ -19,6 +20,7 @@ import json
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 REQUIRED_DOC_KEYS = {
@@ -90,6 +92,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo", default=".", help="Repository root. Defaults to current directory.")
     parser.add_argument("--base", help="Base git ref for changed-file detection.")
     parser.add_argument("--head", default="HEAD", help="Head git ref for changed-file detection. Defaults to HEAD.")
+    parser.add_argument("--today", help="Override today's date for deterministic date-based checks (YYYY-MM-DD).")
     parser.add_argument("--staged", action="store_true", help="Use staged changes from git diff --cached.")
     parser.add_argument("--files", nargs="*", default=[], help="Explicit changed files, relative to repo root.")
     parser.add_argument("--report", action="append", default=[], help="Explicit report path(s) to inspect for DocImpact.")
@@ -175,6 +178,15 @@ def parse_doc_status(text: str) -> str | None:
     if match:
         return match.group(1).strip().lower()
     return None
+
+
+def parse_iso_date(value: object) -> date | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value.strip())
+    except ValueError:
+        return None
 
 
 def extract_markdown_links(text: str) -> list[str]:
@@ -408,6 +420,25 @@ def check_parked_as_active(rel_path: str, text: str, issues: list[dict[str, obje
                 )
 
 
+def check_review_window(rel_path: str, text: str, today: date, issues: list[dict[str, object]]) -> None:
+    frontmatter = parse_frontmatter(text)
+    if not frontmatter:
+        return
+    review_after = parse_iso_date(frontmatter.get("review_after"))
+    if review_after is None:
+        return
+    if review_after < today:
+        add_issue(
+            issues,
+            "warning",
+            "DOC_REVIEW_WINDOW_EXPIRED",
+            rel_path,
+            f"Canonical doc review window has expired: review_after={review_after.isoformat()} < today={today.isoformat()}.",
+            review_after=review_after.isoformat(),
+            today=today.isoformat(),
+        )
+
+
 def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[str], issues: list[dict[str, object]]) -> None:
     meaningful = [path for path in changed_files if is_meaningful_change(path)]
     if not meaningful:
@@ -582,6 +613,12 @@ def human_summary(result: dict[str, object]) -> str:
 def main() -> int:
     args = parse_args()
     repo = Path(args.repo).resolve()
+    if args.today:
+        today = parse_iso_date(args.today)
+        if today is None:
+            raise SystemExit(f"Invalid --today value: {args.today}. Expected YYYY-MM-DD.")
+    else:
+        today = date.today()
     changed_files = get_changed_files(repo, args)
     report_paths = sorted({normalize_rel_path(p) for p in args.report} | {p for p in changed_files if p.startswith("work/reports/") and p.endswith(".md")})
     issues: list[dict[str, object]] = []
@@ -599,6 +636,7 @@ def main() -> int:
         check_links(repo, rel_path, text, issues)
         check_superseded_refs(repo, rel_path, text, issues)
         check_parked_as_active(rel_path, text, issues)
+        check_review_window(rel_path, text, today, issues)
 
     check_doc_impact(repo, changed_files, report_paths, issues)
     check_map_frontmatter_consistency(repo, changed_files, issues)
@@ -608,6 +646,7 @@ def main() -> int:
     result = {
         "status": "pass" if not failures else "fail",
         "repo": str(repo),
+        "today": today.isoformat(),
         "changed_files": changed_files,
         "canonical_docs_checked": canonical_docs_checked,
         "report_paths": report_paths,

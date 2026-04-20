@@ -1,0 +1,41 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.stale_review_window.expired.warn
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Canonical docs whose review_after is in the past should warn, not fail."
+
+input:
+  today: 2026-04-20
+  changed_files:
+    - docs/product/EXAMPLE.md
+  files:
+    docs/product/EXAMPLE.md: |
+      ---
+      id: docs_product_example
+      kind: product-doc
+      status: active
+      authority: canonical
+      owner: vitaly
+      created_at: 2026-04-20
+      updated_at: 2026-04-20
+      review_after: 2026-04-19
+      canonical_for:
+        - example-surface
+      supersedes: []
+      superseded_by: null
+      ---
+      # Example
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings:
+    - code: DOC_REVIEW_WINDOW_EXPIRED
+      path: docs/product/EXAMPLE.md
+      review_after: 2026-04-19
+      today: 2026-04-20
+
+checks:
+  - docs_stale_review_window

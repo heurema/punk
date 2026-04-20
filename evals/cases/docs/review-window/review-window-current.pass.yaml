@@ -1,0 +1,37 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.stale_review_window.current.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Canonical docs whose review_after is still current should pass without warnings."
+
+input:
+  today: 2026-04-20
+  changed_files:
+    - docs/product/EXAMPLE.md
+  files:
+    docs/product/EXAMPLE.md: |
+      ---
+      id: docs_product_example
+      kind: product-doc
+      status: active
+      authority: canonical
+      owner: vitaly
+      created_at: 2026-04-20
+      updated_at: 2026-04-20
+      review_after: 2026-07-20
+      canonical_for:
+        - example-surface
+      supersedes: []
+      superseded_by: null
+      ---
+      # Example
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_stale_review_window
