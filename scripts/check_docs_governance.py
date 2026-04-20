@@ -7,6 +7,7 @@ Scope:
 - DocImpact presence via report files for meaningful changes
 - simple superseded/current-ref checks
 - simple parked-as-active wording checks
+- warning-level consistency checks between DOCUMENTATION-MAP.md and canonical doc frontmatter
 
 This is internal tooling, not a public CLI contract.
 """
@@ -78,6 +79,10 @@ MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 DOC_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])((?:docs|knowledge|public)/[^\s`)]*\.md(?:#[^\s`)]+)?)")
 HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$", re.MULTILINE)
 STATUS_LINE_RE = re.compile(r"^Status:\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+DOCUMENTATION_MAP_PATH = "docs/product/DOCUMENTATION-MAP.md"
+MAP_OWNER_ROW_RE = re.compile(r"`?(docs/product/[^`| ]+\.md)`?")
+TOKEN_RE = re.compile(r"[a-z0-9]+")
+IGNORED_SURFACE_TOKENS = {"and", "or", "the", "a", "an", "of"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -225,6 +230,59 @@ def parse_doc_impact_from_report(text: str) -> dict[str, object] | None:
         "classification": parse_scalar(classification.group(1).strip()),
         "reason": parse_scalar(reason.group(1).strip()),
     }
+
+
+def parse_documentation_map_owner_rows(text: str) -> list[dict[str, str]]:
+    start = text.find("## Canonical owners")
+    if start == -1:
+        return []
+    next_heading = text.find("\n## ", start + 1)
+    section = text[start: next_heading if next_heading != -1 else len(text)]
+    rows: list[dict[str, str]] = []
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if set(stripped.replace("|", "").replace("-", "").replace(":", "").strip()) == set():
+            continue
+        columns = [part.strip() for part in stripped.strip("|").split("|")]
+        if len(columns) < 2:
+            continue
+        if columns[0].lower() == "truth surface" and columns[1].lower() == "canonical owner":
+            continue
+        owner_match = MAP_OWNER_ROW_RE.search(columns[1])
+        if not owner_match:
+            continue
+        rows.append({"surface": columns[0], "owner_path": owner_match.group(1)})
+    return rows
+
+
+def normalize_tokens(value: str) -> set[str]:
+    tokens: set[str] = set()
+    for raw in TOKEN_RE.findall(value.lower()):
+        token = raw
+        if len(token) > 4 and token.endswith("ies"):
+            token = token[:-3] + "y"
+        elif len(token) > 3 and token.endswith("s"):
+            token = token[:-1]
+        if token and token not in IGNORED_SURFACE_TOKENS:
+            tokens.add(token)
+    return tokens
+
+
+def surface_matches_canonical_for(surface: str, canonical_for: list[object]) -> bool:
+    surface_tokens = normalize_tokens(surface)
+    if not surface_tokens:
+        return False
+    for entry in canonical_for:
+        entry_text = str(entry)
+        if not entry_text.strip():
+            continue
+        if markdown_slug(surface) == markdown_slug(entry_text):
+            return True
+        if surface_tokens & normalize_tokens(entry_text):
+            return True
+    return False
 
 
 def is_canonical_doc(rel_path: str) -> bool:
@@ -391,6 +449,112 @@ def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[st
         return
 
 
+def check_map_frontmatter_consistency(repo: Path, changed_files: list[str], issues: list[dict[str, object]]) -> None:
+    if not any(path.startswith("docs/product/") for path in changed_files):
+        return
+    map_path = repo / DOCUMENTATION_MAP_PATH
+    if not map_path.exists():
+        return
+    rows = parse_documentation_map_owner_rows(load_text(map_path))
+    if not rows:
+        add_issue(
+            issues,
+            "warning",
+            "DOC_MAP_OWNER_ROWS_UNPARSEABLE",
+            DOCUMENTATION_MAP_PATH,
+            "Documentation map canonical owner rows could not be parsed.",
+        )
+        return
+
+    mapped_owner_paths = {row["owner_path"] for row in rows}
+    for row in rows:
+        owner_path = row["owner_path"]
+        owner_file = repo / owner_path
+        if not owner_file.exists():
+            add_issue(
+                issues,
+                "warning",
+                "DOC_MAP_OWNER_TARGET_MISSING",
+                DOCUMENTATION_MAP_PATH,
+                f"Documentation map owner target does not exist: {owner_path}.",
+                owner_path=owner_path,
+                surface=row["surface"],
+            )
+            continue
+        frontmatter = parse_frontmatter(load_text(owner_file))
+        if not frontmatter:
+            add_issue(
+                issues,
+                "warning",
+                "DOC_MAP_OWNER_MISSING_FRONTMATTER",
+                owner_path,
+                "Documentation map canonical owner is missing frontmatter.",
+                surface=row["surface"],
+            )
+            continue
+        if frontmatter.get("authority") != "canonical":
+            add_issue(
+                issues,
+                "warning",
+                "DOC_MAP_OWNER_NOT_CANONICAL",
+                owner_path,
+                "Documentation map canonical owner does not declare authority: canonical.",
+                surface=row["surface"],
+                authority=frontmatter.get("authority"),
+            )
+        if frontmatter.get("status") != "active":
+            add_issue(
+                issues,
+                "warning",
+                "DOC_MAP_OWNER_NOT_ACTIVE",
+                owner_path,
+                "Documentation map canonical owner does not declare status: active.",
+                surface=row["surface"],
+                status=frontmatter.get("status"),
+            )
+        canonical_for = frontmatter.get("canonical_for")
+        if not isinstance(canonical_for, list) or not canonical_for:
+            add_issue(
+                issues,
+                "warning",
+                "DOC_MAP_OWNER_MISSING_CANONICAL_FOR",
+                owner_path,
+                "Documentation map canonical owner is missing canonical_for declarations.",
+                surface=row["surface"],
+            )
+            continue
+        if not surface_matches_canonical_for(row["surface"], canonical_for):
+            add_issue(
+                issues,
+                "warning",
+                "DOC_MAP_SURFACE_NOT_REFLECTED_IN_CANONICAL_FOR",
+                owner_path,
+                "Documentation map surface is not obviously reflected in the owner canonical_for declarations.",
+                surface=row["surface"],
+                canonical_for=canonical_for,
+            )
+
+    for doc_path in sorted((repo / "docs/product").glob("*.md")):
+        rel_path = normalize_rel_path(str(doc_path.relative_to(repo)))
+        frontmatter = parse_frontmatter(load_text(doc_path))
+        if not frontmatter:
+            continue
+        if frontmatter.get("authority") != "canonical":
+            continue
+        canonical_for = frontmatter.get("canonical_for")
+        if not isinstance(canonical_for, list) or not canonical_for:
+            continue
+        if rel_path not in mapped_owner_paths:
+            add_issue(
+                issues,
+                "warning",
+                "DOC_FRONTMATTER_OWNER_NOT_MAPPED",
+                rel_path,
+                "Canonical doc declares canonical_for but is not listed in DOCUMENTATION-MAP canonical owners.",
+                canonical_for=canonical_for,
+            )
+
+
 def human_summary(result: dict[str, object]) -> str:
     lines = [
         f"Docs governance check: {str(result['status']).upper()}",
@@ -437,6 +601,7 @@ def main() -> int:
         check_parked_as_active(rel_path, text, issues)
 
     check_doc_impact(repo, changed_files, report_paths, issues)
+    check_map_frontmatter_consistency(repo, changed_files, issues)
 
     failures = [issue for issue in issues if issue["severity"] == "failure"]
     warnings = [issue for issue in issues if issue["severity"] == "warning"]
