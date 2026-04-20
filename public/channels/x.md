@@ -4,7 +4,7 @@ name: "X / Twitter"
 status: draft
 owner: vitaly
 created_at: 2026-04-18
-updated_at: 2026-04-18
+updated_at: 2026-04-20
 channel_type: social
 external_url: null
 ---
@@ -17,11 +17,27 @@ Short public updates and threads.
 
 ## Audience
 
-TODO
+- builders who discover ideas through fast-moving public threads
+- people following the build in real time
+- adjacent researchers and toolmakers who respond to compact takes
+
+## Shared style source
+
+Use:
+
+- `public/channels/_shared/style.toml`
+- `public/channels/_shared/voice.md`
 
 ## Format rules
 
-TODO
+- Prefer one idea per post.
+- Use either one short standalone post or a 4-10 post thread.
+- Make the first line carry the tension, claim, or lesson.
+- Keep standalone posts compact; avoid padding just to sound dramatic.
+- Use at most one link, usually in the final post of a thread.
+- Do not use hashtag spray.
+- If the post mentions the product state, make the experimental/early-stage status clear when omission could mislead.
+- Avoid threadbait, hype language, and vague founder-posturing.
 
 ## Manual publication steps
 
