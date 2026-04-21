@@ -1,0 +1,11 @@
+[package]
+name = "punk-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "punk"
+path = "src/main.rs"

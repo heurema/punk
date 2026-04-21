@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/punk-cli",
+  "crates/punk-domain",
+  "crates/punk-core",
+  "crates/punk-events",
+  "crates/punk-flow",
+  "crates/punk-rules",
+  "crates/punk-eval",
+  "crates/punk-contract",
+  "crates/punk-gate",
+  "crates/punk-proof",
+  "crates/punk-project",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/heurema/punk"

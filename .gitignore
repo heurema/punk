@@ -3,3 +3,4 @@
 .wrangler/
 .playwright-cli/
 output/playwright/
+target/

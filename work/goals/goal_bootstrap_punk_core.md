@@ -1,20 +1,21 @@
 ---
 id: goal_bootstrap_punk_core
 title: "Bootstrap punk core-first workspace"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P0
 authority: canonical
 created_at: 2026-04-18
 updated_at: 2026-04-21
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-21
+started_at: 2026-04-21
+completed_at: 2026-04-21
 blocked_by: []
 scope:
   include:
     - "Cargo.toml"
+    - "Cargo.lock"
     - "crates/**"
     - "docs/product/**"
     - "docs/adr/**"
@@ -34,7 +35,8 @@ knowledge_refs:
   - "docs/product/START-HERE.md"
   - "docs/product/ROADMAP.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-21-phase-0-workspace-skeleton.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -53,3 +55,5 @@ Create the initial `punk` repo skeleton without enabling modules, adapters, LLM 
 ## Notes
 
 This is Dogfooding Level 0: the work is tracked in `punk` project memory before `punk` can execute it.
+
+Phase 0 is complete when the compile-only active-core workspace skeleton exists and `cargo check --workspace` passes without promoting parked behavior.

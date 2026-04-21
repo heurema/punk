@@ -1,7 +1,7 @@
 ---
 id: goal_add_flow_and_smoke_eval
 title: "Add flow controller and smoke eval foundation"
-status: draft
+status: ready
 owner: "vitaly"
 module: "core"
 priority: P0
@@ -11,8 +11,7 @@ updated_at: 2026-04-21
 selected_at: null
 started_at: null
 completed_at: null
-blocked_by:
-  - "work/goals/goal_bootstrap_punk_core.md"
+blocked_by: []
 scope:
   include:
     - "crates/punk-flow/**"
