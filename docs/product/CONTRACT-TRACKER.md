@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-21
 review_after: 2026-07-20
 canonical_for:
   - contract-work-ledger-direction
@@ -13,6 +13,7 @@ canonical_for:
   - lifecycle-ledger-view
   - contract-truth-model
   - doc-impact-carrier-direction
+  - manual-work-ledger-semantics
 related_docs:
   - docs/product/FLOW.md
   - docs/product/PROJECT-MEMORY.md
@@ -114,6 +115,26 @@ Repo-tracked and runtime data stay split:
 - runtime and derived contract/run/decision/proof artifacts under `.punk/`.
 
 Accepted summaries may later expose stable inspect views, but those views must not become a second source of truth.
+
+## Level 0 manual Work Ledger
+
+Before runtime contract tracking exists, Punk uses a manual Work Ledger for Dogfooding Level 0.
+
+The canonical live state is:
+
+```text
+work/STATUS.md
+```
+
+This surface may point to goals, reports, decisions, and future contract/proof references, but it does not replace `gate`.
+
+At Level 0:
+
+- `done` means manually closed with evidence;
+- `accepted` remains reserved for future `gate` decisions;
+- `work/STATUS.md` is human-maintained;
+- `.punk/` runtime state is not written yet for this purpose;
+- this ledger must not become a separate task tracker product.
 
 ## Phase mapping
 

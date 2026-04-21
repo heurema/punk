@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-20
+updated_at: 2026-04-21
 review_after: 2026-07-20
 canonical_for:
   - documentation-reading-order
@@ -75,6 +75,7 @@ For product and architecture work, read in this order:
 | Roadmap and phase gates | `docs/product/ROADMAP.md` | `work/goals/`, `docs/adr/` | Current phase order and exit criteria. |
 | Crate maturity/status | `docs/product/CRATE-STATUS.md` | `docs/product/ROADMAP.md` | Current crate boundary vocabulary. |
 | Project memory model | `docs/product/PROJECT-MEMORY.md` | `docs/adr/ADR-0003-project-memory-plane.md`, `docs/adr/ADR-0008-knowledge-vault-boundaries.md` | Repo-tracked memory surfaces and authority rules. |
+| Dogfooding levels and manual ledger discipline | `docs/product/DOGFOODING.md` | `work/`, `docs/product/PROJECT-MEMORY.md` | Manual-to-runtime adoption levels and Level 0 work rules. |
 | Research gate policy | `docs/product/RESEARCH-GATE.md` | `knowledge/research/` | When research is required before implementation. |
 | Research intake classification | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | `adopt / defer / park / avoid` intake discipline. |
 | Telemetry/privacy and audit evidence | `docs/product/TELEMETRY.md` | `docs/adr/ADR-0011-local-first-trust-telemetry.md` | Event/redaction/no-network truth. |

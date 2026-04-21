@@ -1,13 +1,17 @@
 ---
 id: goal_research_knowledge_vault
 title: "Research and bound Knowledge Vault"
-status: draft
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-19
-updated_at: 2026-04-19
+updated_at: 2026-04-21
+selected_at: null
+started_at: null
+completed_at: 2026-04-19
+blocked_by: []
 scope:
   include:
     - "knowledge/research/**"
@@ -30,7 +34,17 @@ knowledge_refs:
   - "knowledge/research/2026-04-19-knowledge-vault-prior-art-summary.md"
   - "docs/adr/ADR-0008-knowledge-vault-boundaries.md"
 contract_refs: []
+report_refs: []
+decision_refs:
+  - "docs/adr/ADR-0008-knowledge-vault-boundaries.md"
+proof_refs: []
 latest_proof_ref: null
+supersedes: []
+superseded_by: null
+doc_impact:
+  classification: none
+  required_updates: []
+  rationale: ""
 ---
 
 ## Context

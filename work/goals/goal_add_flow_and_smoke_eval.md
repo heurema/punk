@@ -7,7 +7,12 @@ module: "core"
 priority: P0
 authority: canonical
 created_at: 2026-04-18
-updated_at: 2026-04-18
+updated_at: 2026-04-21
+selected_at: null
+started_at: null
+completed_at: null
+blocked_by:
+  - "work/goals/goal_bootstrap_punk_core.md"
 scope:
   include:
     - "crates/punk-flow/**"
@@ -29,7 +34,16 @@ knowledge_refs:
   - "docs/product/FLOW.md"
   - "docs/product/EVAL.md"
 contract_refs: []
+report_refs: []
+decision_refs: []
+proof_refs: []
 latest_proof_ref: null
+supersedes: []
+superseded_by: null
+doc_impact:
+  classification: none
+  required_updates: []
+  rationale: ""
 ---
 
 ## Context

@@ -1,3 +1,27 @@
+---
+id: docs_product_dogfooding
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-04-21
+review_after: 2026-07-21
+canonical_for:
+  - dogfooding-levels
+  - manual-work-ledger-discipline
+  - self-tracking-boundary
+  - trust-surface-classes
+related_docs:
+  - docs/product/PROJECT-MEMORY.md
+  - docs/product/CONTRACT-TRACKER.md
+  - docs/product/START-HERE.md
+related_adrs:
+  - docs/adr/ADR-0004-dogfooding-from-day-zero.md
+supersedes: []
+superseded_by: null
+---
+
 # Dogfooding
 
 ## Purpose
@@ -18,21 +42,40 @@ Use `punk` as soon as a capability exists, but only at the trust level it has ea
 
 Use repo-tracked `work/` and `knowledge/` manually.
 
+The canonical live state is:
+
+```text
+work/STATUS.md
+```
+
 Allowed:
 
 - create goals in `work/goals/`
 - write reports in `work/reports/`
 - maintain knowledge docs
 - record decisions in ADRs
+- keep current state, selected next goal, blockers, and recent evidence in `work/STATUS.md`
 
 Not allowed:
 
 - claim `punk` executed the work
 - skip human review
+- create a second live-state file beside `work/STATUS.md`
+- treat `done` as future `gate` acceptance
+
+Level 0 operating rules:
+
+- `work/STATUS.md` is the only live work-state source of truth;
+- `selected_next` points to one `ready` goal;
+- set `in_progress` only when work has actually started;
+- every meaningful change updates status and/or the selected goal/report;
+- `done` means manually closed with evidence, not final acceptance;
+- `.punk/` runtime state is not written yet for this purpose.
 
 Exit criteria:
 
 - all new meaningful work has a goal or explicit maintenance reason
+- current focus and selected next work are inspectable from `work/STATUS.md`
 - accepted decisions have ADRs or knowledge updates when needed
 
 ### Level 1 — Flow-tracked work

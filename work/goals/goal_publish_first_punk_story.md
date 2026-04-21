@@ -1,13 +1,17 @@
 ---
 id: goal_publish_first_punk_story
 title: "Prepare first punk public-build story and manual channel artifacts"
-status: ready
+status: done
 owner: "vitaly"
 module: "pub"
 priority: P0
 authority: canonical
 created_at: 2026-04-18
-updated_at: 2026-04-18
+updated_at: 2026-04-21
+selected_at: null
+started_at: null
+completed_at: 2026-04-20
+blocked_by: []
 scope:
   include:
     - "publishing/**"
@@ -27,7 +31,17 @@ knowledge_refs:
   - "docs/product/PUBLIC-NARRATIVE.md"
   - "publishing/stories/story-0001-origin.md"
 contract_refs: []
+report_refs: []
+decision_refs:
+  - "docs/adr/ADR-0007-public-narrative-plane.md"
+proof_refs: []
 latest_proof_ref: null
+supersedes: []
+superseded_by: null
+doc_impact:
+  classification: none
+  required_updates: []
+  rationale: ""
 ---
 
 ## Context

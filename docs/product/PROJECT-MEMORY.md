@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-21
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -14,6 +14,7 @@ canonical_for:
   - knowledge-authority-model
   - project-coherence-boundary
   - documentation-as-project-memory
+  - manual-work-ledger-boundary
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/DOC-GOVERNANCE.md
@@ -55,6 +56,7 @@ This keeps memory bounded and inspectable. The graph should be built from canoni
 
 ```text
 work/
+  STATUS.md
   goals/
   reports/
   views/
@@ -76,6 +78,32 @@ docs/
 
 publishing/
 ```
+
+## Level 0 manual Work Ledger
+
+Before runtime contract tracking exists, Punk uses a repo-tracked manual Work Ledger under `work/`.
+
+The canonical live state is:
+
+```text
+work/STATUS.md
+```
+
+This file is the Dogfooding Level 0 live-status surface.
+
+It must make the current focus, selected next goal, blockers, recent completed items, and validation state inspectable without hidden chat context.
+
+At this stage:
+
+- `work/STATUS.md` is human-maintained;
+- `work/goals/` hold durable work intent;
+- `work/reports/` hold durable outcome and handoff artifacts;
+- `.punk/` runtime state is not written yet for this purpose;
+- this surface must not become a second tracker product or a hidden backend.
+
+Level 0 `done` means manual closure with evidence.
+
+It does not mean future `gate` acceptance.
 
 ## Documentation as project memory
 

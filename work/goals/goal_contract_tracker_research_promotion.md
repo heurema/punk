@@ -1,13 +1,17 @@
 ---
 id: goal_contract_tracker_research_promotion
 title: "Promote contract tracker research into proposed product docs"
-status: draft
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-19
-updated_at: 2026-04-19
+updated_at: 2026-04-21
+selected_at: null
+started_at: null
+completed_at: 2026-04-19
+blocked_by: []
 scope:
   include:
     - "docs/product/CONTRACT-TRACKER.md"
@@ -28,7 +32,17 @@ knowledge_refs:
   - "docs/adr/ADR-0009-contract-tracker-core-primitives.md"
   - "knowledge/research/2026-04-19-contract-tracker-prior-art.md"
 contract_refs: []
+report_refs: []
+decision_refs:
+  - "docs/adr/ADR-0009-contract-tracker-core-primitives.md"
+proof_refs: []
 latest_proof_ref: null
+supersedes: []
+superseded_by: null
+doc_impact:
+  classification: none
+  required_updates: []
+  rationale: ""
 ---
 
 ## Context

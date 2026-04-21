@@ -7,7 +7,11 @@ module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-18
-updated_at: 2026-04-18
+updated_at: 2026-04-21
+selected_at: null
+started_at: null
+completed_at: null
+blocked_by: []
 scope:
   include:
     - "knowledge/research/**"
@@ -24,9 +28,22 @@ acceptance:
 knowledge_refs:
   - "docs/product/RESEARCH-GATE.md"
 contract_refs: []
+report_refs: []
+decision_refs: []
+proof_refs: []
 latest_proof_ref: null
+supersedes: []
+superseded_by: null
+doc_impact:
+  classification: none
+  required_updates: []
+  rationale: ""
 ---
 
 ## Context
 
 Before implementing Project Memory storage, run a focused research gate over existing task/issue systems and their failure modes.
+
+## Notes
+
+Keep this goal deferred until the manual Work Ledger semantics survive a real cycle of selected goal -> report -> status update -> next selected goal.
