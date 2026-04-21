@@ -1,0 +1,7 @@
+interface:
+  display_name: "Punk Workflow"
+  short_description: "Bounded work discipline for Punk"
+  default_prompt: "Use $punk-workflow to implement the selected Punk repo goal as one bounded diff."
+
+policy:
+  allow_implicit_invocation: false

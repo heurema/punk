@@ -8,7 +8,7 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-21
 current_phase: "Dogfooding Level 0 / Phase 1 preparation"
-current_focus: "Build the append-only event log on top of the new pure flow state kernel"
+current_focus: "Resume the append-only event log with the repo-scoped Codex workflow skill in place"
 selected_next: "work/goals/goal_add_append_only_event_log.md"
 last_validated_commit: null
 ---
@@ -17,12 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: use the finished pure state kernel as the base for the next bounded Phase 1 slice.
+- Current focus: resume the append-only event log after installing a thin repo-scoped Codex workflow skill.
 - Selected next: `work/goals/goal_add_append_only_event_log.md`
-- Why this is next: event writing is now the smallest remaining Phase 1 foundation step and unblocks later inspect and smoke-eval work.
+- Why this is next: the workflow guardrail is now in place, so event writing remains the smallest remaining Phase 1 foundation step and still unblocks later inspect and smoke-eval work.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
+  - the workflow skill stays thin and does not become a second source of product truth.
   - event logging remains separate from CLI inspect and eval harness work.
 
 ## Next Candidates
@@ -46,6 +47,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-21 | Added the Codex project workflow skill | `work/goals/goal_add_codex_project_workflow_skill.md`, `work/reports/2026-04-21-codex-project-workflow-skill.md` |
 | 2026-04-21 | Added the pure flow state kernel | `work/goals/goal_add_flow_state_kernel.md`, `work/reports/2026-04-21-flow-state-kernel.md` |
 | 2026-04-21 | Split the broad flow + smoke eval goal into smaller bounded goals | `work/reports/2026-04-21-split-flow-smoke-eval-goal.md` |
 | 2026-04-21 | Bootstrapped the Phase 0 active-core workspace skeleton | `work/goals/goal_bootstrap_punk_core.md`, `work/reports/2026-04-21-phase-0-workspace-skeleton.md` |
@@ -56,9 +58,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-21
-- Command: `cargo test -p punk-flow && cargo check --workspace && python3 scripts/check_work_ledger.py`
+- Command: `python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-21-codex-project-workflow-skill.md --report work/reports/2026-04-21-codex-project-workflow-skill.md`
 - Result: `pass`
 - Notes:
   - `selected_next` points to `work/goals/goal_add_append_only_event_log.md`
   - no goal is currently `in_progress`
-  - the current flow kernel remains pure and side-effect free; no `.punk/` runtime state is written
+  - the repo-scoped workflow skill is installed and `selected_next` remains `work/goals/goal_add_append_only_event_log.md`
+  - no Rust code or `.punk/` runtime state changed in this diff
