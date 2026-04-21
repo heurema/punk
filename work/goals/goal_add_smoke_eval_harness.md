@@ -12,7 +12,7 @@ selected_at: null
 started_at: null
 completed_at: null
 blocked_by:
-  - "work/goals/goal_add_append_only_event_log.md"
+  - "work/goals/goal_connect_flow_transitions_to_event_log.md"
 scope:
   include:
     - "crates/punk-eval/**"
@@ -50,4 +50,4 @@ Start the smoke eval harness only after there is enough deterministic flow/event
 
 ## Notes
 
-This goal intentionally stays blocked so Phase 2 work does not re-enter the first Phase 1 implementation diff.
+This goal intentionally stays blocked until flow transitions emit deterministic append-only event evidence.

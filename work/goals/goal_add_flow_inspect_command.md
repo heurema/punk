@@ -12,7 +12,7 @@ selected_at: null
 started_at: null
 completed_at: null
 blocked_by:
-  - "work/goals/goal_add_append_only_event_log.md"
+  - "work/goals/goal_connect_flow_transitions_to_event_log.md"
 scope:
   include:
     - "crates/punk-cli/**"
@@ -51,4 +51,4 @@ Expose inspectable flow state only after there is real state and event evidence 
 
 ## Notes
 
-This goal stays blocked until append-only event evidence exists.
+This goal stays blocked until flow transitions emit real append-only event evidence.
