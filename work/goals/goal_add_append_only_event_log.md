@@ -1,7 +1,7 @@
 ---
 id: goal_add_append_only_event_log
 title: "Add append-only event log"
-status: blocked
+status: ready
 owner: "vitaly"
 module: "core"
 priority: P0
@@ -11,8 +11,7 @@ updated_at: 2026-04-21
 selected_at: null
 started_at: null
 completed_at: null
-blocked_by:
-  - "work/goals/goal_add_flow_state_kernel.md"
+blocked_by: []
 scope:
   include:
     - "crates/punk-events/**"
@@ -50,4 +49,4 @@ Add the minimal append-only event log only after the pure flow-state kernel exis
 
 ## Notes
 
-Keep this goal blocked until the state kernel is proven as a smaller bounded step.
+The flow state kernel now exists, so this is the next implementation-ready Phase 1 goal.

@@ -12,7 +12,6 @@ selected_at: null
 started_at: null
 completed_at: null
 blocked_by:
-  - "work/goals/goal_add_flow_state_kernel.md"
   - "work/goals/goal_add_append_only_event_log.md"
 scope:
   include:

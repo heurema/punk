@@ -1,16 +1,16 @@
 ---
 id: goal_add_flow_state_kernel
 title: "Add flow state kernel"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P0
 authority: canonical
 created_at: 2026-04-21
 updated_at: 2026-04-21
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-21
+started_at: 2026-04-21
+completed_at: 2026-04-21
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "docs/product/ROADMAP.md"
   - "docs/product/START-HERE.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-21-flow-state-kernel.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -53,3 +54,5 @@ Build the smallest useful pure flow-state kernel before persistence, event writi
 ## Notes
 
 This is the next implementation-ready goal after the Phase 0 workspace skeleton.
+
+This goal is complete once the pure state model, deterministic transition guard, and unit tests exist without adding persistence, event writing, CLI inspect behavior, or `.punk/` state.
