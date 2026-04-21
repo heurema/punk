@@ -1,7 +1,7 @@
 ---
 id: goal_add_flow_and_smoke_eval
 title: "Add flow controller and smoke eval foundation"
-status: ready
+status: superseded
 owner: "vitaly"
 module: "core"
 priority: P0
@@ -33,12 +33,17 @@ knowledge_refs:
   - "docs/product/FLOW.md"
   - "docs/product/EVAL.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-21-split-flow-smoke-eval-goal.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
 supersedes: []
-superseded_by: null
+superseded_by:
+  - "work/goals/goal_add_flow_state_kernel.md"
+  - "work/goals/goal_add_append_only_event_log.md"
+  - "work/goals/goal_add_flow_inspect_command.md"
+  - "work/goals/goal_add_smoke_eval_harness.md"
 doc_impact:
   classification: none
   required_updates: []
@@ -48,3 +53,7 @@ doc_impact:
 ## Context
 
 Build Phase 1 and Phase 2 foundation after Phase 0 skeleton is stable.
+
+## Notes
+
+This broad goal was superseded because it mixed multiple roadmap phases and exceeded the intended bounded-work size for the next implementation step.

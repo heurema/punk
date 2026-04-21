@@ -23,7 +23,7 @@ decision_refs: []
 proof_refs: []
 latest_proof_ref: null
 supersedes: []
-superseded_by: null
+superseded_by: []
 doc_impact:
   classification: none
   required_updates: []

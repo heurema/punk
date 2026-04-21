@@ -17,10 +17,10 @@ REQUIRED_STATUS_SECTIONS = [
     "## Done Recently",
     "## Validation",
 ]
-LIST_KEYS = {"blocked_by", "knowledge_refs", "contract_refs", "report_refs", "decision_refs", "proof_refs", "supersedes"}
-SCALAR_KEYS = {"status", "selected_next", "latest_proof_ref", "superseded_by"}
-REF_LIST_KEYS = {"blocked_by", "knowledge_refs", "contract_refs", "report_refs", "decision_refs", "proof_refs", "supersedes"}
-REF_SCALAR_KEYS = {"selected_next", "latest_proof_ref", "superseded_by"}
+LIST_KEYS = {"blocked_by", "knowledge_refs", "contract_refs", "report_refs", "decision_refs", "proof_refs", "supersedes", "superseded_by"}
+SCALAR_KEYS = {"status", "selected_next", "latest_proof_ref"}
+REF_LIST_KEYS = {"blocked_by", "knowledge_refs", "contract_refs", "report_refs", "decision_refs", "proof_refs", "supersedes", "superseded_by"}
+REF_SCALAR_KEYS = {"selected_next", "latest_proof_ref"}
 
 
 def parse_scalar(raw: str) -> object:
