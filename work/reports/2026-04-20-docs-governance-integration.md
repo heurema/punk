@@ -39,7 +39,7 @@ doc_impact:
 ## Checks run
 
 - `scripts/check.sh docs-governance --files scripts/check.sh .github/workflows/docs-governance.yml work/reports/2026-04-20-docs-governance-integration.md --report work/reports/2026-04-20-docs-governance-integration.md`
-- `python3 scripts/check_docs_governance.py --repo /Users/vi/personal/heurema/punk --files scripts/check_docs_governance.py`
+- `python3 scripts/check_docs_governance.py --repo . --files scripts/check_docs_governance.py`
 - local temp-repo assertions for pass/fail scenarios in `scripts/check_docs_governance.py`
 
 ## What remains
