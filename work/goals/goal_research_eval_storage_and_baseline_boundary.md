@@ -1,16 +1,16 @@
 ---
 id: goal_research_eval_storage_and_baseline_boundary
 title: "Research eval storage and baseline boundary"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -30,8 +30,10 @@ knowledge_refs:
   - "docs/product/RESEARCH-GATE.md"
   - "docs/product/EVAL-PLANE.md"
   - "knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md"
+  - "knowledge/research/2026-04-22-eval-storage-baseline-waiver-boundary.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-eval-storage-baseline-boundary-research.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -59,9 +61,7 @@ After opt-in JSON output exists, the next tempting steps are `.punk/evals` stora
 
 ## Notes
 
-Keep this goal narrow:
-- research only;
-- no implementation;
-- no `.punk/evals`;
-- no baseline or waiver behavior yet;
-- no validator or stable-public-contract hardening.
+This goal is complete:
+- the research note compares storage, baseline, waiver, and future proof-reference options;
+- the recommendation keeps `.punk/evals`, baseline, and waiver implementation deferred;
+- the next safe step is a design/spec-only eval storage boundary goal.
