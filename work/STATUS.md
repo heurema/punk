@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 2 preparation"
-current_focus: "Define a design-only eval baseline and waiver boundary v0.1 before any implementation"
-selected_next: "work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md"
+current_focus: "Run a second advisory Work Ledger Review before any eval storage, baseline, or waiver implementation"
+selected_next: "work/goals/goal_run_second_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,34 +17,36 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: define a design-only eval baseline and waiver boundary v0.1 before any implementation.
-- Selected next: `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md`
-- Why this is next: the storage boundary spec is now defined and explicitly defers baseline/waiver to a separate boundary step.
+- Current focus: run a second advisory Work Ledger Review before any eval storage, baseline, or waiver implementation.
+- Selected next: `work/goals/goal_run_second_work_ledger_review.md`
+- Why this is next: the storage boundary and baseline/waiver boundary are now explicit, so the safest next move is an advisory review instead of jumping into implementation.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - smoke eval remains an assessment surface, not a decision surface.
-  - `.punk/evals`, baseline, and waiver implementation remain deferred behind the baseline/waiver boundary design step.
+  - eval remains an assessment surface, not a decision surface.
+  - `.punk/evals`, baseline comparison, and waiver implementation remain deferred.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md` | `ready` | The storage boundary is now explicit, so the next honest design step is to define baseline and waiver boundaries separately. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval baseline/waiver boundary step. | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md` |
+| `work/goals/goal_run_second_work_ledger_review.md` | `ready` | The recent schema and boundary sequence is large enough to justify another advisory review before choosing implementation work. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the current review step. | `work/goals/goal_run_second_work_ledger_review.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/evals` report storage | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md` | Keep storage implementation deferred while baseline/waiver boundaries are still being specified. |
-| Baseline and waiver behavior | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md` | Define the boundary spec before any implementation. |
-| Project Memory storage research | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md` | Finish the eval baseline/waiver boundary step before broader storage work. |
+| `.punk/evals` report storage | `work/goals/goal_run_second_work_ledger_review.md` | Review the recent boundary sequence before choosing any storage implementation path. |
+| Baseline comparison implementation | `work/goals/goal_run_second_work_ledger_review.md` | Review the recent boundary sequence before choosing any baseline implementation path. |
+| Waiver ledger implementation | `work/goals/goal_run_second_work_ledger_review.md` | Review the recent boundary sequence before choosing any waiver implementation path. |
+| Project Memory storage research | `work/goals/goal_run_second_work_ledger_review.md` | Finish the review step before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Defined the eval baseline and waiver boundary v0.1 spec | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md`, `work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md`, `evals/specs/eval-baseline-waiver-boundary.v0.1.md` |
 | 2026-04-22 | Defined the eval storage boundary v0.1 spec | `work/goals/goal_define_eval_storage_boundary_v0_1.md`, `work/reports/2026-04-22-eval-storage-boundary-v0-1.md`, `evals/specs/eval-storage-boundary.v0.1.md` |
 | 2026-04-22 | Researched eval storage, baseline, and waiver boundary | `work/goals/goal_research_eval_storage_and_baseline_boundary.md`, `work/reports/2026-04-22-eval-storage-baseline-boundary-research.md`, `knowledge/research/2026-04-22-eval-storage-baseline-waiver-boundary.md` |
 | 2026-04-22 | Added opt-in smoke eval JSON output v0.1 | `work/goals/goal_add_smoke_eval_json_output_v0_1.md`, `work/reports/2026-04-22-smoke-eval-json-output-v0-1.md` |
@@ -70,9 +72,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/eval-storage-boundary.v0.1.md work/reports/2026-04-22-eval-storage-boundary-v0-1.md --report work/reports/2026-04-22-eval-storage-boundary-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/eval-baseline-waiver-boundary.v0.1.md work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md --report work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md`
-  - the storage boundary remains design-only and does not activate `.punk/evals`
-  - baseline, waiver, validator, and proof integration remain out of scope
+  - `selected_next` moves to `work/goals/goal_run_second_work_ledger_review.md`
+  - baseline and waiver remain design-only and do not activate `.punk/evals`
+  - storage, baseline comparison, waiver ledger, validator, and proof integration remain out of scope

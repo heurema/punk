@@ -1,16 +1,16 @@
 ---
 id: goal_define_eval_baseline_waiver_boundary_v0_1
 title: "Define eval baseline and waiver boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "knowledge/research/2026-04-22-eval-storage-baseline-waiver-boundary.md"
   - "evals/specs/eval-storage-boundary.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,9 +64,7 @@ After the storage boundary is explicit, the next honest design step is to define
 
 ## Notes
 
-Keep this goal narrow:
-- design/spec only;
-- no implementation;
-- no `.punk/evals`;
-- no baseline or waiver files yet;
-- no validators or gate/proof work.
+This goal is complete:
+- `evals/specs/eval-baseline-waiver-boundary.v0.1.md` now defines baseline and waiver as future-only evidence/governance boundaries;
+- the spec keeps baseline pass and waivers out of final decision semantics;
+- the next conservative step is a second advisory Work Ledger Review before any implementation.
