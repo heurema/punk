@@ -1,7 +1,7 @@
 ---
 id: goal_add_smoke_eval_harness
 title: "Add smoke eval harness"
-status: blocked
+status: ready
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -11,8 +11,7 @@ updated_at: 2026-04-22
 selected_at: null
 started_at: null
 completed_at: null
-blocked_by:
-  - "work/goals/goal_add_flow_inspect_command.md"
+blocked_by: []
 scope:
   include:
     - "crates/punk-eval/**"
@@ -38,6 +37,18 @@ proof_refs: []
 latest_proof_ref: null
 supersedes: []
 superseded_by: []
+research_gate:
+  classification: R1
+  required: true
+  rationale: "Touches the eval operator surface over the current flow/event inspect path."
+  research_refs:
+    - "docs/product/RESEARCH-GATE.md"
+    - "docs/product/EVAL-PLANE.md"
+    - "docs/product/ROADMAP.md"
+  external_research_refs:
+    - "work/reports/2026-04-22-research-gate-preflight.md"
+    - "work/reports/2026-04-22-flow-inspect-command.md"
+  blocked_reason: null
 doc_impact:
   classification: none
   required_updates: []
@@ -50,4 +61,4 @@ Start the smoke eval harness only after there is enough deterministic flow/event
 
 ## Notes
 
-This goal intentionally stays blocked until the first bounded inspect surface exists on top of real flow event evidence.
+This goal is now ready because the first bounded inspect surface exists on top of real flow/event kernel evidence without activating `.punk/` runtime state.

@@ -5,6 +5,10 @@ version = 4
 [[package]]
 name = "punk-cli"
 version = "0.1.0"
+dependencies = [
+ "punk-events",
+ "punk-flow",
+]
 
 [[package]]
 name = "punk-contract"

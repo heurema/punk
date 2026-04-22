@@ -1,16 +1,16 @@
 ---
 id: goal_add_flow_inspect_command
 title: "Add flow inspect command"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-21
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "docs/product/START-HERE.md"
   - "docs/product/ROADMAP.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-flow-inspect-command.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -44,7 +45,13 @@ research_gate:
   rationale: "Touches public CLI/operator surface and inspectable flow/event views."
   research_refs:
     - "docs/product/RESEARCH-GATE.md"
+    - "docs/product/START-HERE.md"
+    - "docs/product/ARCHITECTURE.md"
+    - "docs/product/ROADMAP.md"
   external_research_refs:
+    - "work/reports/2026-04-21-flow-state-kernel.md"
+    - "work/reports/2026-04-21-append-only-event-log.md"
+    - "work/reports/2026-04-22-connect-flow-transitions-to-event-log.md"
     - "work/reports/2026-04-22-research-gate-preflight.md"
   blocked_reason: null
 doc_impact:
@@ -60,4 +67,5 @@ Expose inspectable flow state only after there is real state and event evidence 
 ## Notes
 
 Flow transitions now emit event drafts, so this is the next honest inspect surface.
-Research Gate preflight is installed before implementation because this goal touches a public CLI/operator surface.
+Research Gate preflight was satisfied before implementation because this goal touches a public CLI/operator surface.
+This first command stays a limited kernel preview and does not claim `.punk/` runtime persistence.

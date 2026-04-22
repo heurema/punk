@@ -6,6 +6,10 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[dependencies]
+punk-events = { path = "../punk-events" }
+punk-flow = { path = "../punk-flow" }
+
 [[bin]]
 name = "punk"
 path = "src/main.rs"

@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 1 preparation"
-current_focus: "Expose the first bounded flow inspect surface after installing Research Gate preflight"
-selected_next: "work/goals/goal_add_flow_inspect_command.md"
+current_focus: "Use the first bounded flow inspect surface, then move into the smoke eval harness"
+selected_next: "work/goals/goal_add_smoke_eval_harness.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,34 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: expose the first bounded inspect surface now that flow transitions emit real event evidence and Research Gate preflight is installed.
-- Selected next: `work/goals/goal_add_flow_inspect_command.md`
-- Why this is next: flow inspect remains the next honest implementation goal, and the workflow now blocks future `R1+` work from silently skipping research preflight.
+- Current focus: use the first bounded flow inspect surface and move next into smoke eval without activating `.punk/` runtime persistence.
+- Selected next: `work/goals/goal_add_smoke_eval_harness.md`
+- Why this is next: `punk flow inspect` now exists as an honest limited kernel preview over current flow/event evidence, so the next bounded step is smoke eval over that path.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - Research Gate preflight is installed before the first CLI/operator surface.
-  - inspect remains separate from smoke eval and `.punk/` runtime activation.
+  - inspect stays honest about limited runtime state.
+  - smoke eval remains separate from gate/proof and `.punk/` runtime activation.
   - event evidence remains evidence only, not decision authority.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_flow_inspect_command.md` | `ready` | Next implementation surface now that flow/event evidence exists and Research Gate preflight is installed. | — |
-| `work/goals/goal_add_smoke_eval_harness.md` | `blocked` | Smoke eval stays behind the first inspect surface and the existing flow/event evidence. | `work/goals/goal_add_flow_inspect_command.md` |
+| `work/goals/goal_add_smoke_eval_harness.md` | `ready` | Next bounded step now that flow inspect exposes a real limited inspect surface over flow/event kernels. | — |
 | `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Storage research stays deferred until manual ledger semantics survive at least one real work cycle. | Manual ledger usage evidence |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `work/goals/goal_add_smoke_eval_harness.md` | `work/goals/goal_add_flow_inspect_command.md` | Finish the first bounded inspect surface before starting Phase 2 eval harness work. |
 | Project Memory storage research | Stable manual ledger semantics | Complete at least one cycle of selected goal -> report -> status update -> next selected goal. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Added the first bounded `punk flow inspect` command | `work/goals/goal_add_flow_inspect_command.md`, `work/reports/2026-04-22-flow-inspect-command.md` |
 | 2026-04-22 | Added Research Gate preflight to the repo workflow skill | `work/goals/goal_add_research_gate_preflight_to_workflow_skill.md`, `work/reports/2026-04-22-research-gate-preflight.md` |
 | 2026-04-22 | Connected flow transitions to the append-only event log | `work/goals/goal_connect_flow_transitions_to_event_log.md`, `work/reports/2026-04-22-connect-flow-transitions-to-event-log.md` |
 | 2026-04-21 | Added the append-only event log kernel | `work/goals/goal_add_append_only_event_log.md`, `work/reports/2026-04-21-append-only-event-log.md` |
@@ -60,9 +59,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-research-gate-preflight.md --report work/reports/2026-04-22-research-gate-preflight.md`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-cli && cargo test -p punk-flow && cargo test -p punk-events && cargo check --workspace && cargo run -q -p punk-cli -- flow inspect && scripts/check.sh docs-governance --files work/reports/2026-04-22-flow-inspect-command.md --report work/reports/2026-04-22-flow-inspect-command.md`
 - Result: `pass`
 - Notes:
-  - `selected_next` remains `work/goals/goal_add_flow_inspect_command.md`
-  - Research Gate preflight was inserted before flow inspect and completed without superseding it
-  - future `R1+` work must cite repo-tracked or user-provided research or stop for Deep Research
+  - `selected_next` moves to `work/goals/goal_add_smoke_eval_harness.md`
+  - `punk flow inspect` is limited to current flow/event kernel evidence and does not claim persisted runtime state
+  - no `.punk/` runtime state changed in this diff
