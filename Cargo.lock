@@ -25,6 +25,10 @@ version = "0.1.0"
 [[package]]
 name = "punk-eval"
 version = "0.1.0"
+dependencies = [
+ "punk-events",
+ "punk-flow",
+]
 
 [[package]]
 name = "punk-events"

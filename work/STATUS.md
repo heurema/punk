@@ -7,9 +7,9 @@ owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
-current_phase: "Dogfooding Level 0 / Phase 1 preparation"
-current_focus: "Use the first bounded flow inspect surface, then move into the smoke eval harness"
-selected_next: "work/goals/goal_add_smoke_eval_harness.md"
+current_phase: "Dogfooding Level 0 / Phase 2 preparation"
+current_focus: "Review the first bounded work cycle after the first smoke eval harness landed"
+selected_next: "work/goals/goal_run_first_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,33 +17,33 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: use the first bounded flow inspect surface and move next into smoke eval without activating `.punk/` runtime persistence.
-- Selected next: `work/goals/goal_add_smoke_eval_harness.md`
-- Why this is next: `punk flow inspect` now exists as an honest limited kernel preview over current flow/event evidence, so the next bounded step is smoke eval over that path.
+- Current focus: review the first bounded work cycle now that the smoke eval harness exists over the current flow/event kernels.
+- Selected next: `work/goals/goal_run_first_work_ledger_review.md`
+- Why this is next: the first smoke eval harness now gives enough implementation and check evidence to run the first Work Ledger review before growing more surfaces.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - inspect stays honest about limited runtime state.
-  - smoke eval remains separate from gate/proof and `.punk/` runtime activation.
-  - event evidence remains evidence only, not decision authority.
+  - smoke eval remains assessment only, not decision authority.
+  - the next review stays advisory and does not become a second tracker.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_smoke_eval_harness.md` | `ready` | Next bounded step now that flow inspect exposes a real limited inspect surface over flow/event kernels. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Storage research stays deferred until manual ledger semantics survive at least one real work cycle. | Manual ledger usage evidence |
+| `work/goals/goal_run_first_work_ledger_review.md` | `ready` | First review now has enough process/code/eval evidence to analyze the initial bounded work cycle. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Storage research stays deferred until the first bounded work cycle has been reviewed. | First Work Ledger review |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Project Memory storage research | Stable manual ledger semantics | Complete at least one cycle of selected goal -> report -> status update -> next selected goal. |
+| Project Memory storage research | First Work Ledger review | Review the first bounded work cycle before revisiting longer-horizon storage research. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Added the first smoke eval harness | `work/goals/goal_add_smoke_eval_harness.md`, `work/reports/2026-04-22-smoke-eval-harness.md` |
 | 2026-04-22 | Added the first bounded `punk flow inspect` command | `work/goals/goal_add_flow_inspect_command.md`, `work/reports/2026-04-22-flow-inspect-command.md` |
 | 2026-04-22 | Added Research Gate preflight to the repo workflow skill | `work/goals/goal_add_research_gate_preflight_to_workflow_skill.md`, `work/reports/2026-04-22-research-gate-preflight.md` |
 | 2026-04-22 | Connected flow transitions to the append-only event log | `work/goals/goal_connect_flow_transitions_to_event_log.md`, `work/reports/2026-04-22-connect-flow-transitions-to-event-log.md` |
@@ -59,9 +59,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-cli && cargo test -p punk-flow && cargo test -p punk-events && cargo check --workspace && cargo run -q -p punk-cli -- flow inspect && scripts/check.sh docs-governance --files work/reports/2026-04-22-flow-inspect-command.md --report work/reports/2026-04-22-flow-inspect-command.md`
-- Result: `pass`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-eval && cargo test -p punk-flow && cargo test -p punk-events && cargo test -p punk-cli && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-smoke-eval-harness.md --report work/reports/2026-04-22-smoke-eval-harness.md`
+- Result: `pending`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_add_smoke_eval_harness.md`
-  - `punk flow inspect` is limited to current flow/event kernel evidence and does not claim persisted runtime state
-  - no `.punk/` runtime state changed in this diff
+  - `selected_next` moves to `work/goals/goal_run_first_work_ledger_review.md`
+  - the smoke harness stays library-first and does not activate `.punk/` eval runtime state
+  - CLI `punk eval run smoke` remains deferred
