@@ -1,16 +1,16 @@
 ---
 id: goal_define_run_receipt_boundary_v0_1
 title: "Define run receipt boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "docs/product/CONTRACT-TRACKER.md"
   - "knowledge/research/2026-04-22-run-receipt-boundary.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-run-receipt-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -62,10 +63,7 @@ Run receipt research is complete. The next honest step is to define a boundary/s
 
 ## Notes
 
-Keep this goal narrow:
-- design/spec only;
-- no Rust code;
-- no `.punk/`;
-- no receipt implementation;
-- no gate/proof implementation;
-- no storage activation.
+This goal is complete:
+- `evals/specs/run-receipt-boundary.v0.1.md` now defines run receipts as future evidence artifacts distinct from event log, eval report, gate decision, and proofpack;
+- the spec keeps `.punk/runs`, receipt schema work, validators, and gate/proof implementation deferred;
+- the next conservative step is a third advisory Work Ledger Review before selecting the next implementation branch.
