@@ -7,9 +7,9 @@ owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
-current_phase: "Dogfooding Level 0 / Phase 3 preparation"
-current_focus: "Return to the core lifecycle with a minimal contract step before any eval storage, baseline, or waiver implementation"
-selected_next: "work/goals/goal_add_contract_lifecycle_minimal.md"
+current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
+current_focus: "Connect the new minimal contract kernel to flow state before any contract storage, gate, or proof implementation"
+selected_next: "work/goals/goal_connect_contract_to_flow_state.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,36 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: return to the core lifecycle with a minimal contract step before any eval storage, baseline, or waiver implementation.
-- Selected next: `work/goals/goal_add_contract_lifecycle_minimal.md`
-- Why this is next: the second advisory review found that eval/report boundary work is sufficiently protected for now, while the core Phase 3 contract loop is still the highest-value missing active surface.
+- Current focus: connect the new minimal contract kernel to flow state before any contract storage, gate, or proof implementation.
+- Selected next: `work/goals/goal_connect_contract_to_flow_state.md`
+- Why this is next: the minimal contract kernel now exists, so the next honest step is to connect it to existing flow state without expanding into storage, CLI, gate, or proof behavior.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
   - eval remains an assessment surface, not a decision surface.
-  - `.punk/evals`, baseline comparison, and waiver implementation remain deferred.
+  - `.punk/evals`, contract storage, gate/proof, baseline comparison, and waiver implementation remain deferred.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_contract_lifecycle_minimal.md` | `ready` | The second review recommends returning to the Phase 3 core loop before adding more eval/storage infrastructure. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the contract lifecycle step. | `work/goals/goal_add_contract_lifecycle_minimal.md` |
+| `work/goals/goal_connect_contract_to_flow_state.md` | `ready` | The minimal contract kernel now exists, so the next bounded step is kernel-only integration with flow state. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the contract-to-flow step. | `work/goals/goal_connect_contract_to_flow_state.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/evals` report storage | `work/goals/goal_add_contract_lifecycle_minimal.md` | Return to the core contract loop before deciding whether stored eval artifacts are actually needed next. |
-| Baseline comparison implementation | `work/goals/goal_add_contract_lifecycle_minimal.md` | Build the minimal contract lifecycle before choosing additional eval governance implementation. |
-| Waiver ledger implementation | `work/goals/goal_add_contract_lifecycle_minimal.md` | Build the minimal contract lifecycle before choosing additional eval governance implementation. |
-| Project Memory storage research | `work/goals/goal_add_contract_lifecycle_minimal.md` | Finish the contract lifecycle step before broader storage work. |
+| `.punk/contracts` or `.punk/evals` storage | `work/goals/goal_connect_contract_to_flow_state.md` | Connect contract scope/status semantics to flow state before deciding whether any runtime storage is needed. |
+| Gate or proof implementation | `work/goals/goal_connect_contract_to_flow_state.md` | Finish the contract-to-flow step before choosing later lifecycle artifacts. |
+| Baseline comparison implementation | `work/goals/goal_connect_contract_to_flow_state.md` | Keep eval governance deferred while the core contract loop is still being connected. |
+| Project Memory storage research | `work/goals/goal_connect_contract_to_flow_state.md` | Finish the contract-to-flow step before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Added the minimal contract lifecycle kernel | `work/goals/goal_add_contract_lifecycle_minimal.md`, `work/reports/2026-04-22-contract-lifecycle-minimal.md`, `crates/punk-contract/src/lib.rs` |
 | 2026-04-22 | Ran the second advisory Work Ledger Review | `work/goals/goal_run_second_work_ledger_review.md`, `work/reports/2026-04-22-second-work-ledger-review.md` |
 | 2026-04-22 | Defined the eval baseline and waiver boundary v0.1 spec | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md`, `work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md`, `evals/specs/eval-baseline-waiver-boundary.v0.1.md` |
 | 2026-04-22 | Defined the eval storage boundary v0.1 spec | `work/goals/goal_define_eval_storage_boundary_v0_1.md`, `work/reports/2026-04-22-eval-storage-boundary-v0-1.md`, `evals/specs/eval-storage-boundary.v0.1.md` |
@@ -73,9 +74,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-second-work-ledger-review.md --report work/reports/2026-04-22-second-work-ledger-review.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-contract && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-contract-lifecycle-minimal.md --report work/reports/2026-04-22-contract-lifecycle-minimal.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_add_contract_lifecycle_minimal.md`
-  - the second review keeps eval/storage/baseline implementation parked for now
-  - the next bounded step returns to the core contract lifecycle
+  - `selected_next` moves to `work/goals/goal_connect_contract_to_flow_state.md`
+  - the contract kernel stays pure and does not activate `.punk/`, CLI, gate, or proof behavior
+  - the next bounded step is kernel-only contract-to-flow integration

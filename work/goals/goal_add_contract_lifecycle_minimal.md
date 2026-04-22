@@ -1,16 +1,16 @@
 ---
 id: goal_add_contract_lifecycle_minimal
 title: "Add minimal contract lifecycle"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -22,7 +22,7 @@ scope:
     - "docs/product/**"
     - "knowledge/research/**"
 acceptance:
-  - "A narrow contract lifecycle surface exists for an accepted contract with explicit scope."
+  - "A narrow contract lifecycle surface exists for a bounded contract with explicit scope."
   - "The step stays minimal and does not introduce agents, autonomous cut, gate, proof, module host, adapters, or `.punk/` runtime state."
   - "If code changes are introduced later, the goal adds tests or assertions around the new lifecycle surface."
   - "The goal does not expand into full contract memory, baseline/waiver implementation, or eval storage implementation."
@@ -33,7 +33,8 @@ knowledge_refs:
   - "docs/product/CONTRACT-TRACKER.md"
   - "docs/adr/ADR-0009-contract-tracker-core-primitives.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-contract-lifecycle-minimal.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -64,9 +65,7 @@ After the eval/report/storage/baseline boundary sequence, the next bounded step 
 
 ## Notes
 
-Keep this goal narrow:
-- minimal contract lifecycle only;
-- no agent execution;
-- no `.punk/` runtime state;
-- no gate/proof implementation unless explicitly re-scoped later;
-- no module host, adapters, or full project memory behavior.
+This goal is complete:
+- `crates/punk-contract/src/lib.rs` now defines minimal contract primitives, scope validation, and bounded approval-for-run semantics;
+- the kernel stays pure and does not introduce `.punk/`, CLI, gate/proof, or run execution;
+- the next bounded step is to connect the new contract kernel to existing flow state without activating runtime storage.
