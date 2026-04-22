@@ -7,12 +7,12 @@ module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-21
-updated_at: 2026-04-21
+updated_at: 2026-04-22
 selected_at: null
 started_at: null
 completed_at: null
 blocked_by:
-  - "work/goals/goal_connect_flow_transitions_to_event_log.md"
+  - "work/goals/goal_add_flow_inspect_command.md"
 scope:
   include:
     - "crates/punk-eval/**"
@@ -50,4 +50,4 @@ Start the smoke eval harness only after there is enough deterministic flow/event
 
 ## Notes
 
-This goal intentionally stays blocked until flow transitions emit deterministic append-only event evidence.
+This goal intentionally stays blocked until the first bounded inspect surface exists on top of real flow event evidence.

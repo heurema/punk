@@ -29,6 +29,9 @@ version = "0.1.0"
 [[package]]
 name = "punk-flow"
 version = "0.1.0"
+dependencies = [
+ "punk-events",
+]
 
 [[package]]
 name = "punk-gate"

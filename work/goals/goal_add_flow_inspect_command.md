@@ -1,18 +1,17 @@
 ---
 id: goal_add_flow_inspect_command
 title: "Add flow inspect command"
-status: blocked
+status: ready
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-21
-updated_at: 2026-04-21
+updated_at: 2026-04-22
 selected_at: null
 started_at: null
 completed_at: null
-blocked_by:
-  - "work/goals/goal_connect_flow_transitions_to_event_log.md"
+blocked_by: []
 scope:
   include:
     - "crates/punk-cli/**"
@@ -51,4 +50,4 @@ Expose inspectable flow state only after there is real state and event evidence 
 
 ## Notes
 
-This goal stays blocked until flow transitions emit real append-only event evidence.
+Flow transitions now emit event drafts, so this is the next honest inspect surface.
