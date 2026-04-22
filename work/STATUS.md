@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 2 preparation"
-current_focus: "Research the eval report schema boundary before any machine-readable output or runtime report storage"
-selected_next: "work/goals/goal_research_eval_report_schema_before_machine_output.md"
+current_focus: "Define a schema-only smoke eval report v0.1 proposal before any machine-readable output or runtime report storage"
+selected_next: "work/goals/goal_define_smoke_eval_report_schema_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,33 +17,35 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: research the eval report schema boundary before any machine-readable output or runtime report storage.
-- Selected next: `work/goals/goal_research_eval_report_schema_before_machine_output.md`
-- Why this is next: the smoke harness now has an internal report shape and an honest CLI renderer, so the next conservative step is research before promoting any machine-readable output, storage, baseline, or waiver semantics.
+- Current focus: define a schema-only smoke eval report v0.1 proposal before any machine-readable output or runtime report storage.
+- Selected next: `work/goals/goal_define_smoke_eval_report_schema_v0_1.md`
+- Why this is next: research confirmed that machine-readable output, storage, baseline, and waiver work should not proceed without an explicit schema-only proposal first.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
   - smoke eval remains an assessment surface, not a decision surface.
-  - machine-readable output and storage remain deferred behind explicit research.
+  - machine-readable output remains deferred until a schema-only proposal is defined.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_research_eval_report_schema_before_machine_output.md` | `ready` | Any stable machine-readable report or storage work now needs explicit research before implementation. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval-report schema research boundary. | `work/goals/goal_research_eval_report_schema_before_machine_output.md` |
+| `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | `ready` | Research recommends a schema-only proposal before any machine-readable output or storage work. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval-report schema proposal boundary. | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Stable machine-readable smoke eval output | `work/goals/goal_research_eval_report_schema_before_machine_output.md` | Complete the research gate on eval report schema, storage, and failure modes first. |
-| Project Memory storage research | `work/goals/goal_research_eval_report_schema_before_machine_output.md` | Finish the eval-report boundary research before starting broader storage research. |
+| Stable machine-readable smoke eval output | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | Define the v0.1 schema proposal before any output implementation. |
+| `.punk/evals` report storage | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | Clarify the schema and ownership boundary first. |
+| Project Memory storage research | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | Finish the eval-report schema proposal before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Researched eval report schema before machine output | `work/goals/goal_research_eval_report_schema_before_machine_output.md`, `work/reports/2026-04-22-eval-report-schema-research.md`, `knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md` |
 | 2026-04-22 | Added the internal smoke eval report artifact shape | `work/goals/goal_add_smoke_eval_report_artifact_shape.md`, `work/reports/2026-04-22-smoke-eval-report-artifact-shape.md` |
 | 2026-04-22 | Added the first bounded `punk eval run smoke` command | `work/goals/goal_add_smoke_eval_cli_command.md`, `work/reports/2026-04-22-smoke-eval-cli-command.md` |
 | 2026-04-22 | Added the reusable Work Ledger review loop | `work/goals/goal_add_work_ledger_review_loop.md`, `work/reports/2026-04-22-work-ledger-review-loop.md` |
@@ -64,9 +66,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-eval && cargo test -p punk-cli && cargo test -p punk-flow && cargo test -p punk-events && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && scripts/check.sh docs-governance --files work/reports/2026-04-22-smoke-eval-report-artifact-shape.md --report work/reports/2026-04-22-smoke-eval-report-artifact-shape.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md || true`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md work/reports/2026-04-22-eval-report-schema-research.md --report work/reports/2026-04-22-eval-report-schema-research.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_research_eval_report_schema_before_machine_output.md`
-  - smoke eval remains a local assessment surface only
-  - stable machine-readable output, `.punk/evals` storage, baseline, and waiver semantics remain deferred behind explicit research
+  - `selected_next` moves to `work/goals/goal_define_smoke_eval_report_schema_v0_1.md`
+  - stable machine-readable output remains deferred behind schema-only design work
+  - `.punk/evals` storage, baseline, and waiver semantics remain out of scope

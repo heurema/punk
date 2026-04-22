@@ -1,16 +1,16 @@
 ---
 id: goal_research_eval_report_schema_before_machine_output
 title: "Research eval report schema before machine output"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -30,8 +30,10 @@ knowledge_refs:
   - "docs/product/RESEARCH-GATE.md"
   - "docs/product/EVAL-PLANE.md"
   - "docs/product/EVAL.md"
+  - "knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-eval-report-schema-research.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -62,9 +64,7 @@ Before adding machine-readable smoke eval output, runtime report storage, or a s
 
 ## Notes
 
-Keep this goal narrow:
-- research only
-- no `.punk/evals` runtime storage
-- no stable JSON/schema implementation
-- no baseline or waiver behavior
-- no gate/proof integration
+This goal is complete:
+- the research note captures prior art and failure modes;
+- the recommendation is research-first before machine output;
+- no code, `.punk/evals`, schema file, storage model, baseline, or waiver behavior was added.
