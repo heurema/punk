@@ -1,16 +1,16 @@
 ---
 id: goal_add_contract_flow_smoke_eval
 title: "Add contract-flow smoke eval"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "docs/product/CONTRACT-TRACKER.md"
   - "work/reports/2026-04-22-connect-contract-to-flow-state.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-contract-flow-smoke-eval.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,9 +64,7 @@ After contract state can influence flow guards, the next bounded step is to add 
 
 ## Notes
 
-Keep this goal narrow:
-- smoke eval only;
-- no CLI;
-- no `.punk/`;
-- no run receipts, gate, or proof;
-- no contract storage or broader flow redesign.
+This goal is complete:
+- `crates/punk-eval/src/lib.rs` now covers the contract-aware flow guard with deterministic smoke cases for approved, draft, invalid-scope, and non-mutating denial behavior;
+- the existing smoke report shape and JSON renderer now include the new contract-flow cases without schema changes;
+- the next conservative step is to research the run receipt boundary before any receipt, storage, gate, or proof implementation.

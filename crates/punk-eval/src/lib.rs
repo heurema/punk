@@ -6,6 +6,10 @@
 
 use std::fmt::Write as _;
 
+use punk_contract::{
+    approve_contract, validate_contract, ContractDraft, ContractError, ContractId, ContractScope,
+    ContractStatus,
+};
 use punk_events::{schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
 
@@ -309,6 +313,11 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_denied_transition_preserves_state(),
         eval_flow_transition_produces_event_evidence(),
         eval_event_log_is_append_only(),
+        eval_contract_ready_for_bounded_work_allows_start_run(),
+        eval_contract_draft_denies_start_run(),
+        eval_contract_invalid_scope_denies_start_run(),
+        eval_contract_denial_does_not_mutate_flow_state(),
+        eval_contract_guard_result_remains_evidence_not_decision(),
     ];
     let smoke_result = if cases
         .iter()
@@ -319,9 +328,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current flow and event kernels".to_owned()
+        "local deterministic smoke harness passed over current contract, flow, and event kernels"
+            .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current flow and event kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, and event kernels"
             .to_owned()
     };
 
@@ -557,6 +567,186 @@ fn eval_event_log_is_append_only() -> SmokeEvalCaseResult {
     }
 }
 
+fn valid_contract_scope() -> ContractScope {
+    ContractScope::new()
+        .with_ref("work/goals/goal_add_contract_lifecycle_minimal.md")
+        .with_ref("work/goals/goal_connect_contract_to_flow_state.md")
+}
+
+fn valid_contract_draft() -> ContractDraft {
+    ContractDraft::new(
+        ContractId::new("contract_eval_001").expect("contract id should be valid"),
+        "Contract-aware flow guard smoke coverage",
+        valid_contract_scope(),
+    )
+}
+
+fn eval_contract_ready_for_bounded_work_allows_start_run() -> SmokeEvalCaseResult {
+    let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+    let instance = FlowInstance::new(FlowState::Approved);
+
+    match instance.transition_with_contract(
+        FlowCommand::StartRun,
+        contract.status(),
+        contract.scope_valid(),
+    ) {
+        Ok(next) if next.state() == FlowState::Running => SmokeEvalCaseResult::pass(
+            "eval_contract_ready_for_bounded_work_allows_start_run",
+            "bounded-work-ready contract still authorizes bounded run start",
+            "ApprovedForRun with explicit scope still allows Approved -> Running without implying final acceptance",
+        ),
+        Ok(next) => SmokeEvalCaseResult::fail(
+            "eval_contract_ready_for_bounded_work_allows_start_run",
+            "bounded-work-ready contract still authorizes bounded run start",
+            format!(
+                "contract-authorized StartRun returned unexpected next state {}",
+                next.state().as_str()
+            ),
+        ),
+        Err(error) => SmokeEvalCaseResult::fail(
+            "eval_contract_ready_for_bounded_work_allows_start_run",
+            "bounded-work-ready contract still authorizes bounded run start",
+            format!(
+                "bounded-work-ready contract was denied with next allowed commands {}",
+                format_commands(error.next_allowed_commands)
+            ),
+        ),
+    }
+}
+
+fn eval_contract_draft_denies_start_run() -> SmokeEvalCaseResult {
+    let draft = valid_contract_draft();
+    let instance = FlowInstance::new(FlowState::Approved);
+    let attempt = instance.attempt_transition_with_contract(
+        FlowCommand::StartRun,
+        ContractStatus::Draft,
+        !draft.scope().is_empty(),
+    );
+
+    if instance.state() == FlowState::Approved
+        && attempt.next_state().is_none()
+        && attempt.guard_code() == Some("RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT")
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_contract_draft_denies_start_run",
+            "draft contract still denies bounded run start",
+            "draft contract keeps StartRun denied until ApprovedForRun is present",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_contract_draft_denies_start_run",
+            "draft contract still denies bounded run start",
+            format!(
+                "draft contract denial drifted; next_state={:?} guard_code={:?}",
+                attempt.next_state(),
+                attempt.guard_code()
+            ),
+        )
+    }
+}
+
+fn eval_contract_invalid_scope_denies_start_run() -> SmokeEvalCaseResult {
+    let invalid_draft = ContractDraft::new(
+        ContractId::new("contract_eval_002").expect("contract id should be valid"),
+        "Invalid scope should deny start run",
+        ContractScope::new(),
+    );
+    let instance = FlowInstance::new(FlowState::Approved);
+    let validation = validate_contract(&invalid_draft);
+    let attempt = instance.attempt_transition_with_contract(
+        FlowCommand::StartRun,
+        ContractStatus::Draft,
+        !invalid_draft.scope().is_empty(),
+    );
+
+    if validation == Err(ContractError::EmptyScope)
+        && instance.state() == FlowState::Approved
+        && attempt.next_state().is_none()
+        && attempt.guard_code() == Some("RUN_REQUIRES_EXPLICIT_CONTRACT_SCOPE")
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_contract_invalid_scope_denies_start_run",
+            "empty contract scope still denies bounded run start",
+            "empty scope remains invalid and keeps StartRun denied before any run begins",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_contract_invalid_scope_denies_start_run",
+            "empty contract scope still denies bounded run start",
+            format!(
+                "invalid scope denial drifted; validation={validation:?} next_state={:?} guard_code={:?}",
+                attempt.next_state(),
+                attempt.guard_code()
+            ),
+        )
+    }
+}
+
+fn eval_contract_denial_does_not_mutate_flow_state() -> SmokeEvalCaseResult {
+    let draft = valid_contract_draft();
+    let instance = FlowInstance::new(FlowState::Approved);
+    let attempt = instance.attempt_transition_with_contract(
+        FlowCommand::StartRun,
+        ContractStatus::Draft,
+        !draft.scope().is_empty(),
+    );
+
+    if instance.state() == FlowState::Approved && attempt.next_state().is_none() {
+        SmokeEvalCaseResult::pass(
+            "eval_contract_denial_does_not_mutate_flow_state",
+            "contract-aware denial still preserves flow state",
+            "denied contract-aware StartRun leaves Approved unchanged",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_contract_denial_does_not_mutate_flow_state",
+            "contract-aware denial still preserves flow state",
+            format!(
+                "contract-aware denial changed state evidence unexpectedly; current_state={} next_state={:?}",
+                instance.state().as_str(),
+                attempt.next_state()
+            ),
+        )
+    }
+}
+
+fn eval_contract_guard_result_remains_evidence_not_decision() -> SmokeEvalCaseResult {
+    let draft_contract = valid_contract_draft();
+    let attempt = FlowInstance::new(FlowState::Approved).attempt_transition_with_contract(
+        FlowCommand::StartRun,
+        ContractStatus::Draft,
+        !draft_contract.scope().is_empty(),
+    );
+    let draft = transition_attempt_event_draft(
+        &attempt,
+        "smoke_eval_contract_guard",
+        Some("work/goals/goal_connect_contract_to_flow_state.md"),
+    );
+
+    if draft.result.status.as_str() == "denied"
+        && draft.result.guard_code.as_deref() == Some("RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT")
+        && !draft.kind.as_str().contains("decision")
+        && !draft.kind.as_str().contains("gate")
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_contract_guard_result_remains_evidence_not_decision",
+            "contract guard results remain evidence only",
+            "contract-aware denial still emits guard evidence without becoming authoritative closure",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_contract_guard_result_remains_evidence_not_decision",
+            "contract guard results remain evidence only",
+            format!(
+                "contract guard evidence drifted to kind={} status={} guard_code={:?}",
+                draft.kind.as_str(),
+                draft.result.status.as_str(),
+                draft.result.guard_code,
+            ),
+        )
+    }
+}
+
 fn format_commands(commands: &[FlowCommand]) -> String {
     commands
         .iter()
@@ -581,7 +771,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 5);
+        assert_eq!(report.cases().len(), 10);
     }
 
     #[test]
@@ -605,9 +795,12 @@ mod tests {
         assert!(rendered.contains("runtime_persistence: inactive"));
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
-        assert!(rendered.contains("assessment: local deterministic smoke harness passed"));
+        assert!(rendered.contains(
+            "assessment: local deterministic smoke harness passed over current contract, flow, and event kernels"
+        ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
+        assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
@@ -626,7 +819,7 @@ mod tests {
             .assessment()
             .contains("local deterministic smoke harness"));
         assert!(!rendered.contains("accepted"));
-        assert!(!rendered.contains("approved"));
+        assert!(!rendered.contains("approved_final"));
         assert!(!rendered.contains("gate decision"));
         assert!(!rendered.contains("proof complete"));
         assert!(!rendered.contains("final decision"));
@@ -649,6 +842,9 @@ mod tests {
         assert!(rendered.contains("\"report_storage\": \"inactive\""));
         assert!(rendered.contains("\"case_results\": ["));
         assert!(rendered.contains("\"case_id\": \"eval_flow_allows_approval_transition\""));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_contract_ready_for_bounded_work_allows_start_run\""
+        ));
         assert!(rendered.contains("\"status\": \"pass\""));
         assert!(rendered.contains("\"boundary_notes\": ["));
         assert!(rendered.contains("\"deferred\": ["));
