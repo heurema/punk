@@ -5,6 +5,7 @@
 //! guards only. No persistence, event writing, CLI behavior, or `.punk/`
 //! runtime state is introduced here.
 
+use punk_contract::ContractStatus;
 use punk_events::{
     EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase, EventResult, EventSource,
     EventStatus, FlowTransitionRef,
@@ -119,8 +120,49 @@ impl FlowInstance {
         }
     }
 
+    pub fn attempt_transition_with_contract(
+        self,
+        command: FlowCommand,
+        contract_status: ContractStatus,
+        scope_valid: bool,
+    ) -> FlowTransitionAttempt {
+        if self.state == FlowState::Approved && command == FlowCommand::StartRun {
+            if !scope_valid {
+                return FlowTransitionAttempt::denied(
+                    self.state,
+                    command,
+                    "RUN_REQUIRES_EXPLICIT_CONTRACT_SCOPE",
+                    FLOW_ILLEGAL_TRANSITION_ERROR_CODE,
+                    allowed_commands_for(self.state),
+                );
+            }
+
+            if !contract_status.ready_for_bounded_work() {
+                return FlowTransitionAttempt::denied(
+                    self.state,
+                    command,
+                    "RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT",
+                    FLOW_ILLEGAL_TRANSITION_ERROR_CODE,
+                    allowed_commands_for(self.state),
+                );
+            }
+        }
+
+        self.attempt_transition(command)
+    }
+
     pub fn transition(self, command: FlowCommand) -> Result<Self, TransitionError> {
         self.attempt_transition(command).into_result()
+    }
+
+    pub fn transition_with_contract(
+        self,
+        command: FlowCommand,
+        contract_status: ContractStatus,
+        scope_valid: bool,
+    ) -> Result<Self, TransitionError> {
+        self.attempt_transition_with_contract(command, contract_status, scope_valid)
+            .into_result()
     }
 }
 
@@ -469,7 +511,25 @@ mod tests {
     use super::{
         transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState, FlowTransitionOutcome,
     };
+    use punk_contract::{
+        approve_contract, validate_contract, ContractDraft, ContractError, ContractId,
+        ContractScope, ContractStatus,
+    };
     use punk_events::{EventKind, EventStatus};
+
+    fn valid_contract_scope() -> ContractScope {
+        ContractScope::new()
+            .with_ref("work/goals/goal_add_contract_lifecycle_minimal.md")
+            .with_ref("docs/product/CONTRACT-TRACKER.md")
+    }
+
+    fn valid_contract_draft() -> ContractDraft {
+        ContractDraft::new(
+            ContractId::new("contract_flow_001").expect("contract id should be valid"),
+            "Approved contract authorizes run transition",
+            valid_contract_scope(),
+        )
+    }
 
     #[test]
     fn illegal_transition_is_denied_before_approval() {
@@ -602,6 +662,112 @@ mod tests {
         );
         assert_eq!(draft.transition.command.as_deref(), Some("StartRun"));
         assert_eq!(draft.transition.to_state, None);
+        assert!(!draft.kind.as_str().contains("decision"));
+        assert!(!draft.kind.as_str().contains("gate"));
+    }
+
+    #[test]
+    fn approved_for_run_contract_allows_start_run_transition() {
+        let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+        let instance = FlowInstance::new(FlowState::Approved);
+        let next = instance
+            .transition_with_contract(
+                FlowCommand::StartRun,
+                contract.status(),
+                contract.scope_valid(),
+            )
+            .expect("approved contract should authorize start run");
+
+        assert_eq!(next.state(), FlowState::Running);
+    }
+
+    #[test]
+    fn draft_contract_denies_start_run_transition() {
+        let draft = valid_contract_draft();
+        let instance = FlowInstance::new(FlowState::Approved);
+        let attempt = instance.attempt_transition_with_contract(
+            FlowCommand::StartRun,
+            ContractStatus::Draft,
+            !draft.scope().is_empty(),
+        );
+
+        assert_eq!(instance.state(), FlowState::Approved);
+        assert_eq!(
+            attempt.outcome(),
+            FlowTransitionOutcome::Denied {
+                guard_code: "RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT",
+                error_code: "E_FLOW_ILLEGAL_TRANSITION",
+                next_allowed_commands: instance.allowed_commands(),
+            }
+        );
+        assert_eq!(attempt.next_state(), None);
+    }
+
+    #[test]
+    fn invalid_contract_cannot_authorize_run_transition() {
+        let invalid_draft = ContractDraft::new(
+            ContractId::new("contract_flow_002").expect("contract id should be valid"),
+            "Scope is required",
+            ContractScope::new(),
+        );
+        let instance = FlowInstance::new(FlowState::Approved);
+        let attempt = instance.attempt_transition_with_contract(
+            FlowCommand::StartRun,
+            ContractStatus::Draft,
+            !invalid_draft.scope().is_empty(),
+        );
+
+        assert_eq!(
+            validate_contract(&invalid_draft),
+            Err(ContractError::EmptyScope)
+        );
+        assert_eq!(instance.state(), FlowState::Approved);
+        assert_eq!(
+            attempt.outcome(),
+            FlowTransitionOutcome::Denied {
+                guard_code: "RUN_REQUIRES_EXPLICIT_CONTRACT_SCOPE",
+                error_code: "E_FLOW_ILLEGAL_TRANSITION",
+                next_allowed_commands: instance.allowed_commands(),
+            }
+        );
+    }
+
+    #[test]
+    fn contract_authorized_start_run_produces_guard_evidence_not_decision() {
+        let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+        let attempt = FlowInstance::new(FlowState::Approved).attempt_transition_with_contract(
+            FlowCommand::StartRun,
+            contract.status(),
+            contract.scope_valid(),
+        );
+        let draft = transition_attempt_event_draft(
+            &attempt,
+            "flow_contract_authorized",
+            Some("work/goals/goal_connect_contract_to_flow_state.md"),
+        );
+
+        assert_eq!(draft.kind, EventKind::TransitionCommitted);
+        assert_eq!(draft.result.status, EventStatus::Succeeded);
+        assert!(!draft.kind.as_str().contains("decision"));
+        assert!(!draft.kind.as_str().contains("gate"));
+    }
+
+    #[test]
+    fn draft_contract_denial_stays_guard_evidence_not_final_decision() {
+        let draft_contract = valid_contract_draft();
+        let attempt = FlowInstance::new(FlowState::Approved).attempt_transition_with_contract(
+            FlowCommand::StartRun,
+            ContractStatus::Draft,
+            !draft_contract.scope().is_empty(),
+        );
+        let draft = transition_attempt_event_draft(&attempt, "flow_contract_denied", None);
+
+        assert_eq!(draft.kind, EventKind::TransitionDenied);
+        assert_eq!(draft.result.status, EventStatus::Denied);
+        assert_eq!(
+            draft.result.guard_code.as_deref(),
+            Some("RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT")
+        );
         assert!(!draft.kind.as_str().contains("decision"));
         assert!(!draft.kind.as_str().contains("gate"));
     }

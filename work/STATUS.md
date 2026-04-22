@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Connect the new minimal contract kernel to flow state before any contract storage, gate, or proof implementation"
-selected_next: "work/goals/goal_connect_contract_to_flow_state.md"
+current_focus: "Add deterministic smoke coverage for the new contract-to-flow guard before any storage, receipt, gate, or proof work"
+selected_next: "work/goals/goal_add_contract_flow_smoke_eval.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,36 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: connect the new minimal contract kernel to flow state before any contract storage, gate, or proof implementation.
-- Selected next: `work/goals/goal_connect_contract_to_flow_state.md`
-- Why this is next: the minimal contract kernel now exists, so the next honest step is to connect it to existing flow state without expanding into storage, CLI, gate, or proof behavior.
+- Current focus: add deterministic smoke coverage for the new contract-to-flow guard before any storage, receipt, gate, or proof work.
+- Selected next: `work/goals/goal_add_contract_flow_smoke_eval.md`
+- Why this is next: contract status now influences flow guard behavior, so the next safe step is to cover that integration in smoke evals before adding more lifecycle surfaces.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - eval remains an assessment surface, not a decision surface.
-  - `.punk/evals`, contract storage, gate/proof, baseline comparison, and waiver implementation remain deferred.
+  - contract and flow remain evidence-oriented, not final decision surfaces.
+  - `.punk/contracts`, `.punk/evals`, receipts, gate, and proof remain deferred.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_connect_contract_to_flow_state.md` | `ready` | The minimal contract kernel now exists, so the next bounded step is kernel-only integration with flow state. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the contract-to-flow step. | `work/goals/goal_connect_contract_to_flow_state.md` |
+| `work/goals/goal_add_contract_flow_smoke_eval.md` | `ready` | The new contract-aware flow guard should land with deterministic smoke coverage before more lifecycle implementation. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the contract-flow smoke eval step. | `work/goals/goal_add_contract_flow_smoke_eval.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/contracts` or `.punk/evals` storage | `work/goals/goal_connect_contract_to_flow_state.md` | Connect contract scope/status semantics to flow state before deciding whether any runtime storage is needed. |
-| Gate or proof implementation | `work/goals/goal_connect_contract_to_flow_state.md` | Finish the contract-to-flow step before choosing later lifecycle artifacts. |
-| Baseline comparison implementation | `work/goals/goal_connect_contract_to_flow_state.md` | Keep eval governance deferred while the core contract loop is still being connected. |
-| Project Memory storage research | `work/goals/goal_connect_contract_to_flow_state.md` | Finish the contract-to-flow step before broader storage work. |
+| `.punk/contracts` or `.punk/evals` storage | `work/goals/goal_add_contract_flow_smoke_eval.md` | Cover the new contract-flow guard in smoke evals before deciding whether any runtime storage is needed. |
+| Run receipts | `work/goals/goal_add_contract_flow_smoke_eval.md` | Validate the new contract-to-flow guard path before adding later lifecycle artifacts. |
+| Gate or proof implementation | `work/goals/goal_add_contract_flow_smoke_eval.md` | Keep later lifecycle artifacts deferred until contract-flow guard coverage exists. |
+| Project Memory storage research | `work/goals/goal_add_contract_flow_smoke_eval.md` | Finish the contract-flow smoke eval step before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Connected contract status to flow guard state | `work/goals/goal_connect_contract_to_flow_state.md`, `work/reports/2026-04-22-connect-contract-to-flow-state.md`, `crates/punk-flow/src/lib.rs` |
 | 2026-04-22 | Added the minimal contract lifecycle kernel | `work/goals/goal_add_contract_lifecycle_minimal.md`, `work/reports/2026-04-22-contract-lifecycle-minimal.md`, `crates/punk-contract/src/lib.rs` |
 | 2026-04-22 | Ran the second advisory Work Ledger Review | `work/goals/goal_run_second_work_ledger_review.md`, `work/reports/2026-04-22-second-work-ledger-review.md` |
 | 2026-04-22 | Defined the eval baseline and waiver boundary v0.1 spec | `work/goals/goal_define_eval_baseline_waiver_boundary_v0_1.md`, `work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md`, `evals/specs/eval-baseline-waiver-boundary.v0.1.md` |
@@ -74,9 +75,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-contract && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-contract-lifecycle-minimal.md --report work/reports/2026-04-22-contract-lifecycle-minimal.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-contract && cargo test -p punk-flow && cargo test -p punk-events && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-connect-contract-to-flow-state.md --report work/reports/2026-04-22-connect-contract-to-flow-state.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_connect_contract_to_flow_state.md`
-  - the contract kernel stays pure and does not activate `.punk/`, CLI, gate, or proof behavior
-  - the next bounded step is kernel-only contract-to-flow integration
+  - `selected_next` moves to `work/goals/goal_add_contract_flow_smoke_eval.md`
+  - contract-aware flow guards remain evidence-only and do not activate `.punk/`, gate, or proof behavior
+  - the next bounded step is deterministic smoke coverage for the new contract-flow guard

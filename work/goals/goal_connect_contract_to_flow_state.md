@@ -1,16 +1,16 @@
 ---
 id: goal_connect_contract_to_flow_state
 title: "Connect contract to flow state"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -33,7 +33,8 @@ knowledge_refs:
   - "docs/product/CONTRACT-TRACKER.md"
   - "docs/adr/ADR-0009-contract-tracker-core-primitives.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-connect-contract-to-flow-state.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,9 +64,7 @@ After the minimal contract kernel exists, the next bounded step is to connect co
 
 ## Notes
 
-Keep this goal narrow:
-- kernel-only integration;
-- no CLI;
-- no `.punk/`;
-- no gate/proof or run receipt behavior;
-- no module host, adapters, or full contract storage.
+This goal is complete:
+- `crates/punk-flow/src/lib.rs` now exposes contract-aware run transition guards over existing flow state;
+- `ApprovedForRun` can authorize bounded `StartRun`, while draft or invalid contract facts deny the transition without mutating state;
+- the next bounded step is to add smoke eval coverage for the new contract-flow guard.

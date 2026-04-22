@@ -39,6 +39,7 @@ version = "0.1.0"
 name = "punk-flow"
 version = "0.1.0"
 dependencies = [
+ "punk-contract",
  "punk-events",
 ]
 

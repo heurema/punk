@@ -7,4 +7,5 @@ repository.workspace = true
 publish = false
 
 [dependencies]
+punk-contract = { path = "../punk-contract" }
 punk-events = { path = "../punk-events" }
