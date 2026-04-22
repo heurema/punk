@@ -1,6 +1,6 @@
 ---
 name: punk-workflow
-description: "Use when making a meaningful change in the Punk repository. Guides Codex through Punk bounded work discipline: read work/STATUS.md, follow selected_next, preserve scope, update goal/report/status, and run checks. Do not use for explanation-only questions."
+description: "Use when making a meaningful change in the Punk repository. Guides Codex through Punk bounded work discipline: run Research Gate preflight, read work/STATUS.md, follow selected_next, preserve scope, update goal/report/status, and run checks. Do not use for explanation-only questions."
 ---
 
 # Punk Workflow Skill
@@ -10,6 +10,28 @@ description: "Use when making a meaningful change in the Punk repository. Guides
 Help Codex make safe, bounded changes in the Punk repository.
 
 This skill is a workflow guide, not a source of product truth.
+
+## Step 0 — Research Gate preflight
+
+Before editing, classify the task as exactly one of:
+
+- `R0` — no research required
+- `R1` — quick scan required
+- `R2` — design research required
+- `R3` — deep research required
+
+Use `docs/product/RESEARCH-GATE.md` as the canonical policy.
+
+If the task is `R1+`:
+
+- use repo-tracked research or user-provided research when it already exists;
+- cite that research in the goal or report;
+- do not silently promote research to canonical product truth.
+
+If the task is `R1+` and no adequate research is available:
+
+- stop and ask the user for Deep Research before implementation;
+- do not silently continue.
 
 ## Start every meaningful task
 
@@ -51,6 +73,7 @@ Keep the skill thin: reference canonical docs instead of copying architecture in
 Always run:
 
 ```bash
+python3 scripts/check_research_gate.py
 python3 scripts/check_work_ledger.py
 ```
 

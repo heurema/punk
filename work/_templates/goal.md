@@ -24,6 +24,13 @@ proof_refs: []
 latest_proof_ref: null
 supersedes: []
 superseded_by: []
+research_gate:
+  classification: R0
+  required: false
+  rationale: ""
+  research_refs: []
+  external_research_refs: []
+  blocked_reason: null
 doc_impact:
   classification: none
   required_updates: []

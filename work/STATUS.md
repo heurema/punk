@@ -8,7 +8,7 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 1 preparation"
-current_focus: "Expose the first bounded flow inspect surface on top of real transition event evidence"
+current_focus: "Expose the first bounded flow inspect surface after installing Research Gate preflight"
 selected_next: "work/goals/goal_add_flow_inspect_command.md"
 last_validated_commit: null
 ---
@@ -17,12 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: expose the first bounded inspect surface now that flow transitions can emit real event evidence.
+- Current focus: expose the first bounded inspect surface now that flow transitions emit real event evidence and Research Gate preflight is installed.
 - Selected next: `work/goals/goal_add_flow_inspect_command.md`
-- Why this is next: flow-to-event integration is done, so inspect is now the smallest honest surface that can consume that evidence without pulling in eval or runtime persistence.
+- Why this is next: flow inspect remains the next honest implementation goal, and the workflow now blocks future `R1+` work from silently skipping research preflight.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
+  - Research Gate preflight is installed before the first CLI/operator surface.
   - inspect remains separate from smoke eval and `.punk/` runtime activation.
   - event evidence remains evidence only, not decision authority.
 
@@ -30,7 +31,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_flow_inspect_command.md` | `ready` | Next honest surface now that flow transitions emit real append-only event evidence. | — |
+| `work/goals/goal_add_flow_inspect_command.md` | `ready` | Next implementation surface now that flow/event evidence exists and Research Gate preflight is installed. | — |
 | `work/goals/goal_add_smoke_eval_harness.md` | `blocked` | Smoke eval stays behind the first inspect surface and the existing flow/event evidence. | `work/goals/goal_add_flow_inspect_command.md` |
 | `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Storage research stays deferred until manual ledger semantics survive at least one real work cycle. | Manual ledger usage evidence |
 
@@ -45,6 +46,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Added Research Gate preflight to the repo workflow skill | `work/goals/goal_add_research_gate_preflight_to_workflow_skill.md`, `work/reports/2026-04-22-research-gate-preflight.md` |
 | 2026-04-22 | Connected flow transitions to the append-only event log | `work/goals/goal_connect_flow_transitions_to_event_log.md`, `work/reports/2026-04-22-connect-flow-transitions-to-event-log.md` |
 | 2026-04-21 | Added the append-only event log kernel | `work/goals/goal_add_append_only_event_log.md`, `work/reports/2026-04-21-append-only-event-log.md` |
 | 2026-04-21 | Added the Codex project workflow skill | `work/goals/goal_add_codex_project_workflow_skill.md`, `work/reports/2026-04-21-codex-project-workflow-skill.md` |
@@ -58,11 +60,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `cargo test -p punk-flow && cargo test -p punk-events && cargo check --workspace && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-connect-flow-transitions-to-event-log.md --report work/reports/2026-04-22-connect-flow-transitions-to-event-log.md`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-research-gate-preflight.md --report work/reports/2026-04-22-research-gate-preflight.md`
 - Result: `pass`
 - Notes:
-  - `selected_next` points to `work/goals/goal_add_flow_inspect_command.md`
-  - no goal is currently `in_progress`
-  - flow transitions now produce event drafts as evidence, not authority
-  - denied transitions leave guard-denial evidence without mutating flow state
-  - no `.punk/` runtime state changed in this diff
+  - `selected_next` remains `work/goals/goal_add_flow_inspect_command.md`
+  - Research Gate preflight was inserted before flow inspect and completed without superseding it
+  - future `R1+` work must cite repo-tracked or user-provided research or stop for Deep Research

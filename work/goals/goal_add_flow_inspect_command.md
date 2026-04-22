@@ -38,6 +38,15 @@ proof_refs: []
 latest_proof_ref: null
 supersedes: []
 superseded_by: []
+research_gate:
+  classification: R1
+  required: true
+  rationale: "Touches public CLI/operator surface and inspectable flow/event views."
+  research_refs:
+    - "docs/product/RESEARCH-GATE.md"
+  external_research_refs:
+    - "work/reports/2026-04-22-research-gate-preflight.md"
+  blocked_reason: null
 doc_impact:
   classification: none
   required_updates: []
@@ -51,3 +60,4 @@ Expose inspectable flow state only after there is real state and event evidence 
 ## Notes
 
 Flow transitions now emit event drafts, so this is the next honest inspect surface.
+Research Gate preflight is installed before implementation because this goal touches a public CLI/operator surface.

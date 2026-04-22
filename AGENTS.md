@@ -4,6 +4,7 @@
 
 Before meaningful repo work:
 
+0. Run Research Gate preflight: classify the task as `R0`, `R1`, `R2`, or `R3` before editing.
 1. Read `work/STATUS.md`.
 2. Follow `selected_next` unless the user explicitly changes scope.
 3. Read the selected goal under `work/goals/`.
@@ -14,9 +15,11 @@ Before meaningful repo work:
 8. Do not write `.punk/` runtime state unless explicitly scoped.
 9. Do not expose parked or future capabilities as active behavior.
 10. Only future `gate` writes final acceptance; Level 0 `done` is manual closure with evidence.
+11. If a task is `R1+` and repo-tracked or user-provided research is not available, stop and ask the user for Deep Research instead of silently implementing.
 
 Required checks:
 
+- Always run `python3 scripts/check_research_gate.py`.
 - Always run `python3 scripts/check_work_ledger.py`.
 - Run `cargo check --workspace` when Rust workspace or code changes.
 - Run docs governance checks when product or process docs, reports, or work-ledger artifacts change.
