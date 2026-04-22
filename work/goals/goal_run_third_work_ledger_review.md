@@ -1,16 +1,16 @@
 ---
 id: goal_run_third_work_ledger_review
 title: "Run third work ledger review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "work/reports/2026-04-22-run-receipt-boundary-research.md"
   - "work/reports/2026-04-22-run-receipt-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-third-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -57,9 +58,8 @@ After the recent contract kernel, contract-flow integration, smoke coverage, run
 
 ## Notes
 
-Keep this goal narrow:
-- review only;
-- no Rust code;
-- no `.punk/`;
-- no automation;
-- no batch creation of implementation goals.
+This goal is complete:
+- `work/reports/2026-04-22-third-work-ledger-review.md` now reviews the contract, flow, smoke, and run-receipt sequence after the second review;
+- the review concludes that the contract and receipt boundaries are sufficiently protected for one narrow core-lifecycle implementation step;
+- the recommended next bounded step is `work/goals/goal_add_run_receipt_minimal.md`;
+- gate/proof research, contract storage, `.punk/runs`, and broader automation remain deferred.

@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run a third advisory Work Ledger Review before choosing the next implementation branch after the contract and run-receipt boundary sequence"
-selected_next: "work/goals/goal_run_third_work_ledger_review.md"
+current_focus: "Add the smallest honest run receipt kernel before any `.punk/runs`, gate, or proof implementation"
+selected_next: "work/goals/goal_add_run_receipt_minimal.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,36 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run a third advisory Work Ledger Review before choosing the next implementation branch after the contract and run-receipt boundary sequence.
-- Selected next: `work/goals/goal_run_third_work_ledger_review.md`
-- Why this is next: the recent sequence closed another boundary chain, so the next honest step is an advisory review before selecting receipt implementation, proof/gate research, or another lifecycle branch.
+- Current focus: add the smallest honest run receipt kernel before any `.punk/runs`, gate, or proof implementation.
+- Selected next: `work/goals/goal_add_run_receipt_minimal.md`
+- Why this is next: the third advisory review found that contract-flow behavior is already bounded and smoke-covered, while run receipt research and boundary/spec work are now specific enough to support one narrow pre-gate receipt step.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - contract, flow, and smoke eval remain evidence-oriented, not final decision surfaces.
-  - `.punk/contracts`, `.punk/evals`, `.punk/runs`, gate, and proof remain deferred until after the next advisory review selects a bounded step.
+  - contract, flow, eval, and receipt remain evidence-oriented, not final decision surfaces.
+  - `.punk/contracts`, `.punk/evals`, `.punk/runs`, gate, and proof remain deferred until a later bounded goal explicitly activates them.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_third_work_ledger_review.md` | `ready` | Another advisory review is the safest next move after the latest contract and receipt-boundary sequence. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the third advisory review. | `work/goals/goal_run_third_work_ledger_review.md` |
+| `work/goals/goal_add_run_receipt_minimal.md` | `ready` | The receipt boundary is now explicit enough to support one narrow pre-gate receipt kernel without `.punk/runs`, gate, or proof activation. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the minimal run receipt step. | `work/goals/goal_add_run_receipt_minimal.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_run_third_work_ledger_review.md` | Use the advisory review to choose whether any storage branch is the next honest bounded step. |
-| Run receipt implementation | `work/goals/goal_run_third_work_ledger_review.md` | Review whether minimal receipt implementation is actually the most valuable next branch. |
-| Gate or proof implementation | `work/goals/goal_run_third_work_ledger_review.md` | Keep later lifecycle artifacts deferred until the review selects a bounded follow-up. |
-| Project Memory storage research | `work/goals/goal_run_third_work_ledger_review.md` | Finish the advisory review before broader storage work. |
+| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_add_run_receipt_minimal.md` | Keep storage deferred while the next step proves a receipt kernel without activating runtime persistence. |
+| Gate or proof implementation | `work/goals/goal_add_run_receipt_minimal.md` | Add the pre-gate receipt artifact first so later decision/proof work references a concrete bounded evidence surface. |
+| Contract storage boundary | `work/goals/goal_add_run_receipt_minimal.md` | Finish the minimal receipt step before opening another runtime-storage branch. |
+| Project Memory storage research | `work/goals/goal_add_run_receipt_minimal.md` | Keep broader storage work behind the next core-lifecycle implementation step. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Ran the third advisory Work Ledger Review | `work/goals/goal_run_third_work_ledger_review.md`, `work/reports/2026-04-22-third-work-ledger-review.md` |
 | 2026-04-22 | Defined the run receipt boundary v0.1 spec | `work/goals/goal_define_run_receipt_boundary_v0_1.md`, `work/reports/2026-04-22-run-receipt-boundary-v0-1.md`, `evals/specs/run-receipt-boundary.v0.1.md` |
 | 2026-04-22 | Researched run receipt boundary | `work/goals/goal_research_run_receipt_boundary.md`, `work/reports/2026-04-22-run-receipt-boundary-research.md`, `knowledge/research/2026-04-22-run-receipt-boundary.md` |
 | 2026-04-22 | Added contract-flow smoke eval coverage | `work/goals/goal_add_contract_flow_smoke_eval.md`, `work/reports/2026-04-22-contract-flow-smoke-eval.md`, `crates/punk-eval/src/lib.rs` |
@@ -78,9 +79,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/run-receipt-boundary.v0.1.md work/reports/2026-04-22-run-receipt-boundary-v0-1.md --report work/reports/2026-04-22-run-receipt-boundary-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-third-work-ledger-review.md --report work/reports/2026-04-22-third-work-ledger-review.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_run_third_work_ledger_review.md`
-  - run receipt boundary is now specified as a future evidence-only surface
-  - the next bounded step is an advisory review before any new implementation branch is selected
+  - `selected_next` moves to `work/goals/goal_add_run_receipt_minimal.md`
+  - the third advisory review recommends a narrow pre-gate receipt kernel before any storage, gate, or proof work
+  - `.punk/runs`, gate, proof, and broader storage work remain deferred
