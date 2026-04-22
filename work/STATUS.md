@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 2 preparation"
-current_focus: "Define a schema-only smoke eval report v0.1 proposal before any machine-readable output or runtime report storage"
-selected_next: "work/goals/goal_define_smoke_eval_report_schema_v0_1.md"
+current_focus: "Expose the proposed smoke eval report v0.1 shape through one bounded JSON output path without storage or baseline behavior"
+selected_next: "work/goals/goal_add_smoke_eval_json_output_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,34 +17,35 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: define a schema-only smoke eval report v0.1 proposal before any machine-readable output or runtime report storage.
-- Selected next: `work/goals/goal_define_smoke_eval_report_schema_v0_1.md`
-- Why this is next: research confirmed that machine-readable output, storage, baseline, and waiver work should not proceed without an explicit schema-only proposal first.
+- Current focus: expose the proposed smoke eval report v0.1 shape through one bounded JSON output path without storage or baseline behavior.
+- Selected next: `work/goals/goal_add_smoke_eval_json_output_v0_1.md`
+- Why this is next: the schema-only proposal is now defined, so the next honest step is one narrow JSON output implementation over the proposed v0.1 shape.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
   - smoke eval remains an assessment surface, not a decision surface.
-  - machine-readable output remains deferred until a schema-only proposal is defined.
+  - JSON output must not imply `.punk/evals` storage, baseline, waiver, or stable public-contract hardening.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | `ready` | Research recommends a schema-only proposal before any machine-readable output or storage work. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval-report schema proposal boundary. | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` |
+| `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | `ready` | The schema-only proposal exists, so one bounded JSON output step is now the next honest implementation diff. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval-report schema and JSON-output boundary. | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Stable machine-readable smoke eval output | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | Define the v0.1 schema proposal before any output implementation. |
-| `.punk/evals` report storage | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | Clarify the schema and ownership boundary first. |
-| Project Memory storage research | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md` | Finish the eval-report schema proposal before broader storage work. |
+| `.punk/evals` report storage | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | Keep storage deferred while the next diff adds JSON output only. |
+| Baseline and waiver behavior | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | Keep policy behavior deferred until machine-readable output exists and remains bounded. |
+| Project Memory storage research | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | Finish the JSON-output boundary before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Defined the schema-only smoke eval report v0.1 proposal | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md`, `work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md`, `evals/specs/smoke-eval-report.v0.1.md` |
 | 2026-04-22 | Researched eval report schema before machine output | `work/goals/goal_research_eval_report_schema_before_machine_output.md`, `work/reports/2026-04-22-eval-report-schema-research.md`, `knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md` |
 | 2026-04-22 | Added the internal smoke eval report artifact shape | `work/goals/goal_add_smoke_eval_report_artifact_shape.md`, `work/reports/2026-04-22-smoke-eval-report-artifact-shape.md` |
 | 2026-04-22 | Added the first bounded `punk eval run smoke` command | `work/goals/goal_add_smoke_eval_cli_command.md`, `work/reports/2026-04-22-smoke-eval-cli-command.md` |
@@ -66,9 +67,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md work/reports/2026-04-22-eval-report-schema-research.md --report work/reports/2026-04-22-eval-report-schema-research.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge || true`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/smoke-eval-report.v0.1.md work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md --report work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_define_smoke_eval_report_schema_v0_1.md`
-  - stable machine-readable output remains deferred behind schema-only design work
-  - `.punk/evals` storage, baseline, and waiver semantics remain out of scope
+  - `selected_next` moves to `work/goals/goal_add_smoke_eval_json_output_v0_1.md`
+  - the schema-only proposal is complete and remains advisory/design
+  - `.punk/evals` storage, baseline, waiver, and validator work remain out of scope

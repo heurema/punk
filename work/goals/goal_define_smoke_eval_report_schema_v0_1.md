@@ -1,50 +1,49 @@
 ---
 id: goal_define_smoke_eval_report_schema_v0_1
 title: "Define smoke eval report schema v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
-    - "evals/_schema/**"
-    - "docs/product/EVAL-PLANE.md"
+    - "evals/specs/smoke-eval-report.v0.1.md"
     - "work/**"
   exclude:
     - "crates/**"
     - ".punk/**"
+    - "docs/product/**"
 acceptance:
   - "A schema-only proposal defines the bounded machine-readable smoke eval report fields and versioning policy for v0.1."
   - "The proposal distinguishes canonical internal report shape from future export contract."
   - "No `.punk/evals` storage, baseline, waiver, or CLI/runtime implementation is introduced."
-  - "Required evals and doc/ADR implications are listed."
+  - "Required follow-up implications are listed without implementing machine output."
 knowledge_refs:
   - "docs/product/RESEARCH-GATE.md"
   - "docs/product/EVAL-PLANE.md"
-  - "docs/product/EVAL.md"
   - "knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
 supersedes: []
 superseded_by: []
 research_gate:
-  classification: R2
+  classification: R1
   required: true
-  rationale: "Defines a stable machine-readable smoke eval report contract boundary, which touches eval report schema and future public CLI/storage implications."
+  rationale: "R2 research is already complete. This diff only defines a bounded schema/design proposal and does not implement machine-readable output, storage, validators, baseline/waiver semantics, or eval policy changes."
   research_refs:
     - "docs/product/RESEARCH-GATE.md"
     - "docs/product/EVAL-PLANE.md"
-    - "docs/product/EVAL.md"
     - "knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md"
   external_research_refs:
     - "work/reports/2026-04-22-eval-report-schema-research.md"
@@ -57,13 +56,11 @@ doc_impact:
 
 ## Context
 
-After research clarified the boundary around machine-readable output, define a schema-only proposal before any JSON output, runtime storage, baseline, or waiver work.
+After research clarified the machine-readable output boundary, define a schema-only proposal before any JSON output, runtime storage, baseline, or waiver work.
 
 ## Notes
 
-Keep this goal narrow:
-- schema/design only
-- no code changes
-- no `.punk/evals`
-- no stable export implementation yet
-- no baseline or waiver behavior
+This goal is complete:
+- `evals/specs/smoke-eval-report.v0.1.md` now defines a proposed v0.1 artifact shape;
+- the proposal stays advisory/design and does not become a stable public contract yet;
+- the next bounded step, if implementation proceeds, is a narrow JSON-output goal over the proposed schema only.
