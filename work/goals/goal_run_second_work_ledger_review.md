@@ -1,16 +1,16 @@
 ---
 id: goal_run_second_work_ledger_review
 title: "Run second work ledger review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -33,7 +33,8 @@ knowledge_refs:
   - "work/reports/2026-04-22-eval-storage-boundary-v0-1.md"
   - "work/reports/2026-04-22-eval-baseline-waiver-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-second-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -58,9 +59,7 @@ After the recent eval schema, storage-boundary, and baseline/waiver-boundary ste
 
 ## Notes
 
-Keep this goal narrow:
-- advisory review only;
-- no implementation;
-- no `.punk/`;
-- no automation;
-- no second live tracker.
+This goal is complete:
+- `work/reports/2026-04-22-second-work-ledger-review.md` records the second advisory review over the eval/report/schema/storage/baseline-boundary sequence;
+- the review keeps eval/storage implementation parked for now;
+- the next bounded step is `work/goals/goal_add_contract_lifecycle_minimal.md`.
