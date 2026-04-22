@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 2 preparation"
-current_focus: "Review the first bounded work cycle after the first smoke eval harness landed"
-selected_next: "work/goals/goal_run_first_work_ledger_review.md"
+current_focus: "Turn the first advisory Work Ledger Review into a reusable bounded review loop"
+selected_next: "work/goals/goal_add_work_ledger_review_loop.md"
 last_validated_commit: null
 ---
 
@@ -17,32 +17,33 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: review the first bounded work cycle now that the smoke eval harness exists over the current flow/event kernels.
-- Selected next: `work/goals/goal_run_first_work_ledger_review.md`
-- Why this is next: the first smoke eval harness now gives enough implementation and check evidence to run the first Work Ledger review before growing more surfaces.
+- Current focus: capture the first Work Ledger Review findings into one reusable bounded review-loop follow-up.
+- Selected next: `work/goals/goal_add_work_ledger_review_loop.md`
+- Why this is next: the first advisory review found enough evidence to justify a reusable review template before growing more operator surfaces.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - smoke eval remains assessment only, not decision authority.
-  - the next review stays advisory and does not become a second tracker.
+  - review findings stay advisory and do not become a second tracker.
+  - the next follow-up remains process-only and does not add automation or `.punk/` review state.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_first_work_ledger_review.md` | `ready` | First review now has enough process/code/eval evidence to analyze the initial bounded work cycle. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Storage research stays deferred until the first bounded work cycle has been reviewed. | First Work Ledger review |
+| `work/goals/goal_add_work_ledger_review_loop.md` | `ready` | The first review found enough repeated process evidence to justify a reusable bounded review template. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Storage research stays deferred until the first review findings are folded back into the workflow. | `work/goals/goal_add_work_ledger_review_loop.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Project Memory storage research | First Work Ledger review | Review the first bounded work cycle before revisiting longer-horizon storage research. |
+| Project Memory storage research | `work/goals/goal_add_work_ledger_review_loop.md` | Land the reusable review-loop follow-up before revisiting longer-horizon storage research. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Ran the first advisory Work Ledger Review | `work/goals/goal_run_first_work_ledger_review.md`, `work/reports/2026-04-22-work-ledger-review.md` |
 | 2026-04-22 | Added the first smoke eval harness | `work/goals/goal_add_smoke_eval_harness.md`, `work/reports/2026-04-22-smoke-eval-harness.md` |
 | 2026-04-22 | Added the first bounded `punk flow inspect` command | `work/goals/goal_add_flow_inspect_command.md`, `work/reports/2026-04-22-flow-inspect-command.md` |
 | 2026-04-22 | Added Research Gate preflight to the repo workflow skill | `work/goals/goal_add_research_gate_preflight_to_workflow_skill.md`, `work/reports/2026-04-22-research-gate-preflight.md` |
@@ -59,9 +60,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-eval && cargo test -p punk-flow && cargo test -p punk-events && cargo test -p punk-cli && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-smoke-eval-harness.md --report work/reports/2026-04-22-smoke-eval-harness.md`
-- Result: `pending`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-work-ledger-review.md --report work/reports/2026-04-22-work-ledger-review.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md || true`
+- Result: `pass`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_run_first_work_ledger_review.md`
-  - the smoke harness stays library-first and does not activate `.punk/` eval runtime state
-  - CLI `punk eval run smoke` remains deferred
+  - `selected_next` moves to `work/goals/goal_add_work_ledger_review_loop.md`
+  - the first review stayed advisory and did not change runtime, CLI, validators, or workflow policy
+  - follow-up review-loop work remains process-only

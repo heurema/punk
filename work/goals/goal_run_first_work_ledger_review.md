@@ -1,16 +1,16 @@
 ---
 id: goal_run_first_work_ledger_review
 title: "Run first Work Ledger review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -29,7 +29,8 @@ knowledge_refs:
   - "docs/product/CONTRACT-TRACKER.md"
   - "docs/product/DOGFOODING.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
