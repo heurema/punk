@@ -1,16 +1,16 @@
 ---
 id: goal_define_eval_storage_boundary_v0_1
 title: "Define eval storage boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -31,7 +31,8 @@ knowledge_refs:
   - "docs/product/EVAL-PLANE.md"
   - "knowledge/research/2026-04-22-eval-storage-baseline-waiver-boundary.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-eval-storage-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -60,9 +61,7 @@ After JSON output exists and storage/baseline/waiver research is complete, the n
 
 ## Notes
 
-Keep this goal narrow:
-- design/spec only;
-- no implementation;
-- no `.punk/evals`;
-- no baseline or waiver behavior yet;
-- no validator or export work.
+This goal is complete:
+- `evals/specs/eval-storage-boundary.v0.1.md` now defines the storage boundary as future append-only run-scoped evidence only;
+- the spec keeps mutable `latest` out of canonical truth;
+- the next bounded step, if design work continues, is a separate baseline/waiver boundary spec.
