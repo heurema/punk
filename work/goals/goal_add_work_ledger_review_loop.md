@@ -1,16 +1,16 @@
 ---
 id: goal_add_work_ledger_review_loop
 title: "Add Work Ledger review loop"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/DOGFOODING.md"
   - "docs/product/CONTRACT-TRACKER.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-work-ledger-review-loop.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null

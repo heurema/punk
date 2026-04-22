@@ -9,6 +9,7 @@ Before editing:
 - read the selected goal scope and exclusions;
 - name the single logical diff you are about to make;
 - list the required checks for that diff.
+- if several meaningful diffs have landed or repeated process corrections happened, consider whether a Work Ledger Review is due.
 
 Before staging:
 

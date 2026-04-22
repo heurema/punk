@@ -68,6 +68,12 @@ For meaningful work, update:
 
 Keep the skill thin: reference canonical docs instead of copying architecture into the skill.
 
+## Work Ledger Reviews
+
+After several meaningful diffs, before phase promotion, after repeated human corrections, or after a process violation that was supposedly fixed, propose a Work Ledger Review.
+Use `work/_templates/work-ledger-review.md`.
+Keep the review advisory and choose at most one conservative next goal through the normal Work Ledger flow.
+
 ## Required checks
 
 Always run:
