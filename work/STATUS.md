@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Research the run receipt boundary before any runtime receipt, storage, gate, or proof implementation"
-selected_next: "work/goals/goal_research_run_receipt_boundary.md"
+current_focus: "Define the run receipt boundary v0.1 before any runtime receipt, storage, gate, or proof implementation"
+selected_next: "work/goals/goal_define_run_receipt_boundary_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,36 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: research the run receipt boundary before any runtime receipt, storage, gate, or proof implementation.
-- Selected next: `work/goals/goal_research_run_receipt_boundary.md`
-- Why this is next: contract-to-flow guard coverage is now in the smoke harness, so the next honest step is to clarify receipt/storage/gate boundaries before any receipt implementation.
+- Current focus: define the run receipt boundary v0.1 before any runtime receipt, storage, gate, or proof implementation.
+- Selected next: `work/goals/goal_define_run_receipt_boundary_v0_1.md`
+- Why this is next: run receipt research is now complete, so the next honest step is to turn that boundary into a bounded design/spec artifact before any runtime receipt implementation.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
   - contract, flow, and smoke eval remain evidence-oriented, not final decision surfaces.
-  - `.punk/contracts`, `.punk/evals`, run receipts, gate, and proof remain deferred until the receipt boundary is researched.
+  - `.punk/contracts`, `.punk/evals`, `.punk/runs`, gate, and proof remain deferred until the run receipt boundary is specified.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_research_run_receipt_boundary.md` | `ready` | Run receipts are the next tempting lifecycle surface, but they touch runtime storage and later gate/proof links, so the next safe step is research-first. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the run receipt boundary decision. | `work/goals/goal_research_run_receipt_boundary.md` |
+| `work/goals/goal_define_run_receipt_boundary_v0_1.md` | `ready` | Research is complete, so the next safe step is a design/spec boundary for future run receipts before any `.punk/runs` implementation. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the run receipt boundary spec step. | `work/goals/goal_define_run_receipt_boundary_v0_1.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/contracts` or `.punk/evals` storage | `work/goals/goal_research_run_receipt_boundary.md` | Clarify the receipt/runtime-storage boundary before deciding whether any lifecycle storage should activate. |
-| Run receipts | `work/goals/goal_research_run_receipt_boundary.md` | Research how receipts should relate to runtime storage, later gate/proof references, and evidence boundaries before implementation. |
-| Gate or proof implementation | `work/goals/goal_research_run_receipt_boundary.md` | Keep later lifecycle artifacts deferred until the receipt boundary is clarified. |
-| Project Memory storage research | `work/goals/goal_research_run_receipt_boundary.md` | Finish the receipt-boundary research step before broader storage work. |
+| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_define_run_receipt_boundary_v0_1.md` | Define the receipt boundary/spec before deciding whether any runtime receipt or related lifecycle storage should activate. |
+| Run receipt implementation | `work/goals/goal_define_run_receipt_boundary_v0_1.md` | Turn receipt research into a bounded design/spec artifact before implementation. |
+| Gate or proof implementation | `work/goals/goal_define_run_receipt_boundary_v0_1.md` | Keep later lifecycle artifacts deferred until the run receipt boundary is specified. |
+| Project Memory storage research | `work/goals/goal_define_run_receipt_boundary_v0_1.md` | Finish the receipt-boundary spec step before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Researched run receipt boundary | `work/goals/goal_research_run_receipt_boundary.md`, `work/reports/2026-04-22-run-receipt-boundary-research.md`, `knowledge/research/2026-04-22-run-receipt-boundary.md` |
 | 2026-04-22 | Added contract-flow smoke eval coverage | `work/goals/goal_add_contract_flow_smoke_eval.md`, `work/reports/2026-04-22-contract-flow-smoke-eval.md`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-22 | Connected contract status to flow guard state | `work/goals/goal_connect_contract_to_flow_state.md`, `work/reports/2026-04-22-connect-contract-to-flow-state.md`, `crates/punk-flow/src/lib.rs` |
 | 2026-04-22 | Added the minimal contract lifecycle kernel | `work/goals/goal_add_contract_lifecycle_minimal.md`, `work/reports/2026-04-22-contract-lifecycle-minimal.md`, `crates/punk-contract/src/lib.rs` |
@@ -76,9 +77,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-contract && cargo test -p punk-flow && cargo test -p punk-eval && cargo test -p punk-cli && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && cargo run -q -p punk-cli -- eval run smoke --format json && cargo run -q -p punk-cli -- eval run smoke --format json | python3 -c 'import json,sys; json.load(sys.stdin)' && scripts/check.sh docs-governance --files work/reports/2026-04-22-contract-flow-smoke-eval.md --report work/reports/2026-04-22-contract-flow-smoke-eval.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files knowledge/research/2026-04-22-run-receipt-boundary.md work/reports/2026-04-22-run-receipt-boundary-research.md --report work/reports/2026-04-22-run-receipt-boundary-research.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_research_run_receipt_boundary.md`
-  - contract-aware flow guards are now covered by the existing smoke harness and report renderers
-  - the next bounded step is research-first on run receipt boundaries before any runtime receipt or storage implementation
+  - `selected_next` moves to `work/goals/goal_define_run_receipt_boundary_v0_1.md`
+  - run receipt research now defines receipts as future evidence artifacts rather than decisions
+  - the next bounded step is a design/spec-only run receipt boundary before any runtime receipt or storage implementation

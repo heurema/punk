@@ -1,16 +1,16 @@
 ---
 id: goal_research_run_receipt_boundary
 title: "Research run receipt boundary"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -33,7 +33,8 @@ knowledge_refs:
   - "docs/product/CONTRACT-TRACKER.md"
   - "work/reports/2026-04-22-contract-flow-smoke-eval.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-run-receipt-boundary-research.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -62,10 +63,7 @@ The contract-to-flow path is now covered by deterministic smoke evals. The next 
 
 ## Notes
 
-Keep this goal narrow:
-- research only;
-- no Rust code;
-- no `.punk/`;
-- no run receipt implementation;
-- no gate/proof implementation;
-- no storage activation.
+This goal is complete:
+- `knowledge/research/2026-04-22-run-receipt-boundary.md` now defines the advisory boundary for future run receipts;
+- the recommendation keeps receipts as future evidence artifacts, not decision artifacts;
+- the next honest step is a design/spec-only run receipt boundary artifact before any `.punk/runs` implementation.
