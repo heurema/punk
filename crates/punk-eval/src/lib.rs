@@ -4,6 +4,8 @@
 //! and event kernels without activating `.punk/` runtime state, baseline
 //! comparison, waiver storage, or a full eval platform.
 
+use std::fmt::Write as _;
+
 use punk_events::{schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
 
@@ -11,12 +13,12 @@ pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const SMOKE_SUITE_ID: &str = "smoke.v0";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SmokeStatus {
+pub enum SmokeEvalStatus {
     Pass,
     Fail,
 }
 
-impl SmokeStatus {
+impl SmokeEvalStatus {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Pass => "pass",
@@ -26,19 +28,19 @@ impl SmokeStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SmokeCaseResult {
+pub struct SmokeEvalCaseResult {
     pub case_id: &'static str,
     pub summary: &'static str,
-    pub status: SmokeStatus,
+    pub status: SmokeEvalStatus,
     pub assessment: String,
 }
 
-impl SmokeCaseResult {
+impl SmokeEvalCaseResult {
     fn pass(case_id: &'static str, summary: &'static str, assessment: impl Into<String>) -> Self {
         Self {
             case_id,
             summary,
-            status: SmokeStatus::Pass,
+            status: SmokeEvalStatus::Pass,
             assessment: assessment.into(),
         }
     }
@@ -47,82 +49,234 @@ impl SmokeCaseResult {
         Self {
             case_id,
             summary,
-            status: SmokeStatus::Fail,
+            status: SmokeEvalStatus::Fail,
             assessment: assessment.into(),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SmokeSuiteReport {
+pub struct SmokeEvalSummary {
     suite_id: &'static str,
-    cases: Vec<SmokeCaseResult>,
+    smoke_result: SmokeEvalStatus,
+    assessment: String,
+    mode: &'static str,
+    runtime_persistence: &'static str,
+    report_storage: &'static str,
 }
 
-impl SmokeSuiteReport {
+impl SmokeEvalSummary {
     pub fn suite_id(&self) -> &'static str {
         self.suite_id
     }
 
-    pub fn cases(&self) -> &[SmokeCaseResult] {
-        &self.cases
+    pub fn smoke_result(&self) -> SmokeEvalStatus {
+        self.smoke_result
     }
 
-    pub fn passed(&self) -> bool {
-        self.cases
-            .iter()
-            .all(|case| case.status == SmokeStatus::Pass)
+    pub fn assessment(&self) -> &str {
+        &self.assessment
+    }
+
+    pub fn mode(&self) -> &'static str {
+        self.mode
+    }
+
+    pub fn runtime_persistence(&self) -> &'static str {
+        self.runtime_persistence
+    }
+
+    pub fn report_storage(&self) -> &'static str {
+        self.report_storage
     }
 }
 
-pub fn run_smoke_suite() -> SmokeSuiteReport {
-    SmokeSuiteReport {
-        suite_id: SMOKE_SUITE_ID,
-        cases: vec![
-            eval_flow_allows_approval_transition(),
-            eval_flow_denies_run_before_approval(),
-            eval_denied_transition_preserves_state(),
-            eval_flow_transition_produces_event_evidence(),
-            eval_event_log_is_append_only(),
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SmokeEvalReport {
+    summary: SmokeEvalSummary,
+    cases: Vec<SmokeEvalCaseResult>,
+    boundary_notes: Vec<&'static str>,
+    deferred_notes: Vec<&'static str>,
+}
+
+impl SmokeEvalReport {
+    pub fn summary(&self) -> &SmokeEvalSummary {
+        &self.summary
+    }
+
+    pub fn suite_id(&self) -> &'static str {
+        self.summary.suite_id()
+    }
+
+    pub fn smoke_result(&self) -> SmokeEvalStatus {
+        self.summary.smoke_result()
+    }
+
+    pub fn assessment(&self) -> &str {
+        self.summary.assessment()
+    }
+
+    pub fn mode(&self) -> &'static str {
+        self.summary.mode()
+    }
+
+    pub fn runtime_persistence(&self) -> &'static str {
+        self.summary.runtime_persistence()
+    }
+
+    pub fn report_storage(&self) -> &'static str {
+        self.summary.report_storage()
+    }
+
+    pub fn cases(&self) -> &[SmokeEvalCaseResult] {
+        &self.cases
+    }
+
+    pub fn boundary_notes(&self) -> &[&'static str] {
+        &self.boundary_notes
+    }
+
+    pub fn deferred_notes(&self) -> &[&'static str] {
+        &self.deferred_notes
+    }
+
+    pub fn passed(&self) -> bool {
+        self.smoke_result() == SmokeEvalStatus::Pass
+    }
+
+    pub fn exit_code(&self) -> u8 {
+        if self.passed() { 0 } else { 1 }
+    }
+
+    pub fn render_human(&self) -> String {
+        let mut output = String::new();
+        writeln!(&mut output, "punk eval run smoke").expect("writing to String should succeed");
+        writeln!(&mut output, "mode: {}", self.mode()).expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "runtime_persistence: {}",
+            self.runtime_persistence()
+        )
+        .expect("writing to String should succeed");
+        writeln!(&mut output, "report_storage: {}", self.report_storage())
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "suite_id: {}", self.suite_id())
+            .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "smoke_result: {}",
+            self.smoke_result().as_str()
+        )
+        .expect("writing to String should succeed");
+        writeln!(&mut output, "assessment: {}", self.assessment())
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "case_results:").expect("writing to String should succeed");
+
+        for case in self.cases() {
+            writeln!(&mut output, "  - id: {}", case.case_id)
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "    status: {}", case.status.as_str())
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "    summary: {}", case.summary)
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "    assessment: {}", case.assessment)
+                .expect("writing to String should succeed");
+        }
+
+        writeln!(&mut output, "notes:").expect("writing to String should succeed");
+        for note in self.boundary_notes() {
+            writeln!(&mut output, "  - {note}").expect("writing to String should succeed");
+        }
+
+        writeln!(&mut output, "deferred:").expect("writing to String should succeed");
+        for note in self.deferred_notes() {
+            writeln!(&mut output, "  - {note}").expect("writing to String should succeed");
+        }
+
+        output.trim_end().to_owned()
+    }
+}
+
+pub fn run_smoke_suite() -> SmokeEvalReport {
+    let cases = vec![
+        eval_flow_allows_approval_transition(),
+        eval_flow_denies_run_before_approval(),
+        eval_denied_transition_preserves_state(),
+        eval_flow_transition_produces_event_evidence(),
+        eval_event_log_is_append_only(),
+    ];
+    let smoke_result = if cases
+        .iter()
+        .all(|case| case.status == SmokeEvalStatus::Pass)
+    {
+        SmokeEvalStatus::Pass
+    } else {
+        SmokeEvalStatus::Fail
+    };
+    let assessment = if smoke_result == SmokeEvalStatus::Pass {
+        "local deterministic smoke harness passed over current flow and event kernels"
+            .to_owned()
+    } else {
+        "local deterministic smoke harness found one or more failing cases over current flow and event kernels"
+            .to_owned()
+    };
+
+    SmokeEvalReport {
+        summary: SmokeEvalSummary {
+            suite_id: SMOKE_SUITE_ID,
+            smoke_result,
+            assessment,
+            mode: "local-smoke-check",
+            runtime_persistence: "inactive",
+            report_storage: "inactive",
+        },
+        cases,
+        boundary_notes: vec![
+            "local assessment only; no authority is written here",
+            "no .punk/evals runtime state is read or written",
+        ],
+        deferred_notes: vec![
+            "machine-readable output is not active",
+            "baseline, waiver, and stored eval reports are not active",
         ],
     }
 }
 
-fn eval_flow_allows_approval_transition() -> SmokeCaseResult {
+fn eval_flow_allows_approval_transition() -> SmokeEvalCaseResult {
     let instance = FlowInstance::new(FlowState::AwaitingApproval);
     match instance.transition(FlowCommand::Approve) {
-        Ok(next) if next.state() == FlowState::Approved => SmokeCaseResult::pass(
+        Ok(next) if next.state() == FlowState::Approved => SmokeEvalCaseResult::pass(
             "eval_flow_allows_approval_transition",
             "allowed transition remains deterministic",
-            "smoke_result: pass; assessment: approval still advances AwaitingApproval -> Approved",
+            "approval still advances AwaitingApproval -> Approved",
         ),
-        Ok(next) => SmokeCaseResult::fail(
+        Ok(next) => SmokeEvalCaseResult::fail(
             "eval_flow_allows_approval_transition",
             "allowed transition remains deterministic",
             format!(
-                "smoke_result: fail; assessment: approval returned unexpected next state {}",
+                "approval returned unexpected next state {}",
                 next.state().as_str()
             ),
         ),
-        Err(error) => SmokeCaseResult::fail(
+        Err(error) => SmokeEvalCaseResult::fail(
             "eval_flow_allows_approval_transition",
             "allowed transition remains deterministic",
             format!(
-                "smoke_result: fail; assessment: approval was denied with next allowed commands {}",
+                "approval was denied with next allowed commands {}",
                 format_commands(error.next_allowed_commands)
             ),
         ),
     }
 }
 
-fn eval_flow_denies_run_before_approval() -> SmokeCaseResult {
+fn eval_flow_denies_run_before_approval() -> SmokeEvalCaseResult {
     let instance = FlowInstance::new(FlowState::AwaitingApproval);
     match instance.transition(FlowCommand::StartRun) {
-        Ok(next) => SmokeCaseResult::fail(
+        Ok(next) => SmokeEvalCaseResult::fail(
             "eval_flow_denies_run_before_approval",
             "illegal run transition stays denied",
             format!(
-                "smoke_result: fail; assessment: StartRun unexpectedly moved to {}",
+                "StartRun unexpectedly moved to {}",
                 next.state().as_str()
             ),
         ),
@@ -131,43 +285,43 @@ fn eval_flow_denies_run_before_approval() -> SmokeCaseResult {
                 && error.attempted_command == FlowCommand::StartRun
                 && error.next_allowed_commands.contains(&FlowCommand::Approve) =>
         {
-            SmokeCaseResult::pass(
+            SmokeEvalCaseResult::pass(
                 "eval_flow_denies_run_before_approval",
                 "illegal run transition stays denied",
-                "smoke_result: pass; assessment: StartRun remains denied before approval and still points to Approve as the next allowed command",
+                "StartRun remains denied before approval and still points to Approve as the next allowed command",
             )
         }
-        Err(error) => SmokeCaseResult::fail(
+        Err(error) => SmokeEvalCaseResult::fail(
             "eval_flow_denies_run_before_approval",
             "illegal run transition stays denied",
             format!(
-                "smoke_result: fail; assessment: denial shape drifted; next allowed commands are {}",
+                "denial shape drifted; next allowed commands are {}",
                 format_commands(error.next_allowed_commands)
             ),
         ),
     }
 }
 
-fn eval_denied_transition_preserves_state() -> SmokeCaseResult {
+fn eval_denied_transition_preserves_state() -> SmokeEvalCaseResult {
     let instance = FlowInstance::new(FlowState::AwaitingApproval);
     let attempt = instance.attempt_transition(FlowCommand::StartRun);
 
     if instance.state() == FlowState::AwaitingApproval && attempt.next_state().is_none() {
-        SmokeCaseResult::pass(
+        SmokeEvalCaseResult::pass(
             "eval_denied_transition_preserves_state",
             "denied transitions do not mutate state",
-            "smoke_result: pass; assessment: denied StartRun attempt leaves AwaitingApproval unchanged",
+            "denied StartRun attempt leaves AwaitingApproval unchanged",
         )
     } else {
-        SmokeCaseResult::fail(
+        SmokeEvalCaseResult::fail(
             "eval_denied_transition_preserves_state",
             "denied transitions do not mutate state",
-            "smoke_result: fail; assessment: denied transition changed state evidence unexpectedly",
+            "denied transition changed state evidence unexpectedly",
         )
     }
 }
 
-fn eval_flow_transition_produces_event_evidence() -> SmokeCaseResult {
+fn eval_flow_transition_produces_event_evidence() -> SmokeEvalCaseResult {
     let attempt = FlowInstance::new(FlowState::AwaitingApproval)
         .attempt_transition(FlowCommand::StartRun);
     let draft = transition_attempt_event_draft(
@@ -180,17 +334,17 @@ fn eval_flow_transition_produces_event_evidence() -> SmokeCaseResult {
         && draft.result.status.as_str() == "denied"
         && draft.result.guard_code.as_deref() == Some("CUT_REQUIRES_APPROVED_CONTRACT")
     {
-        SmokeCaseResult::pass(
+        SmokeEvalCaseResult::pass(
             "eval_flow_transition_produces_event_evidence",
             "transition attempts still emit event evidence",
-            "smoke_result: pass; assessment: denied flow attempt produces guard-denial event evidence without decision authority",
+            "denied flow attempt produces guard-denial event evidence without decision authority",
         )
     } else {
-        SmokeCaseResult::fail(
+        SmokeEvalCaseResult::fail(
             "eval_flow_transition_produces_event_evidence",
             "transition attempts still emit event evidence",
             format!(
-                "smoke_result: fail; assessment: event evidence drifted to kind={} status={} guard_code={:?}",
+                "event evidence drifted to kind={} status={} guard_code={:?}",
                 draft.kind.as_str(),
                 draft.result.status.as_str(),
                 draft.result.guard_code,
@@ -199,7 +353,7 @@ fn eval_flow_transition_produces_event_evidence() -> SmokeCaseResult {
     }
 }
 
-fn eval_event_log_is_append_only() -> SmokeCaseResult {
+fn eval_event_log_is_append_only() -> SmokeEvalCaseResult {
     let mut log = MemoryEventLog::default();
     let first = log.append(schema_fixture());
 
@@ -216,26 +370,26 @@ fn eval_event_log_is_append_only() -> SmokeCaseResult {
                 && first.event_id == "evt_0000000000000001"
                 && second.event_id == "evt_0000000000000002" =>
         {
-            SmokeCaseResult::pass(
+            SmokeEvalCaseResult::pass(
                 "eval_event_log_is_append_only",
                 "append-only event log stays monotonic",
-                "smoke_result: pass; assessment: append-only log preserved prior records and emitted monotonic ids/sequences",
+                "append-only log preserved prior records and emitted monotonic ids and sequences",
             )
         }
-        (Ok(first), Ok(second)) => SmokeCaseResult::fail(
+        (Ok(first), Ok(second)) => SmokeEvalCaseResult::fail(
             "eval_event_log_is_append_only",
             "append-only event log stays monotonic",
             format!(
-                "smoke_result: fail; assessment: append-only evidence drifted; first={} second={} len={}",
+                "append-only evidence drifted; first={} second={} len={}",
                 first.event_id,
                 second.event_id,
                 log.events().len(),
             ),
         ),
-        (Err(error), _) | (_, Err(error)) => SmokeCaseResult::fail(
+        (Err(error), _) | (_, Err(error)) => SmokeEvalCaseResult::fail(
             "eval_event_log_is_append_only",
             "append-only event log stays monotonic",
-            format!("smoke_result: fail; assessment: append failed with {error:?}"),
+            format!("append failed with {error:?}"),
         ),
     }
 }
@@ -250,38 +404,61 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{run_smoke_suite, SmokeStatus, SMOKE_SUITE_ID};
+    use super::{run_smoke_suite, SmokeEvalStatus, SMOKE_SUITE_ID};
 
     #[test]
-    fn smoke_suite_reports_expected_suite_id() {
+    fn smoke_report_contains_expected_summary_and_cases() {
         let report = run_smoke_suite();
 
         assert_eq!(report.suite_id(), SMOKE_SUITE_ID);
+        assert_eq!(report.smoke_result(), SmokeEvalStatus::Pass);
+        assert_eq!(report.mode(), "local-smoke-check");
+        assert_eq!(report.runtime_persistence(), "inactive");
+        assert_eq!(report.report_storage(), "inactive");
         assert_eq!(report.cases().len(), 5);
     }
 
     #[test]
-    fn smoke_suite_passes_against_current_flow_and_event_kernels() {
+    fn smoke_report_passes_against_current_flow_and_event_kernels() {
         let report = run_smoke_suite();
 
         assert!(report.passed(), "all current smoke cases should pass");
         assert!(report
             .cases()
             .iter()
-            .all(|case| case.status == SmokeStatus::Pass));
+            .all(|case| case.status == SmokeEvalStatus::Pass));
     }
 
     #[test]
-    fn smoke_suite_uses_assessment_not_decision_wording() {
+    fn smoke_report_renders_human_output_with_boundaries_and_deferred_notes() {
         let report = run_smoke_suite();
+        let rendered = report.render_human();
 
-        for case in report.cases() {
-            assert!(case.assessment.contains("smoke_result:"));
-            assert!(case.assessment.contains("assessment:"));
-            assert!(!case.assessment.contains("accepted"));
-            assert!(!case.assessment.contains("approved"));
-            assert!(!case.assessment.contains("gate decision"));
-            assert!(!case.assessment.contains("proof complete"));
-        }
+        assert!(rendered.contains("punk eval run smoke"));
+        assert!(rendered.contains("mode: local-smoke-check"));
+        assert!(rendered.contains("runtime_persistence: inactive"));
+        assert!(rendered.contains("report_storage: inactive"));
+        assert!(rendered.contains("smoke_result: pass"));
+        assert!(rendered.contains("assessment: local deterministic smoke harness passed"));
+        assert!(rendered.contains("case_results:"));
+        assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
+        assert!(rendered.contains("    status: pass"));
+        assert!(rendered.contains("notes:"));
+        assert!(rendered.contains("local assessment only; no authority is written here"));
+        assert!(rendered.contains("deferred:"));
+        assert!(rendered.contains("machine-readable output is not active"));
+    }
+
+    #[test]
+    fn smoke_report_uses_assessment_not_decision_wording() {
+        let report = run_smoke_suite();
+        let rendered = report.render_human();
+
+        assert!(report.assessment().contains("local deterministic smoke harness"));
+        assert!(!rendered.contains("accepted"));
+        assert!(!rendered.contains("approved"));
+        assert!(!rendered.contains("gate decision"));
+        assert!(!rendered.contains("proof complete"));
+        assert!(!rendered.contains("final decision"));
     }
 }

@@ -1,16 +1,16 @@
 ---
 id: goal_add_smoke_eval_report_artifact_shape
 title: "Add smoke eval report artifact shape"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "docs/product/EVAL-PLANE.md"
   - "docs/product/ROADMAP.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-smoke-eval-report-artifact-shape.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -64,8 +65,7 @@ After the first honest `punk eval run smoke` command exists, define one bounded 
 
 ## Notes
 
-Keep this goal narrow:
-- no `.punk/evals` persistence
-- no baseline or waiver discipline
-- no remote eval platform
-- no gate/proof integration
+This goal is complete:
+- `punk-eval` now has an internal smoke-eval report shape;
+- the CLI renders through that internal report shape;
+- no stable JSON/schema contract, `.punk/evals`, or richer eval platform behavior was introduced.

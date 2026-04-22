@@ -1,5 +1,4 @@
 use std::env;
-use std::fmt::Write as _;
 use std::process::ExitCode;
 
 use punk_eval::run_smoke_suite;
@@ -161,42 +160,7 @@ fn render_flow_inspect() -> String {
 
 fn render_smoke_eval() -> CommandOutput {
     let report = run_smoke_suite();
-    let smoke_result = if report.passed() { "pass" } else { "fail" };
-    let assessment = if report.passed() {
-        "local deterministic smoke harness passed over current flow and event kernels"
-    } else {
-        "local deterministic smoke harness found one or more failing cases over current flow and event kernels"
-    };
-
-    let mut output = String::new();
-    writeln!(&mut output, "punk eval run smoke").expect("writing to String should succeed");
-    writeln!(&mut output, "mode: local-smoke-check").expect("writing to String should succeed");
-    writeln!(&mut output, "runtime_persistence: inactive")
-        .expect("writing to String should succeed");
-    writeln!(&mut output, "report_storage: inactive").expect("writing to String should succeed");
-    writeln!(&mut output, "suite_id: {}", report.suite_id())
-        .expect("writing to String should succeed");
-    writeln!(&mut output, "smoke_result: {smoke_result}")
-        .expect("writing to String should succeed");
-    writeln!(&mut output, "assessment: {assessment}")
-        .expect("writing to String should succeed");
-    writeln!(&mut output, "case_results:").expect("writing to String should succeed");
-
-    for case in report.cases() {
-        writeln!(&mut output, "  - {}: {}", case.case_id, case.status.as_str())
-            .expect("writing to String should succeed");
-    }
-
-    output.push_str(
-        concat!(
-            "notes:\n",
-            "  - local assessment only; not a gate decision\n",
-            "  - no .punk/evals runtime state is read or written\n",
-            "  - no baseline, waiver, or stored eval reports are active"
-        ),
-    );
-
-    CommandOutput::with_exit(output, if report.passed() { 0 } else { 1 })
+    CommandOutput::with_exit(report.render_human(), report.exit_code())
 }
 
 fn format_commands(commands: &[FlowCommand]) -> String {
@@ -259,14 +223,17 @@ mod tests {
             .text
             .contains("assessment: local deterministic smoke harness passed"));
         assert!(output.text.contains("case_results:"));
-        assert!(output.text.contains("eval_flow_allows_approval_transition: pass"));
-        assert!(output.text.contains("eval_event_log_is_append_only: pass"));
+        assert!(output.text.contains("  - id: eval_flow_allows_approval_transition"));
+        assert!(output.text.contains("    status: pass"));
+        assert!(output.text.contains("    summary: append-only event log stays monotonic"));
         assert!(output
             .text
             .contains("no .punk/evals runtime state is read or written"));
         assert!(output
             .text
-            .contains("local assessment only; not a gate decision"));
+            .contains("local assessment only; no authority is written here"));
+        assert!(output.text.contains("deferred:"));
+        assert!(output.text.contains("machine-readable output is not active"));
         assert!(!output.text.contains("accepted"));
         assert!(!output.text.contains("approved"));
         assert!(!output.text.contains("proof complete"));
