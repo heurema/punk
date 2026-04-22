@@ -1,13 +1,37 @@
 use std::env;
+use std::fmt::Write as _;
 use std::process::ExitCode;
 
+use punk_eval::run_smoke_suite;
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CommandOutput {
+    text: String,
+    exit_code: u8,
+}
+
+impl CommandOutput {
+    fn success(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            exit_code: 0,
+        }
+    }
+
+    fn with_exit(text: impl Into<String>, exit_code: u8) -> Self {
+        Self {
+            text: text.into(),
+            exit_code,
+        }
+    }
+}
 
 fn main() -> ExitCode {
     match run(env::args()) {
         Ok(output) => {
-            println!("{output}");
-            ExitCode::SUCCESS
+            println!("{}", output.text);
+            ExitCode::from(output.exit_code)
         }
         Err(error) => {
             eprintln!("{error}");
@@ -16,7 +40,7 @@ fn main() -> ExitCode {
     }
 }
 
-fn run<I, S>(args: I) -> Result<String, String>
+fn run<I, S>(args: I) -> Result<CommandOutput, String>
 where
     I: IntoIterator<Item = S>,
     S: Into<String>,
@@ -24,11 +48,15 @@ where
     let args: Vec<String> = args.into_iter().map(Into::into).collect();
 
     match args.as_slice() {
-        [_bin] => Ok(render_root_help()),
+        [_bin] => Ok(CommandOutput::success(render_root_help())),
         [_bin, flow, inspect] if flow == "flow" && inspect == "inspect" => {
-            Ok(render_flow_inspect())
+            Ok(CommandOutput::success(render_flow_inspect()))
         }
-        [_bin, flow] if flow == "flow" => Err(flow_usage()),
+        [_bin, eval, run, smoke] if eval == "eval" && run == "run" && smoke == "smoke" => {
+            Ok(render_smoke_eval())
+        }
+        [_bin, flow, ..] if flow == "flow" => Err(flow_usage()),
+        [_bin, eval, ..] if eval == "eval" => Err(eval_usage()),
         [_bin, ..] => Err(root_usage()),
         [] => Err(root_usage()),
     }
@@ -37,17 +65,13 @@ where
 fn render_root_help() -> String {
     format!(
         concat!(
-            "punk: early-stage local-first bounded work kernel
-",
-            "active inspect surface: `punk flow inspect`
-",
-            "runtime persistence is not active yet; inspect stays limited and honest
-
-",
-            "Usage:
-",
-            "  punk flow inspect
-"
+            "punk: early-stage local-first bounded work kernel\n",
+            "active inspect surface: `punk flow inspect`\n",
+            "active eval surface: `punk eval run smoke`\n",
+            "runtime persistence is not active yet; inspect and eval stay limited and honest\n\n",
+            "Usage:\n",
+            "  punk flow inspect\n",
+            "  punk eval run smoke\n"
         )
     )
 }
@@ -55,20 +79,13 @@ fn render_root_help() -> String {
 fn root_usage() -> String {
     format!(
         concat!(
-            "unknown command
-
-",
-            "Usage:
-",
-            "  punk flow inspect
-
-",
-            "Notes:
-",
-            "  - only the first bounded inspect surface is active
-",
-            "  - .punk runtime persistence is not active yet
-"
+            "unknown command\n\n",
+            "Usage:\n",
+            "  punk flow inspect\n",
+            "  punk eval run smoke\n\n",
+            "Notes:\n",
+            "  - only bounded inspect and smoke-eval surfaces are active\n",
+            "  - .punk runtime persistence is not active yet\n"
         )
     )
 }
@@ -76,13 +93,19 @@ fn root_usage() -> String {
 fn flow_usage() -> String {
     format!(
         concat!(
-            "unknown flow command
+            "unknown flow command\n\n",
+            "Usage:\n",
+            "  punk flow inspect\n"
+        )
+    )
+}
 
-",
-            "Usage:
-",
-            "  punk flow inspect
-"
+fn eval_usage() -> String {
+    format!(
+        concat!(
+            "unknown eval command\n\n",
+            "Usage:\n",
+            "  punk eval run smoke\n"
         )
     )
 }
@@ -104,42 +127,24 @@ fn render_flow_inspect() -> String {
 
     format!(
         concat!(
-            "punk flow inspect
-",
-            "mode: limited-kernel-preview
-",
-            "runtime_persistence: inactive
-",
-            "truth_surface: current flow/event kernel fixtures only
-",
-            "current_runtime_state: unavailable
-",
-            "preview_state: {preview_state}
-",
-            "preview_allowed_commands: {allowed_commands}
-",
-            "preview_allowed_transition: {allowed_command} -> {allowed_next_state}
-",
-            "preview_denied_transition: {denied_command}
-",
-            "preview_guard_code: {guard_code}
-",
-            "preview_event_kind: {event_kind}
-",
-            "preview_event_status: {event_status}
-",
-            "preview_flow_id: {flow_id}
-",
-            "preview_goal_ref: {goal_ref}
-",
-            "notes:
-",
-            "  - no .punk runtime state is read or written
-",
-            "  - inspect is derived from existing flow and event kernels only
-",
-            "  - event evidence remains evidence, not decision authority
-"
+            "punk flow inspect\n",
+            "mode: limited-kernel-preview\n",
+            "runtime_persistence: inactive\n",
+            "truth_surface: current flow/event kernel fixtures only\n",
+            "current_runtime_state: unavailable\n",
+            "preview_state: {preview_state}\n",
+            "preview_allowed_commands: {allowed_commands}\n",
+            "preview_allowed_transition: {allowed_command} -> {allowed_next_state}\n",
+            "preview_denied_transition: {denied_command}\n",
+            "preview_guard_code: {guard_code}\n",
+            "preview_event_kind: {event_kind}\n",
+            "preview_event_status: {event_status}\n",
+            "preview_flow_id: {flow_id}\n",
+            "preview_goal_ref: {goal_ref}\n",
+            "notes:\n",
+            "  - no .punk runtime state is read or written\n",
+            "  - inspect is derived from existing flow and event kernels only\n",
+            "  - event evidence remains evidence, not decision authority\n"
         ),
         preview_state = preview_instance.state().as_str(),
         allowed_commands = format_commands(preview_instance.allowed_commands()),
@@ -154,6 +159,46 @@ fn render_flow_inspect() -> String {
     )
 }
 
+fn render_smoke_eval() -> CommandOutput {
+    let report = run_smoke_suite();
+    let smoke_result = if report.passed() { "pass" } else { "fail" };
+    let assessment = if report.passed() {
+        "local deterministic smoke harness passed over current flow and event kernels"
+    } else {
+        "local deterministic smoke harness found one or more failing cases over current flow and event kernels"
+    };
+
+    let mut output = String::new();
+    writeln!(&mut output, "punk eval run smoke").expect("writing to String should succeed");
+    writeln!(&mut output, "mode: local-smoke-check").expect("writing to String should succeed");
+    writeln!(&mut output, "runtime_persistence: inactive")
+        .expect("writing to String should succeed");
+    writeln!(&mut output, "report_storage: inactive").expect("writing to String should succeed");
+    writeln!(&mut output, "suite_id: {}", report.suite_id())
+        .expect("writing to String should succeed");
+    writeln!(&mut output, "smoke_result: {smoke_result}")
+        .expect("writing to String should succeed");
+    writeln!(&mut output, "assessment: {assessment}")
+        .expect("writing to String should succeed");
+    writeln!(&mut output, "case_results:").expect("writing to String should succeed");
+
+    for case in report.cases() {
+        writeln!(&mut output, "  - {}: {}", case.case_id, case.status.as_str())
+            .expect("writing to String should succeed");
+    }
+
+    output.push_str(
+        concat!(
+            "notes:\n",
+            "  - local assessment only; not a gate decision\n",
+            "  - no .punk/evals runtime state is read or written\n",
+            "  - no baseline, waiver, or stored eval reports are active"
+        ),
+    );
+
+    CommandOutput::with_exit(output, if report.passed() { 0 } else { 1 })
+}
+
 fn format_commands(commands: &[FlowCommand]) -> String {
     commands
         .iter()
@@ -164,13 +209,14 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{render_flow_inspect, render_root_help, run};
+    use super::{eval_usage, render_flow_inspect, render_root_help, render_smoke_eval, run};
 
     #[test]
-    fn root_help_points_to_flow_inspect() {
+    fn root_help_points_to_active_surfaces() {
         let output = render_root_help();
 
         assert!(output.contains("punk flow inspect"));
+        assert!(output.contains("punk eval run smoke"));
         assert!(output.contains("runtime persistence is not active yet"));
     }
 
@@ -199,10 +245,55 @@ mod tests {
     }
 
     #[test]
+    fn smoke_eval_command_reports_local_assessment_and_success_exit_code() {
+        let output = render_smoke_eval();
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("punk eval run smoke"));
+        assert!(output.text.contains("mode: local-smoke-check"));
+        assert!(output.text.contains("runtime_persistence: inactive"));
+        assert!(output.text.contains("report_storage: inactive"));
+        assert!(output.text.contains("suite_id: smoke.v0"));
+        assert!(output.text.contains("smoke_result: pass"));
+        assert!(output
+            .text
+            .contains("assessment: local deterministic smoke harness passed"));
+        assert!(output.text.contains("case_results:"));
+        assert!(output.text.contains("eval_flow_allows_approval_transition: pass"));
+        assert!(output.text.contains("eval_event_log_is_append_only: pass"));
+        assert!(output
+            .text
+            .contains("no .punk/evals runtime state is read or written"));
+        assert!(output
+            .text
+            .contains("local assessment only; not a gate decision"));
+        assert!(!output.text.contains("accepted"));
+        assert!(!output.text.contains("approved"));
+        assert!(!output.text.contains("proof complete"));
+    }
+
+    #[test]
+    fn run_returns_success_exit_code_for_smoke_command() {
+        let output = run(["punk", "eval", "run", "smoke"]).expect("smoke command must run");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("smoke_result: pass"));
+    }
+
+    #[test]
+    fn unknown_eval_command_returns_usage_error() {
+        let error = run(["punk", "eval", "unknown"]).expect_err("unknown eval command must fail");
+
+        assert_eq!(error, eval_usage());
+        assert!(error.contains("punk eval run smoke"));
+    }
+
+    #[test]
     fn unknown_command_returns_usage_error() {
         let error = run(["punk", "unknown"]).expect_err("unknown command must fail");
 
         assert!(error.contains("unknown command"));
         assert!(error.contains("punk flow inspect"));
+        assert!(error.contains("punk eval run smoke"));
     }
 }
