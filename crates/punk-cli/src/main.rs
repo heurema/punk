@@ -10,6 +10,12 @@ struct CommandOutput {
     exit_code: u8,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SmokeEvalFormat {
+    Human,
+    Json,
+}
+
 impl CommandOutput {
     fn success(text: impl Into<String>) -> Self {
         Self {
@@ -52,7 +58,16 @@ where
             Ok(CommandOutput::success(render_flow_inspect()))
         }
         [_bin, eval, run, smoke] if eval == "eval" && run == "run" && smoke == "smoke" => {
-            Ok(render_smoke_eval())
+            Ok(render_smoke_eval(SmokeEvalFormat::Human))
+        }
+        [_bin, eval, run, smoke, format_flag, format]
+            if eval == "eval"
+                && run == "run"
+                && smoke == "smoke"
+                && format_flag == "--format"
+                && format == "json" =>
+        {
+            Ok(render_smoke_eval(SmokeEvalFormat::Json))
         }
         [_bin, flow, ..] if flow == "flow" => Err(flow_usage()),
         [_bin, eval, ..] if eval == "eval" => Err(eval_usage()),
@@ -62,51 +77,46 @@ where
 }
 
 fn render_root_help() -> String {
-    format!(
-        concat!(
-            "punk: early-stage local-first bounded work kernel\n",
-            "active inspect surface: `punk flow inspect`\n",
-            "active eval surface: `punk eval run smoke`\n",
-            "runtime persistence is not active yet; inspect and eval stay limited and honest\n\n",
-            "Usage:\n",
-            "  punk flow inspect\n",
-            "  punk eval run smoke\n"
-        )
-    )
+    format!(concat!(
+        "punk: early-stage local-first bounded work kernel\n",
+        "active inspect surface: `punk flow inspect`\n",
+        "active eval surface: `punk eval run smoke`\n",
+        "runtime persistence is not active yet; inspect and eval stay limited and honest\n\n",
+        "Usage:\n",
+        "  punk flow inspect\n",
+        "  punk eval run smoke\n",
+        "  punk eval run smoke --format json\n"
+    ))
 }
 
 fn root_usage() -> String {
-    format!(
-        concat!(
-            "unknown command\n\n",
-            "Usage:\n",
-            "  punk flow inspect\n",
-            "  punk eval run smoke\n\n",
-            "Notes:\n",
-            "  - only bounded inspect and smoke-eval surfaces are active\n",
-            "  - .punk runtime persistence is not active yet\n"
-        )
-    )
+    format!(concat!(
+        "unknown command\n\n",
+        "Usage:\n",
+        "  punk flow inspect\n",
+        "  punk eval run smoke\n",
+        "  punk eval run smoke --format json\n\n",
+        "Notes:\n",
+        "  - only bounded inspect and smoke-eval surfaces are active\n",
+        "  - .punk runtime persistence is not active yet\n"
+    ))
 }
 
 fn flow_usage() -> String {
-    format!(
-        concat!(
-            "unknown flow command\n\n",
-            "Usage:\n",
-            "  punk flow inspect\n"
-        )
-    )
+    format!(concat!(
+        "unknown flow command\n\n",
+        "Usage:\n",
+        "  punk flow inspect\n"
+    ))
 }
 
 fn eval_usage() -> String {
-    format!(
-        concat!(
-            "unknown eval command\n\n",
-            "Usage:\n",
-            "  punk eval run smoke\n"
-        )
-    )
+    format!(concat!(
+        "unknown eval command\n\n",
+        "Usage:\n",
+        "  punk eval run smoke\n",
+        "  punk eval run smoke --format json\n"
+    ))
 }
 
 fn render_flow_inspect() -> String {
@@ -154,13 +164,21 @@ fn render_flow_inspect() -> String {
         event_kind = denied_event.kind.as_str(),
         event_status = denied_event.result.status.as_str(),
         flow_id = denied_event.correlation.flow_id,
-        goal_ref = denied_event.correlation.goal_ref.as_deref().unwrap_or("<none>"),
+        goal_ref = denied_event
+            .correlation
+            .goal_ref
+            .as_deref()
+            .unwrap_or("<none>"),
     )
 }
 
-fn render_smoke_eval() -> CommandOutput {
+fn render_smoke_eval(format: SmokeEvalFormat) -> CommandOutput {
     let report = run_smoke_suite();
-    CommandOutput::with_exit(report.render_human(), report.exit_code())
+    let text = match format {
+        SmokeEvalFormat::Human => report.render_human(),
+        SmokeEvalFormat::Json => report.render_json(),
+    };
+    CommandOutput::with_exit(text, report.exit_code())
 }
 
 fn format_commands(commands: &[FlowCommand]) -> String {
@@ -173,7 +191,9 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{eval_usage, render_flow_inspect, render_root_help, render_smoke_eval, run};
+    use super::{
+        eval_usage, render_flow_inspect, render_root_help, render_smoke_eval, run, SmokeEvalFormat,
+    };
 
     #[test]
     fn root_help_points_to_active_surfaces() {
@@ -210,7 +230,7 @@ mod tests {
 
     #[test]
     fn smoke_eval_command_reports_local_assessment_and_success_exit_code() {
-        let output = render_smoke_eval();
+        let output = render_smoke_eval(SmokeEvalFormat::Human);
 
         assert_eq!(output.exit_code, 0);
         assert!(output.text.contains("punk eval run smoke"));
@@ -223,9 +243,13 @@ mod tests {
             .text
             .contains("assessment: local deterministic smoke harness passed"));
         assert!(output.text.contains("case_results:"));
-        assert!(output.text.contains("  - id: eval_flow_allows_approval_transition"));
+        assert!(output
+            .text
+            .contains("  - id: eval_flow_allows_approval_transition"));
         assert!(output.text.contains("    status: pass"));
-        assert!(output.text.contains("    summary: append-only event log stays monotonic"));
+        assert!(output
+            .text
+            .contains("    summary: append-only event log stays monotonic"));
         assert!(output
             .text
             .contains("no .punk/evals runtime state is read or written"));
@@ -233,10 +257,27 @@ mod tests {
             .text
             .contains("local assessment only; no authority is written here"));
         assert!(output.text.contains("deferred:"));
-        assert!(output.text.contains("machine-readable output is not active"));
+        assert!(output
+            .text
+            .contains("baseline, waiver, and stored eval reports are not active"));
         assert!(!output.text.contains("accepted"));
         assert!(!output.text.contains("approved"));
         assert!(!output.text.contains("proof complete"));
+    }
+
+    #[test]
+    fn smoke_eval_command_supports_opt_in_json_output() {
+        let output = render_smoke_eval(SmokeEvalFormat::Json);
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.starts_with("{"));
+        assert!(output
+            .text
+            .contains("\"schema_version\": \"smoke-eval-report.v0.1\""));
+        assert!(output.text.contains("\"smoke_result\": \"pass\""));
+        assert!(output.text.contains("\"report_storage\": \"inactive\""));
+        assert!(!output.text.contains("punk eval run smoke\n"));
+        assert!(!output.text.contains("case_results:"));
     }
 
     #[test]
@@ -248,11 +289,30 @@ mod tests {
     }
 
     #[test]
+    fn run_returns_json_for_smoke_command_when_requested() {
+        let output = run(["punk", "eval", "run", "smoke", "--format", "json"])
+            .expect("json smoke command must run");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.starts_with("{"));
+        assert!(output.text.contains("\"case_results\": ["));
+    }
+
+    #[test]
     fn unknown_eval_command_returns_usage_error() {
         let error = run(["punk", "eval", "unknown"]).expect_err("unknown eval command must fail");
 
         assert_eq!(error, eval_usage());
         assert!(error.contains("punk eval run smoke"));
+    }
+
+    #[test]
+    fn unsupported_eval_format_returns_usage_error() {
+        let error = run(["punk", "eval", "run", "smoke", "--format", "yaml"])
+            .expect_err("unsupported eval format must fail");
+
+        assert_eq!(error, eval_usage());
+        assert!(error.contains("--format json"));
     }
 
     #[test]

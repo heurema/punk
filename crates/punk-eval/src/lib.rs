@@ -11,6 +11,7 @@ use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowS
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const SMOKE_SUITE_ID: &str = "smoke.v0";
+pub const SMOKE_REPORT_SCHEMA_VERSION: &str = "smoke-eval-report.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SmokeEvalStatus {
@@ -145,7 +146,111 @@ impl SmokeEvalReport {
     }
 
     pub fn exit_code(&self) -> u8 {
-        if self.passed() { 0 } else { 1 }
+        if self.passed() {
+            0
+        } else {
+            1
+        }
+    }
+
+    pub fn render_json(&self) -> String {
+        let mut output = String::new();
+        output.push_str("{\n");
+
+        write_json_field(
+            &mut output,
+            1,
+            "schema_version",
+            JsonValue::String(SMOKE_REPORT_SCHEMA_VERSION),
+            true,
+        );
+        write_json_field(
+            &mut output,
+            1,
+            "suite_id",
+            JsonValue::String(self.suite_id()),
+            true,
+        );
+        write_json_field(&mut output, 1, "run_id", JsonValue::Null, true);
+        write_json_field(
+            &mut output,
+            1,
+            "smoke_result",
+            JsonValue::String(self.smoke_result().as_str()),
+            true,
+        );
+        write_json_field(&mut output, 1, "mode", JsonValue::String(self.mode()), true);
+        write_json_field(
+            &mut output,
+            1,
+            "runtime_persistence",
+            JsonValue::String(self.runtime_persistence()),
+            true,
+        );
+        write_json_field(
+            &mut output,
+            1,
+            "report_storage",
+            JsonValue::String(self.report_storage()),
+            true,
+        );
+
+        output.push_str("  \"case_results\": [\n");
+        for (index, case) in self.cases().iter().enumerate() {
+            output.push_str("    {\n");
+            write_json_field(
+                &mut output,
+                3,
+                "case_id",
+                JsonValue::String(case.case_id),
+                true,
+            );
+            write_json_field(
+                &mut output,
+                3,
+                "status",
+                JsonValue::String(case.status.as_str()),
+                true,
+            );
+            write_json_field(
+                &mut output,
+                3,
+                "summary",
+                JsonValue::String(case.summary),
+                true,
+            );
+            write_json_field(
+                &mut output,
+                3,
+                "assessment",
+                JsonValue::String(case.assessment.as_str()),
+                false,
+            );
+            output.push_str("    }");
+            if index + 1 != self.cases().len() {
+                output.push(',');
+            }
+            output.push('\n');
+        }
+        output.push_str("  ],\n");
+
+        write_json_field(
+            &mut output,
+            1,
+            "boundary_notes",
+            JsonValue::StringArray(self.boundary_notes()),
+            true,
+        );
+        write_json_field(
+            &mut output,
+            1,
+            "deferred",
+            JsonValue::StringArray(self.deferred_notes()),
+            false,
+        );
+        output.push_str("}");
+
+        output
     }
 
     pub fn render_human(&self) -> String {
@@ -214,8 +319,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current flow and event kernels"
-            .to_owned()
+        "local deterministic smoke harness passed over current flow and event kernels".to_owned()
     } else {
         "local deterministic smoke harness found one or more failing cases over current flow and event kernels"
             .to_owned()
@@ -234,12 +338,71 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         boundary_notes: vec![
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
+            "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
-            "machine-readable output is not active",
             "baseline, waiver, and stored eval reports are not active",
+            "schema validation and export adapters are not active",
         ],
     }
+}
+
+enum JsonValue<'a> {
+    String(&'a str),
+    StringArray(&'a [&'a str]),
+    Null,
+}
+
+fn write_json_field(
+    output: &mut String,
+    indent_level: usize,
+    key: &str,
+    value: JsonValue<'_>,
+    trailing_comma: bool,
+) {
+    output.push_str(&"  ".repeat(indent_level));
+    push_json_string(output, key);
+    output.push_str(": ");
+
+    match value {
+        JsonValue::String(value) => push_json_string(output, value),
+        JsonValue::StringArray(values) => {
+            output.push('[');
+            for (index, value) in values.iter().enumerate() {
+                if index > 0 {
+                    output.push_str(", ");
+                }
+                push_json_string(output, value);
+            }
+            output.push(']');
+        }
+        JsonValue::Null => output.push_str("null"),
+    }
+
+    if trailing_comma {
+        output.push(',');
+    }
+    output.push('\n');
+}
+
+fn push_json_string(output: &mut String, value: &str) {
+    output.push('"');
+    for ch in value.chars() {
+        match ch {
+            '"' => output.push_str("\\\""),
+            '\\' => output.push_str("\\\\"),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            '\u{08}' => output.push_str("\\b"),
+            '\u{0C}' => output.push_str("\\f"),
+            ch if ch.is_control() => {
+                write!(output, "\\u{:04x}", ch as u32).expect("writing to String should succeed");
+            }
+            ch => output.push(ch),
+        }
+    }
+    output.push('"');
 }
 
 fn eval_flow_allows_approval_transition() -> SmokeEvalCaseResult {
@@ -322,8 +485,8 @@ fn eval_denied_transition_preserves_state() -> SmokeEvalCaseResult {
 }
 
 fn eval_flow_transition_produces_event_evidence() -> SmokeEvalCaseResult {
-    let attempt = FlowInstance::new(FlowState::AwaitingApproval)
-        .attempt_transition(FlowCommand::StartRun);
+    let attempt =
+        FlowInstance::new(FlowState::AwaitingApproval).attempt_transition(FlowCommand::StartRun);
     let draft = transition_attempt_event_draft(
         &attempt,
         "smoke_eval_preview",
@@ -357,8 +520,8 @@ fn eval_event_log_is_append_only() -> SmokeEvalCaseResult {
     let mut log = MemoryEventLog::default();
     let first = log.append(schema_fixture());
 
-    let second_attempt = FlowInstance::new(FlowState::AwaitingApproval)
-        .attempt_transition(FlowCommand::Approve);
+    let second_attempt =
+        FlowInstance::new(FlowState::AwaitingApproval).attempt_transition(FlowCommand::Approve);
     let second_draft = transition_attempt_event_draft(&second_attempt, "smoke_eval_append", None);
     let second = log.append(second_draft);
 
@@ -404,7 +567,10 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{run_smoke_suite, SmokeEvalStatus, SMOKE_SUITE_ID};
+    use super::{
+        run_smoke_suite, SmokeEvalCaseResult, SmokeEvalReport, SmokeEvalStatus, SmokeEvalSummary,
+        SMOKE_REPORT_SCHEMA_VERSION, SMOKE_SUITE_ID,
+    };
 
     #[test]
     fn smoke_report_contains_expected_summary_and_cases() {
@@ -445,8 +611,10 @@ mod tests {
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
+        assert!(rendered
+            .contains("JSON output is opt-in only and does not imply a stable public contract"));
         assert!(rendered.contains("deferred:"));
-        assert!(rendered.contains("machine-readable output is not active"));
+        assert!(rendered.contains("baseline, waiver, and stored eval reports are not active"));
     }
 
     #[test]
@@ -454,11 +622,62 @@ mod tests {
         let report = run_smoke_suite();
         let rendered = report.render_human();
 
-        assert!(report.assessment().contains("local deterministic smoke harness"));
+        assert!(report
+            .assessment()
+            .contains("local deterministic smoke harness"));
         assert!(!rendered.contains("accepted"));
         assert!(!rendered.contains("approved"));
         assert!(!rendered.contains("gate decision"));
         assert!(!rendered.contains("proof complete"));
         assert!(!rendered.contains("final decision"));
+    }
+
+    #[test]
+    fn smoke_report_renders_json_output_with_v0_1_shape() {
+        let report = run_smoke_suite();
+        let rendered = report.render_json();
+
+        assert!(rendered.starts_with("{\n"));
+        assert!(rendered.contains(&format!(
+            "\"schema_version\": \"{SMOKE_REPORT_SCHEMA_VERSION}\""
+        )));
+        assert!(rendered.contains("\"suite_id\": \"smoke.v0\""));
+        assert!(rendered.contains("\"run_id\": null"));
+        assert!(rendered.contains("\"smoke_result\": \"pass\""));
+        assert!(rendered.contains("\"mode\": \"local-smoke-check\""));
+        assert!(rendered.contains("\"runtime_persistence\": \"inactive\""));
+        assert!(rendered.contains("\"report_storage\": \"inactive\""));
+        assert!(rendered.contains("\"case_results\": ["));
+        assert!(rendered.contains("\"case_id\": \"eval_flow_allows_approval_transition\""));
+        assert!(rendered.contains("\"status\": \"pass\""));
+        assert!(rendered.contains("\"boundary_notes\": ["));
+        assert!(rendered.contains("\"deferred\": ["));
+    }
+
+    #[test]
+    fn smoke_report_json_escapes_quotes_backslashes_and_newlines() {
+        let report = SmokeEvalReport {
+            summary: SmokeEvalSummary {
+                suite_id: SMOKE_SUITE_ID,
+                smoke_result: SmokeEvalStatus::Pass,
+                assessment: "hello \"punk\"\npath\\to\\file".to_owned(),
+                mode: "local-smoke-check",
+                runtime_persistence: "inactive",
+                report_storage: "inactive",
+            },
+            cases: vec![SmokeEvalCaseResult::pass(
+                "case_quotes",
+                "line\nbreak",
+                "hello \"punk\"\npath\\to\\file",
+            )],
+            boundary_notes: vec!["line\nbreak"],
+            deferred_notes: vec!["path\\to\\file"],
+        };
+
+        let rendered = report.render_json();
+
+        assert!(rendered.contains("hello \\\"punk\\\"\\npath\\\\to\\\\file"));
+        assert!(rendered.contains("\"summary\": \"line\\nbreak\""));
+        assert!(rendered.contains("\"deferred\": [\"path\\\\to\\\\file\"]"));
     }
 }

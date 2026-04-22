@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 2 preparation"
-current_focus: "Expose the proposed smoke eval report v0.1 shape through one bounded JSON output path without storage or baseline behavior"
-selected_next: "work/goals/goal_add_smoke_eval_json_output_v0_1.md"
+current_focus: "Research eval storage, report history, baseline, and waiver boundaries before any `.punk/evals` runtime implementation"
+selected_next: "work/goals/goal_research_eval_storage_and_baseline_boundary.md"
 last_validated_commit: null
 ---
 
@@ -17,34 +17,35 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: expose the proposed smoke eval report v0.1 shape through one bounded JSON output path without storage or baseline behavior.
-- Selected next: `work/goals/goal_add_smoke_eval_json_output_v0_1.md`
-- Why this is next: the schema-only proposal is now defined, so the next honest step is one narrow JSON output implementation over the proposed v0.1 shape.
+- Current focus: research eval storage, report history, baseline, and waiver boundaries before any `.punk/evals` runtime implementation.
+- Selected next: `work/goals/goal_research_eval_storage_and_baseline_boundary.md`
+- Why this is next: opt-in JSON output now exists, so the next honest step is research-first boundary work before any storage, baseline, waiver, or report-history implementation.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
   - smoke eval remains an assessment surface, not a decision surface.
-  - JSON output must not imply `.punk/evals` storage, baseline, waiver, or stable public-contract hardening.
+  - `.punk/evals` storage and baseline/waiver behavior remain deferred until research clarifies the boundary.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | `ready` | The schema-only proposal exists, so one bounded JSON output step is now the next honest implementation diff. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval-report schema and JSON-output boundary. | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` |
+| `work/goals/goal_research_eval_storage_and_baseline_boundary.md` | `ready` | JSON output now exists, so the next honest step is research-first work before storage, report history, baseline, or waiver implementation. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the eval storage and baseline boundary. | `work/goals/goal_research_eval_storage_and_baseline_boundary.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/evals` report storage | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | Keep storage deferred while the next diff adds JSON output only. |
-| Baseline and waiver behavior | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | Keep policy behavior deferred until machine-readable output exists and remains bounded. |
-| Project Memory storage research | `work/goals/goal_add_smoke_eval_json_output_v0_1.md` | Finish the JSON-output boundary before broader storage work. |
+| `.punk/evals` report storage | `work/goals/goal_research_eval_storage_and_baseline_boundary.md` | Clarify storage ownership and runtime/report-history boundary first. |
+| Baseline and waiver behavior | `work/goals/goal_research_eval_storage_and_baseline_boundary.md` | Clarify policy and artifact implications before implementation. |
+| Project Memory storage research | `work/goals/goal_research_eval_storage_and_baseline_boundary.md` | Finish eval storage and baseline research before broader storage work. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Added opt-in smoke eval JSON output v0.1 | `work/goals/goal_add_smoke_eval_json_output_v0_1.md`, `work/reports/2026-04-22-smoke-eval-json-output-v0-1.md` |
 | 2026-04-22 | Defined the schema-only smoke eval report v0.1 proposal | `work/goals/goal_define_smoke_eval_report_schema_v0_1.md`, `work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md`, `evals/specs/smoke-eval-report.v0.1.md` |
 | 2026-04-22 | Researched eval report schema before machine output | `work/goals/goal_research_eval_report_schema_before_machine_output.md`, `work/reports/2026-04-22-eval-report-schema-research.md`, `knowledge/research/2026-04-22-eval-report-schema-before-machine-output.md` |
 | 2026-04-22 | Added the internal smoke eval report artifact shape | `work/goals/goal_add_smoke_eval_report_artifact_shape.md`, `work/reports/2026-04-22-smoke-eval-report-artifact-shape.md` |
@@ -67,9 +68,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/smoke-eval-report.v0.1.md work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md --report work/reports/2026-04-22-smoke-eval-report-schema-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-eval && cargo test -p punk-cli && cargo test -p punk-flow && cargo test -p punk-events && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && cargo run -q -p punk-cli -- eval run smoke --format json && scripts/check.sh docs-governance --files work/reports/2026-04-22-smoke-eval-json-output-v0-1.md --report work/reports/2026-04-22-smoke-eval-json-output-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_add_smoke_eval_json_output_v0_1.md`
-  - the schema-only proposal is complete and remains advisory/design
-  - `.punk/evals` storage, baseline, waiver, and validator work remain out of scope
+  - `selected_next` moves to `work/goals/goal_research_eval_storage_and_baseline_boundary.md`
+  - `punk eval run smoke` keeps human output as default while `--format json` is opt-in
+  - `.punk/evals` storage, baseline, waiver, validator, and export-adapter work remain out of scope
