@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-23
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Define the gate decision boundary before starting any gate implementation branch"
-selected_next: "work/goals/goal_define_gate_decision_boundary_v0_1.md"
+current_focus: "Research the proofpack boundary before any gate or proof implementation branch"
+selected_next: "work/goals/goal_research_proofpack_boundary.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,36 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: define the gate decision boundary before starting any gate implementation branch.
-- Selected next: `work/goals/goal_define_gate_decision_boundary_v0_1.md`
-- Why this is next: gate boundary research is now complete, so the next honest step is a spec-only artifact that fixes what future `gate` may write and what it may only reference.
+- Current focus: research the proofpack boundary before any gate or proof implementation branch.
+- Selected next: `work/goals/goal_research_proofpack_boundary.md`
+- Why this is next: gate decision boundary work is now fixed at the spec level, so the next honest trust-surface question is how proofpack should link evidence and decisions without absorbing closure authority.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - contract, flow, event, eval, receipt, and proof stay evidence-oriented until a later gate implementation goal explicitly activates decision writing.
+  - contract, flow, event, eval, receipt, and proof stay evidence-oriented until later bounded goals explicitly activate proof or gate implementation.
   - `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, gate, and proof remain deferred until later bounded goals explicitly activate them.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_define_gate_decision_boundary_v0_1.md` | `ready` | The next honest step after research is a design/spec-only artifact for DecisionObject and closure authority boundaries. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the gate-boundary spec step. | `work/goals/goal_define_gate_decision_boundary_v0_1.md` |
+| `work/goals/goal_research_proofpack_boundary.md` | `ready` | The next honest step after the gate decision boundary spec is research-first on proofpack provenance and authority boundaries. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind proofpack-boundary research. | `work/goals/goal_research_proofpack_boundary.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Gate or proof implementation | `work/goals/goal_define_gate_decision_boundary_v0_1.md` | Define the gate decision boundary before any implementation starts writing decision artifacts. |
-| `.punk/contracts`, `.punk/evals`, `.punk/runs`, or `.punk/decisions` storage | `work/goals/goal_define_gate_decision_boundary_v0_1.md` | Keep storage deferred while the next step fixes the closure authority boundary first. |
-| Contract storage boundary | `work/goals/goal_define_gate_decision_boundary_v0_1.md` | Keep storage work behind the next decision-boundary spec step. |
-| Project Memory storage research | `work/goals/goal_define_gate_decision_boundary_v0_1.md` | Keep broader storage work behind gate-boundary design. |
+| Gate or proof implementation | `work/goals/goal_research_proofpack_boundary.md` | Research the proofpack boundary before any implementation starts linking decision and proof artifacts. |
+| `.punk/contracts`, `.punk/evals`, `.punk/runs`, or `.punk/decisions` storage | `work/goals/goal_research_proofpack_boundary.md` | Keep storage deferred while the next step clarifies proof linkage and authority boundaries first. |
+| Contract storage boundary | `work/goals/goal_research_proofpack_boundary.md` | Keep broader storage work behind the next proof-boundary research step. |
+| Project Memory storage research | `work/goals/goal_research_proofpack_boundary.md` | Keep broader storage work behind proofpack-boundary research. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-23 | Defined the gate decision boundary v0.1 spec | `work/goals/goal_define_gate_decision_boundary_v0_1.md`, `work/reports/2026-04-22-gate-decision-boundary-v0-1.md`, `evals/specs/gate-decision-boundary.v0.1.md` |
 | 2026-04-23 | Researched gate decision boundary | `work/goals/goal_research_gate_decision_boundary.md`, `work/reports/2026-04-22-gate-decision-boundary-research.md`, `knowledge/research/2026-04-22-gate-decision-boundary.md` |
 | 2026-04-23 | Added run receipt smoke eval coverage | `work/goals/goal_add_run_receipt_smoke_eval.md`, `work/reports/2026-04-22-run-receipt-smoke-eval.md`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-23 | Connected run receipt to contract and flow | `work/goals/goal_connect_run_receipt_to_contract_flow.md`, `work/reports/2026-04-22-connect-run-receipt-to-contract-flow.md`, `crates/punk-flow/src/lib.rs` |
@@ -83,9 +84,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-23
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files knowledge/research/2026-04-22-gate-decision-boundary.md work/reports/2026-04-22-gate-decision-boundary-research.md --report work/reports/2026-04-22-gate-decision-boundary-research.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/gate-decision-boundary.v0.1.md work/reports/2026-04-22-gate-decision-boundary-v0-1.md --report work/reports/2026-04-22-gate-decision-boundary-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_define_gate_decision_boundary_v0_1.md`
-  - gate decision research now fixes the authority boundary between event, receipt, eval, proof, and future decision artifacts
-  - gate, proof, and `.punk/decisions` implementation remain deferred
+  - `selected_next` moves to `work/goals/goal_research_proofpack_boundary.md`
+  - gate decision boundary is now fixed as a spec-only artifact before any gate implementation branch
+  - proofpack, gate, validators, and `.punk/decisions` remain deferred

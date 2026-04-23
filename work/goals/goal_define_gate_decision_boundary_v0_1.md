@@ -1,16 +1,16 @@
 ---
 id: goal_define_gate_decision_boundary_v0_1
 title: "Define gate decision boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
 updated_at: 2026-04-23
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "docs/product/PUNK-LAWS.md"
   - "knowledge/research/2026-04-22-gate-decision-boundary.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-gate-decision-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -62,10 +63,7 @@ Gate decision research is complete. The next honest step is to define a boundary
 
 ## Notes
 
-Keep this goal narrow:
-- design/spec only;
-- no Rust code;
-- no `.punk/`;
-- no gate implementation;
-- no proofpack implementation;
-- no validators.
+This goal is complete:
+- `evals/specs/gate-decision-boundary.v0.1.md` now defines gate decision as a future closure-authority artifact distinct from contract, flow, event, receipt, eval, and proof surfaces;
+- the spec keeps gate, proofpack, validators, storage, and CLI work deferred;
+- the next conservative step is research-first on the proofpack boundary before any gate or proof implementation branch.
