@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-22
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Add the smallest honest run receipt kernel before any `.punk/runs`, gate, or proof implementation"
-selected_next: "work/goals/goal_add_run_receipt_minimal.md"
+current_focus: "Connect the minimal run receipt kernel to the existing contract-authorized flow path before any storage, CLI, gate, or proof work"
+selected_next: "work/goals/goal_connect_run_receipt_to_contract_flow.md"
 last_validated_commit: null
 ---
 
@@ -17,9 +17,9 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: add the smallest honest run receipt kernel before any `.punk/runs`, gate, or proof implementation.
-- Selected next: `work/goals/goal_add_run_receipt_minimal.md`
-- Why this is next: the third advisory review found that contract-flow behavior is already bounded and smoke-covered, while run receipt research and boundary/spec work are now specific enough to support one narrow pre-gate receipt step.
+- Current focus: connect the minimal run receipt kernel to the existing contract-authorized flow path before any storage, CLI, gate, or proof work.
+- Selected next: `work/goals/goal_connect_run_receipt_to_contract_flow.md`
+- Why this is next: the minimal receipt model now exists in the canonical-types crate, but the contract/flow path still needs a bounded integration step before any smoke coverage or runtime storage activation.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
@@ -30,22 +30,23 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_run_receipt_minimal.md` | `ready` | The receipt boundary is now explicit enough to support one narrow pre-gate receipt kernel without `.punk/runs`, gate, or proof activation. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the minimal run receipt step. | `work/goals/goal_add_run_receipt_minimal.md` |
+| `work/goals/goal_connect_run_receipt_to_contract_flow.md` | `ready` | The next honest step is to connect the new receipt kernel to the real contract/flow run path without activating storage or final-decision surfaces. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the receipt-to-flow integration step. | `work/goals/goal_connect_run_receipt_to_contract_flow.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_add_run_receipt_minimal.md` | Keep storage deferred while the next step proves a receipt kernel without activating runtime persistence. |
-| Gate or proof implementation | `work/goals/goal_add_run_receipt_minimal.md` | Add the pre-gate receipt artifact first so later decision/proof work references a concrete bounded evidence surface. |
-| Contract storage boundary | `work/goals/goal_add_run_receipt_minimal.md` | Finish the minimal receipt step before opening another runtime-storage branch. |
-| Project Memory storage research | `work/goals/goal_add_run_receipt_minimal.md` | Keep broader storage work behind the next core-lifecycle implementation step. |
+| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_connect_run_receipt_to_contract_flow.md` | Keep storage deferred while the next step proves receipt creation against the real run path without runtime persistence. |
+| Gate or proof implementation | `work/goals/goal_connect_run_receipt_to_contract_flow.md` | Connect receipt creation to bounded run behavior before later decision/proof work starts consuming receipt artifacts. |
+| Contract storage boundary | `work/goals/goal_connect_run_receipt_to_contract_flow.md` | Finish receipt integration before opening another runtime-storage branch. |
+| Project Memory storage research | `work/goals/goal_connect_run_receipt_to_contract_flow.md` | Keep broader storage work behind the next lifecycle integration step. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-22 | Added the minimal run receipt kernel | `work/goals/goal_add_run_receipt_minimal.md`, `work/reports/2026-04-22-run-receipt-minimal.md`, `crates/punk-domain/src/lib.rs` |
 | 2026-04-22 | Ran the third advisory Work Ledger Review | `work/goals/goal_run_third_work_ledger_review.md`, `work/reports/2026-04-22-third-work-ledger-review.md` |
 | 2026-04-22 | Defined the run receipt boundary v0.1 spec | `work/goals/goal_define_run_receipt_boundary_v0_1.md`, `work/reports/2026-04-22-run-receipt-boundary-v0-1.md`, `evals/specs/run-receipt-boundary.v0.1.md` |
 | 2026-04-22 | Researched run receipt boundary | `work/goals/goal_research_run_receipt_boundary.md`, `work/reports/2026-04-22-run-receipt-boundary-research.md`, `knowledge/research/2026-04-22-run-receipt-boundary.md` |
@@ -79,9 +80,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-22
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-third-work-ledger-review.md --report work/reports/2026-04-22-third-work-ledger-review.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-domain && cargo test --workspace && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-run-receipt-minimal.md --report work/reports/2026-04-22-run-receipt-minimal.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_add_run_receipt_minimal.md`
-  - the third advisory review recommends a narrow pre-gate receipt kernel before any storage, gate, or proof work
-  - `.punk/runs`, gate, proof, and broader storage work remain deferred
+  - `selected_next` moves to `work/goals/goal_connect_run_receipt_to_contract_flow.md`
+  - `punk-domain` now owns the minimal canonical run receipt kernel
+  - `.punk/runs`, gate, proof, CLI, and broader storage work remain deferred

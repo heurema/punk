@@ -1,16 +1,16 @@
 ---
 id: goal_add_run_receipt_minimal
 title: "Add minimal run receipt"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-22
+started_at: 2026-04-22
+completed_at: 2026-04-22
 blocked_by: []
 scope:
   include:
@@ -41,7 +41,8 @@ knowledge_refs:
   - "knowledge/research/2026-04-22-run-receipt-boundary.md"
   - "evals/specs/run-receipt-boundary.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-run-receipt-minimal.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -73,9 +74,8 @@ After the contract lifecycle kernel, contract-to-flow guard integration, smoke c
 
 ## Notes
 
-Keep this goal narrow:
-- no `.punk/runs`;
-- no file storage;
-- no CLI receipt surface;
-- no gate/proof implementation;
-- denied transitions remain event evidence only, not receipts.
+This goal is complete:
+- `crates/punk-domain/src/lib.rs` now owns the minimal canonical run receipt kernel because `punk-domain` is the active-core owner for shared canonical types in `docs/product/CRATE-STATUS.md`;
+- the receipt model stays in-memory and pre-gate, with explicit boundary flags for no final acceptance, no gate decision writes, no proofpack creation, and no runtime storage;
+- denied transitions still do not become receipts;
+- the next bounded step is to connect the receipt kernel to the existing contract/flow run path before adding smoke coverage or any storage.
