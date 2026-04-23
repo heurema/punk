@@ -1,16 +1,16 @@
 ---
 id: goal_run_fourth_work_ledger_review
 title: "Run fourth work ledger review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
 updated_at: 2026-04-23
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "work/reports/2026-04-22-proofpack-boundary-research.md"
   - "work/reports/2026-04-22-proofpack-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-fourth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -59,9 +60,8 @@ Receipt, gate-decision, and proofpack boundary work are now documented. The next
 
 ## Notes
 
-Keep this goal narrow:
-- advisory review only;
-- no code;
-- no automation;
-- no new live tracker;
-- recommend exactly one next bounded step.
+This goal is complete:
+- `work/reports/2026-04-22-fourth-work-ledger-review.md` records the advisory review over the receipt, gate-decision, and proofpack boundary sequence;
+- the review concludes that Punk's process shell is mature enough for a narrow GoalRail process-only pilot;
+- runtime pilot, process capture inbox, and Event Ledger research remain deferred behind the selected next bounded step;
+- ADR-0012 reconciliation and `proof before acceptance` semantics stay recorded as prerequisites for future gate/proof runtime branches, not as scope of the process pilot.
