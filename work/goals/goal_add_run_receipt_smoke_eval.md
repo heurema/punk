@@ -1,16 +1,16 @@
 ---
 id: goal_add_run_receipt_smoke_eval
 title: "Add run receipt smoke eval"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
 updated_at: 2026-04-23
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -39,7 +39,8 @@ knowledge_refs:
   - "knowledge/research/2026-04-22-run-receipt-boundary.md"
   - "evals/specs/run-receipt-boundary.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-run-receipt-smoke-eval.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -70,9 +71,8 @@ After the receipt-aware contract/flow path exists, the next bounded step is to a
 
 ## Notes
 
-Keep this goal narrow:
-- no `.punk/runs`;
-- no file storage;
-- no CLI changes;
-- no gate/proof implementation;
-- no report schema changes unless explicitly re-selected later.
+This goal is complete:
+- `crates/punk-eval/src/lib.rs` now covers the receipt-aware allowed contract+flow path and the denied no-receipt paths;
+- the existing `SmokeEvalReport`, human renderer, and JSON renderer were reused without schema or CLI changes;
+- receipt remains evidence-only and pre-gate in smoke output;
+- the next conservative step is research on the gate decision boundary before any gate implementation branch starts.

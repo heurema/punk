@@ -10,6 +10,7 @@ use punk_contract::{
     approve_contract, validate_contract, ContractDraft, ContractError, ContractId, ContractScope,
     ContractStatus,
 };
+use punk_domain::{ContractRef, RunId, RunReceiptId, RunScopeRef};
 use punk_events::{schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
 
@@ -318,6 +319,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_contract_invalid_scope_denies_start_run(),
         eval_contract_denial_does_not_mutate_flow_state(),
         eval_contract_guard_result_remains_evidence_not_decision(),
+        eval_contract_receipt_allowed_path_produces_evidence(),
+        eval_contract_receipt_draft_denial_produces_no_receipt(),
+        eval_contract_receipt_invalid_scope_produces_no_receipt(),
+        eval_contract_receipt_remains_pre_gate_evidence(),
     ];
     let smoke_result = if cases
         .iter()
@@ -328,10 +333,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, and event kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, and event kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, and event kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, and event kernels"
             .to_owned()
     };
 
@@ -348,6 +353,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         boundary_notes: vec![
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
+            "run receipt evidence remains pre-gate and does not imply final acceptance",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
@@ -747,6 +753,170 @@ fn eval_contract_guard_result_remains_evidence_not_decision() -> SmokeEvalCaseRe
     }
 }
 
+fn eval_contract_receipt_allowed_path_produces_evidence() -> SmokeEvalCaseResult {
+    let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+    let receipt_attempt = FlowInstance::new(FlowState::Approved)
+        .attempt_transition_with_contract_receipt(
+            FlowCommand::StartRun,
+            contract.status(),
+            contract.scope_valid(),
+            RunReceiptId::new("receipt_eval_001").expect("receipt id should be valid"),
+            ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
+            RunId::new("run_eval_001").expect("run id should be valid"),
+            RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
+                .expect("run scope should be valid"),
+        );
+
+    match receipt_attempt.receipt() {
+        Some(receipt)
+            if receipt_attempt.transition().next_state() == Some(FlowState::Running)
+                && receipt.id().as_str() == "receipt_eval_001"
+                && receipt.contract_ref().as_str() == contract.id().as_str()
+                && receipt.run_id().as_str() == "run_eval_001" =>
+        {
+            SmokeEvalCaseResult::pass(
+                "eval_contract_receipt_allowed_path_produces_evidence",
+                "allowed receipt-aware path produces receipt evidence",
+                "ApprovedForRun with valid scope now returns receipt evidence alongside the allowed StartRun transition",
+            )
+        }
+        Some(receipt) => SmokeEvalCaseResult::fail(
+            "eval_contract_receipt_allowed_path_produces_evidence",
+            "allowed receipt-aware path produces receipt evidence",
+            format!(
+                "receipt evidence drifted; next_state={:?} receipt_id={} contract_ref={} run_id={}",
+                receipt_attempt.transition().next_state(),
+                receipt.id().as_str(),
+                receipt.contract_ref().as_str(),
+                receipt.run_id().as_str()
+            ),
+        ),
+        None => SmokeEvalCaseResult::fail(
+            "eval_contract_receipt_allowed_path_produces_evidence",
+            "allowed receipt-aware path produces receipt evidence",
+            "allowed contract-aware StartRun no longer produces receipt evidence",
+        ),
+    }
+}
+
+fn eval_contract_receipt_draft_denial_produces_no_receipt() -> SmokeEvalCaseResult {
+    let receipt_attempt = FlowInstance::new(FlowState::Approved)
+        .attempt_transition_with_contract_receipt(
+            FlowCommand::StartRun,
+            ContractStatus::Draft,
+            true,
+            RunReceiptId::new("receipt_eval_002").expect("receipt id should be valid"),
+            ContractRef::new("contract_eval_002").expect("contract ref should be valid"),
+            RunId::new("run_eval_002").expect("run id should be valid"),
+            RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
+                .expect("run scope should be valid"),
+        );
+
+    if receipt_attempt.transition().next_state().is_none()
+        && receipt_attempt.transition().guard_code() == Some("RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT")
+        && receipt_attempt.receipt().is_none()
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_contract_receipt_draft_denial_produces_no_receipt",
+            "draft denial still produces no receipt",
+            "draft contract denial stays on the guard/event path and does not create receipt evidence",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_contract_receipt_draft_denial_produces_no_receipt",
+            "draft denial still produces no receipt",
+            format!(
+                "draft denial drifted; next_state={:?} guard_code={:?} receipt_present={}",
+                receipt_attempt.transition().next_state(),
+                receipt_attempt.transition().guard_code(),
+                receipt_attempt.receipt().is_some()
+            ),
+        )
+    }
+}
+
+fn eval_contract_receipt_invalid_scope_produces_no_receipt() -> SmokeEvalCaseResult {
+    let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+    let receipt_attempt = FlowInstance::new(FlowState::Approved)
+        .attempt_transition_with_contract_receipt(
+            FlowCommand::StartRun,
+            contract.status(),
+            false,
+            RunReceiptId::new("receipt_eval_003").expect("receipt id should be valid"),
+            ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
+            RunId::new("run_eval_003").expect("run id should be valid"),
+            RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
+                .expect("run scope should be valid"),
+        );
+
+    if receipt_attempt.transition().next_state().is_none()
+        && receipt_attempt.transition().guard_code() == Some("RUN_REQUIRES_EXPLICIT_CONTRACT_SCOPE")
+        && receipt_attempt.receipt().is_none()
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_contract_receipt_invalid_scope_produces_no_receipt",
+            "invalid scope denial still produces no receipt",
+            "invalid scope keeps StartRun denied and still produces no receipt evidence",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_contract_receipt_invalid_scope_produces_no_receipt",
+            "invalid scope denial still produces no receipt",
+            format!(
+                "invalid scope denial drifted; next_state={:?} guard_code={:?} receipt_present={}",
+                receipt_attempt.transition().next_state(),
+                receipt_attempt.transition().guard_code(),
+                receipt_attempt.receipt().is_some()
+            ),
+        )
+    }
+}
+
+fn eval_contract_receipt_remains_pre_gate_evidence() -> SmokeEvalCaseResult {
+    let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+    let receipt_attempt = FlowInstance::new(FlowState::Approved)
+        .attempt_transition_with_contract_receipt(
+            FlowCommand::StartRun,
+            contract.status(),
+            contract.scope_valid(),
+            RunReceiptId::new("receipt_eval_004").expect("receipt id should be valid"),
+            ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
+            RunId::new("run_eval_004").expect("run id should be valid"),
+            RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
+                .expect("run scope should be valid"),
+        );
+
+    match receipt_attempt.receipt() {
+        Some(receipt)
+            if receipt.run_evidence_only()
+                && !receipt.boundary().implies_final_acceptance
+                && !receipt.boundary().writes_gate_decision
+                && !receipt.boundary().creates_proofpack =>
+        {
+            SmokeEvalCaseResult::pass(
+                "eval_contract_receipt_remains_pre_gate_evidence",
+                "receipt remains pre-gate evidence only",
+                "receipt evidence remains pre-gate and does not become acceptance, authoritative closure, or proofpack",
+            )
+        }
+        Some(receipt) => SmokeEvalCaseResult::fail(
+            "eval_contract_receipt_remains_pre_gate_evidence",
+            "receipt remains pre-gate evidence only",
+            format!(
+                "receipt boundary drifted; acceptance={} gate={} proofpack={}",
+                receipt.boundary().implies_final_acceptance,
+                receipt.boundary().writes_gate_decision,
+                receipt.boundary().creates_proofpack
+            ),
+        ),
+        None => SmokeEvalCaseResult::fail(
+            "eval_contract_receipt_remains_pre_gate_evidence",
+            "receipt remains pre-gate evidence only",
+            "allowed receipt-aware StartRun failed to produce receipt evidence for boundary validation",
+        ),
+    }
+}
+
 fn format_commands(commands: &[FlowCommand]) -> String {
     commands
         .iter()
@@ -771,7 +941,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 10);
+        assert_eq!(report.cases().len(), 14);
     }
 
     #[test]
@@ -796,14 +966,20 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, and event kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, and event kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
         assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
+        assert!(rendered.contains(
+            "  - id: eval_contract_receipt_allowed_path_produces_evidence"
+        ));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
+        assert!(rendered.contains(
+            "run receipt evidence remains pre-gate and does not imply final acceptance"
+        ));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
         assert!(rendered.contains("deferred:"));
@@ -844,6 +1020,9 @@ mod tests {
         assert!(rendered.contains("\"case_id\": \"eval_flow_allows_approval_transition\""));
         assert!(rendered.contains(
             "\"case_id\": \"eval_contract_ready_for_bounded_work_allows_start_run\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_contract_receipt_allowed_path_produces_evidence\""
         ));
         assert!(rendered.contains("\"status\": \"pass\""));
         assert!(rendered.contains("\"boundary_notes\": ["));

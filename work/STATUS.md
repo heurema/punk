@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-23
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Add deterministic smoke coverage for the new receipt-aware contract+flow path before any storage, CLI, gate, or proof work"
-selected_next: "work/goals/goal_add_run_receipt_smoke_eval.md"
+current_focus: "Research the gate decision boundary before starting any gate implementation branch"
+selected_next: "work/goals/goal_research_gate_decision_boundary.md"
 last_validated_commit: null
 ---
 
@@ -17,9 +17,9 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: add deterministic smoke coverage for the new receipt-aware contract+flow path before any storage, CLI, gate, or proof work.
-- Selected next: `work/goals/goal_add_run_receipt_smoke_eval.md`
-- Why this is next: the allowed contract+flow path can now produce receipt evidence, so the next honest step is smoke coverage before any storage, gate, or proof branch opens.
+- Current focus: research the gate decision boundary before starting any gate implementation branch.
+- Selected next: `work/goals/goal_research_gate_decision_boundary.md`
+- Why this is next: contract, flow, receipt, and receipt-aware smoke coverage now exist, so the next honest trust-surface question is what only `gate` may write and how it should reference receipt, eval, event, and later proof artifacts.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
@@ -30,22 +30,23 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_run_receipt_smoke_eval.md` | `ready` | The receipt-aware contract+flow path now exists and should be regression-covered before any storage or decision work continues. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the receipt smoke-eval step. | `work/goals/goal_add_run_receipt_smoke_eval.md` |
+| `work/goals/goal_research_gate_decision_boundary.md` | `ready` | The next trust-surface question is the final decision boundary now that receipt-aware evidence surfaces exist. | — |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind gate-boundary research. | `work/goals/goal_research_gate_decision_boundary.md` |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_add_run_receipt_smoke_eval.md` | Keep storage deferred while the next step proves the new receipt-aware path under smoke coverage. |
-| Gate or proof implementation | `work/goals/goal_add_run_receipt_smoke_eval.md` | Add smoke coverage first so later decision/proof work consumes a regression-protected receipt path. |
-| Contract storage boundary | `work/goals/goal_add_run_receipt_smoke_eval.md` | Finish receipt smoke coverage before opening another runtime-storage branch. |
-| Project Memory storage research | `work/goals/goal_add_run_receipt_smoke_eval.md` | Keep broader storage work behind the receipt smoke-eval step. |
+| `.punk/contracts`, `.punk/evals`, or `.punk/runs` storage | `work/goals/goal_research_gate_decision_boundary.md` | Keep storage deferred while the next step clarifies final decision semantics first. |
+| Gate or proof implementation | `work/goals/goal_research_gate_decision_boundary.md` | Research the gate boundary before any implementation starts writing decision artifacts. |
+| Contract storage boundary | `work/goals/goal_research_gate_decision_boundary.md` | Keep storage work behind the next decision-boundary research step. |
+| Project Memory storage research | `work/goals/goal_research_gate_decision_boundary.md` | Keep broader storage work behind gate-boundary research. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-23 | Added run receipt smoke eval coverage | `work/goals/goal_add_run_receipt_smoke_eval.md`, `work/reports/2026-04-22-run-receipt-smoke-eval.md`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-23 | Connected run receipt to contract and flow | `work/goals/goal_connect_run_receipt_to_contract_flow.md`, `work/reports/2026-04-22-connect-run-receipt-to-contract-flow.md`, `crates/punk-flow/src/lib.rs` |
 | 2026-04-22 | Added the minimal run receipt kernel | `work/goals/goal_add_run_receipt_minimal.md`, `work/reports/2026-04-22-run-receipt-minimal.md`, `crates/punk-domain/src/lib.rs` |
 | 2026-04-22 | Ran the third advisory Work Ledger Review | `work/goals/goal_run_third_work_ledger_review.md`, `work/reports/2026-04-22-third-work-ledger-review.md` |
@@ -81,9 +82,9 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-23
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-domain && cargo test -p punk-contract && cargo test -p punk-flow && cargo test -p punk-events && cargo test -p punk-eval && cargo check --workspace && scripts/check.sh docs-governance --files work/reports/2026-04-22-connect-run-receipt-to-contract-flow.md --report work/reports/2026-04-22-connect-run-receipt-to-contract-flow.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && cargo test -p punk-domain && cargo test -p punk-contract && cargo test -p punk-flow && cargo test -p punk-eval && cargo test -p punk-cli && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && cargo run -q -p punk-cli -- eval run smoke --format json && cargo run -q -p punk-cli -- eval run smoke --format json | python3 -c 'import json,sys; json.load(sys.stdin)' && scripts/check.sh docs-governance --files work/reports/2026-04-22-run-receipt-smoke-eval.md --report work/reports/2026-04-22-run-receipt-smoke-eval.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_add_run_receipt_smoke_eval.md`
-  - `punk-flow` now integrates receipt evidence into the allowed contract+flow path without taking ownership of receipt types or storage
-  - `.punk/runs`, gate, proof, CLI, and broader storage work remain deferred
+  - `selected_next` moves to `work/goals/goal_research_gate_decision_boundary.md`
+  - the smoke harness now covers receipt-aware allowed and denied contract+flow paths without schema or CLI changes
+  - `.punk/runs`, gate, proof, CLI receipt surfaces, and broader storage work remain deferred

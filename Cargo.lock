@@ -28,6 +28,7 @@ name = "punk-eval"
 version = "0.1.0"
 dependencies = [
  "punk-contract",
+ "punk-domain",
  "punk-events",
  "punk-flow",
 ]
