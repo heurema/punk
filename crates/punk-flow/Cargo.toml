@@ -8,4 +8,5 @@ publish = false
 
 [dependencies]
 punk-contract = { path = "../punk-contract" }
+punk-domain = { path = "../punk-domain" }
 punk-events = { path = "../punk-events" }

@@ -1,16 +1,16 @@
 ---
 id: goal_connect_run_receipt_to_contract_flow
 title: "Connect run receipt to contract and flow"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-22
 updated_at: 2026-04-22
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -39,7 +39,8 @@ knowledge_refs:
   - "knowledge/research/2026-04-22-run-receipt-boundary.md"
   - "evals/specs/run-receipt-boundary.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-connect-run-receipt-to-contract-flow.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -71,9 +72,8 @@ After the minimal receipt kernel exists, the next bounded step is to connect it 
 
 ## Notes
 
-Keep this goal narrow:
-- no `.punk/runs`;
-- no file storage;
-- no CLI receipt surface;
-- no gate/proof implementation;
-- denied transitions remain event evidence only.
+This goal is complete:
+- `crates/punk-flow/src/lib.rs` now exposes a narrow contract-aware helper that returns transition evidence alongside optional receipt evidence for the allowed `Approved -> StartRun` path;
+- `punk-domain` still owns receipt types, while `punk-flow` only integrates them;
+- denied transitions still remain event evidence only and do not create receipts;
+- the next bounded step is to add smoke coverage for the new receipt-aware contract+flow path.

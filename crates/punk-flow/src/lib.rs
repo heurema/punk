@@ -6,6 +6,7 @@
 //! runtime state is introduced here.
 
 use punk_contract::ContractStatus;
+use punk_domain::{ContractRef, RunId, RunReceipt, RunReceiptId, RunScopeRef};
 use punk_events::{
     EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase, EventResult, EventSource,
     EventStatus, FlowTransitionRef,
@@ -151,6 +152,34 @@ impl FlowInstance {
         self.attempt_transition(command)
     }
 
+    pub fn attempt_transition_with_contract_receipt(
+        self,
+        command: FlowCommand,
+        contract_status: ContractStatus,
+        scope_valid: bool,
+        receipt_id: RunReceiptId,
+        contract_ref: ContractRef,
+        run_id: RunId,
+        run_scope_ref: RunScopeRef,
+    ) -> FlowTransitionReceiptAttempt {
+        let attempt = self.attempt_transition_with_contract(command, contract_status, scope_valid);
+        let receipt = if self.state == FlowState::Approved
+            && command == FlowCommand::StartRun
+            && attempt.next_state() == Some(FlowState::Running)
+        {
+            Some(RunReceipt::new(
+                receipt_id,
+                contract_ref,
+                run_id,
+                run_scope_ref,
+            ))
+        } else {
+            None
+        };
+
+        FlowTransitionReceiptAttempt::new(attempt, receipt)
+    }
+
     pub fn transition(self, command: FlowCommand) -> Result<Self, TransitionError> {
         self.attempt_transition(command).into_result()
     }
@@ -279,6 +308,29 @@ impl FlowTransitionAttempt {
                 Err(error)
             }
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FlowTransitionReceiptAttempt {
+    transition: FlowTransitionAttempt,
+    receipt: Option<RunReceipt>,
+}
+
+impl FlowTransitionReceiptAttempt {
+    fn new(transition: FlowTransitionAttempt, receipt: Option<RunReceipt>) -> Self {
+        Self {
+            transition,
+            receipt,
+        }
+    }
+
+    pub fn transition(&self) -> &FlowTransitionAttempt {
+        &self.transition
+    }
+
+    pub fn receipt(&self) -> Option<&RunReceipt> {
+        self.receipt.as_ref()
     }
 }
 
@@ -515,6 +567,7 @@ mod tests {
         approve_contract, validate_contract, ContractDraft, ContractError, ContractId,
         ContractScope, ContractStatus,
     };
+    use punk_domain::{ContractRef, RunId, RunReceiptId, RunScopeRef};
     use punk_events::{EventKind, EventStatus};
 
     fn valid_contract_scope() -> ContractScope {
@@ -770,5 +823,120 @@ mod tests {
         );
         assert!(!draft.kind.as_str().contains("decision"));
         assert!(!draft.kind.as_str().contains("gate"));
+    }
+
+    #[test]
+    fn approved_for_run_contract_can_produce_receipt_evidence_for_start_run() {
+        let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+        let receipt_attempt = FlowInstance::new(FlowState::Approved)
+            .attempt_transition_with_contract_receipt(
+                FlowCommand::StartRun,
+                contract.status(),
+                contract.scope_valid(),
+                RunReceiptId::new("receipt_flow_001").expect("receipt id should be valid"),
+                ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
+                RunId::new("run_flow_001").expect("run id should be valid"),
+                RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
+                    .expect("run scope ref should be valid"),
+            );
+
+        assert_eq!(receipt_attempt.transition().next_state(), Some(FlowState::Running));
+        let receipt = receipt_attempt
+            .receipt()
+            .expect("allowed start run should produce receipt evidence");
+        assert_eq!(receipt.id().as_str(), "receipt_flow_001");
+        assert_eq!(receipt.contract_ref().as_str(), contract.id().as_str());
+        assert_eq!(receipt.run_id().as_str(), "run_flow_001");
+        assert_eq!(
+            receipt.run_scope_ref().as_str(),
+            "work/goals/goal_connect_run_receipt_to_contract_flow.md"
+        );
+        assert!(receipt.run_evidence_only());
+        assert!(!receipt.boundary().implies_final_acceptance);
+        assert!(!receipt.boundary().requires_runtime_storage);
+    }
+
+    #[test]
+    fn draft_contract_cannot_produce_receipt() {
+        let receipt_attempt = FlowInstance::new(FlowState::Approved)
+            .attempt_transition_with_contract_receipt(
+                FlowCommand::StartRun,
+                ContractStatus::Draft,
+                true,
+                RunReceiptId::new("receipt_flow_002").expect("receipt id should be valid"),
+                ContractRef::new("contract_flow_002").expect("contract ref should be valid"),
+                RunId::new("run_flow_002").expect("run id should be valid"),
+                RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
+                    .expect("run scope ref should be valid"),
+            );
+
+        assert_eq!(receipt_attempt.transition().next_state(), None);
+        assert!(receipt_attempt.receipt().is_none());
+    }
+
+    #[test]
+    fn invalid_scope_cannot_produce_receipt() {
+        let contract = approve_contract(valid_contract_draft()).expect("contract should approve");
+        let receipt_attempt = FlowInstance::new(FlowState::Approved)
+            .attempt_transition_with_contract_receipt(
+                FlowCommand::StartRun,
+                contract.status(),
+                false,
+                RunReceiptId::new("receipt_flow_003").expect("receipt id should be valid"),
+                ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
+                RunId::new("run_flow_003").expect("run id should be valid"),
+                RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
+                    .expect("run scope ref should be valid"),
+            );
+
+        assert_eq!(receipt_attempt.transition().next_state(), None);
+        assert_eq!(
+            receipt_attempt.transition().guard_code(),
+            Some("RUN_REQUIRES_EXPLICIT_CONTRACT_SCOPE")
+        );
+        assert!(receipt_attempt.receipt().is_none());
+    }
+
+    #[test]
+    fn denied_transition_with_receipt_context_does_not_mutate_flow_state_or_produce_receipt() {
+        let instance = FlowInstance::new(FlowState::Approved);
+        let receipt_attempt = instance.attempt_transition_with_contract_receipt(
+            FlowCommand::StartRun,
+            ContractStatus::Draft,
+            true,
+            RunReceiptId::new("receipt_flow_004").expect("receipt id should be valid"),
+            ContractRef::new("contract_flow_004").expect("contract ref should be valid"),
+            RunId::new("run_flow_004").expect("run id should be valid"),
+            RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
+                .expect("run scope ref should be valid"),
+        );
+
+        assert_eq!(instance.state(), FlowState::Approved);
+        assert_eq!(receipt_attempt.transition().next_state(), None);
+        assert!(receipt_attempt.receipt().is_none());
+    }
+
+    #[test]
+    fn denied_transition_with_receipt_context_stays_event_evidence_only() {
+        let receipt_attempt = FlowInstance::new(FlowState::Approved)
+            .attempt_transition_with_contract_receipt(
+                FlowCommand::StartRun,
+                ContractStatus::Draft,
+                true,
+                RunReceiptId::new("receipt_flow_005").expect("receipt id should be valid"),
+                ContractRef::new("contract_flow_005").expect("contract ref should be valid"),
+                RunId::new("run_flow_005").expect("run id should be valid"),
+                RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
+                    .expect("run scope ref should be valid"),
+            );
+        let draft = transition_attempt_event_draft(
+            receipt_attempt.transition(),
+            "flow_receipt_denied",
+            Some("work/goals/goal_connect_run_receipt_to_contract_flow.md"),
+        );
+
+        assert_eq!(draft.kind, EventKind::TransitionDenied);
+        assert_eq!(draft.result.status, EventStatus::Denied);
+        assert!(receipt_attempt.receipt().is_none());
     }
 }
