@@ -1,16 +1,16 @@
 ---
 id: goal_research_proofpack_boundary
 title: "Research proofpack boundary"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
 updated_at: 2026-04-23
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -39,7 +39,8 @@ knowledge_refs:
   - "docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md"
   - "evals/specs/gate-decision-boundary.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-proofpack-boundary-research.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -72,9 +73,7 @@ Gate decision boundary work is complete. The next trust-surface question is how 
 
 ## Notes
 
-Keep this goal narrow:
-- research only;
-- no Rust code;
-- no `.punk/`;
-- no proofpack implementation;
-- no validators or schema implementation.
+This goal is complete:
+- `knowledge/research/2026-04-22-proofpack-boundary.md` now defines the advisory boundary for future proofpacks;
+- the recommendation keeps proofpack as a separate evidence bundle and keeps `gate` as the only closure authority;
+- the next honest step is a design/spec-only proofpack boundary artifact before any proofpack or gate/proof implementation branch.
