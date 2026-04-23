@@ -1,16 +1,16 @@
 ---
 id: goal_define_proofpack_boundary_v0_1
 title: "Define proofpack boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
 updated_at: 2026-04-23
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "docs/product/PUNK-LAWS.md"
   - "knowledge/research/2026-04-22-proofpack-boundary.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-proofpack-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -62,9 +63,7 @@ Proofpack boundary research is complete. The next honest step is to define a bou
 
 ## Notes
 
-Keep this goal narrow:
-- design/spec only;
-- no Rust code;
-- no `.punk/`;
-- no proofpack implementation;
-- no validators.
+This goal is complete:
+- `evals/specs/proofpack-boundary.v0.1.md` now defines proofpack as a future provenance and evidence bundle distinct from event, receipt, eval, and gate-decision surfaces;
+- the spec keeps proofpack, `.punk/proofs`, validators, signing, storage, and CLI work deferred;
+- the next conservative step is `work/goals/goal_run_fourth_work_ledger_review.md` before selecting a new implementation or process branch.
