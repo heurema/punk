@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contribution guide
+    url: https://github.com/heurema/punk/blob/main/CONTRIBUTING.md
+    about: Read repo workflow rules, required checks, and DCO expectations first.
+  - name: Support guidance
+    url: https://github.com/heurema/punk/blob/main/SUPPORT.md
+    about: Check where to ask bounded questions and what not to post publicly.
+  - name: Security policy
+    url: https://github.com/heurema/punk/blob/main/SECURITY.md
+    about: Do not post vulnerability details publicly. Follow the private handoff guidance in SECURITY.md.

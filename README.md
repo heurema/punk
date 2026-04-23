@@ -111,3 +111,18 @@ Stories, post drafts, manual publication receipts, and metrics snapshots live un
 Future PubPunk automation must adopt that structure instead of creating a hidden content store.
 
 See `docs/product/PUBLIC-NARRATIVE.md`.
+
+## Open source and community
+
+- [LICENSE](LICENSE)
+- [NOTICE](NOTICE)
+- [CONTRIBUTING](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)
+- [SECURITY](SECURITY.md)
+- [SUPPORT](SUPPORT.md)
+- [TRADEMARKS](TRADEMARKS.md)
+- [DCO](DCO.md)
+
+## License
+
+[Apache License 2.0](LICENSE)

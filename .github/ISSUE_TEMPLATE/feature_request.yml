@@ -1,0 +1,56 @@
+name: Feature request
+description: Propose a bounded improvement that fits current punk scope
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please ground proposals in punk's current active-core posture.
+        Do not assume parked or future capabilities are active by default.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: A short one-line proposal
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / opportunity
+      placeholder: Describe the problem first
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      placeholder: Describe the bounded change
+    validations:
+      required: true
+
+  - type: textarea
+    id: fit
+    attributes:
+      label: Why this fits punk now
+      description: Explain how this stays within current active-core / roadmap boundaries
+      placeholder: Reference README, work/STATUS.md, docs/product/START-HERE.md, or docs/product/ROADMAP.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Out of scope / non-goals
+      placeholder: What this request should explicitly not become
+
+  - type: textarea
+    id: proof
+    attributes:
+      label: Supporting material
+      description: Related issues, reports, design notes, or examples

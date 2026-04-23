@@ -46,6 +46,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-23 | Added the repository open-source baseline | `work/goals/goal_add_open_source_repository_baseline.md`, `work/reports/2026-04-23-open-source-repository-baseline.md`, `README.md` |
 | 2026-04-23 | Defined the proofpack boundary v0.1 spec | `work/goals/goal_define_proofpack_boundary_v0_1.md`, `work/reports/2026-04-22-proofpack-boundary-v0-1.md`, `evals/specs/proofpack-boundary.v0.1.md` |
 | 2026-04-23 | Researched proofpack boundary | `work/goals/goal_research_proofpack_boundary.md`, `work/reports/2026-04-22-proofpack-boundary-research.md`, `knowledge/research/2026-04-22-proofpack-boundary.md` |
 | 2026-04-23 | Defined the gate decision boundary v0.1 spec | `work/goals/goal_define_gate_decision_boundary_v0_1.md`, `work/reports/2026-04-22-gate-decision-boundary-v0-1.md`, `evals/specs/gate-decision-boundary.v0.1.md` |
@@ -86,9 +87,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-23
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/proofpack-boundary.v0.1.md work/reports/2026-04-22-proofpack-boundary-v0-1.md --report work/reports/2026-04-22-proofpack-boundary-v0-1.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files README.md work/STATUS.md work/goals/goal_add_open_source_repository_baseline.md work/reports/2026-04-23-open-source-repository-baseline.md --report work/reports/2026-04-23-open-source-repository-baseline.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals README.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md TRADEMARKS.md || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
   - `selected_next` moves to `work/goals/goal_run_fourth_work_ledger_review.md`
   - proofpack boundary is now defined as a spec-only provenance bundle distinct from decision authority
   - proofpack, gate, validators, signing, `.punk/proofs`, and related storage work remain deferred
+  - the repository now has an explicit Apache 2.0 + community-health baseline without changing active-core runtime scope
