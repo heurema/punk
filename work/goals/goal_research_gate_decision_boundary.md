@@ -1,16 +1,16 @@
 ---
 id: goal_research_gate_decision_boundary
 title: "Research gate decision boundary"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
 updated_at: 2026-04-23
-selected_at: null
-started_at: null
-completed_at: null
+selected_at: 2026-04-23
+started_at: 2026-04-23
+completed_at: 2026-04-23
 blocked_by: []
 scope:
   include:
@@ -39,7 +39,8 @@ knowledge_refs:
   - "docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md"
   - "work/reports/2026-04-22-run-receipt-smoke-eval.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-22-gate-decision-boundary-research.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -71,9 +72,7 @@ Contract, flow, receipt, and smoke coverage now exist as bounded evidence surfac
 
 ## Notes
 
-Keep this goal narrow:
-- research only;
-- no Rust code;
-- no `.punk/`;
-- no gate implementation;
-- no validator or schema implementation.
+This goal is complete:
+- `knowledge/research/2026-04-22-gate-decision-boundary.md` now defines the advisory boundary for future gate decisions;
+- the recommendation keeps `gate` as the only final closure authority and keeps prior surfaces evidence-only;
+- the next honest step is a design/spec-only gate decision boundary artifact before any gate or proof implementation.
