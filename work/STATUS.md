@@ -6,7 +6,7 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-04-23
+updated_at: 2026-04-24
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
 current_focus: "Extract a GoalRail process-shell pilot from the now-stable Punk work-ledger discipline"
 selected_next: "work/goals/goal_extract_goalrail_process_shell_pilot.md"
@@ -46,6 +46,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-24 | Adopted execution-agnostic Contract over Prompt boundary as docs/ADR/eval-policy only | `work/goals/goal_execution_agnostic_contract_boundary.md`, `work/reports/2026-04-24-execution-agnostic-contract-boundary.md`, `knowledge/research/2026-04-24-contract-over-prompt.md`, `docs/adr/ADR-0014-execution-agnostic-contract-boundary.md`, `evals/specs/execution-agnostic-boundary.v0.1.md` |
 | 2026-04-23 | Ran the fourth advisory Work Ledger Review | `work/goals/goal_run_fourth_work_ledger_review.md`, `work/reports/2026-04-22-fourth-work-ledger-review.md` |
 | 2026-04-23 | Added the repository open-source baseline | `work/goals/goal_add_open_source_repository_baseline.md`, `work/reports/2026-04-23-open-source-repository-baseline.md`, `README.md` |
 | 2026-04-23 | Defined the proofpack boundary v0.1 spec | `work/goals/goal_define_proofpack_boundary_v0_1.md`, `work/reports/2026-04-22-proofpack-boundary-v0-1.md`, `evals/specs/proofpack-boundary.v0.1.md` |
@@ -65,11 +66,11 @@ last_validated_commit: null
 
 ## Validation
 
-- Last checked: 2026-04-23
-- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/reports/2026-04-22-fourth-work-ledger-review.md --report work/reports/2026-04-22-fourth-work-ledger-review.md && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Last checked: 2026-04-24
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/PUNK-LAWS.md docs/product/ARCHITECTURE.md docs/product/ROADMAP.md docs/product/RESEARCH-GATE.md docs/product/PROJECT-MEMORY.md docs/product/PUBLIC-NARRATIVE.md docs/product/CRATE-STATUS.md docs/adr/ADR-0014-execution-agnostic-contract-boundary.md evals/specs/execution-agnostic-boundary.v0.1.md AGENTS.md .agents/skills/punk-workflow/SKILL.md knowledge/research/2026-04-24-contract-over-prompt.md work/goals/goal_execution_agnostic_contract_boundary.md work/reports/2026-04-24-execution-agnostic-contract-boundary.md work/STATUS.md --report work/reports/2026-04-24-execution-agnostic-contract-boundary.md && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` moves to `work/goals/goal_extract_goalrail_process_shell_pilot.md`
-  - the fourth review recommends a GoalRail process-shell pilot over process capture inbox, Event Ledger research, or runtime pilot work
-  - ADR-0012 reconciliation and `proof before acceptance` semantics stay explicitly recorded for later gate/proof runtime branches
-  - the repository now has an explicit Apache 2.0 + community-health baseline without changing active-core runtime scope
+  - `selected_next` remains `work/goals/goal_extract_goalrail_process_shell_pilot.md` after the user-requested execution-boundary interrupt
+  - ADR-0014 is proposed only; future `gate` still owns final acceptance
+  - execution/model/provider runtime behavior remains out of active-core scope
+  - docs governance passed with 0 failures and 11 warning-style findings on legacy definition/glossary candidates

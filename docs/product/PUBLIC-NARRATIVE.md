@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-24
 review_after: 2026-07-20
 canonical_for:
   - public-narrative-plane
@@ -13,12 +13,14 @@ canonical_for:
   - publication-receipt-model
   - manual-metrics-snapshot-policy
   - pubpunk-adoption-boundary
+  - execution-agnostic-public-claim-boundary
 related_docs:
   - docs/product/PROJECT-MEMORY.md
   - docs/product/MODULES.md
   - docs/product/START-HERE.md
 related_adrs:
   - docs/adr/ADR-0007-public-narrative-plane.md
+  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -158,6 +160,7 @@ It should include:
 9. Public content must not leak private/internal-only material.
 10. Public claims should cite canonical project knowledge or be marked as opinion.
 11. Public narrative changes can be dogfooded before code exists.
+12. Public narrative should describe Punk as bounding and verifying proof-bearing work, not as owning a specific model, provider, or executor.
 
 ## First artifacts
 

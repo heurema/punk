@@ -5,17 +5,20 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-24
 review_after: 2026-07-20
 canonical_for:
   - crate-status
   - workspace-status-vocabulary
   - active-core-crate-boundaries
   - parked-crate-boundaries
+  - execution-agnostic-crate-boundary
 related_docs:
   - docs/product/START-HERE.md
   - docs/product/ROADMAP.md
   - docs/product/ARCHITECTURE.md
+related_adrs:
+  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -62,6 +65,21 @@ Telemetry ownership is distributed across active-core crates:
 - `punk-project`: project identity and memory-link boundaries
 
 Future export adapters, dashboards, or remote sinks are parked and must not be listed as active-core.
+
+## Execution-agnostic stance
+
+Do not add an active-core executor, prompt manager, skill manager, provider runner, or agent runtime crate in the current phase.
+
+The current active-core responsibility is:
+
+- contract shape
+- scope validation
+- receipt/evidence shape
+- eval report shape
+- gate decision exclusivity
+- proofpack links and hashes
+
+Executor-specific behavior remains parked until the roadmap explicitly promotes DevPunk or adapters.
 
 ## Parked module docs
 

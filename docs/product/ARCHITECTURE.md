@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-24
 review_after: 2026-07-20
 canonical_for:
   - architecture-boundaries
@@ -18,6 +18,7 @@ canonical_for:
   - assessment-vs-decision-boundary
   - proofpack-provenance-boundary
   - eval-plane-boundary
+  - execution-agnostic-boundary
 related_docs:
   - docs/product/PUNK-LAWS.md
   - docs/product/PROJECT-MEMORY.md
@@ -26,6 +27,7 @@ related_adrs:
   - docs/adr/ADR-0003-project-memory-plane.md
   - docs/adr/ADR-0012-minimal-proofpack-provenance.md
   - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
+  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -69,6 +71,42 @@ The core must not own:
 - hidden memory
 - unbounded autonomy
 - hosted eval or tracing truth
+
+## Execution-agnostic boundary
+
+Punk does not own execution.
+
+An executor is any human, local model, coding agent, IDE, shell script, module, or adapter that attempts scoped work under a contract.
+
+The executor is replaceable and non-authoritative. Its prompts, skills, model settings, provider defaults, local memories, tool rituals, and hidden runtime state are not project truth.
+
+The core owns:
+
+- the contract
+- allowed scope
+- expected artifacts
+- run receipt shape
+- validator results
+- eval reports
+- gate decision
+- proofpack
+- event log
+- project-memory links
+
+The core does not own:
+
+- provider-specific orchestration
+- global model prompts
+- model-specific rituals
+- hidden local memories
+- autonomous execution policy
+- user runtime configuration
+
+Punk may describe the work. Punk may verify the result. Punk must not silently depend on how the executor achieved it.
+
+Execution details become Punk evidence only when captured in a scoped run receipt, validator output, eval report, proofpack, or gate decision.
+
+In short: Punk owns contract, evidence, validation, gate, proof, and memory. Punk does not own execution.
 
 ## Universal lifecycle
 
@@ -249,7 +287,7 @@ See `docs/product/EVAL-PLANE.md` and `docs/adr/ADR-0008-eval-plane.md`.
 
 Commands are transitions over persisted state.
 
-The LLM can suggest a next step, but runtime flow state decides whether the step is allowed.
+An LLM or other executor can suggest a next step, but runtime flow state decides whether the step is allowed.
 
 ## Research gate
 

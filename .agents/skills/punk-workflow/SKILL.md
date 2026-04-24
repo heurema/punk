@@ -11,6 +11,22 @@ Help Codex make safe, bounded changes in the Punk repository.
 
 This skill is a workflow guide, not a source of product truth.
 
+## Authority boundary
+
+This skill is an advisory runner aid.
+
+It may help an executor navigate Punk's workflow, but it must not:
+
+- define product truth
+- override Punk Laws
+- write final decisions
+- bypass gate
+- promote parked capabilities
+- treat model-specific behavior as architecture
+- accumulate fixes without eval/failure evidence
+
+Canonical truth lives in repo-tracked docs, ADRs, contracts, evals, decisions, proofpacks, and project memory.
+
 ## Step 0 — Research Gate preflight
 
 Before editing, classify the task as exactly one of:

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-21
+updated_at: 2026-04-24
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -15,6 +15,7 @@ canonical_for:
   - project-coherence-boundary
   - documentation-as-project-memory
   - manual-work-ledger-boundary
+  - prompt-and-skill-memory-boundary
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/DOC-GOVERNANCE.md
@@ -22,6 +23,7 @@ related_docs:
 related_adrs:
   - docs/adr/ADR-0003-project-memory-plane.md
   - docs/adr/ADR-0008-knowledge-vault-boundaries.md
+  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -51,6 +53,24 @@ goal -> contract -> report -> eval -> decision -> proof -> docs/public narrative
 ```
 
 This keeps memory bounded and inspectable. The graph should be built from canonical artifacts, not from one giant prompt or hidden runtime state.
+
+## Prompt and skill memory boundary
+
+Prompts, skills, playbooks, model-specific settings, and executor-local memories are not project memory by default.
+
+They may help an executor perform work, but they do not own authority and must not become hidden implementation truth.
+
+A useful executor failure should be promoted into one of:
+
+- a contract clause
+- a validator
+- an eval case
+- a proof requirement
+- a report
+- an ADR or knowledge update
+- a bounded runner aid with explicit scope and review date
+
+Project memory is built from linked artifacts, not accumulated prompt text.
 
 ## Repo-tracked memory
 

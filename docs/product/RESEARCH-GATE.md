@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-24
 review_after: 2026-07-20
 canonical_for:
   - research-gate-policy
@@ -13,12 +13,14 @@ canonical_for:
   - research-lifecycle
   - research-promotion-rule
   - research-note-requirements
+  - persistent-model-control-artifact-policy
 related_docs:
   - docs/product/ROADMAP.md
   - docs/product/RESEARCH-INTAKE.md
   - docs/product/START-HERE.md
 related_adrs:
   - docs/adr/ADR-0006-research-gate-before-major-decisions.md
+  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -230,6 +232,37 @@ A Research Gate is required before adopting ideas that change:
 - sandbox/permission semantics
 - public claims about trust evidence
 - active-core scope or parked/future boundaries
+
+## Persistent model-control artifact trigger
+
+Changes to persistent model-control artifacts require Research Gate review when they affect:
+
+- global system prompts
+- repository instructions
+- `AGENTS.md` / `CLAUDE.md`-style instructions
+- agent skills
+- playbooks
+- model-specific behavior rules
+- provider-specific execution assumptions
+- prompt/skill promotion or retirement policy
+
+A prompt, skill, playbook, or model-specific rule must not be promoted as durable architecture unless it has at least one of:
+
+- a repeated failure case;
+- an eval case;
+- an ablation result;
+- a validator gap it closes;
+- or an explicit temporary workaround record with review date.
+
+The preferred fix order is:
+
+1. contract clause
+2. deterministic validator
+3. eval/regression case
+4. proof requirement
+5. project-memory update
+6. scoped runner aid
+7. global instruction only as a last resort
 
 ## Knowledge Vault research requirements
 

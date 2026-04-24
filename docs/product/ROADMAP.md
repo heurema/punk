@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-24
 review_after: 2026-07-20
 canonical_for:
   - roadmap-phase-gates
@@ -19,6 +19,7 @@ related_docs:
   - docs/product/RESEARCH-GATE.md
 related_evals:
   - evals/specs/docs-consistency.v0.1.md
+  - evals/specs/execution-agnostic-boundary.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -158,6 +159,13 @@ Flow:
 ```text
 goal -> contract -> approve -> run -> gate -> proof
 ```
+
+Execution stance:
+
+- `run` may be performed manually or by any external user-chosen runtime.
+- Punk does not require, select, tune, or control the executor.
+- The active-core requirement is not agent execution; it is receipt/evidence capture and gate verification.
+- Executor prompts, skills, provider defaults, and local setup are outside project truth unless explicitly captured as evidence.
 
 Exit criteria:
 
@@ -306,6 +314,13 @@ Required eval additions:
 
 Goal: first active domain module for software work.
 
+Dev module must preserve the execution-agnostic boundary:
+
+- bring-your-own runtime is allowed;
+- provider choice is not project truth;
+- coding-agent output is evidence only after receipt/eval/gate/proof;
+- no model-specific ritual may become active-core architecture without eval-backed promotion.
+
 Exit criteria:
 
 - uses shared flow/rules/contracts
@@ -347,6 +362,7 @@ Rules:
 - wrap, not rebuild
 - no provider zoo
 - adapters never own truth
+- provider behavior, prompt scaffolds, and local model defaults remain non-authoritative
 
 Candidate parked adapter boundary:
 
