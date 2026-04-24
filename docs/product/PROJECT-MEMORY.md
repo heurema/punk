@@ -23,7 +23,7 @@ related_docs:
 related_adrs:
   - docs/adr/ADR-0003-project-memory-plane.md
   - docs/adr/ADR-0008-knowledge-vault-boundaries.md
-  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
+  - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -60,17 +60,26 @@ Prompts, skills, playbooks, model-specific settings, and executor-local memories
 
 They may help an executor perform work, but they do not own authority and must not become hidden implementation truth.
 
+Executor-local memory can be cited only as an unverified input until a Punk artifact captures it with scope, source, date, and authority.
+
 A useful executor failure should be promoted into one of:
 
 - a contract clause
 - a validator
+- a receipt or evidence field
 - an eval case
 - a proof requirement
 - a report
 - an ADR or knowledge update
 - a bounded runner aid with explicit scope and review date
 
-Project memory is built from linked artifacts, not accumulated prompt text.
+Verified executor output becomes project memory only through artifact links such as:
+
+```text
+goal -> contract -> receipt -> eval/assessment -> gate decision -> proofpack -> docs/ADR
+```
+
+Project memory is built from linked artifacts, not accumulated prompt text or executor-local state.
 
 ## Repo-tracked memory
 

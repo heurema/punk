@@ -14,7 +14,7 @@ canonical_for:
   - research-laws
   - public-narrative-laws
   - telemetry-and-research-intake-laws
-  - execution-runtime-boundary-laws
+  - executor-agnostic-validation-laws
 related_docs:
   - docs/product/START-HERE.md
   - docs/product/ARCHITECTURE.md
@@ -96,10 +96,11 @@ Lower layers can narrow or specialize upper rules. They cannot weaken them.
 42. Derived inspect views are regenerable and must not become a second source of truth.
 43. Project memory links must preserve explicit refs between goals, contracts, reports, evals, decisions, proofs, and public narrative.
 
-## Execution boundary laws
+## Executor-agnostic validation boundary laws
 
-44. The task contract is the primary control surface; prompts, skills, playbooks, and model/provider settings are not project truth.
-45. Execution runtime is replaceable and non-authoritative. Humans, local models, coding agents, scripts, modules, and adapters may attempt work, but only scoped artifacts, receipts, evals, decisions, and proofpacks become Punk evidence.
-46. Punk verifies results; it does not depend on or silently govern a user's local model setup.
-47. Persistent model-control artifacts require explicit scope, owner, failure/eval refs, and a review or retirement path.
-48. A repeated executor failure becomes a contract clause, validator, eval case, proof requirement, or memory artifact before it becomes a global instruction.
+44. Punk is executor-agnostic, not validation-agnostic. Work may be attempted by any user-chosen human, script, model, coding agent, IDE, module, or adapter.
+45. User runtime is the substrate, not the authority. Punk may run validators in the user's environment, but final authority comes from contracts, receipts, evals, gate decisions, proofpacks, and project-memory links.
+46. Executor claims are not proof. A claim such as "tests passed", "scope preserved", or "done" must be verified, captured as unverified, or rejected/deferred.
+47. Semantic assessors may assess, not decide. LLM-based review can produce clause-specific evidence, but cannot write final acceptance.
+48. Persistent prompts, skills, playbooks, model settings, and provider settings are runner aids, not project truth. Durable runner aids require explicit scope, owner, evidence refs, and a review or retirement path.
+49. A repeated executor failure becomes a contract clause, validator, receipt field, eval case, proof requirement, or memory artifact before it becomes a global instruction.

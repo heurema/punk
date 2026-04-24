@@ -18,7 +18,7 @@ canonical_for:
   - assessment-vs-decision-boundary
   - proofpack-provenance-boundary
   - eval-plane-boundary
-  - execution-agnostic-boundary
+  - executor-agnostic-validation-boundary
 related_docs:
   - docs/product/PUNK-LAWS.md
   - docs/product/PROJECT-MEMORY.md
@@ -27,7 +27,7 @@ related_adrs:
   - docs/adr/ADR-0003-project-memory-plane.md
   - docs/adr/ADR-0012-minimal-proofpack-provenance.md
   - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
-  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
+  - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -72,28 +72,38 @@ The core must not own:
 - unbounded autonomy
 - hosted eval or tracing truth
 
-## Execution-agnostic boundary
+## Executor-agnostic validation boundary
 
-Punk does not own execution.
+Punk is executor-agnostic, not validation-agnostic.
 
-An executor is any human, local model, coding agent, IDE, shell script, module, or adapter that attempts scoped work under a contract.
+Punk runs in the user's environment. That environment may include the user's repository, filesystem, shell, IDE, toolchains, humans, scripts, local models, coding agents, provider CLIs, environment configuration, and future modules or adapters.
 
-The executor is replaceable and non-authoritative. Its prompts, skills, model settings, provider defaults, local memories, tool rituals, and hidden runtime state are not project truth.
+The user runtime is the substrate, not the authority.
 
-The core owns:
+An executor is any human, local model, coding agent, IDE, shell script, module, adapter, or other user-chosen runtime component that attempts scoped work under a contract.
 
-- the contract
+Punk does not own the executor. Executor prompts, skills, model settings, provider defaults, local memories, tool rituals, hidden runtime state, and self-reported success are not project truth.
+
+The core owns the validation protocol:
+
+- task contract shape
 - allowed scope
 - expected artifacts
-- run receipt shape
-- validator results
-- eval reports
-- gate decision
-- proofpack
-- event log
+- validator plan
+- receipt and evidence shape
+- eval and assessment report shape
+- gate decision rules
+- proofpack links and hashes
+- event log refs
 - project-memory links
 
-The core does not own:
+The core may invoke validators inside the user's environment.
+
+Validator outputs are evidence. Executor claims are not proof. Claims such as "tests passed", "scope preserved", or "done" must be verified, captured as unverified claims, or rejected/deferred by gate policy.
+
+Semantic or LLM-based assessments may produce clause-specific advisory evidence. They must not write final decisions, and they must not turn executor self-review into acceptance.
+
+The core must not own:
 
 - provider-specific orchestration
 - global model prompts
@@ -102,11 +112,9 @@ The core does not own:
 - autonomous execution policy
 - user runtime configuration
 
-Punk may describe the work. Punk may verify the result. Punk must not silently depend on how the executor achieved it.
+Punk may describe the work, capture artifacts, rerun checks, record evidence, and gate acceptance. Punk must not silently depend on how the executor achieved the work.
 
-Execution details become Punk evidence only when captured in a scoped run receipt, validator output, eval report, proofpack, or gate decision.
-
-In short: Punk owns contract, evidence, validation, gate, proof, and memory. Punk does not own execution.
+In short: Punk does not own the executor. Punk owns contract, validation protocol, evidence, gate, proof, and memory.
 
 ## Universal lifecycle
 

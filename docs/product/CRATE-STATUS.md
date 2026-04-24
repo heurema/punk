@@ -12,13 +12,13 @@ canonical_for:
   - workspace-status-vocabulary
   - active-core-crate-boundaries
   - parked-crate-boundaries
-  - execution-agnostic-crate-boundary
+  - executor-agnostic-validation-crate-boundary
 related_docs:
   - docs/product/START-HERE.md
   - docs/product/ROADMAP.md
   - docs/product/ARCHITECTURE.md
 related_adrs:
-  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
+  - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -66,7 +66,7 @@ Telemetry ownership is distributed across active-core crates:
 
 Future export adapters, dashboards, or remote sinks are parked and must not be listed as active-core.
 
-## Execution-agnostic stance
+## Executor-agnostic validation stance
 
 Do not add an active-core executor, prompt manager, skill manager, provider runner, or agent runtime crate in the current phase.
 
@@ -74,12 +74,15 @@ The current active-core responsibility is:
 
 - contract shape
 - scope validation
+- validator plan and deterministic helpers
 - receipt/evidence shape
 - eval report shape
 - gate decision exclusivity
 - proofpack links and hashes
 
-Executor-specific behavior remains parked until the roadmap explicitly promotes DevPunk or adapters.
+Punk may run validators in the user's environment, but the user's executor, provider, prompt, skill, or local model setup must not become active-core authority.
+
+Executor-specific behavior and semantic assessor command interfaces remain parked until the roadmap explicitly promotes DevPunk, adapters, or an assessor boundary.
 
 ## Parked module docs
 

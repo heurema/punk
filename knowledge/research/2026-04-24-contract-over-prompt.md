@@ -5,9 +5,11 @@ authority: advisory
 created: 2026-04-24
 related_goal: work/goals/goal_execution_agnostic_contract_boundary.md
 related_report: work/reports/2026-04-24-execution-agnostic-contract-boundary.md
+related_refinement_goal: work/goals/goal_refine_executor_agnostic_validation_boundary.md
+related_refinement_report: work/reports/2026-04-24-executor-agnostic-validation-boundary-refinement.md
 ---
 
-# Contract over Prompt / Execution-agnostic Contract Boundary
+# Contract over Prompt / Executor-agnostic Validation Boundary
 
 ## Question
 
@@ -19,12 +21,18 @@ Punk already defines the active trust surfaces as contract, scope, event evidenc
 
 The next risk is that persistent prompts, repo instructions, local skills, model defaults, and provider-specific rituals could become the real architecture outside Punk's proof-bearing artifact loop.
 
-The proposed boundary is:
+The corrected boundary is:
 
 ```text
-Punk does not own execution.
-Punk owns contract, evidence, validation, gate, proof, and memory.
+Punk is executor-agnostic, not validation-agnostic.
+Punk runs in the user's environment,
+but does not trust the user's executor as truth.
+
+Punk does not own the executor.
+Punk owns contract, validation protocol, evidence, gate, proof, and memory.
 ```
+
+This corrects the earlier shorthand "Punk does not own execution", which was too broad because Punk does run validators inside the user runtime.
 
 This is an R2 architecture/policy question because it touches core laws, eval policy, project memory, roadmap phase boundaries, adapter boundaries, and repository instructions.
 
@@ -43,6 +51,7 @@ This is an R2 architecture/policy question because it touches core laws, eval po
 | OpenAI evals guide | official docs | A | 2026-04-24 | https://platform.openai.com/docs/guides/evals | Evals check outputs against criteria, especially across model changes, supporting validation over over-instruction. |
 | OpenAI structured outputs guide | official docs | A | 2026-04-24 | https://platform.openai.com/docs/guides/structured-outputs | Schema adherence is a stronger control surface than asking a model to return valid structure. |
 | Anthropic Agent Skills | vendor engineering doc | A/B | 2026-04-24 | https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills | Skills are useful procedural context, but should remain composable runner aids rather than project truth. |
+| User correction packet | project architecture input | project input | 2026-04-24 | current work session | Clarifies execution substrate vs executor authority and names the boundary `executor-agnostic validation`. |
 
 ## Source quality table
 
@@ -52,6 +61,7 @@ This is an R2 architecture/policy question because it touches core laws, eval po
 | Official OpenAI docs | High for eval/schema principles | Validation and schema control are safer than instruction-only control | API mechanisms do not imply Punk should integrate providers now. |
 | Anthropic postmortem | Medium-high field evidence | Product-layer prompt/default changes can measurably affect coding quality | Single-vendor incident; use as failure mode evidence, not direct architecture copy. |
 | Anthropic Skills doc | Medium-high vendor evidence | Skills can be scoped procedural aids | Vendor framing is product-specific; skills should not become Punk authority by default. |
+| User correction packet | High for project intent | Corrected terminology and authority boundary | Treat as architecture input that still needs promotion through docs/ADR/eval artifacts. |
 
 ## Existing systems / prior art
 
@@ -133,7 +143,7 @@ Cons:
 
 Assessment: avoid.
 
-### Option D — Adopt execution-agnostic boundary as docs/ADR/eval-policy now
+### Option D — Adopt executor-agnostic validation boundary as docs/ADR/eval-policy now
 
 Pros:
 - strengthens active-core trust surfaces;
@@ -153,9 +163,13 @@ Assessment: adopt now.
 Adopt now as an architecture and Research Gate policy boundary:
 
 ```text
+Bring your own executor.
+Punk brings the contract and the gate.
+
 Contract over Prompt.
 Validate, don't over-instruct.
-Execution is replaceable and non-authoritative.
+User runtime is the substrate, not the authority.
+Executor claims are not proof.
 ```
 
 Do not implement model execution, provider adapters, prompt management, skill management, MCP integration, or new CLI behavior in this step.
@@ -164,8 +178,8 @@ Do not implement model execution, provider adapters, prompt management, skill ma
 
 | Outcome | Items |
 |---|---|
-| adopt | Execution-agnostic boundary in core laws, architecture, roadmap, Research Gate, Project Memory, ADR, eval spec, and advisory runner-aid headers. |
-| defer | Schema-level `executor_kind`, receipt metadata fields, validator implementation, and gate/proof runtime consequences. |
+| adopt | Executor-agnostic validation boundary in core laws, architecture, roadmap, Research Gate, Project Memory, ADR, eval spec, and advisory runner-aid headers. |
+| defer | Schema-level `executor_policy`, `validation_runtime`, `semantic_assessment`, `gate_policy`, `executor_kind`, receipt metadata fields, validator implementation, semantic assessor command interface, and gate/proof runtime consequences. |
 | park | `punk agent`, `punk provider`, `punk prompt`, `punk skill`, provider abstraction, MCP integration, coding-agent execution. |
 | avoid | Treating AGENTS.md, skills, prompts, local memories, or provider defaults as project truth. |
 
@@ -183,8 +197,9 @@ Do not implement model execution, provider adapters, prompt management, skill ma
 ## Impact on roadmap
 
 - Phase 3 should explicitly allow manual/BYO execution while making receipt/evidence capture and gate verification the active-core requirement.
-- Phase 7 Dev module should preserve bring-your-own runtime and treat coding-agent output as evidence only after receipt/eval/gate/proof.
-- Phase 9 Adapters should wrap provider/tool capabilities without letting provider behavior, prompt scaffolds, or model defaults own truth.
+- Phase 3 should also state that validators may run in the user's environment, but user runtime is substrate rather than authority.
+- Phase 7 Dev module should preserve bring-your-own runtime and treat coding-agent output and executor claims as evidence only after receipt/eval/gate/proof.
+- Phase 9 Adapters should wrap provider/tool capabilities without letting provider behavior, prompt scaffolds, executor claims, or model defaults own truth.
 
 ## Required evals
 
@@ -193,14 +208,16 @@ Add an eval spec that checks docs/policy consistency for:
 - no current claim that Punk executes agent work today;
 - prompts/skills/AGENTS as advisory only;
 - provider/model settings non-authoritative;
-- executor output treated as evidence, not acceptance;
+- user runtime as substrate, not authority;
+- executor output and claims treated as evidence or unverified claims, not acceptance;
+- semantic assessors as advisory evidence, not final decisions;
 - only `gate` writes final decisions;
-- repeated executor failures routed to contract/validator/eval/proof/memory before global instruction.
+- repeated executor failures routed to contract/validator/receipt/eval/proof/memory before global instruction.
 
 ## Required docs/ADRs/contracts
 
-- `docs/adr/ADR-0014-execution-agnostic-contract-boundary.md`
-- `evals/specs/execution-agnostic-boundary.v0.1.md`
+- `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`
+- `evals/specs/executor-agnostic-validation-boundary.v0.1.md`
 - `docs/product/PUNK-LAWS.md`
 - `docs/product/ARCHITECTURE.md`
 - `docs/product/ROADMAP.md`
@@ -213,6 +230,8 @@ Add an eval spec that checks docs/policy consistency for:
 
 ## Open questions
 
-1. When contract schema changes resume, should `executor_kind: manual|external|module|adapter` be added as metadata or left to run receipts?
-2. Should runner-aid lifecycle metadata live in each aid file or in a central `knowledge/ops/runner-aids.md` index?
-3. Which deterministic check should first enforce this boundary: docs-governance extension, smoke eval case, or standalone policy lint?
+1. Should semantic assessor support be active-core as a generic command interface, or stay incubating until a separate boundary is accepted?
+2. Should executor self-review be completely forbidden, or allowed only as advisory evidence with an explicit risk flag?
+3. When contract schema changes resume, should `executor_policy`, `validation_runtime`, `semantic_assessment`, and `gate_policy` be added to contracts, or should `executor_kind` and runtime metadata stay in run receipts first?
+4. When a required validator is unavailable in the user runtime, should gate policy reject, defer, or allow an explicit waiver?
+5. Should semantic assessor specs live under `evals/specs/`, a future `.punk/` runtime surface, or repo-tracked `knowledge/` until implementation?

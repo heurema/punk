@@ -46,7 +46,8 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
-| 2026-04-24 | Adopted execution-agnostic Contract over Prompt boundary as docs/ADR/eval-policy only | `work/goals/goal_execution_agnostic_contract_boundary.md`, `work/reports/2026-04-24-execution-agnostic-contract-boundary.md`, `knowledge/research/2026-04-24-contract-over-prompt.md`, `docs/adr/ADR-0014-execution-agnostic-contract-boundary.md`, `evals/specs/execution-agnostic-boundary.v0.1.md` |
+| 2026-04-24 | Refined executor-agnostic validation boundary wording and evidence model | `work/goals/goal_refine_executor_agnostic_validation_boundary.md`, `work/reports/2026-04-24-executor-agnostic-validation-boundary-refinement.md`, `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`, `evals/specs/executor-agnostic-validation-boundary.v0.1.md` |
+| 2026-04-24 | Adopted initial Contract over Prompt boundary as docs/ADR/eval-policy only | `work/goals/goal_execution_agnostic_contract_boundary.md`, `work/reports/2026-04-24-execution-agnostic-contract-boundary.md`, `knowledge/research/2026-04-24-contract-over-prompt.md`, `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`, `evals/specs/executor-agnostic-validation-boundary.v0.1.md` |
 | 2026-04-23 | Ran the fourth advisory Work Ledger Review | `work/goals/goal_run_fourth_work_ledger_review.md`, `work/reports/2026-04-22-fourth-work-ledger-review.md` |
 | 2026-04-23 | Added the repository open-source baseline | `work/goals/goal_add_open_source_repository_baseline.md`, `work/reports/2026-04-23-open-source-repository-baseline.md`, `README.md` |
 | 2026-04-23 | Defined the proofpack boundary v0.1 spec | `work/goals/goal_define_proofpack_boundary_v0_1.md`, `work/reports/2026-04-22-proofpack-boundary-v0-1.md`, `evals/specs/proofpack-boundary.v0.1.md` |
@@ -67,10 +68,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-24
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/PUNK-LAWS.md docs/product/ARCHITECTURE.md docs/product/ROADMAP.md docs/product/RESEARCH-GATE.md docs/product/PROJECT-MEMORY.md docs/product/PUBLIC-NARRATIVE.md docs/product/CRATE-STATUS.md docs/adr/ADR-0014-execution-agnostic-contract-boundary.md evals/specs/execution-agnostic-boundary.v0.1.md AGENTS.md .agents/skills/punk-workflow/SKILL.md knowledge/research/2026-04-24-contract-over-prompt.md work/goals/goal_execution_agnostic_contract_boundary.md work/reports/2026-04-24-execution-agnostic-contract-boundary.md work/STATUS.md --report work/reports/2026-04-24-execution-agnostic-contract-boundary.md && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/PUNK-LAWS.md docs/product/ARCHITECTURE.md docs/product/ROADMAP.md docs/product/RESEARCH-GATE.md docs/product/PROJECT-MEMORY.md docs/product/PUBLIC-NARRATIVE.md docs/product/CRATE-STATUS.md docs/adr/ADR-0014-executor-agnostic-validation-boundary.md evals/specs/executor-agnostic-validation-boundary.v0.1.md knowledge/research/2026-04-24-contract-over-prompt.md work/goals/goal_execution_agnostic_contract_boundary.md work/goals/goal_refine_executor_agnostic_validation_boundary.md work/reports/2026-04-24-execution-agnostic-contract-boundary.md work/reports/2026-04-24-executor-agnostic-validation-boundary-refinement.md work/STATUS.md --report work/reports/2026-04-24-executor-agnostic-validation-boundary-refinement.md && cargo check --workspace && cargo run -q -p punk-cli -- eval run smoke && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
-  - `selected_next` remains `work/goals/goal_extract_goalrail_process_shell_pilot.md` after the user-requested execution-boundary interrupt
+  - `selected_next` remains `work/goals/goal_extract_goalrail_process_shell_pilot.md` after the user-requested executor-boundary correction
   - ADR-0014 is proposed only; future `gate` still owns final acceptance
-  - execution/model/provider runtime behavior remains out of active-core scope
+  - executor/model/provider runtime behavior remains out of active-core scope
   - docs governance passed with 0 failures and 11 warning-style findings on legacy definition/glossary candidates

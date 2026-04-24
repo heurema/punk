@@ -19,7 +19,7 @@ related_docs:
   - docs/product/RESEARCH-GATE.md
 related_evals:
   - evals/specs/docs-consistency.v0.1.md
-  - evals/specs/execution-agnostic-boundary.v0.1.md
+  - evals/specs/executor-agnostic-validation-boundary.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -160,12 +160,13 @@ Flow:
 goal -> contract -> approve -> run -> gate -> proof
 ```
 
-Execution stance:
+Executor/validation stance:
 
 - `run` may be performed manually or by any external user-chosen runtime.
-- Punk does not require, select, tune, or control the executor.
-- The active-core requirement is not agent execution; it is receipt/evidence capture and gate verification.
-- Executor prompts, skills, provider defaults, and local setup are outside project truth unless explicitly captured as evidence.
+- Punk does not require, select, tune, control, or trust the executor.
+- Punk may run validators in the user's environment; that runtime is the substrate, not the authority.
+- The active-core requirement is not agent execution; it is receipt/evidence capture, deterministic-first validation, and gate verification.
+- Executor prompts, skills, provider defaults, claims, and local setup are outside project truth unless explicitly captured as evidence and verified or marked unverified.
 
 Exit criteria:
 
@@ -314,11 +315,12 @@ Required eval additions:
 
 Goal: first active domain module for software work.
 
-Dev module must preserve the execution-agnostic boundary:
+Dev module must preserve the executor-agnostic validation boundary:
 
 - bring-your-own runtime is allowed;
 - provider choice is not project truth;
 - coding-agent output is evidence only after receipt/eval/gate/proof;
+- executor claims are not proof;
 - no model-specific ritual may become active-core architecture without eval-backed promotion.
 
 Exit criteria:
@@ -362,7 +364,7 @@ Rules:
 - wrap, not rebuild
 - no provider zoo
 - adapters never own truth
-- provider behavior, prompt scaffolds, and local model defaults remain non-authoritative
+- provider behavior, prompt scaffolds, executor claims, and local model defaults remain non-authoritative
 
 Candidate parked adapter boundary:
 

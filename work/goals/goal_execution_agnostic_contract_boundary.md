@@ -1,6 +1,6 @@
 ---
 id: goal_execution_agnostic_contract_boundary
-title: "Adopt execution-agnostic contract boundary"
+title: "Adopt initial Contract over Prompt boundary"
 status: done
 owner: "vitaly"
 module: "core"
@@ -38,7 +38,7 @@ scope:
     - "brand/**"
     - ".punk/**"
 acceptance:
-  - "Execution-agnostic Contract over Prompt is promoted as documentation, ADR, Research Gate, and eval-policy boundary only."
+  - "Executor-agnostic validation boundary is promoted as documentation, ADR, Research Gate, and eval-policy boundary only."
   - "Punk remains provider/model independent and does not gain a runner, provider adapter, prompt manager, skill manager, MCP integration, or public CLI command."
   - "Prompts, skills, playbooks, AGENTS.md, local memories, and model/provider settings are advisory runner aids, not project truth."
   - "Executor output remains evidence only after receipt/eval/gate/proof linkage."
@@ -57,7 +57,8 @@ decision_refs: []
 proof_refs: []
 latest_proof_ref: null
 supersedes: []
-superseded_by: []
+superseded_by:
+  - "work/goals/goal_refine_executor_agnostic_validation_boundary.md"
 research_gate:
   classification: R2
   required: true
@@ -81,18 +82,19 @@ doc_impact:
     - "docs/product/PROJECT-MEMORY.md"
     - "docs/product/PUBLIC-NARRATIVE.md"
     - "docs/product/CRATE-STATUS.md"
-  rationale: "The diff promotes a researched execution/model boundary into canonical product docs and supporting advisory artifacts."
+  rationale: "The diff promotes a researched executor/model boundary into canonical product docs and supporting advisory artifacts."
 ---
 
 ## Context
 
-The user explicitly changed scope from the previously selected GoalRail process-shell pilot to adopt the researched `Contract over Prompt` idea now, but only as an execution-agnostic active-core boundary.
+The user explicitly changed scope from the previously selected GoalRail process-shell pilot to adopt the researched `Contract over Prompt` idea now, but only as an executor-agnostic validation boundary.
 
-The boundary is:
+The corrected boundary is:
 
 ```text
-Punk does not own execution.
-Punk owns contract, evidence, validation, gate, proof, and memory.
+Punk is executor-agnostic, not validation-agnostic.
+Punk does not own the executor.
+Punk owns contract, validation protocol, evidence, gate, proof, and memory.
 ```
 
 ## Notes
@@ -100,8 +102,8 @@ Punk owns contract, evidence, validation, gate, proof, and memory.
 This goal is complete:
 
 - research note saved under `knowledge/research/`;
-- ADR-0014 created with `Status: Proposed`;
-- eval spec created for execution-agnostic docs/policy consistency;
+- ADR-0014 created with `Status: Proposed` and later renamed to `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`;
+- eval spec created for executor-agnostic validation docs/policy consistency;
 - canonical docs updated without changing runtime code;
 - AGENTS and punk-workflow skill now state they are advisory runner aids;
 - no new active-core crate, CLI command, provider adapter, or `.punk/` runtime state was added.

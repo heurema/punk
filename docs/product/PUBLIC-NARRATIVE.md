@@ -13,14 +13,14 @@ canonical_for:
   - publication-receipt-model
   - manual-metrics-snapshot-policy
   - pubpunk-adoption-boundary
-  - execution-agnostic-public-claim-boundary
+  - executor-agnostic-validation-public-claim-boundary
 related_docs:
   - docs/product/PROJECT-MEMORY.md
   - docs/product/MODULES.md
   - docs/product/START-HERE.md
 related_adrs:
   - docs/adr/ADR-0007-public-narrative-plane.md
-  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
+  - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -160,7 +160,7 @@ It should include:
 9. Public content must not leak private/internal-only material.
 10. Public claims should cite canonical project knowledge or be marked as opinion.
 11. Public narrative changes can be dogfooded before code exists.
-12. Public narrative should describe Punk as bounding and verifying proof-bearing work, not as owning a specific model, provider, or executor.
+12. Public narrative should describe Punk as bounding, validating, and proving bring-your-own-executor work, not as owning a specific model, provider, or executor.
 
 ## First artifacts
 

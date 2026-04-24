@@ -20,7 +20,7 @@ related_docs:
   - docs/product/START-HERE.md
 related_adrs:
   - docs/adr/ADR-0006-research-gate-before-major-decisions.md
-  - docs/adr/ADR-0014-execution-agnostic-contract-boundary.md
+  - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -244,6 +244,7 @@ Changes to persistent model-control artifacts require Research Gate review when 
 - playbooks
 - model-specific behavior rules
 - provider-specific execution assumptions
+- executor-specific acceptance logic
 - prompt/skill promotion or retirement policy
 
 A prompt, skill, playbook, or model-specific rule must not be promoted as durable architecture unless it has at least one of:
@@ -258,11 +259,12 @@ The preferred fix order is:
 
 1. contract clause
 2. deterministic validator
-3. eval/regression case
-4. proof requirement
-5. project-memory update
-6. scoped runner aid
-7. global instruction only as a last resort
+3. receipt field or evidence-capture field
+4. eval/regression case
+5. proof requirement
+6. project-memory link
+7. scoped runner aid
+8. global instruction only as a last resort
 
 ## Knowledge Vault research requirements
 
