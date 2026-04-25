@@ -1,14 +1,14 @@
 ---
 id: goal_research_task_storage_before_project_memory
 title: "Research task/work storage before Project Memory implementation"
-status: draft
+status: ready
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-18
-updated_at: 2026-04-21
-selected_at: null
+updated_at: 2026-04-25
+selected_at: 2026-04-25
 started_at: null
 completed_at: null
 blocked_by: []
@@ -34,10 +34,21 @@ proof_refs: []
 latest_proof_ref: null
 supersedes: []
 superseded_by: null
+research_gate:
+  classification: R2
+  required: true
+  rationale: "Task/work storage affects the future Project Memory storage model and must compare prior art and failure modes before implementation."
+  research_refs:
+    - "docs/product/RESEARCH-GATE.md"
+    - "docs/product/PROJECT-MEMORY.md"
+    - "work/pilots/goalrail-process-shell.md"
+    - "work/reports/2026-04-25-goalrail-process-shell-pilot.md"
+  external_research_refs: []
+  blocked_reason: null
 doc_impact:
   classification: none
   required_updates: []
-  rationale: ""
+  rationale: "Goal selection metadata only; future execution will produce the research and any required docs/ADR updates."
 ---
 
 ## Context
@@ -46,4 +57,4 @@ Before implementing Project Memory storage, run a focused research gate over exi
 
 ## Notes
 
-Keep this goal deferred until the manual Work Ledger semantics survive a real cycle of selected goal -> report -> status update -> next selected goal.
+This goal is ready after the manual Work Ledger semantics survived the selected goal -> report -> status update -> next selected goal cycle during the GoalRail process-shell pilot extraction.

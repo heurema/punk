@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Extract a GoalRail process-shell pilot from the now-stable Punk work-ledger discipline"
-selected_next: "work/goals/goal_extract_goalrail_process_shell_pilot.md"
+current_focus: "Research task/work storage before Project Memory implementation"
+selected_next: "work/goals/goal_research_task_storage_before_project_memory.md"
 last_validated_commit: null
 ---
 
@@ -17,35 +17,38 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: extract a GoalRail process-shell pilot from the now-stable Punk work-ledger discipline.
-- Selected next: `work/goals/goal_extract_goalrail_process_shell_pilot.md`
-- Why this is next: the fourth advisory review found the process shell mature enough for a process-only pilot, while runtime closure and storage branches still need to stay deferred.
+- Current focus: research task/work storage before Project Memory implementation.
+- Selected next: `work/goals/goal_research_task_storage_before_project_memory.md`
+- Why this is next: the GoalRail process-shell extraction completed the manual selected goal -> report -> status update -> next selected goal cycle; task/work storage research is the next deferred Project Memory question before implementation.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
+  - task/work storage research compares repo Markdown, JSONL, SQLite mirror, and service-backed options before Project Memory implementation.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate implementation.
-  - `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, `.punk/proofs`, gate, proof, and Event Ledger runtime work remain deferred until later bounded goals explicitly activate them.
+  - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
+  - `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, `.punk/proofs`, gate, proof, Event Ledger runtime work, GoalRail runtime work, and `punk init` remain deferred until later bounded goals explicitly activate them.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_extract_goalrail_process_shell_pilot.md` | `ready` | The process shell has enough repeated evidence to justify a narrow reuse pilot without porting runtime surfaces. | — |
-| `work/goals/goal_research_task_storage_before_project_memory.md` | `draft` | Project Memory storage research stays deferred behind the process-shell extraction step. | `work/goals/goal_extract_goalrail_process_shell_pilot.md` |
+| `work/goals/goal_research_task_storage_before_project_memory.md` | `ready` | The process-shell extraction is complete, and Project Memory storage still needs research before implementation. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Gate or proof implementation | `work/goals/goal_extract_goalrail_process_shell_pilot.md` | Keep runtime closure work deferred while the next step extracts the proven process shell only. |
-| `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | `work/goals/goal_extract_goalrail_process_shell_pilot.md` | Keep storage deferred while the next step stays process-only. |
-| Process capture inbox or Event Ledger research | `work/goals/goal_extract_goalrail_process_shell_pilot.md` | Revisit only if the pilot or a later review shows a repeated capture or inspectability gap. |
-| GoalRail runtime pilot | `work/goals/goal_extract_goalrail_process_shell_pilot.md` | Extract the process shell before testing any runtime reuse. |
+| Gate or proof implementation | future bounded gate/proof goals | Reconcile proofpack minimum metadata and `proof before acceptance` semantics before runtime closure work. |
+| `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | `work/goals/goal_research_task_storage_before_project_memory.md` | Research task/work storage and Project Memory boundaries before activating runtime storage. |
+| Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
+| GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
+| `punk init` docs/CLI mismatch | separate docs/CLI reconciliation goal | `docs/product/START-HERE.md` lists `punk init`, but current CLI exposes only flow inspect and smoke eval surfaces. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Extracted the GoalRail process-only shell from Punk's work-ledger discipline | `work/goals/goal_extract_goalrail_process_shell_pilot.md`, `work/pilots/goalrail-process-shell.md`, `work/reports/2026-04-25-goalrail-process-shell-pilot.md` |
 | 2026-04-25 | Tightened public site problem copy to executor-neutral wording | `work/goals/goal_public_site_executor_neutral_problem_copy.md`, `work/reports/2026-04-25-public-site-executor-neutral-problem-copy.md`, `site/src/components/Problem.astro` |
 | 2026-04-24 | Made public site copy executor-neutral | `work/goals/goal_public_site_executor_neutral_copy.md`, `work/reports/2026-04-24-public-site-executor-neutral-copy.md`, `site/src/data/content.ts`, `site/src/components/Hero.astro`, `site/src/components/HowSection.astro`, `site/src/components/ModulesSection.astro`, `site/src/layouts/Layout.astro` |
 | 2026-04-24 | Refined executor-agnostic validation boundary wording and evidence model | `work/goals/goal_refine_executor_agnostic_validation_boundary.md`, `work/reports/2026-04-24-executor-agnostic-validation-boundary-refinement.md`, `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`, `evals/specs/executor-agnostic-validation-boundary.v0.1.md` |
@@ -70,10 +73,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files site/src/components/Problem.astro work/goals/goal_public_site_executor_neutral_problem_copy.md work/reports/2026-04-25-public-site-executor-neutral-problem-copy.md work/STATUS.md --report work/reports/2026-04-25-public-site-executor-neutral-problem-copy.md && npm --prefix site run build && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true && git diff --name-only`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_extract_goalrail_process_shell_pilot.md work/goals/goal_research_task_storage_before_project_memory.md work/pilots/goalrail-process-shell.md work/reports/2026-04-25-goalrail-process-shell-pilot.md --report work/reports/2026-04-25-goalrail-process-shell-pilot.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` remains `work/goals/goal_extract_goalrail_process_shell_pilot.md` after the user-requested public-copy correction
+  - `selected_next` is now `work/goals/goal_research_task_storage_before_project_memory.md`
+  - the GoalRail pilot artifact is process-only, setup-neutral, and does not create a second live tracker
   - ADR-0014 is proposed only; future `gate` still owns final acceptance
   - executor/model/provider runtime behavior remains out of active-core scope
-  - active landing copy no longer frames agents as the required worker
+  - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI, adapter, automation, and `punk init` work remain deferred

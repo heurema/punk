@@ -1,16 +1,16 @@
 ---
 id: goal_extract_goalrail_process_shell_pilot
 title: "Extract GoalRail process shell pilot"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-23
-updated_at: 2026-04-23
+updated_at: 2026-04-25
 selected_at: null
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -32,8 +32,10 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "docs/product/RESEARCH-GATE.md"
   - "work/reports/2026-04-22-fourth-work-ledger-review.md"
+  - "work/pilots/goalrail-process-shell.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-goalrail-process-shell-pilot.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -53,7 +55,7 @@ research_gate:
 doc_impact:
   classification: none
   required_updates: []
-  rationale: ""
+  rationale: "Process-only work artifact and work-ledger update; no canonical product docs are changed."
 ---
 
 ## Context
@@ -70,3 +72,13 @@ Keep this goal narrow:
 - no product-doc promotion;
 - no new source of truth;
 - no automation.
+
+## Outcome
+
+Completed as a process-only extraction.
+
+The reusable GoalRail shell is recorded in `work/pilots/goalrail-process-shell.md`.
+
+The handoff report is `work/reports/2026-04-25-goalrail-process-shell-pilot.md`.
+
+No Rust code, CLI behavior, `.punk/` runtime state, schema, gate implementation, proofpack writer, Event Ledger runtime, adapters, modules, automation, second tracker, or product-doc promotion was introduced.
