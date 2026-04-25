@@ -1,7 +1,7 @@
 ---
 id: goal_run_fifteenth_work_ledger_review
 title: "Run the fifteenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -31,7 +31,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-fourteenth-work-ledger-review.md"
   - "work/reports/2026-04-25-proofpack-integrity-smoke-eval-coverage.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-fifteenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -64,3 +65,18 @@ Before selecting proofpack writer, runtime storage, gate/eval/proof orchestratio
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the fifteenth advisory Work Ledger Review.
+
+Selected `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md` as the next bounded active-core docs guardrail.
+
+Rationale:
+
+- proofpack integrity smoke eval coverage now protects complete and missing digest-link readiness;
+- `docs/product/CRATE-STATUS.md` still uses target-style wording such as decision writing and proofpack writing/hashing that can be read as current runtime behavior;
+- tightening current-vs-target wording is narrower and safer than selecting proofpack writer, `.punk/proofs`, runtime storage, CLI, schema/hash computation, or gate/eval/proof orchestration.
+
+No runtime/code/schema/CLI/`.punk` changes were made by this review.
