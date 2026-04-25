@@ -1,7 +1,7 @@
 ---
 id: goal_run_eleventh_work_ledger_review
 title: "Run the eleventh advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-eleventh-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,18 @@ Before selecting proofpack kernel, runtime storage, gate/eval integration, or an
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the eleventh advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_proofpack_kernel_minimal_v0_1.md` as the next bounded active-core step.
+
+Rationale:
+
+- gate decision authority is now modeled as side-effect-free data;
+- proofpack boundary and proof-before-acceptance semantics are already specified;
+- `punk-proof` is still a compile-only skeleton;
+- a pure proofpack kernel is narrower than `.punk/proofs`, proofpack writer, runtime storage, CLI, or gate/eval orchestration.
+
+No runtime/code/schema/CLI/`.punk` changes were made by this review.
