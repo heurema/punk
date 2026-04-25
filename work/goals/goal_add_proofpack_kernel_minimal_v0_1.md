@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_kernel_minimal_v0_1
 title: "Add minimal proofpack kernel v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md"
   - "work/reports/2026-04-25-eleventh-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-proofpack-kernel-minimal-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -84,3 +85,32 @@ Do not implement a proofpack writer.
 Do not claim acceptance.
 Do not collapse proofpack into gate decision.
 Do not add adapters, automation, provider/model runners, or schema files.
+
+## Outcome
+
+Completed the minimal side-effect-free proofpack kernel v0.1.
+
+Implemented proofpack fields:
+
+- schema version;
+- proofpack id;
+- gate decision ref;
+- contract refs;
+- run receipt refs;
+- optional eval refs;
+- optional event refs;
+- optional output artifact refs;
+- artifact digest metadata;
+- created-at;
+- boundary notes.
+
+The proofpack kernel models post-gate provenance as data, but still does not:
+
+- write `.punk/proofs`;
+- expose CLI behavior;
+- write gate decisions;
+- claim acceptance;
+- require runtime storage;
+- absorb evidence bodies.
+
+Positive acceptance still requires an accepting gate decision and a matching proofpack.
