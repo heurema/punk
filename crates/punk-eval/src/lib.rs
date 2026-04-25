@@ -1,8 +1,8 @@
 //! Minimal deterministic smoke eval harness for the current Punk core.
 //!
-//! This Phase 1/2 bridge stays library-first. It assesses the existing flow
-//! and event kernels without activating `.punk/` runtime state, baseline
-//! comparison, waiver storage, or a full eval platform.
+//! This Phase 1/2/3 bridge stays library-first. It assesses the existing flow,
+//! event, receipt, gate, and proof kernels without activating `.punk/` runtime
+//! state, baseline comparison, waiver storage, or a full eval platform.
 
 use std::fmt::Write as _;
 
@@ -13,6 +13,16 @@ use punk_contract::{
 use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
 use punk_events::{schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
+use punk_gate::{
+    GateBoundaryNote, GateContractRef, GateCreatedAt, GateDecision, GateDecisionId,
+    GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
+};
+use punk_proof::{
+    positive_acceptance_preconditions_met, PositiveAcceptanceInputs, ProofArtifactDigest,
+    ProofArtifactHash, ProofArtifactKind, ProofArtifactRef, ProofBoundaryNote, ProofContractRef,
+    ProofCreatedAt, ProofEvalRef, ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef,
+    ProofRunReceiptRef, Proofpack, ProofpackId,
+};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const SMOKE_SUITE_ID: &str = "smoke.v0";
@@ -323,6 +333,9 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_contract_receipt_draft_denial_produces_no_receipt(),
         eval_contract_receipt_invalid_scope_produces_no_receipt(),
         eval_contract_receipt_remains_pre_gate_evidence(),
+        eval_gate_authority_requires_proof_before_acceptance(),
+        eval_proofpack_is_post_gate_provenance_not_decision(),
+        eval_acceptance_requires_accepting_decision_and_matching_proofpack(),
     ];
     let smoke_result = if cases
         .iter()
@@ -333,10 +346,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, and event kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, and proof kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, and event kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, and proof kernels"
             .to_owned()
     };
 
@@ -354,6 +367,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
             "run receipt evidence remains pre-gate and does not imply final acceptance",
+            "gate/proof smoke cases remain local assessment and do not claim acceptance",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
@@ -922,6 +936,175 @@ fn eval_contract_receipt_remains_pre_gate_evidence() -> SmokeEvalCaseResult {
     }
 }
 
+fn sample_gate_decision() -> GateDecision {
+    GateDecision::new(
+        GateDecisionId::new("decision_eval_001").expect("decision id should be valid"),
+        GateDecisionOutcome::Accepted,
+        vec![GateContractRef::new("contract_eval_001").expect("contract ref should be valid")],
+        vec![GateRunReceiptRef::new("receipt_eval_001").expect("receipt ref should be valid")],
+        GateCreatedAt::new("2026-04-25T21:00:00Z").expect("created_at should be valid"),
+        vec![GateBoundaryNote::new(
+            "Decision references evidence; proof is still required before acceptance.",
+        )
+        .expect("boundary note should be valid")],
+    )
+    .expect("gate decision should be valid")
+    .with_eval_ref(GateEvalRef::new("eval_smoke_gate_proof").expect("eval ref should be valid"))
+    .with_event_ref(GateEventRef::new("evt_eval_001").expect("event ref should be valid"))
+}
+
+fn sample_proofpack(decision_ref: &str) -> Proofpack {
+    Proofpack::new(
+        ProofpackId::new("proofpack_eval_001").expect("proofpack id should be valid"),
+        ProofGateDecisionRef::new(decision_ref).expect("gate decision ref should be valid"),
+        vec![ProofContractRef::new("contract_eval_001").expect("contract ref should be valid")],
+        vec![ProofRunReceiptRef::new("receipt_eval_001").expect("receipt ref should be valid")],
+        ProofCreatedAt::new("2026-04-25T21:01:00Z").expect("created_at should be valid"),
+        vec![
+            ProofBoundaryNote::new("Proofpack references evidence; gate remains the authority.")
+                .expect("boundary note should be valid"),
+        ],
+    )
+    .expect("proofpack should be valid")
+    .with_eval_ref(ProofEvalRef::new("eval_smoke_gate_proof").expect("eval ref should be valid"))
+    .with_event_ref(ProofEventRef::new("evt_eval_001").expect("event ref should be valid"))
+    .with_output_artifact_ref(
+        ProofOutputArtifactRef::new("target/debug/punk")
+            .expect("output artifact ref should be valid"),
+    )
+    .with_artifact_digest(ProofArtifactDigest::new(
+        ProofArtifactKind::GateDecision,
+        ProofArtifactRef::new(decision_ref).expect("artifact ref should be valid"),
+        ProofArtifactHash::new("sha256:decisionhash").expect("artifact hash should be valid"),
+    ))
+    .with_artifact_digest(ProofArtifactDigest::new(
+        ProofArtifactKind::Contract,
+        ProofArtifactRef::new("contract_eval_001").expect("artifact ref should be valid"),
+        ProofArtifactHash::new("sha256:contracthash").expect("artifact hash should be valid"),
+    ))
+}
+
+fn eval_gate_authority_requires_proof_before_acceptance() -> SmokeEvalCaseResult {
+    let decision = sample_gate_decision();
+    let boundary = decision.boundary();
+
+    if decision.is_final_decision_authority()
+        && decision.requires_proof_for_acceptance_claim()
+        && !decision.acceptance_claimable_without_proof()
+        && boundary.writes_final_decision
+        && !boundary.writes_proofpack
+        && !boundary.creates_acceptance_claim
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_gate_authority_requires_proof_before_acceptance",
+            "gate authority requires proof before acceptance",
+            "accepting closure authority still cannot claim acceptance until matching proof exists",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_gate_authority_requires_proof_before_acceptance",
+            "gate authority requires proof before acceptance",
+            format!(
+                "gate boundary drifted; authority={} requires_proof={} claim_without_proof={} proofpack={} acceptance={} storage={} cli={}",
+                decision.is_final_decision_authority(),
+                decision.requires_proof_for_acceptance_claim(),
+                decision.acceptance_claimable_without_proof(),
+                boundary.writes_proofpack,
+                boundary.creates_acceptance_claim,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output
+            ),
+        )
+    }
+}
+
+fn eval_proofpack_is_post_gate_provenance_not_decision() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let boundary = proofpack.boundary();
+
+    if proofpack.is_post_gate_provenance_bundle()
+        && proofpack.references_evidence_without_absorbing()
+        && !proofpack.is_final_decision_authority()
+        && !proofpack.creates_acceptance_claim()
+        && !proofpack.can_claim_acceptance_by_itself()
+        && !boundary.writes_proofpack
+        && !boundary.writes_final_decision
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.absorbs_evidence
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_is_post_gate_provenance_not_decision",
+            "proofpack stays provenance only",
+            "proofpack references post-gate evidence without deciding, writing runtime state, or claiming acceptance",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_is_post_gate_provenance_not_decision",
+            "proofpack stays provenance only",
+            format!(
+                "proofpack boundary drifted; post_gate={} final_authority={} writes_proofpack={} writes_decision={} acceptance={} storage={} cli={} absorbs={}",
+                proofpack.is_post_gate_provenance_bundle(),
+                proofpack.is_final_decision_authority(),
+                boundary.writes_proofpack,
+                boundary.writes_final_decision,
+                boundary.creates_acceptance_claim,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.absorbs_evidence
+            ),
+        )
+    }
+}
+
+fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> SmokeEvalCaseResult {
+    let decision = sample_gate_decision();
+    let matching_decision_ref =
+        ProofGateDecisionRef::new(decision.id().as_str()).expect("decision ref should be valid");
+    let proofpack = sample_proofpack(decision.id().as_str());
+    let mismatch = ProofGateDecisionRef::new("decision_eval_other")
+        .expect("other decision ref should be valid");
+
+    let matching = proofpack.matches_gate_decision_ref(&matching_decision_ref);
+    let mismatching = proofpack.matches_gate_decision_ref(&mismatch);
+    let acceptance_allowed = positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
+        accepting_gate_decision: decision.outcome().is_accepting(),
+        matching_proofpack: matching,
+    });
+    let missing_decision_blocked =
+        !positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
+            accepting_gate_decision: false,
+            matching_proofpack: matching,
+        });
+    let missing_proof_blocked = !positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
+        accepting_gate_decision: decision.outcome().is_accepting(),
+        matching_proofpack: false,
+    });
+
+    if matching
+        && !mismatching
+        && acceptance_allowed
+        && missing_decision_blocked
+        && missing_proof_blocked
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_acceptance_requires_accepting_decision_and_matching_proofpack",
+            "positive acceptance requires matching decision and proof",
+            "acceptance preconditions pass only when accepting authority and matching proofpack are both present",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_acceptance_requires_accepting_decision_and_matching_proofpack",
+            "positive acceptance requires matching decision and proof",
+            format!(
+                "acceptance preconditions drifted; matching={matching} mismatching={mismatching} allowed={acceptance_allowed} missing_decision_blocked={missing_decision_blocked} missing_proof_blocked={missing_proof_blocked}"
+            ),
+        )
+    }
+}
+
 fn format_commands(commands: &[FlowCommand]) -> String {
     commands
         .iter()
@@ -946,7 +1129,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 14);
+        assert_eq!(report.cases().len(), 17);
     }
 
     #[test]
@@ -971,17 +1154,25 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, and event kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, and proof kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
         assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
         assert!(rendered.contains("  - id: eval_contract_receipt_allowed_path_produces_evidence"));
+        assert!(rendered.contains("  - id: eval_gate_authority_requires_proof_before_acceptance"));
+        assert!(rendered.contains("  - id: eval_proofpack_is_post_gate_provenance_not_decision"));
+        assert!(rendered.contains(
+            "  - id: eval_acceptance_requires_accepting_decision_and_matching_proofpack"
+        ));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
         assert!(rendered
             .contains("run receipt evidence remains pre-gate and does not imply final acceptance"));
+        assert!(rendered.contains(
+            "gate/proof smoke cases remain local assessment and do not claim acceptance"
+        ));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
         assert!(rendered.contains("deferred:"));
@@ -1024,6 +1215,13 @@ mod tests {
             .contains("\"case_id\": \"eval_contract_ready_for_bounded_work_allows_start_run\""));
         assert!(rendered
             .contains("\"case_id\": \"eval_contract_receipt_allowed_path_produces_evidence\""));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_gate_authority_requires_proof_before_acceptance\""));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_proofpack_is_post_gate_provenance_not_decision\""));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_acceptance_requires_accepting_decision_and_matching_proofpack\""
+        ));
         assert!(rendered.contains("\"status\": \"pass\""));
         assert!(rendered.contains("\"boundary_notes\": ["));
         assert!(rendered.contains("\"deferred\": ["));

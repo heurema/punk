@@ -1,7 +1,7 @@
 ---
 id: goal_add_gate_proof_acceptance_smoke_eval
 title: "Add gate/proof acceptance-chain smoke eval coverage"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,11 +9,12 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
+    - "Cargo.lock"
     - "crates/punk-eval/Cargo.toml"
     - "crates/punk-eval/src/lib.rs"
     - "work/STATUS.md"
@@ -35,7 +36,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-proofpack-kernel-minimal-v0-1.md"
   - "work/reports/2026-04-25-twelfth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-gate-proof-acceptance-smoke-eval.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -82,3 +84,25 @@ Do not implement gate runtime.
 Do not implement proofpack writer.
 Do not claim acceptance.
 Do not add adapters, automation, provider/model runners, or schema files.
+
+## Outcome
+
+Completed deterministic gate/proof acceptance-chain smoke eval coverage.
+
+Added local smoke cases for:
+
+- accepting gate authority requiring proof before acceptance;
+- proofpack staying post-gate provenance and not decision authority;
+- positive acceptance requiring both accepting authority and a matching proofpack.
+
+The smoke eval remains a local assessment only.
+
+It still does not:
+
+- write `.punk/evals`;
+- write gate decisions;
+- write proofpacks;
+- claim acceptance;
+- require runtime storage;
+- expose new CLI behavior;
+- add schema files, adapters, automation, or provider/model runners.
