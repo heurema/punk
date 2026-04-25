@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run the fifth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_fifth_work_ledger_review.md"
+current_focus: "Define missing-validator policy v0.1"
+selected_next: "work/goals/goal_define_missing_validator_policy_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the fifth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_fifth_work_ledger_review.md`
-- Why this is next: GoalRail process-shell reuse, R2 storage research, and Project Memory storage boundary v0.1 are now complete; review the manual ledger before choosing runtime storage, missing-validator policy, receipt fields, semantic assessor interface, or another docs/spec branch.
+- Current focus: define missing-validator policy v0.1.
+- Selected next: `work/goals/goal_define_missing_validator_policy_v0_1.md`
+- Why this is next: the fifth advisory review found that setup-neutral validation needs explicit missing-validator semantics before runtime storage, gate/proof, receipt expansion, or semantic assessor interface work.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - Advisory review inspects recent completed work and open blockers before selecting the next branch.
+  - missing validators are classified without silently passing, forcing user setup, or becoming proof.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate implementation.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
   - `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, `.punk/proofs`, gate, proof, Event Ledger runtime work, GoalRail runtime work, and `punk init` remain deferred until later bounded goals explicitly activate them.
@@ -32,13 +32,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_fifth_work_ledger_review.md` | `ready` | Recent GoalRail process-shell and Project Memory storage boundary work is complete; review before selecting implementation or policy branch. | — |
+| `work/goals/goal_define_missing_validator_policy_v0_1.md` | `ready` | The fifth review selected missing-validator policy as the safest docs/spec step before runtime storage or gate/proof work. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Gate or proof implementation | future bounded gate/proof goals | Reconcile proofpack minimum metadata and `proof before acceptance` semantics before runtime closure work. |
+| Gate or proof implementation | `work/goals/goal_define_missing_validator_policy_v0_1.md` and future bounded gate/proof goals | Define missing-validator behavior, then reconcile proofpack minimum metadata and `proof before acceptance` semantics before runtime closure work. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -48,6 +48,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Ran the fifth advisory Work Ledger Review | `work/goals/goal_run_fifth_work_ledger_review.md`, `work/reports/2026-04-25-fifth-work-ledger-review.md`, `work/goals/goal_define_missing_validator_policy_v0_1.md` |
 | 2026-04-25 | Defined Project Memory storage boundary v0.1 | `work/goals/goal_define_project_memory_storage_boundary_v0_1.md`, `evals/specs/project-memory-storage-boundary.v0.1.md`, `work/reports/2026-04-25-project-memory-storage-boundary-v0-1.md` |
 | 2026-04-25 | Researched task/work storage before Project Memory implementation | `work/goals/goal_research_task_storage_before_project_memory.md`, `knowledge/research/2026-04-25-task-work-storage-before-project-memory.md`, `docs/adr/ADR-0015-project-memory-storage-direction.md`, `work/reports/2026-04-25-task-work-storage-research.md` |
 | 2026-04-25 | Extracted the GoalRail process-only shell from Punk's work-ledger discipline | `work/goals/goal_extract_goalrail_process_shell_pilot.md`, `work/pilots/goalrail-process-shell.md`, `work/reports/2026-04-25-goalrail-process-shell-pilot.md` |
@@ -75,10 +76,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/project-memory-storage-boundary.v0.1.md docs/product/PROJECT-MEMORY.md work/goals/goal_define_project_memory_storage_boundary_v0_1.md work/goals/goal_run_fifth_work_ledger_review.md work/reports/2026-04-25-project-memory-storage-boundary-v0-1.md work/STATUS.md --report work/reports/2026-04-25-project-memory-storage-boundary-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_fifth_work_ledger_review.md work/goals/goal_define_missing_validator_policy_v0_1.md work/reports/2026-04-25-fifth-work-ledger-review.md --report work/reports/2026-04-25-fifth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_fifth_work_ledger_review.md`
-  - Project Memory storage boundary v0.1 is docs/spec-only and advisory/design
-  - docs governance passed with one warning for pre-existing `Project coherence` duplicate-definition candidate in `docs/product/PROJECT-MEMORY.md`
+  - `selected_next` is now `work/goals/goal_define_missing_validator_policy_v0_1.md`
+  - the review is advisory only and does not decide acceptance
+  - missing-validator policy is the next docs/spec-only branch before runtime storage, gate/proof, receipt expansion, or semantic assessor interface work
   - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI, adapter, automation, service-backed storage, and `punk init` work remain deferred

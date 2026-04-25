@@ -1,7 +1,7 @@
 ---
 id: goal_run_fifth_work_ledger_review
 title: "Run the fifth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -29,8 +29,10 @@ knowledge_refs:
   - "docs/product/DOGFOODING.md"
   - "docs/product/PROJECT-MEMORY.md"
 contract_refs: []
-report_refs: []
-decision_refs: []
+report_refs:
+  - "work/reports/2026-04-25-fifth-work-ledger-review.md"
+decision_refs:
+  - "work/goals/goal_define_missing_validator_policy_v0_1.md"
 proof_refs: []
 latest_proof_ref: null
 supersedes: []
@@ -51,7 +53,7 @@ research_gate:
 doc_impact:
   classification: none
   required_updates: []
-  rationale: "Advisory review goal only; execution will produce a work report and selected-next update."
+  rationale: "Advisory review produced a report and selected a docs/spec-only missing-validator policy goal; no canonical docs or runtime surfaces changed."
 ---
 
 ## Context
@@ -63,3 +65,21 @@ Before selecting runtime storage or another implementation branch, run a short a
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk/` state, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed as an R0 advisory review.
+
+Artifacts:
+
+- `work/reports/2026-04-25-fifth-work-ledger-review.md`
+- `work/goals/goal_define_missing_validator_policy_v0_1.md`
+
+Recommendation:
+
+```text
+next safest branch = missing-validator policy v0.1, docs/spec-only
+```
+
+No runtime/code/schema/CLI/`.punk` changes were made.
