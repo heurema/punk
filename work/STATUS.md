@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run seventeenth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_seventeenth_work_ledger_review.md"
+current_focus: "Add artifact hash policy helpers v0.1"
+selected_next: "work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,15 +17,15 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the seventeenth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_seventeenth_work_ledger_review.md`
-- Why this is next: artifact hash policy v0.1 is now defined as a docs/spec-only boundary; run a short advisory review before selecting side-effect-free hash policy helpers, smoke eval coverage, proofpack writer, runtime storage, gate/eval/proof orchestration, schema work, or another active-core guardrail.
+- Current focus: add artifact hash policy helpers v0.1.
+- Selected next: `work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md`
+- Why this is next: artifact hash policy v0.1 is defined, and `punk-core` is still a minimal skeleton; the next smallest active-core step is side-effect-free digest/ref validation helpers before proofpack integration, smoke eval coverage, proofpack writer, runtime storage, schema work, CLI behavior, or active hash computation.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - artifact hash policy remains docs/spec-only before runtime hashing or proofpack writer work.
-  - policy covers algorithm labels, digest string shape, artifact ref/path normalization boundary, invalid/missing digest visibility, and future writer/storage relationship.
-  - proofpack link/hash integrity checks stay structural until a later implementation goal activates hash computation.
+  - helpers validate artifact hash policy v0.1 digest and repo-relative ref shape without computing hashes.
+  - helpers remain side-effect-free, dependency-free, and do not normalize artifact bytes.
+  - proofpack link/hash integrity checks stay structural until a later implementation goal integrates helpers and/or activates hash computation.
   - missing required proofpack digests stay visible and block proof/acceptance readiness signals.
   - smoke eval remains local assessment and not final decision/proof/acceptance authority.
   - proofpack stays a provenance/evidence bundle and not the final decision authority.
@@ -39,13 +39,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_seventeenth_work_ledger_review.md` | `ready` | Artifact hash policy is defined; review before selecting side-effect-free hash helpers, smoke eval coverage, proofpack writer, runtime storage, schema work, or orchestration. | — |
+| `work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md` | `ready` | Artifact hash policy is defined; implement side-effect-free digest/ref validation helpers in `punk-core` before proofpack/eval integration or runtime surfaces. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, active hash computation, or runtime gate/proof implementation | future bounded gate/proof/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, and artifact hash policy v0.1 are in place; still select and scope helper/writer/orchestration/runtime implementation through a separate goal after review. |
+| Proofpack writer, gate/eval orchestration, active hash computation, proofpack hash-policy integration, or runtime gate/proof implementation | artifact hash policy helpers and future bounded gate/proof/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, and artifact hash policy v0.1 are in place; next add side-effect-free helpers before selecting integration/writer/orchestration/runtime implementation. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -55,6 +55,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Ran the seventeenth advisory Work Ledger Review | `work/goals/goal_run_seventeenth_work_ledger_review.md`, `work/reports/2026-04-25-seventeenth-work-ledger-review.md`, `work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md` |
 | 2026-04-25 | Defined artifact hash policy v0.1 | `work/goals/goal_define_artifact_hash_policy_v0_1.md`, `evals/specs/artifact-hash-policy.v0.1.md`, `work/reports/2026-04-25-artifact-hash-policy-v0-1.md` |
 | 2026-04-25 | Ran the sixteenth advisory Work Ledger Review | `work/goals/goal_run_sixteenth_work_ledger_review.md`, `work/reports/2026-04-25-sixteenth-work-ledger-review.md`, `work/goals/goal_define_artifact_hash_policy_v0_1.md` |
 | 2026-04-25 | Reconciled CRATE-STATUS current-vs-target scope wording | `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md`, `work/reports/2026-04-25-crate-status-current-vs-target-scope.md`, `docs/product/CRATE-STATUS.md` |
@@ -108,12 +109,12 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/artifact-hash-policy.v0.1.md work/STATUS.md work/goals/goal_define_artifact_hash_policy_v0_1.md work/goals/goal_run_seventeenth_work_ledger_review.md work/reports/2026-04-25-artifact-hash-policy-v0-1.md --report work/reports/2026-04-25-artifact-hash-policy-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_seventeenth_work_ledger_review.md work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md work/reports/2026-04-25-seventeenth-work-ledger-review.md --report work/reports/2026-04-25-seventeenth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_seventeenth_work_ledger_review.md`
-  - artifact hash policy v0.1 is docs/spec-only and does not activate hash computation, hash normalization, proofpack writer, runtime storage, schemas, or CLI behavior
+  - `selected_next` is now `work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md`
+  - next branch is side-effect-free artifact hash policy validation helpers before proofpack/eval integration, proofpack writer, hash computation, runtime storage, schemas, or gate/eval/proof orchestration
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - gate/proof writers, `.punk/` storage, adapters, automation, service-backed storage, and `punk init` remain deferred
   - smoke eval remains local assessment and does not write proofpacks, decisions, acceptance claims, `.punk/evals`, or runtime state
-  - docs-governance had 0 failures and 0 warnings for this docs/spec diff
+  - docs-governance had 0 failures and 0 warnings for this review diff

@@ -1,7 +1,7 @@
 ---
 id: goal_run_seventeenth_work_ledger_review
 title: "Run the seventeenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-policy.v0.1.md"
   - "work/reports/2026-04-25-artifact-hash-policy-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-seventeenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -66,3 +67,21 @@ Before selecting side-effect-free hash helpers, smoke eval coverage, proofpack w
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the seventeenth advisory Work Ledger Review.
+
+Selected next:
+
+```text
+work/goals/goal_add_artifact_hash_policy_helpers_v0_1.md
+```
+
+Rationale:
+
+- Artifact hash policy v0.1 now defines digest/ref boundaries.
+- `punk-core` is still a minimal skeleton but is the target home for deterministic helper behavior.
+- A side-effect-free helper slice is narrower than proofpack integration, smoke eval coverage, writer/runtime/storage/schema work, CLI behavior, or active hash computation.
+- Proof/eval integration can follow after shared helpers exist.
