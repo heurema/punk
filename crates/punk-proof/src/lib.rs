@@ -220,6 +220,70 @@ impl ProofArtifactDigest {
     pub fn artifact_hash(&self) -> &ProofArtifactHash {
         &self.artifact_hash
     }
+
+    pub fn satisfies_requirement(&self, requirement: &ProofArtifactDigestRequirement) -> bool {
+        self.kind == requirement.kind && self.artifact_ref == requirement.artifact_ref
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofArtifactDigestRequirement {
+    kind: ProofArtifactKind,
+    artifact_ref: ProofArtifactRef,
+}
+
+impl ProofArtifactDigestRequirement {
+    pub fn new(
+        kind: ProofArtifactKind,
+        artifact_ref: impl Into<String>,
+    ) -> Result<Self, ProofpackError> {
+        Ok(Self {
+            kind,
+            artifact_ref: ProofArtifactRef::new(artifact_ref)?,
+        })
+    }
+
+    pub fn kind(&self) -> ProofArtifactKind {
+        self.kind
+    }
+
+    pub fn artifact_ref(&self) -> &ProofArtifactRef {
+        &self.artifact_ref
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackIntegrityReport {
+    required_digest_refs: Vec<ProofArtifactDigestRequirement>,
+    missing_digest_refs: Vec<ProofArtifactDigestRequirement>,
+}
+
+impl ProofpackIntegrityReport {
+    pub fn new(
+        required_digest_refs: Vec<ProofArtifactDigestRequirement>,
+        missing_digest_refs: Vec<ProofArtifactDigestRequirement>,
+    ) -> Self {
+        Self {
+            required_digest_refs,
+            missing_digest_refs,
+        }
+    }
+
+    pub fn required_digest_refs(&self) -> &[ProofArtifactDigestRequirement] {
+        &self.required_digest_refs
+    }
+
+    pub fn missing_digest_refs(&self) -> &[ProofArtifactDigestRequirement] {
+        &self.missing_digest_refs
+    }
+
+    pub fn is_complete(&self) -> bool {
+        self.missing_digest_refs.is_empty()
+    }
+
+    pub fn has_missing_required_digests(&self) -> bool {
+        !self.is_complete()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -366,6 +430,79 @@ impl Proofpack {
     pub fn matches_gate_decision_ref(&self, gate_decision_ref: &ProofGateDecisionRef) -> bool {
         &self.gate_decision_ref == gate_decision_ref
     }
+
+    pub fn required_artifact_digest_refs(&self) -> Vec<ProofArtifactDigestRequirement> {
+        let mut required = Vec::new();
+
+        required.push(proof_artifact_digest_requirement(
+            ProofArtifactKind::GateDecision,
+            self.gate_decision_ref.as_str(),
+        ));
+
+        required.extend(self.contract_refs.iter().map(|contract_ref| {
+            proof_artifact_digest_requirement(ProofArtifactKind::Contract, contract_ref.as_str())
+        }));
+
+        required.extend(self.run_receipt_refs.iter().map(|run_receipt_ref| {
+            proof_artifact_digest_requirement(
+                ProofArtifactKind::RunReceipt,
+                run_receipt_ref.as_str(),
+            )
+        }));
+
+        required.extend(self.eval_refs.iter().map(|eval_ref| {
+            proof_artifact_digest_requirement(ProofArtifactKind::Eval, eval_ref.as_str())
+        }));
+
+        required.extend(self.event_refs.iter().map(|event_ref| {
+            proof_artifact_digest_requirement(ProofArtifactKind::Event, event_ref.as_str())
+        }));
+
+        required.extend(self.output_artifact_refs.iter().map(|output_artifact_ref| {
+            proof_artifact_digest_requirement(
+                ProofArtifactKind::OutputArtifact,
+                output_artifact_ref.as_str(),
+            )
+        }));
+
+        required
+    }
+
+    pub fn has_artifact_digest_for(&self, requirement: &ProofArtifactDigestRequirement) -> bool {
+        self.artifact_digests
+            .iter()
+            .any(|digest| digest.satisfies_requirement(requirement))
+    }
+
+    pub fn link_hash_integrity_report(&self) -> ProofpackIntegrityReport {
+        let required_digest_refs = self.required_artifact_digest_refs();
+        let missing_digest_refs = required_digest_refs
+            .iter()
+            .filter(|requirement| !self.has_artifact_digest_for(requirement))
+            .cloned()
+            .collect();
+
+        ProofpackIntegrityReport::new(required_digest_refs, missing_digest_refs)
+    }
+
+    pub fn has_complete_link_hash_integrity(&self) -> bool {
+        self.link_hash_integrity_report().is_complete()
+    }
+
+    pub fn is_matching_proof_ready_for_acceptance(
+        &self,
+        gate_decision_ref: &ProofGateDecisionRef,
+    ) -> bool {
+        self.matches_gate_decision_ref(gate_decision_ref) && self.has_complete_link_hash_integrity()
+    }
+}
+
+fn proof_artifact_digest_requirement(
+    kind: ProofArtifactKind,
+    artifact_ref: &str,
+) -> ProofArtifactDigestRequirement {
+    ProofArtifactDigestRequirement::new(kind, artifact_ref)
+        .expect("proofpack refs are validated before integrity checks")
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -399,6 +536,9 @@ pub struct ProofpackBoundary {
     pub creates_acceptance_claim: bool,
     pub absorbs_evidence: bool,
     pub post_gate_only: bool,
+    pub checks_structural_link_hash_integrity: bool,
+    pub computes_hashes: bool,
+    pub normalizes_hashes: bool,
 }
 
 pub const fn proofpack_boundary() -> ProofpackBoundary {
@@ -414,6 +554,9 @@ pub const fn proofpack_boundary() -> ProofpackBoundary {
         creates_acceptance_claim: false,
         absorbs_evidence: false,
         post_gate_only: true,
+        checks_structural_link_hash_integrity: true,
+        computes_hashes: false,
+        normalizes_hashes: false,
     }
 }
 
@@ -431,7 +574,7 @@ pub fn positive_acceptance_preconditions_met(inputs: PositiveAcceptanceInputs) -
 mod tests {
     use super::*;
 
-    fn sample_proofpack() -> Proofpack {
+    fn sample_proofpack_without_digests() -> Proofpack {
         Proofpack::new(
             ProofpackId::new("proofpack_local_001").expect("proofpack id should be valid"),
             ProofGateDecisionRef::new("decision_local_001")
@@ -457,18 +600,55 @@ mod tests {
             ProofOutputArtifactRef::new("target/debug/punk")
                 .expect("output artifact ref should be valid"),
         )
-        .with_artifact_digest(ProofArtifactDigest::new(
-            ProofArtifactKind::GateDecision,
-            ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:decisionhash")
-                .expect("artifact hash should be valid"),
-        ))
-        .with_artifact_digest(ProofArtifactDigest::new(
-            ProofArtifactKind::Contract,
-            ProofArtifactRef::new("contract_local_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:contracthash")
-                .expect("artifact hash should be valid"),
-        ))
+    }
+
+    fn sample_proofpack() -> Proofpack {
+        sample_proofpack_without_digests()
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::GateDecision,
+                ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:decisionhash")
+                    .expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::Contract,
+                ProofArtifactRef::new("contract_local_001").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:contracthash")
+                    .expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::RunReceipt,
+                ProofArtifactRef::new("receipt_local_001").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:receipthash")
+                    .expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::Eval,
+                ProofArtifactRef::new(
+                    "work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md",
+                )
+                .expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:evalhash").expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::Event,
+                ProofArtifactRef::new("evt_0000000000000001")
+                    .expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:eventhash").expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::OutputArtifact,
+                ProofArtifactRef::new("target/debug/punk").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:outputhash").expect("artifact hash should be valid"),
+            ))
+    }
+
+    fn digest_requirement(
+        kind: ProofArtifactKind,
+        artifact_ref: &str,
+    ) -> ProofArtifactDigestRequirement {
+        ProofArtifactDigestRequirement::new(kind, artifact_ref)
+            .expect("digest requirement should be valid")
     }
 
     #[test]
@@ -486,7 +666,7 @@ mod tests {
         assert_eq!(proofpack.eval_refs().len(), 1);
         assert_eq!(proofpack.event_refs().len(), 1);
         assert_eq!(proofpack.output_artifact_refs().len(), 1);
-        assert_eq!(proofpack.artifact_digests().len(), 2);
+        assert_eq!(proofpack.artifact_digests().len(), 6);
         assert_eq!(
             proofpack.artifact_digests()[0].kind().as_str(),
             "gate_decision"
@@ -499,6 +679,131 @@ mod tests {
         assert_eq!(proofpack.boundary_notes().len(), 1);
         assert!(proofpack.references_evidence_without_absorbing());
         assert!(!proofpack.boundary().absorbs_evidence);
+    }
+
+    #[test]
+    fn link_hash_integrity_report_requires_digests_for_declared_refs() {
+        let proofpack = sample_proofpack_without_digests()
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::GateDecision,
+                ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:decisionhash")
+                    .expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::Contract,
+                ProofArtifactRef::new("contract_local_001").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:contracthash")
+                    .expect("artifact hash should be valid"),
+            ));
+
+        let report = proofpack.link_hash_integrity_report();
+        let missing_receipt =
+            digest_requirement(ProofArtifactKind::RunReceipt, "receipt_local_001");
+        let missing_eval = digest_requirement(
+            ProofArtifactKind::Eval,
+            "work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md",
+        );
+        let missing_event = digest_requirement(ProofArtifactKind::Event, "evt_0000000000000001");
+        let missing_output =
+            digest_requirement(ProofArtifactKind::OutputArtifact, "target/debug/punk");
+        let matching_decision =
+            ProofGateDecisionRef::new("decision_local_001").expect("decision ref should be valid");
+
+        assert_eq!(report.required_digest_refs().len(), 6);
+        assert_eq!(report.missing_digest_refs().len(), 4);
+        assert!(report.has_missing_required_digests());
+        assert!(!report.is_complete());
+        assert!(report.missing_digest_refs().contains(&missing_receipt));
+        assert!(report.missing_digest_refs().contains(&missing_eval));
+        assert!(report.missing_digest_refs().contains(&missing_event));
+        assert!(report.missing_digest_refs().contains(&missing_output));
+        assert!(!proofpack.has_complete_link_hash_integrity());
+        assert!(!proofpack.is_matching_proof_ready_for_acceptance(&matching_decision));
+    }
+
+    #[test]
+    fn link_hash_integrity_accepts_declared_optional_refs_when_digest_entries_match() {
+        let proofpack = sample_proofpack();
+        let report = proofpack.link_hash_integrity_report();
+        let matching_decision =
+            ProofGateDecisionRef::new("decision_local_001").expect("decision ref should be valid");
+
+        assert_eq!(report.required_digest_refs().len(), 6);
+        assert!(report.missing_digest_refs().is_empty());
+        assert!(report.is_complete());
+        assert!(proofpack.has_complete_link_hash_integrity());
+        assert!(proofpack.is_matching_proof_ready_for_acceptance(&matching_decision));
+    }
+
+    #[test]
+    fn minimal_link_hash_integrity_requires_only_declared_core_refs() {
+        let proofpack = Proofpack::new(
+            ProofpackId::new("proofpack_minimal_001").expect("proofpack id should be valid"),
+            ProofGateDecisionRef::new("decision_minimal_001")
+                .expect("decision ref should be valid"),
+            vec![ProofContractRef::new("contract_minimal_001")
+                .expect("contract ref should be valid")],
+            vec![ProofRunReceiptRef::new("receipt_minimal_001")
+                .expect("receipt ref should be valid")],
+            ProofCreatedAt::new("2026-04-25T20:02:00Z").expect("created_at should be valid"),
+            vec![
+                ProofBoundaryNote::new("Minimal proofpack still needs core ref digests.")
+                    .expect("boundary note should be valid"),
+            ],
+        )
+        .expect("minimal proofpack should be valid")
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::GateDecision,
+            ProofArtifactRef::new("decision_minimal_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:decisionhash").expect("artifact hash should be valid"),
+        ))
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::Contract,
+            ProofArtifactRef::new("contract_minimal_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:contracthash").expect("artifact hash should be valid"),
+        ))
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::RunReceipt,
+            ProofArtifactRef::new("receipt_minimal_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:receipthash").expect("artifact hash should be valid"),
+        ));
+
+        let report = proofpack.link_hash_integrity_report();
+
+        assert_eq!(report.required_digest_refs().len(), 3);
+        assert!(report.is_complete());
+        assert!(proofpack.has_complete_link_hash_integrity());
+    }
+
+    #[test]
+    fn link_hash_integrity_matches_kind_and_ref_without_hash_normalization() {
+        let proofpack = sample_proofpack_without_digests()
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::Contract,
+                ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
+                ProofArtifactHash::new("not-normalized-but-non-empty")
+                    .expect("artifact hash should be valid"),
+            ))
+            .with_artifact_digest(ProofArtifactDigest::new(
+                ProofArtifactKind::GateDecision,
+                ProofArtifactRef::new("decision_local_other")
+                    .expect("artifact ref should be valid"),
+                ProofArtifactHash::new("sha256:other").expect("artifact hash should be valid"),
+            ));
+
+        let required_decision =
+            digest_requirement(ProofArtifactKind::GateDecision, "decision_local_001");
+        let wrong_kind_same_ref =
+            digest_requirement(ProofArtifactKind::Contract, "decision_local_001");
+        let report = proofpack.link_hash_integrity_report();
+
+        assert!(!proofpack.has_artifact_digest_for(&required_decision));
+        assert!(proofpack.has_artifact_digest_for(&wrong_kind_same_ref));
+        assert!(report.missing_digest_refs().contains(&required_decision));
+        assert!(report.has_missing_required_digests());
+        assert!(!proofpack.boundary().computes_hashes);
+        assert!(!proofpack.boundary().normalizes_hashes);
     }
 
     #[test]
@@ -557,6 +862,9 @@ mod tests {
         assert!(!boundary.writes_proofpack);
         assert!(!boundary.writes_final_decision);
         assert!(boundary.post_gate_only);
+        assert!(boundary.checks_structural_link_hash_integrity);
+        assert!(!boundary.computes_hashes);
+        assert!(!boundary.normalizes_hashes);
     }
 
     #[test]
@@ -581,11 +889,14 @@ mod tests {
             .expect("decision ref should be valid");
 
         assert!(proofpack.matches_gate_decision_ref(&matching_decision));
+        assert!(proofpack.is_matching_proof_ready_for_acceptance(&matching_decision));
         assert!(!proofpack.matches_gate_decision_ref(&other_decision));
+        assert!(!proofpack.is_matching_proof_ready_for_acceptance(&other_decision));
         assert!(positive_acceptance_preconditions_met(
             PositiveAcceptanceInputs {
                 accepting_gate_decision: true,
-                matching_proofpack: true,
+                matching_proofpack: proofpack
+                    .is_matching_proof_ready_for_acceptance(&matching_decision),
             },
         ));
         assert!(!positive_acceptance_preconditions_met(

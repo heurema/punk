@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_link_hash_integrity_kernel_v0_1
 title: "Add proofpack link/hash integrity kernel v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-gate-proof-acceptance-smoke-eval.md"
   - "work/reports/2026-04-25-thirteenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-proofpack-link-hash-integrity-kernel-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -81,3 +82,21 @@ Do not implement a proofpack writer.
 Do not claim acceptance.
 Do not collapse proofpack into gate decision.
 Do not add adapters, automation, provider/model runners, or schema files.
+
+
+## Outcome
+
+Completed the side-effect-free proofpack link/hash integrity kernel v0.1.
+
+Added structural helpers that can inspect whether every declared proofpack ref has a matching artifact digest entry by kind and ref:
+
+- gate decision ref;
+- contract refs;
+- run receipt refs;
+- optional eval refs when present;
+- optional event refs when present;
+- optional output artifact refs when present.
+
+Missing required digests remain visible in an integrity report and block matching proof readiness signals.
+
+The kernel still does not compute hashes, normalize hashes, write proofpacks, write gate decisions, claim acceptance, expose CLI behavior, or write `.punk/` runtime state.
