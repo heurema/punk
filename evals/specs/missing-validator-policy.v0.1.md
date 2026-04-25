@@ -304,7 +304,6 @@ Any later implementation step should be explicit about:
 
 Still deferred after this policy spec:
 
-- minimal receipt fields;
 - semantic assessor command interface;
 - real gate runtime;
 - real proofpack runtime;
@@ -313,4 +312,4 @@ Still deferred after this policy spec:
 
 ## Next bounded step
 
-After this missing-validator policy, the conservative next move is to define minimal receipt fields v0.1 so future receipts can carry validator outcomes and evidence gaps without becoming gate decisions or proofpacks.
+Minimal receipt fields v0.1 are defined in `evals/specs/minimal-receipt-fields.v0.1.md` so future receipts can carry validator outcomes and evidence gaps without becoming gate decisions or proofpacks.

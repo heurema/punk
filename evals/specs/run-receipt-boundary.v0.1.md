@@ -126,6 +126,8 @@ The first future receipt boundary should assume at least:
 
 If no stable actor or runner identity model exists yet, actor identity may be deferred in the first implementation step, but the deferral must be explicit.
 
+Field boundary v0.1 is defined in `evals/specs/minimal-receipt-fields.v0.1.md`. That spec is advisory/design only and does not activate receipt schema or `.punk/runs` storage.
+
 ## Distinction from adjacent artifacts
 
 ### Event log

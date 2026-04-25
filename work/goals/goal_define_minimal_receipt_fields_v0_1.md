@@ -1,7 +1,7 @@
 ---
 id: goal_define_minimal_receipt_fields_v0_1
 title: "Define minimal receipt fields v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -28,8 +28,10 @@ acceptance:
 knowledge_refs:
   - "evals/specs/run-receipt-boundary.v0.1.md"
   - "evals/specs/missing-validator-policy.v0.1.md"
+  - "evals/specs/minimal-receipt-fields.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-minimal-receipt-fields-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -44,12 +46,16 @@ research_gate:
     - "evals/specs/run-receipt-boundary.v0.1.md"
     - "evals/specs/missing-validator-policy.v0.1.md"
     - "work/reports/2026-04-25-missing-validator-policy-v0-1.md"
+    - "evals/specs/minimal-receipt-fields.v0.1.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution will produce the minimal receipt fields spec and report."
+  classification: architecture
+  required_updates:
+    - "evals/specs/minimal-receipt-fields.v0.1.md"
+    - "evals/specs/run-receipt-boundary.v0.1.md"
+    - "evals/specs/missing-validator-policy.v0.1.md"
+  rationale: "Minimal receipt fields v0.1 defines evidence field boundaries before receipt schema/runtime implementation."
 ---
 
 ## Context
@@ -61,3 +67,23 @@ Before runtime receipt schema or `.punk/runs` storage work, define the minimal r
 ## Notes
 
 Keep this docs/spec-only. Do not implement receipt schema, validators, runtime storage, CLI commands, gate behavior, proofpack writing, or adapters.
+
+
+## Outcome
+
+Completed as an R1 docs/spec-only task.
+
+Artifacts:
+
+- `evals/specs/minimal-receipt-fields.v0.1.md`
+- `work/reports/2026-04-25-minimal-receipt-fields-v0-1.md`
+
+Boundary shorthand:
+
+```text
+receipt = what a bounded run did and observed
+not gate
+not proofpack
+```
+
+No runtime code, CLI, schema, gate, proofpack, provider/model/agent adapter, receipt schema implementation, validator implementation, or `.punk/` state was implemented.
