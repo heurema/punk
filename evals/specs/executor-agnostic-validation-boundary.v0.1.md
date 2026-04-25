@@ -36,6 +36,7 @@ The eval family covers:
 - model/provider settings do not become project truth;
 - user runtime is described as validation substrate, not acceptance authority;
 - executor claims are not proof;
+- missing validators are visible evidence gaps, not proof or silent passes;
 - semantic or LLM-based assessments are advisory evidence, not decisions;
 - only `gate` writes final decisions;
 - repeated executor failures route into contract clauses, validators, receipt/evidence fields, eval cases, proof requirements, or project memory before global instructions.
@@ -116,6 +117,26 @@ Catches:
 - receipts/evals/proofs collapsed into decision authority;
 - self-reported test success replacing validator output.
 
+### missing_validators_are_visible_evidence_gaps
+
+Purpose: keep setup-neutral validation honest when local tools or checks are unavailable.
+
+Expected result:
+
+- unavailable, skipped, unsupported, failed, and deferred validators remain distinct outcomes;
+- missing validators do not become passing evidence;
+- missing validators do not force user setup as a side effect;
+- required missing validators remain evidence gaps for later gate policy.
+
+Catches:
+
+- unavailable tools treated as success;
+- skipped checks hidden from reports;
+- setup-neutral UX becoming validation-neutral;
+- executor claims filling missing validator evidence.
+
+See `evals/specs/missing-validator-policy.v0.1.md`.
+
 ### semantic_assessors_assess_not_decide
 
 Purpose: preserve the assessment-vs-decision boundary for semantic or LLM-based review.
@@ -158,7 +179,8 @@ Catches:
 - `docs/product/CRATE-STATUS.md`;
 - `AGENTS.md`;
 - `.agents/skills/punk-workflow/SKILL.md`;
-- related report `DocImpact`.
+- related report `DocImpact`;
+- `evals/specs/missing-validator-policy.v0.1.md`.
 
 ## Non-goals
 

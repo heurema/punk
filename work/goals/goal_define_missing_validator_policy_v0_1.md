@@ -1,7 +1,7 @@
 ---
 id: goal_define_missing_validator_policy_v0_1
 title: "Define missing-validator policy v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -31,8 +31,10 @@ knowledge_refs:
   - "docs/adr/ADR-0014-executor-agnostic-validation-boundary.md"
   - "evals/specs/project-memory-storage-boundary.v0.1.md"
   - "work/reports/2026-04-25-fifth-work-ledger-review.md"
+  - "evals/specs/missing-validator-policy.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-missing-validator-policy-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -50,12 +52,15 @@ research_gate:
     - "evals/specs/proofpack-boundary.v0.1.md"
     - "evals/specs/project-memory-storage-boundary.v0.1.md"
     - "work/reports/2026-04-25-fifth-work-ledger-review.md"
+    - "evals/specs/missing-validator-policy.v0.1.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution will produce the missing-validator policy spec and report."
+  classification: architecture
+  required_updates:
+    - "evals/specs/missing-validator-policy.v0.1.md"
+    - "evals/specs/executor-agnostic-validation-boundary.v0.1.md"
+  rationale: "Missing-validator policy v0.1 defines validation evidence-gap semantics before runtime gate/proof/storage implementation."
 ---
 
 ## Context
@@ -67,3 +72,23 @@ Before runtime gate/proof/storage work, define how unavailable, skipped, failed,
 ## Notes
 
 Keep this docs/spec-only. Do not implement validators, runtime gate behavior, CLI commands, schemas, `.punk/` storage, proofpack writing, or adapters.
+
+
+## Outcome
+
+Completed as an R1 docs/spec-only task.
+
+Artifacts:
+
+- `evals/specs/missing-validator-policy.v0.1.md`
+- `work/reports/2026-04-25-missing-validator-policy-v0-1.md`
+
+Policy shorthand:
+
+```text
+missing is visible
+missing is not passing
+missing is not proof
+```
+
+No runtime code, CLI, schema, gate, proofpack, provider/model/agent adapter, validator implementation, or `.punk/` state was implemented.
