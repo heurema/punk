@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-21
+updated_at: 2026-04-25
 review_after: 2026-07-21
 canonical_for:
   - dogfooding-levels
@@ -226,6 +226,8 @@ Every dogfooded work item must leave:
 - eval result when relevant
 - report
 - proof when available
+
+Executor briefs may be used as advisory handoff aids during dogfooding, but they do not replace the dogfood trail. The trail should still record goal, contract when available, executor attempt, receipt/evidence, validators, gate decision when available, proof when available, and project-memory links.
 
 ## Research intake dogfooding checks
 

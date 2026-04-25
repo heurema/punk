@@ -1,0 +1,19 @@
+# Task transformations into Punk contract framing
+
+`plot` turns user intent into a bounded contract. `gate` accepts only evidence-backed results.
+
+| User request | Plot interpretation | Non-goals | Validators / proof | Common scope risk |
+|---|---|---|---|---|
+| "fix the bug" | Identify the observed failure, expected behavior, reproduction path, affected surface, and acceptance check. | Unrelated cleanup, broad rewrites, new feature behavior. | Reproduction before fix, targeted regression check, relevant existing test suite, receipt with exact output. | Executor fixes a symptom without proving the bug is covered. |
+| "add validation" | Define inputs, invalid cases, expected errors, and where validation belongs. | New schema fields or policy not requested, UI copy changes, broad error-system redesign. | Tests or assertions for invalid and valid inputs, docs if public behavior changes. | Validation spreads across unrelated layers. |
+| "refactor this" | Name the code boundary, behavior that must stay identical, and measurable reason for refactor. | Behavior changes, dependency swaps, style-only churn outside target. | Before/after tests, diff review, public API compatibility check. | Refactor becomes redesign. |
+| "make it faster" | Define workload, baseline, target metric, measurement command, and acceptable tradeoffs. | Algorithm changes outside target path, infra changes, new services. | Benchmark or timing evidence, correctness tests, before/after report. | Optimizing without baseline or changing semantics. |
+| "update docs" | Identify canonical owner, audience, stale claim, and required cross-refs. | Runtime behavior changes, public marketing rewrite, unrelated docs cleanup. | Docs governance check, broken-link review if available, report DocImpact. | Duplicating product truth in multiple docs. |
+| "add agent support" | Clarify whether this is active runtime, parked design, examples, or adapter research. | Active coding-agent execution unless explicitly scoped and approved. | Research Gate classification, roadmap/status boundary check, eval implications. | Accidentally promoting agent execution into active core. |
+| "add a dependency" | State why stdlib/built-in is insufficient, package scope, license/security concerns, and rollback plan. | Opportunistic dependency upgrades, provider lock-in, transitive feature expansion. | Dependency diff, license/security review, tests, explicit contract clause. | Dependency becomes hidden architecture. |
+| "improve architecture" | Narrow to one architecture question, affected canonical docs, decision options, and promotion path. | Multi-surface rewrite, runtime implementation, public overclaims. | Research note or R1/R2 refs, ADR/doc update if needed, docs governance. | Broad architecture churn without a concrete decision. |
+| "clean this up" | Define exact cleanup target and why it blocks current work. | Drive-by formatting, deleting unrelated dead code, style preference changes. | Focused diff, tests/checks for touched surface, receipt explaining traceability. | Cleanup hides behavior changes. |
+| "ship an MVP" | Break into one minimal active-core slice with explicit user-visible outcome and acceptance checks. | Full product platform, parked capabilities, provider integration, automation. | End-to-end acceptance scenario, smoke eval, proof/report links. | MVP expands into unbounded roadmap execution. |
+| "fix a typo" | Treat as low-rigor maintenance if the target and replacement are obvious. | Reflowing paragraphs, changing meaning, nearby docs rewrite. | `git diff --check`; optional docs check if canonical docs changed. | A tiny edit becomes copy editing or policy change. |
+
+Use the smallest contract that can be verified. If the request cannot be framed with scope, non-goals, and checks, it is not ready for `cut`.

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-24
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - architecture-boundaries
@@ -83,6 +83,14 @@ The user runtime is the substrate, not the authority.
 An executor is any human, local model, coding agent, IDE, shell script, module, adapter, or other user-chosen runtime component that attempts scoped work under a contract.
 
 Punk does not own the executor. Executor prompts, skills, model settings, provider defaults, local memories, tool rituals, hidden runtime state, and self-reported success are not project truth.
+
+### Task-scoped advisory handoffs
+
+Use task-scoped briefs, examples, checklists, prompts, skills, playbooks, or local runner instructions to help a human, model, agent, script, IDE, module, or adapter attempt scoped work.
+
+These handoff artifacts should be derived from the current contract. They must not define acceptance criteria, override contracts, replace validators, write gate decisions, supersede proofpacks, or become project memory without explicit refs and review.
+
+Keep them progressively disclosed and task-scoped. Useful handoffs prefer assumptions before edits, simple solutions, surgical changes, and verifiable goals.
 
 The core owns the validation protocol:
 

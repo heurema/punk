@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-24
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - research-gate-policy
@@ -265,6 +265,10 @@ The preferred fix order is:
 6. project-memory link
 7. scoped runner aid
 8. global instruction only as a last resort
+
+Persistent executor aids such as prompts, skills, playbooks, `AGENTS.md`-style files, and `CLAUDE.md`-style files require explicit scope, failure/eval evidence or a repeated-failure link, an owner or review path, and a retirement path. They have no authority over acceptance.
+
+Use `evals/specs/surgical-change-discipline.v0.1.md` as advisory eval-policy guidance when a runner aid is meant to prevent overbroad diffs, drive-by refactors, or unverified executor claims.
 
 ## Knowledge Vault research requirements
 

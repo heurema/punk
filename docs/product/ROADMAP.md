@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-24
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - roadmap-phase-gates
@@ -20,6 +20,7 @@ related_docs:
 related_evals:
   - evals/specs/docs-consistency.v0.1.md
   - evals/specs/executor-agnostic-validation-boundary.v0.1.md
+  - evals/specs/surgical-change-discipline.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -167,6 +168,8 @@ Executor/validation stance:
 - Punk may run validators in the user's environment; that runtime is the substrate, not the authority.
 - The active-core requirement is not agent execution; it is receipt/evidence capture, deterministic-first validation, and gate verification.
 - Executor prompts, skills, provider defaults, claims, and local setup are outside project truth unless explicitly captured as evidence and verified or marked unverified.
+- `plot` may later emit a task-scoped executor brief as a handoff artifact; this is not a new lifecycle phase, active CLI command, or prompt/skill management surface.
+- Any executor brief remains advisory and non-authoritative; validation, gate, proof, and memory remain the active-core trust surfaces.
 
 Exit criteria:
 
