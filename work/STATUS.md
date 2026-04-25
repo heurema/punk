@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run the twelfth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_twelfth_work_ledger_review.md"
+current_focus: "Add gate/proof acceptance-chain smoke eval coverage"
+selected_next: "work/goals/goal_add_gate_proof_acceptance_smoke_eval.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,14 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the twelfth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_twelfth_work_ledger_review.md`
-- Why this is next: the proofpack kernel now models post-gate provenance without runtime side effects; review the ledger before selecting proofpack writer, runtime storage, gate/eval/proof orchestration, or another active-core step.
+- Current focus: add gate/proof acceptance-chain smoke eval coverage.
+- Selected next: `work/goals/goal_add_gate_proof_acceptance_smoke_eval.md`
+- Why this is next: gate decision and proofpack kernels now model authority/provenance as data, but the local smoke eval does not yet protect the proof-before-acceptance chain.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - the review inspects the proofpack kernel and open blockers before selecting one next goal.
+  - smoke eval covers gate decision authority, proofpack provenance, and positive acceptance preconditions.
+  - smoke eval remains local assessment and not final decision/proof/acceptance authority.
   - proofpack stays a provenance/evidence bundle and not the final decision authority.
   - positive acceptance remains unavailable unless an accepting gate decision and matching proofpack are both present.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
@@ -35,13 +36,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_twelfth_work_ledger_review.md` | `ready` | Proofpack kernel is implemented; review before selecting proofpack writer, runtime storage, gate/eval/proof orchestration, or another active-core step. | — |
+| `work/goals/goal_add_gate_proof_acceptance_smoke_eval.md` | `ready` | Gate decision and proofpack kernels are implemented; local smoke eval should now protect the acceptance-chain boundary before writer/storage/orchestration work. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, or runtime gate/proof implementation | future bounded gate/proof goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, and proof-before-acceptance semantics are defined; still select and scope writer/orchestration/runtime implementation through a separate goal after review. |
+| Proofpack writer, gate/eval orchestration, or runtime gate/proof implementation | future bounded gate/proof goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, and proof-before-acceptance semantics are defined; still select and scope writer/orchestration/runtime implementation through a separate goal after smoke eval coverage. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -51,6 +52,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Ran the twelfth advisory Work Ledger Review | `work/goals/goal_run_twelfth_work_ledger_review.md`, `work/reports/2026-04-25-twelfth-work-ledger-review.md`, `work/goals/goal_add_gate_proof_acceptance_smoke_eval.md` |
 | 2026-04-25 | Added the minimal proofpack kernel v0.1 | `work/goals/goal_add_proofpack_kernel_minimal_v0_1.md`, `work/reports/2026-04-25-proofpack-kernel-minimal-v0-1.md`, `crates/punk-proof/src/lib.rs` |
 | 2026-04-25 | Ran the eleventh advisory Work Ledger Review | `work/goals/goal_run_eleventh_work_ledger_review.md`, `work/reports/2026-04-25-eleventh-work-ledger-review.md`, `work/goals/goal_add_proofpack_kernel_minimal_v0_1.md` |
 | 2026-04-25 | Added the minimal gate decision kernel v0.1 | `work/goals/goal_add_gate_decision_kernel_minimal_v0_1.md`, `work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md`, `crates/punk-gate/src/lib.rs` |
@@ -94,10 +96,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `cargo fmt --all --check && git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files crates/punk-proof/src/lib.rs work/STATUS.md work/goals/goal_add_proofpack_kernel_minimal_v0_1.md work/goals/goal_run_twelfth_work_ledger_review.md work/reports/2026-04-25-proofpack-kernel-minimal-v0-1.md --report work/reports/2026-04-25-proofpack-kernel-minimal-v0-1.md && cargo check --workspace && cargo test --workspace && cargo run -p punk-cli -- eval run smoke --format json && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twelfth_work_ledger_review.md work/goals/goal_add_gate_proof_acceptance_smoke_eval.md work/reports/2026-04-25-twelfth-work-ledger-review.md --report work/reports/2026-04-25-twelfth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_twelfth_work_ledger_review.md`
+  - `selected_next` is now `work/goals/goal_add_gate_proof_acceptance_smoke_eval.md`
+  - twelfth Work Ledger Review selected deterministic gate/proof acceptance-chain smoke eval coverage as the next narrow active-core step
   - proofpack kernel now models post-gate provenance as data without `.punk/proofs`, CLI, proofpack writer, acceptance claim, gate decision, or runtime storage side effects
   - gate decision kernel still models final decision authority separately from proofpack provenance
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
