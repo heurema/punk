@@ -1,7 +1,7 @@
 ---
 id: goal_run_sixteenth_work_ledger_review
 title: "Run the sixteenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-fifteenth-work-ledger-review.md"
   - "work/reports/2026-04-25-crate-status-current-vs-target-scope.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-sixteenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -65,3 +66,21 @@ Before selecting proofpack writer, runtime storage, gate/eval/proof orchestratio
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the sixteenth advisory Work Ledger Review.
+
+Selected next:
+
+```text
+work/goals/goal_define_artifact_hash_policy_v0_1.md
+```
+
+Rationale:
+
+- CRATE-STATUS now distinguishes target ownership from current implemented behavior.
+- Proofpack integrity checks are structural and smoke-covered.
+- Stable artifact hash semantics remain undefined, so proofpack writer, active hash computation, runtime storage, schema files, and gate/eval/proof orchestration stay deferred.
+- The next safest branch is a docs/spec-only artifact hash policy before implementation.
