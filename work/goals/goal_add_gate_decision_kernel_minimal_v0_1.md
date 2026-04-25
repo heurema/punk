@@ -1,7 +1,7 @@
 ---
 id: goal_add_gate_decision_kernel_minimal_v0_1
 title: "Add minimal gate decision kernel v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-run-receipt-kernel-minimal-fields-v0-1.md"
   - "work/reports/2026-04-25-tenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -81,3 +82,30 @@ Do not add CLI behavior.
 Do not implement proofpack writer.
 Do not claim acceptance.
 Do not add adapters, automation, provider/model runners, or schema files.
+
+## Outcome
+
+Completed the minimal side-effect-free gate decision kernel v0.1.
+
+Implemented gate decision fields:
+
+- schema version;
+- decision id;
+- outcome;
+- contract refs;
+- run receipt refs;
+- optional eval refs;
+- optional event refs;
+- created-at;
+- boundary notes.
+
+The gate decision kernel models final decision authority as data, but still does not:
+
+- write `.punk/decisions`;
+- expose CLI behavior;
+- create proofpacks;
+- claim acceptance;
+- require runtime storage;
+- absorb evidence bodies.
+
+An accepting decision still requires matching proof before acceptance can be claimed.
