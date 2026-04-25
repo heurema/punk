@@ -1,7 +1,7 @@
 ---
 id: goal_research_task_storage_before_project_memory
 title: "Research task/work storage before Project Memory implementation"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-18
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -27,9 +27,13 @@ acceptance:
   - "Required eval cases are listed."
 knowledge_refs:
   - "docs/product/RESEARCH-GATE.md"
+  - "docs/product/PROJECT-MEMORY.md"
+  - "knowledge/research/2026-04-25-task-work-storage-before-project-memory.md"
 contract_refs: []
-report_refs: []
-decision_refs: []
+report_refs:
+  - "work/reports/2026-04-25-task-work-storage-research.md"
+decision_refs:
+  - "docs/adr/ADR-0015-project-memory-storage-direction.md"
 proof_refs: []
 latest_proof_ref: null
 supersedes: []
@@ -41,14 +45,21 @@ research_gate:
   research_refs:
     - "docs/product/RESEARCH-GATE.md"
     - "docs/product/PROJECT-MEMORY.md"
+    - "docs/product/CONTRACT-TRACKER.md"
+    - "docs/adr/ADR-0003-project-memory-plane.md"
+    - "docs/adr/ADR-0009-contract-tracker-core-primitives.md"
+    - "docs/adr/ADR-0014-executor-agnostic-validation-boundary.md"
+    - "knowledge/research/2026-04-25-task-work-storage-before-project-memory.md"
     - "work/pilots/goalrail-process-shell.md"
     - "work/reports/2026-04-25-goalrail-process-shell-pilot.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; future execution will produce the research and any required docs/ADR updates."
+  classification: research-promotion
+  required_updates:
+    - "docs/product/PROJECT-MEMORY.md"
+    - "docs/adr/ADR-0015-project-memory-storage-direction.md"
+  rationale: "R2 storage research produced a proposed ADR and updated the canonical Project Memory storage direction without implementation."
 ---
 
 ## Context
@@ -58,3 +69,25 @@ Before implementing Project Memory storage, run a focused research gate over exi
 ## Notes
 
 This goal is ready after the manual Work Ledger semantics survived the selected goal -> report -> status update -> next selected goal cycle during the GoalRail process-shell pilot extraction.
+
+
+## Outcome
+
+Completed as an R2 research/docs-only task.
+
+Artifacts:
+
+- `knowledge/research/2026-04-25-task-work-storage-before-project-memory.md`
+- `docs/adr/ADR-0015-project-memory-storage-direction.md`
+- `work/reports/2026-04-25-task-work-storage-research.md`
+
+Direction:
+
+```text
+repo-tracked Markdown authority
+  -> append-only JSONL runtime events
+  -> rebuildable SQLite indexes/views
+  -> optional service-backed adapter/sync
+```
+
+No runtime storage, CLI, schema, gate, proofpack, provider/model/agent adapter, or `.punk/` state was implemented.

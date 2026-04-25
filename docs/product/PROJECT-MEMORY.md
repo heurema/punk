@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-24
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -15,6 +15,7 @@ canonical_for:
   - project-coherence-boundary
   - documentation-as-project-memory
   - manual-work-ledger-boundary
+  - task-work-storage-direction
   - prompt-and-skill-memory-boundary
 related_docs:
   - docs/product/ARCHITECTURE.md
@@ -24,6 +25,7 @@ related_adrs:
   - docs/adr/ADR-0003-project-memory-plane.md
   - docs/adr/ADR-0008-knowledge-vault-boundaries.md
   - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
+  - docs/adr/ADR-0015-project-memory-storage-direction.md
 supersedes: []
 superseded_by: null
 ---
@@ -162,6 +164,34 @@ See `docs/product/DOC-GOVERNANCE.md`.
   proofs/
   views/
 ```
+
+## Task/work storage direction
+
+Project Memory task/work storage follows this direction:
+
+```text
+repo-tracked Markdown authority
+  -> append-only JSONL runtime events, when runtime transitions exist
+  -> rebuildable SQLite indexes/views for query and inspect UX
+  -> optional service-backed adapter/sync after local authority is stable
+```
+
+Current Level 0 authority remains in repo-tracked Markdown:
+
+- `work/STATUS.md` owns the one live work-state ledger;
+- `work/goals/` owns durable work intent;
+- `work/reports/` owns durable outcome, evidence, and handoff artifacts;
+- `docs/adr/` and `knowledge/research/` own decision rationale and advisory research.
+
+Future JSONL event streams may record runtime transitions and receipts, but they must not be the only home for rich human-authored goals or reports.
+
+Future SQLite/FTS storage may provide query and inspect projections, but it must be rebuildable and non-authoritative. A missing or stale index degrades inspect UX; it does not change project truth.
+
+Future service-backed storage may mirror, sync, or coordinate after local authority is stable, but it must not own active-core truth or hide selected work.
+
+No `.punk/` task/work runtime writes are active until a later selected implementation goal explicitly activates them.
+
+See `docs/adr/ADR-0015-project-memory-storage-direction.md`.
 
 ## Non-canonical retrieval memory
 
