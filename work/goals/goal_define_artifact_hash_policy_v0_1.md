@@ -1,7 +1,7 @@
 ---
 id: goal_define_artifact_hash_policy_v0_1
 title: "Define artifact hash policy v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
   - "work/reports/2026-04-25-sixteenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-artifact-hash-policy-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -91,3 +92,27 @@ Do not write gate decisions.
 Do not add CLI behavior.
 Do not write `.punk/` state.
 Do not claim acceptance.
+
+
+## Outcome
+
+Completed artifact hash policy v0.1 as a docs/spec-only artifact.
+
+Added:
+
+- `evals/specs/artifact-hash-policy.v0.1.md`
+- `work/reports/2026-04-25-artifact-hash-policy-v0-1.md`
+
+Policy summary:
+
+```text
+refs identify artifacts
+hashes verify artifact bytes
+missing is visible
+executor claims are not proof
+hash metadata is evidence, not acceptance
+```
+
+The policy defines canonical v0.1 digest identity as `sha256:<64 lowercase hex chars>`, repo-relative artifact ref rules, runtime id ref boundaries, exact-byte hashing boundary, and missing/invalid/unsupported/ref-mismatch/unverified digest states.
+
+No runtime code, CLI behavior, schema file, dependency, hash implementation, proofpack writer, gate decision writer, provider/model/agent adapter, automation, acceptance claim, or `.punk/` state was added.
