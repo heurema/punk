@@ -1,7 +1,7 @@
 ---
 id: goal_run_sixth_work_ledger_review
 title: "Run the sixth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -29,7 +29,8 @@ knowledge_refs:
   - "docs/product/DOGFOODING.md"
   - "docs/product/PROJECT-MEMORY.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-sixth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,15 @@ Before selecting runtime storage, receipt schema, gate/proof implementation, or 
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the sixth advisory Work Ledger Review.
+
+The review selected `work/goals/goal_define_proof_before_acceptance_semantics_v0_1.md` as the next ready goal.
+
+Reason:
+
+- missing-validator policy, minimal receipt fields, and semantic assessor interface are now defined;
+- runtime storage, receipt schema/runtime, gate/proof implementation, proofpack writer, semantic assessor implementation, GoalRail runtime work, and `punk init` remain deferred;
+- the next narrow trust-surface gap is clarifying how gate decision, proof/proofpack, and final acceptance relate without turning proofpack into a second decision surface.
