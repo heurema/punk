@@ -6,7 +6,7 @@
 //! runtime state is introduced here.
 
 use punk_contract::ContractStatus;
-use punk_domain::{ContractRef, RunId, RunReceipt, RunReceiptId, RunScopeRef};
+use punk_domain::{ContractRef, ProducedAt, RunId, RunReceipt, RunReceiptId, RunScopeRef};
 use punk_events::{
     EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase, EventResult, EventSource,
     EventStatus, FlowTransitionRef,
@@ -158,6 +158,7 @@ impl FlowInstance {
         contract_status: ContractStatus,
         scope_valid: bool,
         receipt_id: RunReceiptId,
+        produced_at: ProducedAt,
         contract_ref: ContractRef,
         run_id: RunId,
         run_scope_ref: RunScopeRef,
@@ -169,6 +170,7 @@ impl FlowInstance {
         {
             Some(RunReceipt::new(
                 receipt_id,
+                produced_at,
                 contract_ref,
                 run_id,
                 run_scope_ref,
@@ -567,7 +569,7 @@ mod tests {
         approve_contract, validate_contract, ContractDraft, ContractError, ContractId,
         ContractScope, ContractStatus,
     };
-    use punk_domain::{ContractRef, RunId, RunReceiptId, RunScopeRef};
+    use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
     use punk_events::{EventKind, EventStatus};
 
     fn valid_contract_scope() -> ContractScope {
@@ -834,17 +836,22 @@ mod tests {
                 contract.status(),
                 contract.scope_valid(),
                 RunReceiptId::new("receipt_flow_001").expect("receipt id should be valid"),
+                ProducedAt::new("2026-04-25T18:50:00Z").expect("produced_at should be valid"),
                 ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
                 RunId::new("run_flow_001").expect("run id should be valid"),
                 RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
                     .expect("run scope ref should be valid"),
             );
 
-        assert_eq!(receipt_attempt.transition().next_state(), Some(FlowState::Running));
+        assert_eq!(
+            receipt_attempt.transition().next_state(),
+            Some(FlowState::Running)
+        );
         let receipt = receipt_attempt
             .receipt()
             .expect("allowed start run should produce receipt evidence");
         assert_eq!(receipt.id().as_str(), "receipt_flow_001");
+        assert_eq!(receipt.produced_at().as_str(), "2026-04-25T18:50:00Z");
         assert_eq!(receipt.contract_ref().as_str(), contract.id().as_str());
         assert_eq!(receipt.run_id().as_str(), "run_flow_001");
         assert_eq!(
@@ -864,6 +871,7 @@ mod tests {
                 ContractStatus::Draft,
                 true,
                 RunReceiptId::new("receipt_flow_002").expect("receipt id should be valid"),
+                ProducedAt::new("2026-04-25T18:50:00Z").expect("produced_at should be valid"),
                 ContractRef::new("contract_flow_002").expect("contract ref should be valid"),
                 RunId::new("run_flow_002").expect("run id should be valid"),
                 RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
@@ -883,6 +891,7 @@ mod tests {
                 contract.status(),
                 false,
                 RunReceiptId::new("receipt_flow_003").expect("receipt id should be valid"),
+                ProducedAt::new("2026-04-25T18:50:00Z").expect("produced_at should be valid"),
                 ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
                 RunId::new("run_flow_003").expect("run id should be valid"),
                 RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
@@ -905,6 +914,7 @@ mod tests {
             ContractStatus::Draft,
             true,
             RunReceiptId::new("receipt_flow_004").expect("receipt id should be valid"),
+            ProducedAt::new("2026-04-25T18:50:00Z").expect("produced_at should be valid"),
             ContractRef::new("contract_flow_004").expect("contract ref should be valid"),
             RunId::new("run_flow_004").expect("run id should be valid"),
             RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")
@@ -924,6 +934,7 @@ mod tests {
                 ContractStatus::Draft,
                 true,
                 RunReceiptId::new("receipt_flow_005").expect("receipt id should be valid"),
+                ProducedAt::new("2026-04-25T18:50:00Z").expect("produced_at should be valid"),
                 ContractRef::new("contract_flow_005").expect("contract ref should be valid"),
                 RunId::new("run_flow_005").expect("run id should be valid"),
                 RunScopeRef::new("work/goals/goal_connect_run_receipt_to_contract_flow.md")

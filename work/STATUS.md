@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Extend run receipt kernel with minimal fields v0.1"
-selected_next: "work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md"
+current_focus: "Run the tenth advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_tenth_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: extend the run receipt kernel with minimal fields v0.1.
-- Selected next: `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md`
-- Why this is next: the ninth Work Ledger Review found that receipt fields and missing-validator policy are defined, and strengthening the side-effect-free receipt kernel is the smallest useful implementation step before gate/proof or runtime storage work.
+- Current focus: run the tenth advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_tenth_work_ledger_review.md`
+- Why this is next: the run receipt kernel now carries minimal fields and missing-validator evidence; review the ledger before selecting gate/proof implementation, runtime storage, proofpack writer, or another receipt/eval step.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - the receipt kernel carries minimal fields and missing-validator evidence without becoming acceptance, proof, or final decision authority.
+  - the review inspects the receipt kernel minimal-fields implementation and open blockers before selecting one next goal.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate implementation.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
@@ -33,7 +33,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md` | `ready` | Receipt fields and missing-validator policy are defined; extend the side-effect-free receipt kernel before gate/proof or storage work. | — |
+| `work/goals/goal_run_tenth_work_ledger_review.md` | `ready` | Receipt kernel minimal fields are implemented; review before selecting gate/proof, storage, proofpack writer, or another receipt/eval step. | — |
 
 ## Blocked
 
@@ -49,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Extended the run receipt kernel with minimal fields v0.1 | `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md`, `work/reports/2026-04-25-run-receipt-kernel-minimal-fields-v0-1.md`, `crates/punk-domain/src/lib.rs` |
 | 2026-04-25 | Ran the ninth advisory Work Ledger Review | `work/goals/goal_run_ninth_work_ledger_review.md`, `work/reports/2026-04-25-ninth-work-ledger-review.md`, `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md` |
 | 2026-04-25 | Added the active CLI surface docs-governance check | `work/goals/goal_add_active_cli_surface_docs_governance_check.md`, `work/reports/2026-04-25-active-cli-surface-docs-governance-check.md`, `scripts/check_docs_governance.py`, `evals/cases/docs/active-cli-surface/README.md` |
 | 2026-04-25 | Ran the eighth advisory Work Ledger Review | `work/goals/goal_run_eighth_work_ledger_review.md`, `work/reports/2026-04-25-eighth-work-ledger-review.md`, `work/goals/goal_add_active_cli_surface_docs_governance_check.md` |
@@ -87,10 +88,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_ninth_work_ledger_review.md work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md work/reports/2026-04-25-ninth-work-ledger-review.md --report work/reports/2026-04-25-ninth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `cargo fmt --all --check && git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files crates/punk-domain/src/lib.rs crates/punk-flow/src/lib.rs crates/punk-eval/src/lib.rs work/STATUS.md work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md work/goals/goal_run_tenth_work_ledger_review.md work/reports/2026-04-25-run-receipt-kernel-minimal-fields-v0-1.md --report work/reports/2026-04-25-run-receipt-kernel-minimal-fields-v0-1.md && cargo check --workspace && cargo test --workspace && cargo run -p punk-cli -- eval run smoke --format json && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md`
-  - ninth Work Ledger Review selected the side-effect-free receipt kernel minimal-fields implementation before gate/proof or storage work
+  - `selected_next` is now `work/goals/goal_run_tenth_work_ledger_review.md`
+  - receipt kernel now carries schema version, produced-at, boundary notes, optional work/flow refs, and missing-validator evidence entries
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI implementation, adapter, automation, service-backed storage, and `punk init` work remain deferred

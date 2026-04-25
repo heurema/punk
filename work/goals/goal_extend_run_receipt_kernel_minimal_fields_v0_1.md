@@ -1,7 +1,7 @@
 ---
 id: goal_extend_run_receipt_kernel_minimal_fields_v0_1
 title: "Extend run receipt kernel with minimal fields v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,13 +9,14 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
     - "crates/punk-domain/src/lib.rs"
     - "crates/punk-flow/src/lib.rs"
+    - "crates/punk-eval/src/lib.rs"
     - "work/STATUS.md"
     - "work/goals/**"
     - "work/reports/**"
@@ -36,7 +37,8 @@ knowledge_refs:
   - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
   - "work/reports/2026-04-25-ninth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-run-receipt-kernel-minimal-fields-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -79,3 +81,24 @@ Do not write `.punk/` state.
 Do not add CLI behavior.
 Do not implement gate/proof/proofpack.
 Do not add adapters, automation, provider/model runners, or schema files.
+
+## Outcome
+
+Completed the side-effect-free run receipt kernel minimal-fields step.
+
+Implemented receipt evidence fields:
+
+- schema version;
+- produced-at timestamp wrapper;
+- boundary notes;
+- optional work-goal and flow-state refs;
+- validator requiredness/outcome vocabulary;
+- validator evidence entries with reason, summary, scope, observed time, evidence ref, and follow-up ref.
+
+Receipts still remain evidence-only:
+
+- no final acceptance;
+- no gate decision;
+- no proofpack creation;
+- no runtime storage requirement;
+- no hidden missing-validator gaps.

@@ -10,7 +10,7 @@ use punk_contract::{
     approve_contract, validate_contract, ContractDraft, ContractError, ContractId, ContractScope,
     ContractStatus,
 };
-use punk_domain::{ContractRef, RunId, RunReceiptId, RunScopeRef};
+use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
 use punk_events::{schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
 
@@ -761,6 +761,7 @@ fn eval_contract_receipt_allowed_path_produces_evidence() -> SmokeEvalCaseResult
             contract.status(),
             contract.scope_valid(),
             RunReceiptId::new("receipt_eval_001").expect("receipt id should be valid"),
+            ProducedAt::new("2026-04-25T18:55:00Z").expect("produced_at should be valid"),
             ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
             RunId::new("run_eval_001").expect("run id should be valid"),
             RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
@@ -806,6 +807,7 @@ fn eval_contract_receipt_draft_denial_produces_no_receipt() -> SmokeEvalCaseResu
             ContractStatus::Draft,
             true,
             RunReceiptId::new("receipt_eval_002").expect("receipt id should be valid"),
+            ProducedAt::new("2026-04-25T18:55:00Z").expect("produced_at should be valid"),
             ContractRef::new("contract_eval_002").expect("contract ref should be valid"),
             RunId::new("run_eval_002").expect("run id should be valid"),
             RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
@@ -813,7 +815,8 @@ fn eval_contract_receipt_draft_denial_produces_no_receipt() -> SmokeEvalCaseResu
         );
 
     if receipt_attempt.transition().next_state().is_none()
-        && receipt_attempt.transition().guard_code() == Some("RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT")
+        && receipt_attempt.transition().guard_code()
+            == Some("RUN_REQUIRES_APPROVED_FOR_RUN_CONTRACT")
         && receipt_attempt.receipt().is_none()
     {
         SmokeEvalCaseResult::pass(
@@ -843,6 +846,7 @@ fn eval_contract_receipt_invalid_scope_produces_no_receipt() -> SmokeEvalCaseRes
             contract.status(),
             false,
             RunReceiptId::new("receipt_eval_003").expect("receipt id should be valid"),
+            ProducedAt::new("2026-04-25T18:55:00Z").expect("produced_at should be valid"),
             ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
             RunId::new("run_eval_003").expect("run id should be valid"),
             RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
@@ -880,6 +884,7 @@ fn eval_contract_receipt_remains_pre_gate_evidence() -> SmokeEvalCaseResult {
             contract.status(),
             contract.scope_valid(),
             RunReceiptId::new("receipt_eval_004").expect("receipt id should be valid"),
+            ProducedAt::new("2026-04-25T18:55:00Z").expect("produced_at should be valid"),
             ContractRef::new(contract.id().as_str()).expect("contract ref should be valid"),
             RunId::new("run_eval_004").expect("run id should be valid"),
             RunScopeRef::new("work/goals/goal_add_run_receipt_smoke_eval.md")
@@ -971,15 +976,12 @@ mod tests {
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
         assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
-        assert!(rendered.contains(
-            "  - id: eval_contract_receipt_allowed_path_produces_evidence"
-        ));
+        assert!(rendered.contains("  - id: eval_contract_receipt_allowed_path_produces_evidence"));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
-        assert!(rendered.contains(
-            "run receipt evidence remains pre-gate and does not imply final acceptance"
-        ));
+        assert!(rendered
+            .contains("run receipt evidence remains pre-gate and does not imply final acceptance"));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
         assert!(rendered.contains("deferred:"));
@@ -1018,12 +1020,10 @@ mod tests {
         assert!(rendered.contains("\"report_storage\": \"inactive\""));
         assert!(rendered.contains("\"case_results\": ["));
         assert!(rendered.contains("\"case_id\": \"eval_flow_allows_approval_transition\""));
-        assert!(rendered.contains(
-            "\"case_id\": \"eval_contract_ready_for_bounded_work_allows_start_run\""
-        ));
-        assert!(rendered.contains(
-            "\"case_id\": \"eval_contract_receipt_allowed_path_produces_evidence\""
-        ));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_contract_ready_for_bounded_work_allows_start_run\""));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_contract_receipt_allowed_path_produces_evidence\""));
         assert!(rendered.contains("\"status\": \"pass\""));
         assert!(rendered.contains("\"boundary_notes\": ["));
         assert!(rendered.contains("\"deferred\": ["));
