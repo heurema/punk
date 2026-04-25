@@ -73,11 +73,16 @@ See `docs/product/DOCUMENTATION-MAP.md` and `docs/product/GLOSSARY.md`.
 
 ## Active now
 
-The active target is the stable core:
+The implemented CLI surface today is intentionally small:
 
-- `punk init`
 - `punk flow inspect`
 - `punk eval run smoke`
+- `punk eval run smoke --format json`
+
+`punk init` is a future setup target. It is not implemented or required today.
+
+The active target remains the stable core:
+
 - core flow state
 - append-only events
 - minimal proof-bearing contract loop after flow is stable

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - flow-semantics
@@ -74,14 +74,19 @@ If supported, an override must:
 - appear in proof context when relevant
 - never bypass hard safety invariants
 
-## First commands
+## Target commands
 
-```bash
-punk init
-punk flow inspect
-punk start --from work/goals/<id>.md
-punk plot approve <contract-id>
-punk cut run <contract-id>
-punk gate run <run-id>
-punk gate proof <decision-id>
-```
+Current implemented CLI subset:
+
+- `punk flow inspect`
+
+Future target commands include:
+
+- `punk init`
+- `punk start --from work/goals/<id>.md`
+- `punk plot approve <contract-id>`
+- `punk cut run <contract-id>`
+- `punk gate run <run-id>`
+- `punk gate proof <decision-id>`
+
+Future target commands are not current behavior until implemented and exposed through `punk-cli`.

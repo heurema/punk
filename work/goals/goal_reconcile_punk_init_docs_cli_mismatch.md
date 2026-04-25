@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_punk_init_docs_cli_mismatch
 title: "Reconcile punk init docs/CLI mismatch"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,14 +9,15 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
     - "README.md"
     - "docs/product/START-HERE.md"
     - "docs/product/DOGFOODING.md"
+    - "docs/product/FLOW.md"
     - "docs/product/ROADMAP.md"
     - "docs/product/CRATE-STATUS.md"
     - "work/STATUS.md"
@@ -34,11 +35,13 @@ knowledge_refs:
   - "README.md"
   - "docs/product/START-HERE.md"
   - "docs/product/DOGFOODING.md"
+  - "docs/product/FLOW.md"
   - "docs/product/ROADMAP.md"
   - "docs/product/CRATE-STATUS.md"
   - "work/reports/2026-04-25-seventh-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-punk-init-docs-cli-mismatch.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -53,6 +56,7 @@ research_gate:
     - "README.md"
     - "docs/product/START-HERE.md"
     - "docs/product/DOGFOODING.md"
+    - "docs/product/FLOW.md"
     - "docs/product/ROADMAP.md"
     - "docs/product/CRATE-STATUS.md"
     - "work/STATUS.md"
@@ -60,9 +64,14 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution will update docs/report/status if selected."
+  classification: docs-only
+  required_updates:
+    - "README.md"
+    - "docs/product/START-HERE.md"
+    - "docs/product/DOGFOODING.md"
+    - "docs/product/FLOW.md"
+    - "docs/product/CRATE-STATUS.md"
+  rationale: "Docs now separate implemented CLI behavior from future setup targets."
 ---
 
 ## Context
@@ -78,3 +87,17 @@ doc_impact:
 ## Notes
 
 Keep this docs-only. Do not add `punk init`, runtime setup, `.punk` state, schemas, gate/proof behavior, adapters, or automation.
+
+## Outcome
+
+Reconciled the `punk init` docs/CLI mismatch as docs-only active-surface wording.
+
+The implemented CLI surface is now documented as:
+
+- `punk flow inspect`;
+- `punk eval run smoke`;
+- `punk eval run smoke --format json`.
+
+`punk init` remains a future setup target only.
+
+No CLI command, runtime code, schema, `.punk/` state, gate/proof behavior, provider/model/agent adapter, or automation was implemented.

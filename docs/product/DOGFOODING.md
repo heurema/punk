@@ -82,10 +82,13 @@ Exit criteria:
 
 Use `punk` to inspect flow state and next actions.
 
-Allowed:
+Currently implemented subset:
+
+- `punk flow inspect`
+
+Target surfaces after implementation:
 
 - `punk init`
-- `punk flow inspect`
 - `punk inspect project`
 - flow state tracking
 

@@ -44,6 +44,14 @@ The current active target is the stable core:
 - inspectable state
 - project memory links
 
+Implemented CLI today:
+
+- `punk flow inspect`
+- `punk eval run smoke`
+- `punk eval run smoke --format json`
+
+`punk init` is documented only as a future setup target, not as current behavior.
+
 See:
 
 - `docs/product/START-HERE.md`

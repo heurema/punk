@@ -51,6 +51,16 @@ superseded_by: null
 | `punk-mod-dev` | parked | software-development module |
 | `punk-mod-pub` | parked | content/publishing module |
 
+## Current CLI surface
+
+The implemented CLI surface is currently limited to:
+
+- `punk flow inspect`
+- `punk eval run smoke`
+- `punk eval run smoke --format json`
+
+`punk init` is a future setup target, not current CLI behavior.
+
 ## Research intake crate stance
 
 Do not add a standalone `punk-telemetry` product crate yet.
