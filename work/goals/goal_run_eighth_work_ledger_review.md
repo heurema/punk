@@ -1,7 +1,7 @@
 ---
 id: goal_run_eighth_work_ledger_review
 title: "Run the eighth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "work/reports/2026-04-25-punk-init-docs-cli-mismatch.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-eighth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,15 @@ Before selecting runtime storage, receipt schema/runtime, gate/proof implementat
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the eighth advisory Work Ledger Review.
+
+The review selected `work/goals/goal_add_active_cli_surface_docs_governance_check.md` as the next ready goal.
+
+Reason:
+
+- the `punk init` docs/CLI mismatch is repaired;
+- the mismatch was caught by manual review rather than a deterministic governance check;
+- adding an active CLI surface docs-governance guard is narrower than runtime storage, receipt schema/runtime, gate/proof implementation, or `punk init` implementation.

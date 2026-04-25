@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run the eighth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_eighth_work_ledger_review.md"
+current_focus: "Add active CLI surface docs-governance check"
+selected_next: "work/goals/goal_add_active_cli_surface_docs_governance_check.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the eighth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_eighth_work_ledger_review.md`
-- Why this is next: the `punk init` docs/CLI mismatch is repaired; review the ledger before selecting runtime storage, receipt schema/runtime, gate/proof implementation, or another docs/spec branch.
+- Current focus: add an active CLI surface docs-governance check.
+- Selected next: `work/goals/goal_add_active_cli_surface_docs_governance_check.md`
+- Why this is next: the eighth Work Ledger Review found the `punk init` mismatch was repaired manually, but docs-governance should prevent current/active docs from reintroducing unimplemented CLI commands as active behavior.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - the review inspects recent active-surface repair and open blockers before selecting one next goal.
+  - docs-governance catches active CLI overclaim regressions.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate implementation.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
@@ -33,7 +33,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_eighth_work_ledger_review.md` | `ready` | Recent active-surface docs repair is complete; review before selecting runtime storage, receipt schema/runtime, gate/proof implementation, or another docs/spec branch. | — |
+| `work/goals/goal_add_active_cli_surface_docs_governance_check.md` | `ready` | The `punk init` mismatch was repaired manually; add a docs-governance regression guard before larger runtime branches. | — |
 
 ## Blocked
 
@@ -49,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Ran the eighth advisory Work Ledger Review | `work/goals/goal_run_eighth_work_ledger_review.md`, `work/reports/2026-04-25-eighth-work-ledger-review.md`, `work/goals/goal_add_active_cli_surface_docs_governance_check.md` |
 | 2026-04-25 | Reconciled the `punk init` docs/CLI mismatch | `work/goals/goal_reconcile_punk_init_docs_cli_mismatch.md`, `work/reports/2026-04-25-punk-init-docs-cli-mismatch.md`, `docs/product/START-HERE.md` |
 | 2026-04-25 | Ran the seventh advisory Work Ledger Review | `work/goals/goal_run_seventh_work_ledger_review.md`, `work/reports/2026-04-25-seventh-work-ledger-review.md`, `work/goals/goal_reconcile_punk_init_docs_cli_mismatch.md` |
 | 2026-04-25 | Defined proof-before-acceptance semantics v0.1 | `work/goals/goal_define_proof_before_acceptance_semantics_v0_1.md`, `evals/specs/proof-before-acceptance-semantics.v0.1.md`, `work/reports/2026-04-25-proof-before-acceptance-semantics-v0-1.md` |
@@ -84,11 +85,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files README.md docs/product/START-HERE.md docs/product/DOGFOODING.md docs/product/FLOW.md docs/product/CRATE-STATUS.md work/goals/goal_reconcile_punk_init_docs_cli_mismatch.md work/goals/goal_run_eighth_work_ledger_review.md work/reports/2026-04-25-punk-init-docs-cli-mismatch.md work/STATUS.md --report work/reports/2026-04-25-punk-init-docs-cli-mismatch.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_eighth_work_ledger_review.md work/goals/goal_add_active_cli_surface_docs_governance_check.md work/reports/2026-04-25-eighth-work-ledger-review.md --report work/reports/2026-04-25-eighth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_eighth_work_ledger_review.md`
-  - `punk init` is documented as a future setup target, not current behavior
-  - current CLI truth must stay limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json` until a later bounded goal implements more
-  - docs-governance passed with 2 duplicate-definition candidate warnings
+  - `selected_next` is now `work/goals/goal_add_active_cli_surface_docs_governance_check.md`
+  - eighth Work Ledger Review selected a docs-governance regression guard for active CLI surface truth
+  - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
+  - docs-governance passed with no warnings for the eighth review artifacts
   - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI implementation, adapter, automation, service-backed storage, and `punk init` work remain deferred
