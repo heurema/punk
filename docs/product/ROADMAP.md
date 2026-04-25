@@ -158,7 +158,7 @@ Goal: prove the core loop without LLM-driven execution.
 Flow:
 
 ```text
-goal -> contract -> approve -> run -> gate -> proof
+goal -> contract -> approve -> run -> gate decision -> proofpack -> acceptance claim
 ```
 
 Executor/validation stance:
@@ -177,6 +177,7 @@ Exit criteria:
 - run writes receipt
 - gate writes decision
 - proof hashes contract, receipt, and decision
+- accepted work is claimable only after decision and proof are linked
 
 Required eval additions:
 

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - product-entry-path
@@ -43,7 +43,8 @@ plot -> cut -> gate
 
 - `plot` shapes work and creates a contract.
 - `cut` executes bounded approved work.
-- `gate` verifies, decides, and proves.
+- `gate` verifies evidence and writes the final decision.
+- proof/proofpack makes the decision inspectable before acceptance.
 
 Only `gate` writes final decisions.
 

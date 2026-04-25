@@ -149,6 +149,8 @@ Future `gate` may consume semantic assessment refs as evidence.
 
 Future proofpack may reference semantic assessment refs after gate.
 
+Proof-before-acceptance semantics are defined in `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
+
 Neither future surface is activated by this spec.
 
 ## Same-executor and same-model risk

@@ -76,6 +76,10 @@ A gate decision does not become the proofpack.
 
 They remain separate artifacts and may later cross-link explicitly.
 
+Positive acceptance claims require both an accepting gate decision and matching proof.
+
+See `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
+
 ### Relationship to output artifacts
 
 A proofpack may later reference the produced output artifacts and their hashes.
@@ -119,6 +123,9 @@ Future proofpack behavior must satisfy all of the following:
 
 10. **Proofpack must stay narrow about sensitive content.**
     Raw provider payloads, secrets, environment details, and hidden storage bodies must not be pulled in by default.
+
+11. **Proofpack enables acceptance claims but does not decide.**
+    A matching proofpack is required before positive acceptance can be claimed, but `gate` remains the decision authority.
 
 ## Why canonical proofpack is post-gate
 
@@ -249,6 +256,7 @@ Still deferred after this boundary spec:
 - signing or transparency-log behavior;
 - draft-vs-final proofpack modeling;
 - hash normalization details;
+- full acceptance claim schema;
 - gate implementation;
 - output artifact export formats.
 

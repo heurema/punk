@@ -1,7 +1,7 @@
 ---
 id: goal_define_proof_before_acceptance_semantics_v0_1
 title: "Define proof-before-acceptance semantics v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -41,8 +41,10 @@ knowledge_refs:
   - "evals/specs/minimal-receipt-fields.v0.1.md"
   - "evals/specs/missing-validator-policy.v0.1.md"
   - "evals/specs/semantic-assessor-command-interface.v0.1.md"
+  - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-proof-before-acceptance-semantics-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -64,13 +66,20 @@ research_gate:
     - "evals/specs/minimal-receipt-fields.v0.1.md"
     - "evals/specs/missing-validator-policy.v0.1.md"
     - "evals/specs/semantic-assessor-command-interface.v0.1.md"
+    - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
     - "work/reports/2026-04-25-sixth-work-ledger-review.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution will produce the proof-before-acceptance semantics artifact and report."
+  classification: architecture
+  required_updates:
+    - "docs/product/START-HERE.md"
+    - "docs/product/ARCHITECTURE.md"
+    - "docs/product/ROADMAP.md"
+    - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
+    - "evals/specs/gate-decision-boundary.v0.1.md"
+    - "evals/specs/proofpack-boundary.v0.1.md"
+  rationale: "Proof-before-acceptance semantics v0.1 clarifies canonical closure sequence and authority boundaries before implementation."
 ---
 
 ## Context
@@ -85,3 +94,16 @@ Before runtime gate/proof/proofpack work, clarify the closure sequence so Punk d
 ## Notes
 
 Keep this docs/spec-only. Do not implement runtime gate behavior, proofpack writing, schema files, CLI commands, provider/model/agent adapters, automation, or `.punk` state.
+
+## Outcome
+
+Defined `evals/specs/proof-before-acceptance-semantics.v0.1.md` as the docs/spec-only semantics boundary for future acceptance claims.
+
+The boundary says:
+
+- `gate` writes the final decision;
+- proofpack makes the decision inspectable;
+- positive acceptance claims require an accepting gate decision plus matching proof;
+- proofpack does not decide.
+
+No runtime code, CLI, schema, gate, proofpack writer, provider/model/agent adapter, or `.punk/` state was implemented.

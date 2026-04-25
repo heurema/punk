@@ -136,6 +136,10 @@ Goal -> Contract -> Run -> Receipt -> ModuleAssessment -> DecisionObject -> Proo
 
 `DecisionObject` is final and is written only by `gate`.
 
+`Proofpack` makes the gate decision inspectable.
+
+Acceptance may be claimed only after the accepting gate decision has matching proof.
+
 ## Local trust evidence architecture
 
 `punk` active-core uses local trust evidence instead of remote control-plane truth.
@@ -253,7 +257,11 @@ They may produce guard results, warnings, findings, patches, receipts, or recomm
 
 They must not write final acceptance. Only `gate` writes final decisions.
 
-Gate decisions may reference assessments, eval reports, run receipts, and proofpacks.
+Gate decisions may reference assessments, eval reports, and run receipts.
+
+Proofpacks may later reference gate decisions and the evidence they considered.
+
+Proofpacks do not decide.
 
 ## Minimal proofpack provenance
 
@@ -266,6 +274,10 @@ A proofpack is a local provenance manifest. It should reference:
 - output artifact refs and hashes
 - relevant event range or event root
 - rule/guard version refs
+
+Proofpack is not a second decision surface.
+
+Positive acceptance claims require an accepting gate decision plus matching proof.
 
 Remote transparency logs, release signing, and full supply-chain provenance are parked.
 

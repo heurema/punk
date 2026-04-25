@@ -202,9 +202,12 @@ They do not decide.
 receipt = what a bounded run did and observed
 gate = future closure authority
 proofpack = future provenance bundle after gate
+acceptance = future project claim after accepting gate decision and matching proof
 ```
 
 Receipt may be referenced by gate or proofpack later.
+
+Proof-before-acceptance semantics are defined in `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
 
 Receipt does not absorb or replace either one.
 

@@ -80,6 +80,12 @@ A proofpack does not replace gate decision.
 
 They remain separate artifacts and may later cross-link explicitly.
 
+### Relationship to acceptance
+
+An accepting gate decision is required for acceptance, but it is not sufficient to claim acceptance until required proof exists.
+
+See `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
+
 ## Gate decision principles
 
 Future gate decision behavior must satisfy all of the following:
@@ -105,7 +111,10 @@ Future gate decision behavior must satisfy all of the following:
 7. **Proofpack remains distinct but may later link to gate decision and vice versa.**
    Cross-links are useful; artifact collapse is not.
 
-8. **Mutable `latest` must not be canonical truth.**
+8. **Acceptance requires proof.**
+   A positive acceptance claim requires an accepting gate decision plus matching proof.
+
+9. **Mutable `latest` must not be canonical truth.**
    Any later convenience view must stay derived and rebuildable from append-only decision artifacts.
 
 ## Minimum future DecisionObject metadata
@@ -237,6 +246,7 @@ Any later implementation step should be explicit about:
 - outcome vocabulary;
 - contract/receipt/eval/event/proof ref rules;
 - hash/reference normalization;
+- proof-before-acceptance semantics;
 - how proof links remain explicit without collapsing artifact boundaries;
 - how derived `latest` or inspect views remain rebuildable rather than canonical.
 
@@ -250,6 +260,7 @@ Still deferred after this boundary spec:
 - decision validators;
 - signing or transparency-log behavior;
 - actor identity hardening.
+- acceptance claim semantics beyond `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
 
 ## Next bounded step
 

@@ -193,6 +193,8 @@ A future gate must not treat these as acceptance:
 
 This spec does not define final gate outcome vocabulary.
 
+Proof-before-acceptance semantics are defined in `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
+
 ## Future report and receipt interpretation
 
 Reports and receipts may record validator outcomes as evidence.
