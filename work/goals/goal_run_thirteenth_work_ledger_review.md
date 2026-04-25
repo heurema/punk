@@ -1,7 +1,7 @@
 ---
 id: goal_run_thirteenth_work_ledger_review
 title: "Run the thirteenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "work/reports/2026-04-25-gate-proof-acceptance-smoke-eval.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-thirteenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,19 @@ Before selecting proofpack writer, runtime storage, gate/eval/proof orchestratio
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the thirteenth advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_proofpack_link_hash_integrity_kernel_v0_1.md` as the next bounded active-core step.
+
+Rationale:
+
+- proofpack provenance metadata exists;
+- gate/proof acceptance-chain smoke coverage exists;
+- proofpack artifact digest metadata exists, but structural ref/digest integrity helpers do not yet exist;
+- proof link/hash integrity is a required Phase 3 guardrail;
+- structural integrity helpers are narrower than `.punk/proofs`, proofpack writer, runtime storage, CLI, hash normalization, or gate/eval/proof orchestration.
+
+No runtime/code/schema/CLI/`.punk` changes were made by this review.
