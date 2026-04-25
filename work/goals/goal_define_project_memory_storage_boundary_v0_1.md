@@ -1,7 +1,7 @@
 ---
 id: goal_define_project_memory_storage_boundary_v0_1
 title: "Define Project Memory storage boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -29,8 +29,10 @@ acceptance:
 knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "knowledge/research/2026-04-25-task-work-storage-before-project-memory.md"
+  - "evals/specs/project-memory-storage-boundary.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-project-memory-storage-boundary-v0-1.md"
 decision_refs:
   - "docs/adr/ADR-0015-project-memory-storage-direction.md"
 proof_refs: []
@@ -46,12 +48,15 @@ research_gate:
     - "docs/product/PROJECT-MEMORY.md"
     - "knowledge/research/2026-04-25-task-work-storage-before-project-memory.md"
     - "docs/adr/ADR-0015-project-memory-storage-direction.md"
+    - "evals/specs/project-memory-storage-boundary.v0.1.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution of this goal will produce the storage-boundary spec and report."
+  classification: architecture
+  required_updates:
+    - "docs/product/PROJECT-MEMORY.md"
+    - "evals/specs/project-memory-storage-boundary.v0.1.md"
+  rationale: "Project Memory storage boundary v0.1 codifies the authority/view split before runtime storage implementation."
 ---
 
 ## Context
@@ -70,3 +75,21 @@ Before implementation, define the v0.1 boundary and eval cases so future storage
 ## Notes
 
 Keep this as docs/spec-only. Do not write `.punk/` state, runtime storage, CLI commands, schema changes, gate implementation, proofpack writer, or adapters.
+
+
+## Outcome
+
+Completed as an R1 docs/spec-only task.
+
+Artifacts:
+
+- `evals/specs/project-memory-storage-boundary.v0.1.md`
+- `work/reports/2026-04-25-project-memory-storage-boundary-v0-1.md`
+
+Boundary shorthand:
+
+```text
+authority first, views later
+```
+
+No runtime storage, CLI, schema, gate, proofpack, provider/model/agent adapter, or `.punk/` state was implemented.

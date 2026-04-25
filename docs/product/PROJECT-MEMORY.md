@@ -26,6 +26,8 @@ related_adrs:
   - docs/adr/ADR-0008-knowledge-vault-boundaries.md
   - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
   - docs/adr/ADR-0015-project-memory-storage-direction.md
+related_evals:
+  - evals/specs/project-memory-storage-boundary.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -190,6 +192,8 @@ Future SQLite/FTS storage may provide query and inspect projections, but it must
 Future service-backed storage may mirror, sync, or coordinate after local authority is stable, but it must not own active-core truth or hide selected work.
 
 No `.punk/` task/work runtime writes are active until a later selected implementation goal explicitly activates them.
+
+Boundary v0.1 is defined in `evals/specs/project-memory-storage-boundary.v0.1.md`. That spec is advisory/design only; it protects the authority/view split before runtime storage implementation.
 
 See `docs/adr/ADR-0015-project-memory-storage-direction.md`.
 
