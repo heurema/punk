@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_integrity_smoke_eval_coverage
 title: "Add proofpack integrity smoke eval coverage"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-proofpack-link-hash-integrity-kernel-v0-1.md"
   - "work/reports/2026-04-25-fourteenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-proofpack-integrity-smoke-eval-coverage.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -81,3 +82,28 @@ Do not implement proofpack writer.
 Do not compute or normalize hashes.
 Do not claim acceptance.
 Do not add adapters, automation, provider/model runners, or schema files.
+
+
+## Outcome
+
+Completed deterministic proofpack integrity smoke eval coverage.
+
+Added local smoke cases for:
+
+- complete declared proofpack digest links satisfying matching proof readiness;
+- missing required proofpack digest links staying visible and blocking matching proof readiness.
+
+Updated the acceptance-chain smoke case to use proof readiness rather than only abstract ref matching.
+
+The smoke eval remains local assessment only.
+
+It still does not:
+
+- write `.punk/evals`;
+- write gate decisions;
+- write proofpacks;
+- claim acceptance;
+- compute or normalize hashes;
+- require runtime storage;
+- expose new CLI behavior;
+- add schema files, adapters, automation, or provider/model runners.

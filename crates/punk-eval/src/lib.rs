@@ -336,6 +336,8 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_gate_authority_requires_proof_before_acceptance(),
         eval_proofpack_is_post_gate_provenance_not_decision(),
         eval_acceptance_requires_accepting_decision_and_matching_proofpack(),
+        eval_proofpack_integrity_ready_when_declared_digest_links_are_complete(),
+        eval_proofpack_integrity_missing_digest_blocks_readiness(),
     ];
     let smoke_result = if cases
         .iter()
@@ -954,6 +956,30 @@ fn sample_gate_decision() -> GateDecision {
 }
 
 fn sample_proofpack(decision_ref: &str) -> Proofpack {
+    sample_proofpack_with_partial_integrity(decision_ref)
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::RunReceipt,
+            ProofArtifactRef::new("receipt_eval_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:receipthash").expect("artifact hash should be valid"),
+        ))
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::Eval,
+            ProofArtifactRef::new("eval_smoke_gate_proof").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:evalhash").expect("artifact hash should be valid"),
+        ))
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::Event,
+            ProofArtifactRef::new("evt_eval_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:eventhash").expect("artifact hash should be valid"),
+        ))
+        .with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::OutputArtifact,
+            ProofArtifactRef::new("target/debug/punk").expect("artifact ref should be valid"),
+            ProofArtifactHash::new("sha256:outputhash").expect("artifact hash should be valid"),
+        ))
+}
+
+fn sample_proofpack_with_partial_integrity(decision_ref: &str) -> Proofpack {
     Proofpack::new(
         ProofpackId::new("proofpack_eval_001").expect("proofpack id should be valid"),
         ProofGateDecisionRef::new(decision_ref).expect("gate decision ref should be valid"),
@@ -1068,15 +1094,17 @@ fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> Smoke
         .expect("other decision ref should be valid");
 
     let matching = proofpack.matches_gate_decision_ref(&matching_decision_ref);
+    let ready_matching = proofpack.is_matching_proof_ready_for_acceptance(&matching_decision_ref);
     let mismatching = proofpack.matches_gate_decision_ref(&mismatch);
+    let ready_mismatching = proofpack.is_matching_proof_ready_for_acceptance(&mismatch);
     let acceptance_allowed = positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
         accepting_gate_decision: decision.outcome().is_accepting(),
-        matching_proofpack: matching,
+        matching_proofpack: ready_matching,
     });
     let missing_decision_blocked =
         !positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
             accepting_gate_decision: false,
-            matching_proofpack: matching,
+            matching_proofpack: ready_matching,
         });
     let missing_proof_blocked = !positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
         accepting_gate_decision: decision.outcome().is_accepting(),
@@ -1084,7 +1112,9 @@ fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> Smoke
     });
 
     if matching
+        && ready_matching
         && !mismatching
+        && !ready_mismatching
         && acceptance_allowed
         && missing_decision_blocked
         && missing_proof_blocked
@@ -1099,7 +1129,95 @@ fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> Smoke
             "eval_acceptance_requires_accepting_decision_and_matching_proofpack",
             "positive acceptance requires matching decision and proof",
             format!(
-                "acceptance preconditions drifted; matching={matching} mismatching={mismatching} allowed={acceptance_allowed} missing_decision_blocked={missing_decision_blocked} missing_proof_blocked={missing_proof_blocked}"
+                "acceptance preconditions drifted; matching={matching} ready_matching={ready_matching} mismatching={mismatching} ready_mismatching={ready_mismatching} allowed={acceptance_allowed} missing_decision_blocked={missing_decision_blocked} missing_proof_blocked={missing_proof_blocked}"
+            ),
+        )
+    }
+}
+
+fn eval_proofpack_integrity_ready_when_declared_digest_links_are_complete() -> SmokeEvalCaseResult {
+    let decision = sample_gate_decision();
+    let matching_decision_ref =
+        ProofGateDecisionRef::new(decision.id().as_str()).expect("decision ref should be valid");
+    let proofpack = sample_proofpack(decision.id().as_str());
+    let integrity = proofpack.link_hash_integrity_report();
+    let boundary = proofpack.boundary();
+
+    if integrity.required_digest_refs().len() == 6
+        && integrity.is_complete()
+        && !integrity.has_missing_required_digests()
+        && proofpack.has_complete_link_hash_integrity()
+        && proofpack.is_matching_proof_ready_for_acceptance(&matching_decision_ref)
+        && boundary.checks_structural_link_hash_integrity
+        && !boundary.computes_hashes
+        && !boundary.normalizes_hashes
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_integrity_ready_when_declared_digest_links_are_complete",
+            "proofpack integrity readiness requires complete declared digest links",
+            "all declared decision, contract, receipt, eval, event, and output refs have structural digest links without hash computation",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_integrity_ready_when_declared_digest_links_are_complete",
+            "proofpack integrity readiness requires complete declared digest links",
+            format!(
+                "proofpack integrity drifted; required={} missing={} complete={} ready={} structural={} computes_hashes={} normalizes_hashes={}",
+                integrity.required_digest_refs().len(),
+                integrity.missing_digest_refs().len(),
+                integrity.is_complete(),
+                proofpack.is_matching_proof_ready_for_acceptance(&matching_decision_ref),
+                boundary.checks_structural_link_hash_integrity,
+                boundary.computes_hashes,
+                boundary.normalizes_hashes
+            ),
+        )
+    }
+}
+
+fn eval_proofpack_integrity_missing_digest_blocks_readiness() -> SmokeEvalCaseResult {
+    let decision = sample_gate_decision();
+    let matching_decision_ref =
+        ProofGateDecisionRef::new(decision.id().as_str()).expect("decision ref should be valid");
+    let proofpack = sample_proofpack_with_partial_integrity(decision.id().as_str());
+    let integrity = proofpack.link_hash_integrity_report();
+    let missing_kinds = integrity
+        .missing_digest_refs()
+        .iter()
+        .map(|missing| missing.kind())
+        .collect::<Vec<_>>();
+
+    let missing_receipt = missing_kinds.contains(&ProofArtifactKind::RunReceipt);
+    let missing_eval = missing_kinds.contains(&ProofArtifactKind::Eval);
+    let missing_event = missing_kinds.contains(&ProofArtifactKind::Event);
+    let missing_output = missing_kinds.contains(&ProofArtifactKind::OutputArtifact);
+
+    if integrity.required_digest_refs().len() == 6
+        && integrity.missing_digest_refs().len() == 4
+        && integrity.has_missing_required_digests()
+        && !integrity.is_complete()
+        && !proofpack.has_complete_link_hash_integrity()
+        && !proofpack.is_matching_proof_ready_for_acceptance(&matching_decision_ref)
+        && missing_receipt
+        && missing_eval
+        && missing_event
+        && missing_output
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_integrity_missing_digest_blocks_readiness",
+            "missing proofpack digests block proof readiness",
+            "missing required receipt, eval, event, and output digest links remain visible and keep matching proof readiness false",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_integrity_missing_digest_blocks_readiness",
+            "missing proofpack digests block proof readiness",
+            format!(
+                "missing digest handling drifted; required={} missing={} complete={} ready={} missing_receipt={missing_receipt} missing_eval={missing_eval} missing_event={missing_event} missing_output={missing_output}",
+                integrity.required_digest_refs().len(),
+                integrity.missing_digest_refs().len(),
+                integrity.is_complete(),
+                proofpack.is_matching_proof_ready_for_acceptance(&matching_decision_ref)
             ),
         )
     }
@@ -1129,7 +1247,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 17);
+        assert_eq!(report.cases().len(), 19);
     }
 
     #[test]
@@ -1165,6 +1283,12 @@ mod tests {
         assert!(rendered.contains(
             "  - id: eval_acceptance_requires_accepting_decision_and_matching_proofpack"
         ));
+        assert!(rendered.contains(
+            "  - id: eval_proofpack_integrity_ready_when_declared_digest_links_are_complete"
+        ));
+        assert!(
+            rendered.contains("  - id: eval_proofpack_integrity_missing_digest_blocks_readiness")
+        );
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
@@ -1222,6 +1346,11 @@ mod tests {
         assert!(rendered.contains(
             "\"case_id\": \"eval_acceptance_requires_accepting_decision_and_matching_proofpack\""
         ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_integrity_ready_when_declared_digest_links_are_complete\""
+        ));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_proofpack_integrity_missing_digest_blocks_readiness\""));
         assert!(rendered.contains("\"status\": \"pass\""));
         assert!(rendered.contains("\"boundary_notes\": ["));
         assert!(rendered.contains("\"deferred\": ["));
