@@ -6,7 +6,7 @@ Authority: advisory/design
 
 ## Purpose
 
-Define the minimal future receipt fields Punk needs before any receipt schema, `.punk/runs` storage, gate/proof runtime, semantic assessor interface, or CLI implementation expands receipt behavior.
+Define the minimal future receipt fields Punk needs before any receipt schema, `.punk/runs` storage, gate/proof runtime, semantic assessor implementation, or CLI implementation expands receipt behavior.
 
 This is a design/spec artifact only.
 
@@ -268,7 +268,7 @@ This v0.1 spec does not define:
 - validator implementation;
 - gate behavior;
 - proofpack writing;
-- semantic assessor command interface;
+- semantic assessor command implementation;
 - CLI commands;
 - `punk init`;
 - provider/model/agent adapters;
@@ -291,7 +291,7 @@ Any later implementation step should be explicit about:
 
 Still deferred after this field spec:
 
-- semantic assessor command interface;
+- semantic assessor implementation;
 - receipt schema/runtime implementation;
 - real gate runtime;
 - real proofpack runtime;
@@ -300,4 +300,6 @@ Still deferred after this field spec:
 
 ## Next bounded step
 
-After this minimal receipt fields spec, the conservative next move is to define the semantic assessor command interface v0.1 as a docs/spec-only boundary, so semantic assessments can produce advisory evidence without becoming gate decisions or executor self-review.
+Semantic assessor command interface v0.1 is defined in `evals/specs/semantic-assessor-command-interface.v0.1.md`.
+
+The conservative next move is a sixth advisory Work Ledger Review before selecting runtime storage, receipt schema, gate/proof, or docs/CLI mismatch work.

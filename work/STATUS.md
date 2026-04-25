@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Define semantic assessor command interface v0.1"
-selected_next: "work/goals/goal_define_semantic_assessor_command_interface_v0_1.md"
+current_focus: "Run the sixth advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_sixth_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: define semantic assessor command interface v0.1.
-- Selected next: `work/goals/goal_define_semantic_assessor_command_interface_v0_1.md`
-- Why this is next: minimal receipt fields can now carry validator outcomes and evidence gaps; semantic assessors need a command interface boundary before any semantic assessment implementation or model/provider adapter work.
+- Current focus: run the sixth advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_sixth_work_ledger_review.md`
+- Why this is next: missing-validator policy, minimal receipt fields, and semantic assessor interface boundaries are now defined; review the ledger before selecting runtime storage, receipt schema, gate/proof, or docs/CLI mismatch work.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - semantic assessor output is clause-scoped advisory evidence, not gate decision, proof, or executor self-review.
+  - the review inspects recent work and open blockers before selecting one next goal.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate implementation.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
   - `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, `.punk/proofs`, gate, proof, Event Ledger runtime work, GoalRail runtime work, and `punk init` remain deferred until later bounded goals explicitly activate them.
@@ -32,13 +32,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_define_semantic_assessor_command_interface_v0_1.md` | `ready` | Receipt fields can carry evidence gaps; next define semantic assessor interface as advisory evidence before implementation. | — |
+| `work/goals/goal_run_sixth_work_ledger_review.md` | `ready` | Recent docs/spec boundaries are complete; review before selecting runtime storage, receipt schema, gate/proof, docs/CLI mismatch, or another docs/spec branch. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Gate or proof implementation | future bounded gate/proof goals | Minimal receipt fields are defined; still reconcile semantic assessment boundaries, proofpack minimum metadata, and `proof before acceptance` semantics before runtime closure work. |
+| Gate or proof implementation | future bounded gate/proof goals | Minimal receipt fields and semantic assessment boundaries are defined; still reconcile proofpack minimum metadata and `proof before acceptance` semantics before runtime closure work. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -48,6 +48,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Defined semantic assessor command interface v0.1 | `work/goals/goal_define_semantic_assessor_command_interface_v0_1.md`, `evals/specs/semantic-assessor-command-interface.v0.1.md`, `work/reports/2026-04-25-semantic-assessor-command-interface-v0-1.md` |
 | 2026-04-25 | Defined minimal receipt fields v0.1 | `work/goals/goal_define_minimal_receipt_fields_v0_1.md`, `evals/specs/minimal-receipt-fields.v0.1.md`, `work/reports/2026-04-25-minimal-receipt-fields-v0-1.md` |
 | 2026-04-25 | Defined missing-validator policy v0.1 | `work/goals/goal_define_missing_validator_policy_v0_1.md`, `evals/specs/missing-validator-policy.v0.1.md`, `work/reports/2026-04-25-missing-validator-policy-v0-1.md` |
 | 2026-04-25 | Ran the fifth advisory Work Ledger Review | `work/goals/goal_run_fifth_work_ledger_review.md`, `work/reports/2026-04-25-fifth-work-ledger-review.md`, `work/goals/goal_define_missing_validator_policy_v0_1.md` |
@@ -78,10 +79,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/minimal-receipt-fields.v0.1.md evals/specs/run-receipt-boundary.v0.1.md evals/specs/missing-validator-policy.v0.1.md work/goals/goal_define_minimal_receipt_fields_v0_1.md work/goals/goal_define_semantic_assessor_command_interface_v0_1.md work/reports/2026-04-25-minimal-receipt-fields-v0-1.md work/STATUS.md --report work/reports/2026-04-25-minimal-receipt-fields-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/semantic-assessor-command-interface.v0.1.md evals/specs/executor-agnostic-validation-boundary.v0.1.md evals/specs/missing-validator-policy.v0.1.md evals/specs/minimal-receipt-fields.v0.1.md work/goals/goal_define_semantic_assessor_command_interface_v0_1.md work/goals/goal_run_sixth_work_ledger_review.md work/reports/2026-04-25-semantic-assessor-command-interface-v0-1.md work/STATUS.md --report work/reports/2026-04-25-semantic-assessor-command-interface-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_define_semantic_assessor_command_interface_v0_1.md`
-  - minimal receipt fields v0.1 is docs/spec-only and advisory/design
-  - receipts remain run evidence, not gate decisions or proofpacks
+  - `selected_next` is now `work/goals/goal_run_sixth_work_ledger_review.md`
+  - semantic assessor command interface v0.1 is docs/spec-only and advisory/design
+  - semantic assessor output remains clause-scoped advisory evidence, not gate decision, proof, proofpack, acceptance, or executor self-review
   - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI, adapter, automation, service-backed storage, and `punk init` work remain deferred

@@ -1,7 +1,7 @@
 ---
 id: goal_define_semantic_assessor_command_interface_v0_1
 title: "Define semantic assessor command interface v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -31,8 +31,10 @@ knowledge_refs:
   - "evals/specs/executor-agnostic-validation-boundary.v0.1.md"
   - "evals/specs/missing-validator-policy.v0.1.md"
   - "evals/specs/minimal-receipt-fields.v0.1.md"
+  - "evals/specs/semantic-assessor-command-interface.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-semantic-assessor-command-interface-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -48,13 +50,18 @@ research_gate:
     - "evals/specs/executor-agnostic-validation-boundary.v0.1.md"
     - "evals/specs/missing-validator-policy.v0.1.md"
     - "evals/specs/minimal-receipt-fields.v0.1.md"
+    - "evals/specs/semantic-assessor-command-interface.v0.1.md"
     - "work/reports/2026-04-25-minimal-receipt-fields-v0-1.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution will produce the semantic assessor interface spec and report."
+  classification: architecture
+  required_updates:
+    - "evals/specs/semantic-assessor-command-interface.v0.1.md"
+    - "evals/specs/executor-agnostic-validation-boundary.v0.1.md"
+    - "evals/specs/missing-validator-policy.v0.1.md"
+    - "evals/specs/minimal-receipt-fields.v0.1.md"
+  rationale: "Semantic assessor command interface v0.1 defines advisory evidence boundaries before implementation."
 ---
 
 ## Context
@@ -66,3 +73,16 @@ Before implementation, define the command interface boundary for clause-scoped s
 ## Notes
 
 Keep this docs/spec-only. Do not implement semantic assessor commands, model/provider adapters, runtime storage, CLI behavior, gate decisions, proofpacks, schemas, or `.punk` state.
+
+## Outcome
+
+Defined `evals/specs/semantic-assessor-command-interface.v0.1.md` as the docs/spec-only interface boundary for future clause-scoped semantic assessment evidence.
+
+The boundary says semantic assessors:
+
+- assess one clause or bounded question;
+- cite explicit evidence refs;
+- use missing-validator outcomes when unavailable, skipped, unsupported, failed, or deferred;
+- remain advisory evidence only.
+
+No runtime code, CLI, schema, gate, proofpack, provider/model/agent adapter, or `.punk/` state was implemented.

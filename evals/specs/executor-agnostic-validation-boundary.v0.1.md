@@ -6,7 +6,7 @@ Authority: advisory/design
 
 ## Purpose
 
-Define consistency checks that should protect Punk's executor-agnostic validation boundary before any model runner, provider adapter, prompt manager, skill manager, semantic assessor interface, or coding-agent execution path is promoted.
+Define consistency checks that should protect Punk's executor-agnostic validation boundary before any model runner, provider adapter, prompt manager, skill manager, semantic assessor implementation, or coding-agent execution path is promoted.
 
 These evals assess docs and policy consistency.
 
@@ -154,6 +154,8 @@ Catches:
 - same-session self-review replacing gate;
 - semantic review hidden inside executor claims.
 
+See `evals/specs/semantic-assessor-command-interface.v0.1.md`.
+
 ### executor_failure_promotion_order
 
 Purpose: prevent global instruction bloat after local failures.
@@ -180,7 +182,8 @@ Catches:
 - `AGENTS.md`;
 - `.agents/skills/punk-workflow/SKILL.md`;
 - related report `DocImpact`;
-- `evals/specs/missing-validator-policy.v0.1.md`.
+- `evals/specs/missing-validator-policy.v0.1.md`;
+- `evals/specs/semantic-assessor-command-interface.v0.1.md`.
 
 ## Non-goals
 
@@ -193,7 +196,7 @@ This spec does not define:
 - MCP integration;
 - runtime storage;
 - gate/proof implementation;
-- semantic assessor command interface;
+- semantic assessor command implementation;
 - contract schema fields such as `executor_policy`, `validation_runtime`, `semantic_assessment`, or `gate_policy`;
 - a public CLI command.
 
@@ -202,4 +205,4 @@ This spec does not define:
 1. Use this spec as manual review criteria in the current docs-only patch.
 2. Add deterministic docs/policy checks later if repeated drift appears.
 3. Add contract/receipt schema checks only when the roadmap promotes the relevant runtime surface.
-4. Add semantic assessor interface checks only after a separate Research Gate and accepted boundary artifact.
+4. Use `evals/specs/semantic-assessor-command-interface.v0.1.md` as manual review criteria for semantic assessor drift; add implementation checks only after a later accepted implementation goal.

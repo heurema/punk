@@ -6,7 +6,7 @@ Authority: advisory/design
 
 ## Purpose
 
-Define how Punk should classify validators that cannot provide normal evidence before any runtime gate, proofpack, storage, receipt expansion, semantic assessor interface, or CLI implementation depends on validator outcomes.
+Define how Punk should classify validators that cannot provide normal evidence before any runtime gate, proofpack, storage, receipt expansion, semantic assessor implementation, or CLI implementation depends on validator outcomes.
 
 This is a design/spec artifact only.
 
@@ -217,6 +217,8 @@ If the semantic assessor is unavailable, Punk must not substitute executor self-
 
 If an assessor runs, its output is advisory evidence unless a later accepted policy narrows that boundary.
 
+Semantic assessor command interface v0.1 is defined in `evals/specs/semantic-assessor-command-interface.v0.1.md`.
+
 ## Required deterministic eval cases
 
 ### MV-001: unavailable does not pass
@@ -281,7 +283,7 @@ This v0.1 policy does not define:
 - proofpack writer behavior;
 - CLI commands;
 - `punk init`;
-- semantic assessor command interface;
+- semantic assessor command implementation;
 - provider/model/agent adapters;
 - `.punk/` storage;
 - automation.
@@ -304,7 +306,7 @@ Any later implementation step should be explicit about:
 
 Still deferred after this policy spec:
 
-- semantic assessor command interface;
+- semantic assessor implementation;
 - real gate runtime;
 - real proofpack runtime;
 - real `.punk/` runtime storage;
