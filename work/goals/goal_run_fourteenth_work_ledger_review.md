@@ -1,7 +1,7 @@
 ---
 id: goal_run_fourteenth_work_ledger_review
 title: "Run the fourteenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -31,7 +31,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-thirteenth-work-ledger-review.md"
   - "work/reports/2026-04-25-proofpack-link-hash-integrity-kernel-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-fourteenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -64,3 +65,18 @@ Before selecting proofpack writer, runtime storage, gate/eval/proof orchestratio
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the fourteenth advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_proofpack_integrity_smoke_eval_coverage.md` as the next bounded active-core step.
+
+Rationale:
+
+- proofpack link/hash integrity helpers now exist in `punk-proof`;
+- the smoke eval currently covers proof-before-acceptance semantics but not complete/missing proofpack digest-link readiness;
+- deterministic smoke eval coverage is narrower than proofpack writer, `.punk/proofs`, runtime storage, CLI, schema, hash computation, or gate/eval/proof orchestration.
+
+No runtime/code/schema/CLI/`.punk` changes were made by this review.
