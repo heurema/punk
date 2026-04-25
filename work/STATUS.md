@@ -6,7 +6,7 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-04-24
+updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
 current_focus: "Extract a GoalRail process-shell pilot from the now-stable Punk work-ledger discipline"
 selected_next: "work/goals/goal_extract_goalrail_process_shell_pilot.md"
@@ -46,6 +46,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Tightened public site problem copy to executor-neutral wording | `work/goals/goal_public_site_executor_neutral_problem_copy.md`, `work/reports/2026-04-25-public-site-executor-neutral-problem-copy.md`, `site/src/components/Problem.astro` |
 | 2026-04-24 | Made public site copy executor-neutral | `work/goals/goal_public_site_executor_neutral_copy.md`, `work/reports/2026-04-24-public-site-executor-neutral-copy.md`, `site/src/data/content.ts`, `site/src/components/Hero.astro`, `site/src/components/HowSection.astro`, `site/src/components/ModulesSection.astro`, `site/src/layouts/Layout.astro` |
 | 2026-04-24 | Refined executor-agnostic validation boundary wording and evidence model | `work/goals/goal_refine_executor_agnostic_validation_boundary.md`, `work/reports/2026-04-24-executor-agnostic-validation-boundary-refinement.md`, `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`, `evals/specs/executor-agnostic-validation-boundary.v0.1.md` |
 | 2026-04-24 | Adopted initial Contract over Prompt boundary as docs/ADR/eval-policy only | `work/goals/goal_execution_agnostic_contract_boundary.md`, `work/reports/2026-04-24-execution-agnostic-contract-boundary.md`, `knowledge/research/2026-04-24-contract-over-prompt.md`, `docs/adr/ADR-0014-executor-agnostic-validation-boundary.md`, `evals/specs/executor-agnostic-validation-boundary.v0.1.md` |
@@ -68,11 +69,11 @@ last_validated_commit: null
 
 ## Validation
 
-- Last checked: 2026-04-24
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files site/src/components/Hero.astro site/src/components/HowSection.astro site/src/components/ModulesSection.astro site/src/data/content.ts site/src/layouts/Layout.astro work/goals/goal_public_site_executor_neutral_copy.md work/reports/2026-04-24-public-site-executor-neutral-copy.md work/STATUS.md --report work/reports/2026-04-24-public-site-executor-neutral-copy.md && npm --prefix site run build && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true && git diff --name-only`
+- Last checked: 2026-04-25
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files site/src/components/Problem.astro work/goals/goal_public_site_executor_neutral_problem_copy.md work/reports/2026-04-25-public-site-executor-neutral-problem-copy.md work/STATUS.md --report work/reports/2026-04-25-public-site-executor-neutral-problem-copy.md && npm --prefix site run build && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true && git diff --name-only`
 - Result: `PASS`
 - Notes:
   - `selected_next` remains `work/goals/goal_extract_goalrail_process_shell_pilot.md` after the user-requested public-copy correction
   - ADR-0014 is proposed only; future `gate` still owns final acceptance
   - executor/model/provider runtime behavior remains out of active-core scope
-  - site copy now avoids presenting agents as the required architecture
+  - active landing copy no longer frames agents as the required worker
