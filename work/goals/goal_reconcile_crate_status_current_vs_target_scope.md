@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_crate_status_current_vs_target_scope
 title: "Reconcile CRATE-STATUS current-vs-target scope"
-status: ready
+status: done
 owner: "vitaly"
 module: "docs"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-proofpack-integrity-smoke-eval-coverage.md"
   - "work/reports/2026-04-25-fifteenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-crate-status-current-vs-target-scope.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -75,3 +76,24 @@ Do not implement gate or proofpack writers.
 Do not compute or normalize hashes.
 Do not add schema files.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed the CRATE-STATUS current-vs-target scope reconciliation.
+
+Updated `docs/product/CRATE-STATUS.md` so compact crate ownership wording cannot be mistaken for active runtime behavior.
+
+The doc now states that the ownership table names target crate responsibility, while current implemented behavior remains narrower.
+
+It explicitly keeps these deferred:
+
+- `.punk/` runtime storage;
+- gate decision writer behavior;
+- proofpack writer behavior;
+- hash computation and normalization;
+- schema files;
+- CLI behavior beyond the current implemented surface;
+- adapters, automation, provider/model runners, and `punk init`.
+
+No Rust code, CLI command, `.punk/` state, schema file, runtime writer, adapter, or automation was added.

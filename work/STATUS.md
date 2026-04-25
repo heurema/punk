@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Reconcile CRATE-STATUS current-vs-target scope"
-selected_next: "work/goals/goal_reconcile_crate_status_current_vs_target_scope.md"
+current_focus: "Run sixteenth advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_sixteenth_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,9 +17,9 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: reconcile CRATE-STATUS current-vs-target scope.
-- Selected next: `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md`
-- Why this is next: proofpack integrity smoke eval coverage is in place, and `docs/product/CRATE-STATUS.md` now needs tighter wording so current side-effect-free gate/proof/hash behavior is not confused with future writer/runtime behavior.
+- Current focus: run the sixteenth advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_sixteenth_work_ledger_review.md`
+- Why this is next: CRATE-STATUS now distinguishes target crate ownership from current implemented side-effect-free behavior; run a short advisory review before selecting writer/storage/orchestration, schema/hash work, or another active-core guardrail.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
@@ -32,6 +32,7 @@ last_validated_commit: null
   - positive acceptance remains unavailable unless an accepting gate decision and matching proofpack are both present.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - `CRATE-STATUS.md` distinguishes current implemented behavior from target ownership where needed.
+  - docs do not overclaim active gate/proof writers, hash computation, hash normalization, schemas, `.punk/` storage, CLI behavior, adapters, automation, or `punk init`.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate runtime implementation.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
   - `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, `.punk/proofs`, gate, proof, Event Ledger runtime work, GoalRail runtime work, and `punk init` remain deferred until later bounded goals explicitly activate them.
@@ -40,13 +41,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md` | `ready` | Current crate-status wording risks overclaiming writer/hashing behavior now that gate/proof kernels are side-effect-free and covered by smoke eval. | — |
+| `work/goals/goal_run_sixteenth_work_ledger_review.md` | `ready` | CRATE-STATUS current-vs-target wording is reconciled; review before selecting writer/storage/orchestration, schema/hash work, or another active-core guardrail. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, or runtime gate/proof implementation | future bounded gate/proof goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, and proofpack integrity smoke eval coverage are in place; still reconcile current-vs-target crate status wording before selecting writer/orchestration/runtime implementation. |
+| Proofpack writer, gate/eval orchestration, or runtime gate/proof implementation | future bounded gate/proof goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, and CRATE-STATUS current-vs-target wording are in place; still select and scope writer/orchestration/runtime implementation through a separate goal after review. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -56,6 +57,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Reconciled CRATE-STATUS current-vs-target scope wording | `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md`, `work/reports/2026-04-25-crate-status-current-vs-target-scope.md`, `docs/product/CRATE-STATUS.md` |
 | 2026-04-25 | Ran the fifteenth advisory Work Ledger Review | `work/goals/goal_run_fifteenth_work_ledger_review.md`, `work/reports/2026-04-25-fifteenth-work-ledger-review.md`, `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md` |
 | 2026-04-25 | Added proofpack integrity smoke eval coverage | `work/goals/goal_add_proofpack_integrity_smoke_eval_coverage.md`, `work/reports/2026-04-25-proofpack-integrity-smoke-eval-coverage.md`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-25 | Ran the fourteenth advisory Work Ledger Review | `work/goals/goal_run_fourteenth_work_ledger_review.md`, `work/reports/2026-04-25-fourteenth-work-ledger-review.md`, `work/goals/goal_add_proofpack_integrity_smoke_eval_coverage.md` |
@@ -106,13 +108,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_fifteenth_work_ledger_review.md work/goals/goal_reconcile_crate_status_current_vs_target_scope.md work/reports/2026-04-25-fifteenth-work-ledger-review.md --report work/reports/2026-04-25-fifteenth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_reconcile_crate_status_current_vs_target_scope.md work/goals/goal_run_sixteenth_work_ledger_review.md work/reports/2026-04-25-crate-status-current-vs-target-scope.md --report work/reports/2026-04-25-crate-status-current-vs-target-scope.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_reconcile_crate_status_current_vs_target_scope.md`
-  - fifteenth Work Ledger Review selected crate-status current-vs-target scope reconciliation as the next narrow docs guardrail
-  - proofpack integrity smoke eval coverage is in place for complete and missing digest-link cases
-  - proofpack kernel structurally checks required ref/digest links without computing or normalizing hashes
-  - smoke eval remains local assessment and does not write proofpacks, decisions, acceptance claims, `.punk/evals`, or runtime state
+  - `selected_next` is now `work/goals/goal_run_sixteenth_work_ledger_review.md`
+  - `docs/product/CRATE-STATUS.md` now separates target crate ownership from current implemented subset boundaries
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
-  - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI implementation, adapter, automation, service-backed storage, and `punk init` work remain deferred
+  - gate/proof writers, `.punk/` storage, hash computation, hash normalization, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
+  - smoke eval remains local assessment and does not write proofpacks, decisions, acceptance claims, `.punk/evals`, or runtime state

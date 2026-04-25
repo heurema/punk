@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-24
+updated_at: 2026-04-25
 review_after: 2026-07-20
 canonical_for:
   - crate-status
@@ -31,25 +31,46 @@ superseded_by: null
 - `parked` — boundary exists; minimal stub/docs only
 - `retired` — removed or legacy-only
 
-## Initial target status
+## Crate ownership target
 
 | Crate | Status | Owns |
 |---|---|---|
 | `punk-cli` | active-core | CLI routing |
 | `punk-domain` | active-core | canonical types |
-| `punk-core` | active-core | deterministic helpers, validation, hashing |
+| `punk-core` | active-core | deterministic helpers, validation, future hashing helpers |
 | `punk-events` | active-core | append-only event log |
 | `punk-flow` | active-core | state machine and transition guards |
 | `punk-rules` | active-core | Punk Laws and rule snapshots |
 | `punk-eval` | active-core | smoke/local eval harness |
 | `punk-contract` | active-core | contract schema and validation |
-| `punk-gate` | active-core | decision writing |
-| `punk-proof` | active-core | proofpack writing/hashing |
+| `punk-gate` | active-core | gate decision model and future decision writer |
+| `punk-proof` | active-core | proofpack manifest, artifact hash refs, and future proofpack writer |
 | `punk-project` | active-core | project identity and memory roots |
 | `punk-module-host` | parked | module manifest and hook routing |
 | `punk-adapters` | parked | provider/tool wrappers |
 | `punk-mod-dev` | parked | software-development module |
 | `punk-mod-pub` | parked | content/publishing module |
+
+
+## Current implemented subset boundary
+
+The ownership table above names the target crate responsibility.
+It is not a claim that every target behavior is active today.
+
+Current implemented behavior remains narrower:
+
+- `punk-cli` routes only the current implemented commands listed below.
+- `punk-core` is still a minimal helper crate skeleton; no active hashing API is exposed yet.
+- `punk-rules` and `punk-project` are still minimal skeleton crates.
+- `punk-events` provides an append-only event-log kernel and deterministic JSONL behavior, but `.punk/events` runtime storage is not active.
+- `punk-flow` provides state-machine and guard evidence kernels, but no persisted runtime flow state.
+- `punk-contract` provides a side-effect-free contract lifecycle kernel, but no `.punk/contracts` storage.
+- `punk-domain` provides run receipt and validation evidence data models, but no `.punk/runs` writer.
+- `punk-eval` provides the local smoke eval harness, including opt-in JSON output, but no `.punk/evals` report storage, baseline, or waiver system.
+- `punk-gate` provides a side-effect-free gate decision kernel, but no `.punk/decisions` writer, CLI behavior, runtime storage, or acceptance claim writer.
+- `punk-proof` provides side-effect-free proofpack provenance, digest metadata, structural link/hash integrity checks, and proof readiness helpers, but no `.punk/proofs` writer, hash computation, hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
+
+Future writer/storage/hash behavior must be added only through separate bounded goals.
 
 ## Current CLI surface
 
@@ -65,12 +86,13 @@ The implemented CLI surface is currently limited to:
 
 Do not add a standalone `punk-telemetry` product crate yet.
 
-Telemetry ownership is distributed across active-core crates:
+Target telemetry ownership is distributed across active-core crates.
+Current implemented behavior remains bounded by the section above.
 
 - `punk-events`: event schema, append-only writer, replay support
 - `punk-flow`: transition and guard events
 - `punk-eval`: eval run events and reports
-- `punk-gate`: final decision events
+- `punk-gate`: future final decision events
 - `punk-proof`: proofpack manifest and artifact hash refs
 - `punk-project`: project identity and memory-link boundaries
 
@@ -88,7 +110,10 @@ The current active-core responsibility is:
 - receipt/evidence shape
 - eval report shape
 - gate decision exclusivity
-- proofpack links and hashes
+- proofpack links, digest metadata, and structural link/hash integrity
+
+This does not mean active hash computation, hash normalization, proofpack
+writing, or gate decision writing.
 
 Punk may run validators in the user's environment, but the user's executor, provider, prompt, skill, or local model setup must not become active-core authority.
 
