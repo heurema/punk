@@ -34,3 +34,17 @@ checks:
 ```
 
 They are meant to exercise the checks named in `evals/specs/docs-consistency.v0.1.md` until the deterministic runner lands.
+
+Current fixture groups include:
+
+- `active-cli-surface/` — guards current/active Punk CLI docs against unimplemented commands;
+- `doc-impact/` — checks report DocImpact coverage for meaningful changes;
+- `duplicate-definition/` — flags possible shared-term definition drift;
+- `frontmatter/` — checks canonical doc frontmatter requirements;
+- `glossary/` — checks glossary term definition placement;
+- `links/` — checks relative doc links;
+- `map-frontmatter/` — checks documentation map/frontmatter consistency;
+- `research/` — checks research promotion boundaries;
+- `review-window/` — checks stale `review_after` windows;
+- `status/` — checks parked capability active-surface overclaims;
+- `supersession/` — checks current references to non-current docs.

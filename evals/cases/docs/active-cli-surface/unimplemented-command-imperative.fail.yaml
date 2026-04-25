@@ -1,0 +1,27 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.active_cli_surface.unimplemented_command_imperative.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Current user-flow instructions that tell users to run unimplemented Punk CLI commands must fail."
+
+input:
+  changed_files:
+    - README.md
+  files:
+    README.md: |
+      # Punk
+
+      Run `punk init` to initialize the project before using Punk.
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_ACTIVE_CLI_UNIMPLEMENTED_COMMAND
+      path: README.md
+      command: punk init
+  warnings: []
+
+checks:
+  - docs_active_cli_surface_truth

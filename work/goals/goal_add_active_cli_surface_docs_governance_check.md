@@ -1,7 +1,7 @@
 ---
 id: goal_add_active_cli_surface_docs_governance_check
 title: "Add active CLI surface docs-governance check"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -35,7 +35,8 @@ knowledge_refs:
   - "docs/product/START-HERE.md"
   - "docs/product/CRATE-STATUS.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-active-cli-surface-docs-governance-check.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -54,9 +55,16 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Goal selection metadata only; execution will update governance script/report/status if selected."
+  classification: docs-only
+  required_updates:
+    - "scripts/check_docs_governance.py"
+    - "docs/product/DOGFOODING.md"
+    - "evals/cases/docs/README.md"
+    - "evals/cases/docs/active-cli-surface/README.md"
+    - "evals/cases/docs/active-cli-surface/unimplemented-command-active.fail.yaml"
+    - "evals/cases/docs/active-cli-surface/unimplemented-command-imperative.fail.yaml"
+    - "evals/cases/docs/active-cli-surface/future-command-labeled.pass.yaml"
+  rationale: "Docs-governance now checks active CLI surface truth and fixture-style docs eval cases cover the regression."
 ---
 
 ## Context
@@ -68,3 +76,17 @@ Add a docs-governance regression check so current/active docs cannot reintroduce
 ## Notes
 
 Keep this as a governance/eval guardrail. Do not implement `punk init`, widen the CLI, write `.punk` state, or add runtime setup behavior.
+
+## Outcome
+
+Completed the active CLI surface docs-governance guard.
+
+The guard fails active/current docs that present unimplemented Punk CLI commands as active behavior.
+
+The current implemented CLI allowlist remains:
+
+- `punk flow inspect`
+- `punk eval run smoke`
+- `punk eval run smoke --format json`
+
+Future, target, deferred, or not-current command mentions remain allowed when clearly labeled.

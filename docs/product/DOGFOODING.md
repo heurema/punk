@@ -104,9 +104,9 @@ Exit criteria:
 
 ### Level 2 — Eval-gated development
 
-Use `punk eval` before and after changes.
+Use the currently implemented eval command before and after changes.
 
-Allowed:
+Currently implemented subset:
 
 - `punk eval run smoke`
 - baseline comparison

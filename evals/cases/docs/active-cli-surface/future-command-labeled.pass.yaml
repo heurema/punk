@@ -1,0 +1,46 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.active_cli_surface.future_command_labeled.pass
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Future or target Punk CLI commands may be mentioned when clearly not current behavior."
+
+input:
+  changed_files:
+    - docs/product/FLOW.md
+  files:
+    docs/product/FLOW.md: |
+      ---
+      id: docs_product_flow
+      kind: product-doc
+      status: active
+      authority: canonical
+      owner: vitaly
+      created_at: 2026-04-25
+      updated_at: 2026-04-25
+      canonical_for:
+        - flow
+      supersedes: []
+      superseded_by: null
+      ---
+      # Flow
+
+      Current implemented CLI subset:
+
+      - `punk flow inspect`
+
+      Future target commands include:
+
+      - `punk init`
+      - `punk gate run <run-id>`
+
+      Future target commands are not current behavior until implemented.
+
+expected:
+  result: pass
+  hard_failures: []
+  warnings: []
+
+checks:
+  - docs_active_cli_surface_truth

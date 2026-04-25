@@ -79,6 +79,62 @@ NEGATING_PHRASES = (
     "remains parked",
     "parked",
 )
+IMPLEMENTED_PUNK_CLI_COMMANDS = {
+    "punk flow inspect",
+    "punk eval run smoke",
+    "punk eval run smoke --format json",
+}
+ACTIVE_CLI_SURFACE_PATHS = ("README.md", "docs/product/")
+ACTIVE_CLI_CONTEXT_PHRASES = (
+    "active cli surface",
+    "current cli surface",
+    "current implemented cli",
+    "current implemented subset",
+    "currently implemented subset",
+    "implemented cli surface",
+    "implemented subset",
+    "implemented commands",
+    "supported commands",
+    "available commands",
+    "current commands",
+)
+ACTIVE_CLI_LINE_PHRASES = (
+    "run ",
+    "use ",
+    "execute ",
+    "invoke ",
+    "current",
+    "currently",
+    "implemented",
+    "available",
+    "supported",
+    "active",
+    "today",
+    "now",
+    "working",
+)
+FUTURE_CLI_GUARD_PHRASES = (
+    "future",
+    "target",
+    "deferred",
+    "not current",
+    "not implemented",
+    "not required",
+    "not active",
+    "after implementation",
+    "once implemented",
+    "until implemented",
+    "later",
+    "may later",
+    "planned",
+    "remains deferred",
+)
+NEGATING_CLI_GUARD_PHRASES = (
+    "do not",
+    "don't",
+    "no ",
+    "not ",
+)
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 DOC_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])((?:docs|knowledge|publishing)/[^\s`)]*\.md(?:#[^\s`)]+)?)")
 HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$", re.MULTILINE)
@@ -89,6 +145,7 @@ MAP_OWNER_ROW_RE = re.compile(r"`?(docs/product/[^`| ]+\.md)`?")
 TOKEN_RE = re.compile(r"[a-z0-9]+")
 IGNORED_SURFACE_TOKENS = {"and", "or", "the", "a", "an", "of"}
 HEADING_WITH_LEVEL_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+BACKTICKED_PUNK_COMMAND_RE = re.compile(r"`(punk(?:\s+[^`\s]+)+)`")
 NON_DEFINITION_PREFIXES = ("see ", "use ", "refer ", "link ", "links ", "source: ", "sources: ")
 STRUCTURAL_HEADING_SLUGS = {
     "purpose",
@@ -428,6 +485,10 @@ def is_canonical_doc(rel_path: str) -> bool:
     return rel_path.endswith(".md") and rel_path.startswith(CANONICAL_DOC_PREFIXES)
 
 
+def is_active_cli_surface_doc(rel_path: str) -> bool:
+    return rel_path == ACTIVE_CLI_SURFACE_PATHS[0] or rel_path.startswith(ACTIVE_CLI_SURFACE_PATHS[1])
+
+
 def is_meaningful_change(rel_path: str) -> bool:
     return rel_path.startswith(MEANINGFUL_CHANGE_PREFIXES)
 
@@ -545,6 +606,78 @@ def check_parked_as_active(rel_path: str, text: str, issues: list[dict[str, obje
                     capability=capability,
                     line=raw_line.strip(),
                 )
+
+
+def normalize_cli_command(command: str) -> str:
+    command = command.strip().strip("`")
+    command = re.sub(r"\s+", " ", command)
+    return command.rstrip(".,;:")
+
+
+def extract_punk_cli_commands(line: str) -> list[str]:
+    return [normalize_cli_command(match.group(1)) for match in BACKTICKED_PUNK_COMMAND_RE.finditer(line)]
+
+
+def has_any_phrase(line: str, phrases: tuple[str, ...]) -> bool:
+    lowered = line.lower()
+    return any(phrase in lowered for phrase in phrases)
+
+
+def check_active_cli_surface(rel_path: str, text: str, issues: list[dict[str, object]]) -> None:
+    """Fail active/current docs that present unimplemented Punk CLI commands as active."""
+
+    active_context_lines = 0
+    future_context_lines = 0
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        lowered = stripped.lower()
+        if not stripped:
+            if active_context_lines:
+                active_context_lines -= 1
+            if future_context_lines:
+                future_context_lines -= 1
+            continue
+
+        if has_any_phrase(lowered, FUTURE_CLI_GUARD_PHRASES):
+            future_context_lines = 8
+            if any(term in lowered for term in ("cli", "command", "commands", "surface", "surfaces")):
+                active_context_lines = 0
+        elif has_any_phrase(lowered, ACTIVE_CLI_CONTEXT_PHRASES):
+            active_context_lines = 8
+            future_context_lines = 0
+
+        commands = extract_punk_cli_commands(stripped)
+        if not commands:
+            if active_context_lines:
+                active_context_lines -= 1
+            if future_context_lines:
+                future_context_lines -= 1
+            continue
+
+        guarded_as_future = future_context_lines > 0 or has_any_phrase(lowered, FUTURE_CLI_GUARD_PHRASES)
+        guarded_as_negative = has_any_phrase(lowered, NEGATING_CLI_GUARD_PHRASES)
+        line_is_active_claim = active_context_lines > 0 or (
+            has_any_phrase(lowered, ACTIVE_CLI_LINE_PHRASES) and not guarded_as_future and not guarded_as_negative
+        )
+        if line_is_active_claim and not guarded_as_future and not guarded_as_negative:
+            for command in commands:
+                if command in IMPLEMENTED_PUNK_CLI_COMMANDS:
+                    continue
+                add_issue(
+                    issues,
+                    "failure",
+                    "DOC_ACTIVE_CLI_UNIMPLEMENTED_COMMAND",
+                    rel_path,
+                    f"Unimplemented Punk CLI command is described as active/current behavior: `{command}`.",
+                    command=command,
+                    implemented_commands=sorted(IMPLEMENTED_PUNK_CLI_COMMANDS),
+                    line=stripped,
+                )
+
+        if active_context_lines:
+            active_context_lines -= 1
+        if future_context_lines:
+            future_context_lines -= 1
 
 
 def check_review_window(rel_path: str, text: str, today: date, issues: list[dict[str, object]]) -> None:
@@ -812,6 +945,10 @@ def main() -> int:
 
     canonical_docs_checked: list[str] = []
     for rel_path in changed_files:
+        if is_active_cli_surface_doc(rel_path):
+            doc_path = repo / rel_path
+            if doc_path.exists() and doc_path.is_file():
+                check_active_cli_surface(rel_path, load_text(doc_path), issues)
         if not is_canonical_doc(rel_path):
             continue
         doc_path = repo / rel_path

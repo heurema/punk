@@ -1,0 +1,43 @@
+schema_version: punk.docs_eval_case.v0.1
+case_id: docs.active_cli_surface.unimplemented_command_active.fail
+kind: docs-consistency-case
+status: active
+authority: canonical
+
+description: "Unimplemented Punk CLI commands listed under current implemented CLI surface must fail."
+
+input:
+  changed_files:
+    - docs/product/START-HERE.md
+  files:
+    docs/product/START-HERE.md: |
+      ---
+      id: docs_product_start_here
+      kind: product-doc
+      status: active
+      authority: canonical
+      owner: vitaly
+      created_at: 2026-04-25
+      updated_at: 2026-04-25
+      canonical_for:
+        - onboarding
+      supersedes: []
+      superseded_by: null
+      ---
+      # Start here
+
+      The implemented CLI surface today is intentionally small:
+
+      - `punk flow inspect`
+      - `punk init`
+
+expected:
+  result: fail
+  hard_failures:
+    - code: DOC_ACTIVE_CLI_UNIMPLEMENTED_COMMAND
+      path: docs/product/START-HERE.md
+      command: punk init
+  warnings: []
+
+checks:
+  - docs_active_cli_surface_truth
