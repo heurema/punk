@@ -45,7 +45,7 @@ export const laws = [
   { key: '01', title: 'Contract first', body: 'Nothing runs until the spec is hashed, signed, and scope-bound.' },
   { key: '02', title: 'Flow before features', body: 'Harden the work loop before you decorate it. Kernels before cosmetics.' },
   { key: '03', title: 'Eval before expansion', body: 'A capability ships the gate first. No eval, no merge.' },
-  { key: '04', title: 'Gate writes the decision', body: 'Deterministic checks decide accept/reject. Humans review the exceptions.' },
+  { key: '04', title: 'Gate writes the decision', body: 'Gate records accept/reject from validated evidence. Humans review the exceptions.' },
   { key: '05', title: 'Proof before acceptance', body: 'Every accepted run emits a replayable receipt: spec + seed + diff + checks.' },
   { key: '06', title: 'Research before decisions', body: 'Major moves ride on written memos. ADRs are mandatory, not optional.' },
   { key: '07', title: 'Memory from day zero', body: 'Context is a first-class, append-only artifact. It outlives people.' },
@@ -55,7 +55,7 @@ export const laws = [
 export const lifecycleSteps = [
   { key: 'goal', subtitle: 'plain-markdown promise', tone: 'muted' },
   { key: 'contract', subtitle: 'hashed · signed · scoped', tone: 'accent' },
-  { key: 'run', subtitle: 'agents on a leash', tone: 'warn' },
+  { key: 'run', subtitle: 'executor under contract', tone: 'warn' },
   { key: 'receipt', subtitle: 'tool calls · diff · seed', tone: 'soft' },
   { key: 'gate', subtitle: 'deterministic evals', tone: 'success' },
   { key: 'proof', subtitle: 'replayable artifact', tone: 'accent' },
@@ -71,7 +71,7 @@ export const moduleTimeline = [
 
 export const devpunkFacts = [
   ['grants', 'fs:rw · scoped'],
-  ['runtime', 'local · bring-your-own model'],
+  ['runtime', 'local · bring-your-own executor'],
   ['output', 'signed receipt · replayable'],
   ['intent', 'merge only on gate-pass'],
 ] as const;
@@ -109,7 +109,7 @@ export const guideTranscript = [
     who: 'guide',
     cite: 'out of scope',
     tone: 'warn',
-    text: 'Not my contract. For code, open a goal, sign a contract, and run an agent under it.',
+    text: 'Not my contract. For code, open a goal, sign a contract, and run your chosen executor under it.',
   },
   { who: 'you', text: 'when does pubpunk ship?' },
   {
