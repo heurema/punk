@@ -1,7 +1,7 @@
 ---
 id: goal_run_ninth_work_ledger_review
 title: "Run the ninth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "work/reports/2026-04-25-active-cli-surface-docs-governance-check.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-ninth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,15 @@ Before selecting runtime storage, receipt schema/runtime, gate/proof implementat
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the ninth advisory Work Ledger Review.
+
+The review selected `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md` as the next ready goal.
+
+Reason:
+
+- active CLI surface governance is now guarded;
+- minimal receipt fields and missing-validator policy are already defined;
+- extending the side-effect-free receipt kernel is narrower than runtime storage, gate/proof implementation, proofpack writer implementation, or `punk init`.

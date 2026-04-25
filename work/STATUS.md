@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-25
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run the ninth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_ninth_work_ledger_review.md"
+current_focus: "Extend run receipt kernel with minimal fields v0.1"
+selected_next: "work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the ninth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_ninth_work_ledger_review.md`
-- Why this is next: the active CLI surface docs-governance guard is implemented; review the ledger before selecting runtime storage, receipt schema/runtime, gate/proof implementation, `punk init`, or another docs/spec branch.
+- Current focus: extend the run receipt kernel with minimal fields v0.1.
+- Selected next: `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md`
+- Why this is next: the ninth Work Ledger Review found that receipt fields and missing-validator policy are defined, and strengthening the side-effect-free receipt kernel is the smallest useful implementation step before gate/proof or runtime storage work.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - the review inspects the active CLI docs-governance guard and open blockers before selecting one next goal.
+  - the receipt kernel carries minimal fields and missing-validator evidence without becoming acceptance, proof, or final decision authority.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - contract, flow, event, eval, receipt, decision, and proof stay bounded to their documented surfaces until later goals explicitly activate implementation.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
@@ -33,7 +33,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_ninth_work_ledger_review.md` | `ready` | Active CLI docs-governance guard is implemented; review before selecting runtime storage, receipt schema/runtime, gate/proof implementation, `punk init`, or another docs/spec branch. | — |
+| `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md` | `ready` | Receipt fields and missing-validator policy are defined; extend the side-effect-free receipt kernel before gate/proof or storage work. | — |
 
 ## Blocked
 
@@ -49,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-25 | Ran the ninth advisory Work Ledger Review | `work/goals/goal_run_ninth_work_ledger_review.md`, `work/reports/2026-04-25-ninth-work-ledger-review.md`, `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md` |
 | 2026-04-25 | Added the active CLI surface docs-governance check | `work/goals/goal_add_active_cli_surface_docs_governance_check.md`, `work/reports/2026-04-25-active-cli-surface-docs-governance-check.md`, `scripts/check_docs_governance.py`, `evals/cases/docs/active-cli-surface/README.md` |
 | 2026-04-25 | Ran the eighth advisory Work Ledger Review | `work/goals/goal_run_eighth_work_ledger_review.md`, `work/reports/2026-04-25-eighth-work-ledger-review.md`, `work/goals/goal_add_active_cli_surface_docs_governance_check.md` |
 | 2026-04-25 | Reconciled the `punk init` docs/CLI mismatch | `work/goals/goal_reconcile_punk_init_docs_cli_mismatch.md`, `work/reports/2026-04-25-punk-init-docs-cli-mismatch.md`, `docs/product/START-HERE.md` |
@@ -86,12 +87,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-25
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files scripts/check_docs_governance.py docs/product/DOGFOODING.md evals/cases/docs/README.md evals/cases/docs/active-cli-surface/README.md evals/cases/docs/active-cli-surface/unimplemented-command-active.fail.yaml evals/cases/docs/active-cli-surface/unimplemented-command-imperative.fail.yaml evals/cases/docs/active-cli-surface/future-command-labeled.pass.yaml work/goals/goal_add_active_cli_surface_docs_governance_check.md work/goals/goal_run_ninth_work_ledger_review.md work/reports/2026-04-25-active-cli-surface-docs-governance-check.md work/STATUS.md --report work/reports/2026-04-25-active-cli-surface-docs-governance-check.md && python3 scripts/check_docs_governance.py --files README.md docs/product/START-HERE.md docs/product/CRATE-STATUS.md docs/product/DOGFOODING.md docs/product/FLOW.md --report work/reports/2026-04-25-active-cli-surface-docs-governance-check.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_ninth_work_ledger_review.md work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md work/reports/2026-04-25-ninth-work-ledger-review.md --report work/reports/2026-04-25-ninth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_ninth_work_ledger_review.md`
-  - docs-governance now fails active/current Punk CLI docs that describe unimplemented commands as active behavior
+  - `selected_next` is now `work/goals/goal_extend_run_receipt_kernel_minimal_fields_v0_1.md`
+  - ninth Work Ledger Review selected the side-effect-free receipt kernel minimal-fields implementation before gate/proof or storage work
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
-  - future/target/deferred command mentions remain allowed when clearly labeled
-  - current docs active CLI scan passed with 2 existing duplicate-definition candidate warnings unrelated to active CLI truth
   - `.punk/`, runtime gate/proof, Event Ledger runtime, schema, CLI implementation, adapter, automation, service-backed storage, and `punk init` work remain deferred
