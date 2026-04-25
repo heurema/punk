@@ -1,7 +1,7 @@
 ---
 id: goal_run_seventh_work_ledger_review
 title: "Run the seventh advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-seventh-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,15 @@ Before selecting runtime storage, receipt schema/runtime, gate/proof implementat
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the seventh advisory Work Ledger Review.
+
+The review selected `work/goals/goal_reconcile_punk_init_docs_cli_mismatch.md` as the next ready goal.
+
+Reason:
+
+- proof-before-acceptance semantics and recent validation/proof boundaries are now defined;
+- runtime storage, receipt schema/runtime, gate/proof implementation, proofpack writer, semantic assessor implementation, and GoalRail runtime work remain deferred;
+- `docs/product/START-HERE.md` still lists `punk init` under active target even though the command is not implemented, so docs/CLI truth repair is the narrowest next step.
