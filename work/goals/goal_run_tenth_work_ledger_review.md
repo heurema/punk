@@ -1,7 +1,7 @@
 ---
 id: goal_run_tenth_work_ledger_review
 title: "Run the tenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-25
 updated_at: 2026-04-25
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-25
+completed_at: 2026-04-25
 blocked_by: []
 scope:
   include:
@@ -30,7 +30,8 @@ knowledge_refs:
   - "docs/product/PROJECT-MEMORY.md"
   - "work/reports/2026-04-25-run-receipt-kernel-minimal-fields-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-25-tenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,3 +64,15 @@ Before selecting gate/proof implementation, runtime storage, proofpack writer, o
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the tenth advisory Work Ledger Review.
+
+The review selected `work/goals/goal_add_gate_decision_kernel_minimal_v0_1.md` as the next ready goal.
+
+Reason:
+
+- receipt evidence shape is now strong enough for gate modeling;
+- gate decision boundary and proof-before-acceptance semantics are already specified;
+- adding a side-effect-free gate decision kernel is narrower than runtime storage, proofpack writer implementation, or `punk init`.
