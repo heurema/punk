@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_crate_status_file_io_artifact_hashing_helper
 title: "Reconcile CRATE-STATUS file IO artifact hashing helper status"
-status: ready
+status: done
 owner: "vitaly"
 module: "docs"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -38,7 +38,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-file-io-artifact-hashing-helper-v0-1.md"
   - "work/reports/2026-04-26-thirtieth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-crate-status-file-io-artifact-hashing-helper.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -86,3 +87,14 @@ Do not implement proofpack writer behavior.
 Do not add referenced artifact byte verification.
 Do not imply acceptance authority.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed the CRATE-STATUS file IO artifact hashing helper status reconciliation.
+
+`docs/product/CRATE-STATUS.md` now records that `punk-core` owns artifact digest/ref validation, exact-byte artifact hash computation, and a narrow evidence-only file IO artifact hashing helper for one explicit regular file under an explicit repo root and validated repo-relative artifact ref.
+
+It also records that `punk-eval` smoke coverage includes file IO artifact hashing helper behavior.
+
+The reconciliation did not add Rust code, CLI behavior, schema files, `.punk/` runtime state, proofpack writer behavior, referenced artifact byte verification, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
