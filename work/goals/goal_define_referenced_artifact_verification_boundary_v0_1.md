@@ -1,7 +1,7 @@
 ---
 id: goal_define_referenced_artifact_verification_boundary_v0_1
 title: "Define referenced artifact verification boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -40,7 +40,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-crate-status-file-io-artifact-hashing-helper.md"
   - "work/reports/2026-04-26-thirty-first-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-referenced-artifact-verification-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -97,3 +98,12 @@ Do not implement proofpack writer behavior.
 Do not implement referenced artifact byte verification.
 Do not imply gate decisions or acceptance authority.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed referenced artifact verification boundary v0.1 as a docs/spec artifact.
+
+`evals/specs/referenced-artifact-verification-boundary.v0.1.md` now defines future verification semantics for proofpack refs and declared artifact hashes, including explicit inputs, repo root/ref constraints, file eligibility, symlink refusal, exact-byte comparison, outcome vocabulary, evidence record boundaries, and authority limits.
+
+No Rust code, CLI behavior, schema files, `.punk/` runtime state, proofpack writer behavior, referenced artifact verification implementation, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init` were added.
