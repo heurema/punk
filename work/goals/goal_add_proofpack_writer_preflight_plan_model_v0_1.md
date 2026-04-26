@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_writer_preflight_plan_model_v0_1
 title: "Add proofpack writer preflight plan model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -42,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-operation-evidence-model-v0-1.md"
   - "work/reports/2026-04-26-thirty-ninth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-preflight-plan-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -88,3 +89,12 @@ Do not implement proofpack file writing.
 Do not implement proofpack referenced-ref verification integration.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Implemented proofpack writer preflight plan model v0.1 as side-effect-free `punk-proof` behavior.
+
+The model records intended target refs, manifest self-digests, planned side effects, missing preconditions, and boundary notes, and can derive `planned_only` or `preflight_failed` operation evidence without claiming canonical artifact availability.
+
+No runtime/storage/schema/CLI/`.punk` changes were made.

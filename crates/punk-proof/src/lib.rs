@@ -10,6 +10,8 @@ pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROOFPACK_SCHEMA_VERSION: &str = "punk.proofpack.v0.1";
 pub const PROOFPACK_WRITER_OPERATION_EVIDENCE_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_operation_evidence.v0.1";
+pub const PROOFPACK_WRITER_PREFLIGHT_PLAN_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_preflight_plan.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -1088,6 +1090,272 @@ pub const fn proofpack_writer_operation_evidence_boundary(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterPreflightStatus {
+    Ready,
+    MissingPreconditions,
+}
+
+impl ProofpackWriterPreflightStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::MissingPreconditions => "missing_preconditions",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterMissingPrecondition {
+    MissingRequiredArtifactDigests,
+    MissingPlannedSideEffects,
+    MissingBoundaryNotes,
+}
+
+impl ProofpackWriterMissingPrecondition {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingRequiredArtifactDigests => "missing_required_artifact_digests",
+            Self::MissingPlannedSideEffects => "missing_planned_side_effects",
+            Self::MissingBoundaryNotes => "missing_boundary_notes",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterPlannedSideEffect {
+    CanonicalArtifactWrite,
+    IndexUpdate,
+    LatestPointerUpdate,
+}
+
+impl ProofpackWriterPlannedSideEffect {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::CanonicalArtifactWrite => "canonical_artifact_write",
+            Self::IndexUpdate => "index_update",
+            Self::LatestPointerUpdate => "latest_pointer_update",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterPreflightPlan {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    target_ref: ProofpackWriterTargetRef,
+    manifest_self_digest: ArtifactDigest,
+    planned_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    missing_preconditions: Vec<ProofpackWriterMissingPrecondition>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterPreflightPlan {
+    pub fn new(
+        proofpack: &Proofpack,
+        target_ref: ProofpackWriterTargetRef,
+        planned_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let manifest_self_digest = compute_proofpack_manifest_digest(proofpack);
+        let missing_preconditions = writer_preflight_missing_preconditions(
+            proofpack,
+            &planned_side_effects,
+            &boundary_notes,
+        );
+
+        Self {
+            proofpack_id: proofpack.id().clone(),
+            schema_version: PROOFPACK_WRITER_PREFLIGHT_PLAN_SCHEMA_VERSION,
+            target_ref,
+            manifest_self_digest,
+            planned_side_effects,
+            missing_preconditions,
+            boundary_notes,
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn target_ref(&self) -> &ProofpackWriterTargetRef {
+        &self.target_ref
+    }
+
+    pub fn manifest_self_digest(&self) -> &ArtifactDigest {
+        &self.manifest_self_digest
+    }
+
+    pub fn planned_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.planned_side_effects
+    }
+
+    pub fn missing_preconditions(&self) -> &[ProofpackWriterMissingPrecondition] {
+        &self.missing_preconditions
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn status(&self) -> ProofpackWriterPreflightStatus {
+        if self.missing_preconditions.is_empty() {
+            ProofpackWriterPreflightStatus::Ready
+        } else {
+            ProofpackWriterPreflightStatus::MissingPreconditions
+        }
+    }
+
+    pub fn is_writer_ready(&self) -> bool {
+        self.status() == ProofpackWriterPreflightStatus::Ready
+    }
+
+    pub fn has_missing_preconditions(&self) -> bool {
+        !self.missing_preconditions.is_empty()
+    }
+
+    pub fn plans_side_effect(&self, side_effect: ProofpackWriterPlannedSideEffect) -> bool {
+        self.planned_side_effects.contains(&side_effect)
+    }
+
+    pub fn operation_outcome(&self) -> ProofpackWriterOperationOutcome {
+        if self.is_writer_ready() {
+            ProofpackWriterOperationOutcome::PlannedOnly
+        } else {
+            ProofpackWriterOperationOutcome::PreflightFailed
+        }
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        ProofpackWriterOperationKind::PlannedOnly
+    }
+
+    pub fn to_operation_evidence(
+        &self,
+        operation_id: ProofpackWriterOperationId,
+        attempted_at: ProofpackWriterAttemptedAt,
+    ) -> Result<ProofpackWriterOperationEvidence, ProofpackError> {
+        ProofpackWriterOperationEvidence::new(
+            operation_id,
+            self.operation_kind(),
+            self.proofpack_id.clone(),
+            attempted_at,
+            self.target_ref.clone(),
+            self.operation_outcome(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+            self.side_effect_status(ProofpackWriterPlannedSideEffect::IndexUpdate),
+            self.side_effect_status(ProofpackWriterPlannedSideEffect::LatestPointerUpdate),
+            self.operation_evidence_boundary_notes(),
+        )
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterPreflightPlanBoundary {
+        proofpack_writer_preflight_plan_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    fn side_effect_status(
+        &self,
+        side_effect: ProofpackWriterPlannedSideEffect,
+    ) -> ProofpackWriterSideEffectStatus {
+        if self.plans_side_effect(side_effect) {
+            ProofpackWriterSideEffectStatus::NotAttempted
+        } else {
+            ProofpackWriterSideEffectStatus::NotSelected
+        }
+    }
+
+    fn operation_evidence_boundary_notes(&self) -> Vec<ProofBoundaryNote> {
+        if self.boundary_notes.is_empty() {
+            return vec![ProofBoundaryNote::new(
+                "Writer preflight plan is evidence-only; missing plan boundary notes are explicit precondition data.",
+            )
+            .expect("fallback boundary note should be valid")];
+        }
+
+        self.boundary_notes.clone()
+    }
+}
+
+fn writer_preflight_missing_preconditions(
+    proofpack: &Proofpack,
+    planned_side_effects: &[ProofpackWriterPlannedSideEffect],
+    boundary_notes: &[ProofBoundaryNote],
+) -> Vec<ProofpackWriterMissingPrecondition> {
+    let mut missing = Vec::new();
+
+    if !proofpack.has_complete_link_hash_integrity() {
+        missing.push(ProofpackWriterMissingPrecondition::MissingRequiredArtifactDigests);
+    }
+
+    if planned_side_effects.is_empty() {
+        missing.push(ProofpackWriterMissingPrecondition::MissingPlannedSideEffects);
+    }
+
+    if boundary_notes.is_empty() {
+        missing.push(ProofpackWriterMissingPrecondition::MissingBoundaryNotes);
+    }
+
+    missing
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterPreflightPlanBoundary {
+    pub models_writer_preflight_plan: bool,
+    pub computes_manifest_self_digest: bool,
+    pub writes_proofpack: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub evidence_only: bool,
+    pub planned_side_effects_are_attempts: bool,
+    pub separates_preflight_from_artifact_availability: bool,
+}
+
+pub const fn proofpack_writer_preflight_plan_boundary() -> ProofpackWriterPreflightPlanBoundary {
+    ProofpackWriterPreflightPlanBoundary {
+        models_writer_preflight_plan: true,
+        computes_manifest_self_digest: true,
+        writes_proofpack: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        evidence_only: true,
+        planned_side_effects_are_attempts: false,
+        separates_preflight_from_artifact_availability: true,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -1283,6 +1551,20 @@ mod tests {
             .expect("boundary note should be valid")],
         )
         .expect("writer operation evidence should be consistent")
+    }
+
+    fn sample_writer_preflight_plan(
+        proofpack: &Proofpack,
+        planned_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> ProofpackWriterPreflightPlan {
+        ProofpackWriterPreflightPlan::new(
+            proofpack,
+            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target ref should be valid"),
+            planned_side_effects,
+            boundary_notes,
+        )
     }
 
     #[test]
@@ -1790,6 +2072,158 @@ mod tests {
         assert!(!boundary.is_proofpack_artifact);
         assert!(!boundary.is_run_receipt);
         assert!(!boundary.is_schema_validation);
+    }
+
+    #[test]
+    fn proofpack_writer_preflight_plan_success_is_planned_only() {
+        let proofpack = sample_proofpack();
+        let plan = sample_writer_preflight_plan(
+            &proofpack,
+            vec![
+                ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+                ProofpackWriterPlannedSideEffect::IndexUpdate,
+                ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+            ],
+            vec![ProofBoundaryNote::new(
+                "Preflight plan is side-effect-free and does not write proofpacks.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let evidence = plan
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_preflight_local_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-26T14:30:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("operation evidence should be derivable");
+
+        assert_eq!(
+            plan.schema_version(),
+            PROOFPACK_WRITER_PREFLIGHT_PLAN_SCHEMA_VERSION
+        );
+        assert_eq!(plan.proofpack_id(), proofpack.id());
+        assert_eq!(
+            plan.target_ref().as_str(),
+            "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert_eq!(
+            plan.manifest_self_digest(),
+            &compute_proofpack_manifest_digest(&proofpack)
+        );
+        assert_eq!(plan.status().as_str(), "ready");
+        assert!(plan.is_writer_ready());
+        assert!(plan.missing_preconditions().is_empty());
+        assert!(plan.plans_side_effect(
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite
+        ));
+        assert!(plan.plans_side_effect(ProofpackWriterPlannedSideEffect::IndexUpdate));
+        assert!(plan.plans_side_effect(
+            ProofpackWriterPlannedSideEffect::LatestPointerUpdate
+        ));
+
+        assert_eq!(evidence.operation_kind().as_str(), "planned_only");
+        assert_eq!(evidence.outcome().as_str(), "planned_only");
+        assert_eq!(
+            evidence.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert_eq!(
+            evidence.index_status(),
+            ProofpackWriterSideEffectStatus::NotAttempted
+        );
+        assert_eq!(
+            evidence.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::NotAttempted
+        );
+        assert!(!evidence.canonical_artifact_available());
+        assert!(!evidence.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_preflight_plan_records_missing_preconditions() {
+        let incomplete_proofpack = Proofpack::new(
+            ProofpackId::new("proofpack_incomplete_001").expect("proofpack id should be valid"),
+            ProofGateDecisionRef::new("decision_local_001")
+                .expect("gate decision ref should be valid"),
+            vec![ProofContractRef::new("contract_local_001")
+                .expect("contract ref should be valid")],
+            vec![ProofRunReceiptRef::new("receipt_local_001")
+                .expect("run receipt ref should be valid")],
+            ProofCreatedAt::new("2026-04-25T21:00:00Z").expect("created_at should be valid"),
+            vec![ProofBoundaryNote::new("Incomplete proofpack lacks required digest entries.")
+                .expect("boundary note should be valid")],
+        )
+        .expect("proofpack should be structurally valid");
+        let plan = sample_writer_preflight_plan(&incomplete_proofpack, vec![], vec![]);
+        let evidence = plan
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_preflight_local_002")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-26T14:31:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("preflight failed evidence should be derivable");
+
+        assert_eq!(plan.status().as_str(), "missing_preconditions");
+        assert!(!plan.is_writer_ready());
+        assert!(plan.has_missing_preconditions());
+        assert_eq!(
+            plan.missing_preconditions(),
+            &[
+                ProofpackWriterMissingPrecondition::MissingRequiredArtifactDigests,
+                ProofpackWriterMissingPrecondition::MissingPlannedSideEffects,
+                ProofpackWriterMissingPrecondition::MissingBoundaryNotes,
+            ]
+        );
+        assert_eq!(
+            plan.missing_preconditions()[0].as_str(),
+            "missing_required_artifact_digests"
+        );
+        assert_eq!(plan.planned_side_effects().len(), 0);
+        assert_eq!(plan.boundary_notes().len(), 0);
+        assert_eq!(evidence.outcome().as_str(), "preflight_failed");
+        assert_eq!(
+            evidence.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert_eq!(
+            evidence.index_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert_eq!(
+            evidence.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert!(!evidence.canonical_artifact_available());
+        assert!(!evidence.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_preflight_plan_is_evidence_only_and_setup_neutral() {
+        let proofpack = sample_proofpack();
+        let plan = sample_writer_preflight_plan(
+            &proofpack,
+            vec![ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite],
+            vec![ProofBoundaryNote::new(
+                "Preflight planning preserves the gate/proof authority boundary.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let boundary = plan.boundary();
+
+        assert!(plan.is_evidence_only());
+        assert!(boundary.models_writer_preflight_plan);
+        assert!(boundary.computes_manifest_self_digest);
+        assert!(boundary.separates_preflight_from_artifact_availability);
+        assert!(!boundary.planned_side_effects_are_attempts);
+        assert!(!plan.writes_proofpack());
+        assert!(!boundary.writes_writer_operation_evidence);
+        assert!(!boundary.writes_final_decision);
+        assert!(!plan.creates_acceptance_claim());
+        assert!(!plan.requires_runtime_storage());
+        assert!(!plan.writes_cli_output());
+        assert!(!boundary.writes_schema_files);
     }
 
     #[test]

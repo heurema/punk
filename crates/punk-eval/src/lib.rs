@@ -36,8 +36,10 @@ use punk_proof::{
     ProofArtifactRef, ProofBoundaryNote, ProofContractRef, ProofCreatedAt, ProofEvalRef,
     ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef, ProofRunReceiptRef, Proofpack,
     ProofpackId, ProofpackWriterAttemptedAt, ProofpackWriterCanonicalArtifactStatus,
-    ProofpackWriterOperationEvidence, ProofpackWriterOperationId, ProofpackWriterOperationKind,
-    ProofpackWriterOperationOutcome, ProofpackWriterSideEffectStatus, ProofpackWriterTargetRef,
+    ProofpackWriterMissingPrecondition, ProofpackWriterOperationEvidence,
+    ProofpackWriterOperationId, ProofpackWriterOperationKind, ProofpackWriterOperationOutcome,
+    ProofpackWriterPlannedSideEffect, ProofpackWriterPreflightPlan,
+    ProofpackWriterSideEffectStatus, ProofpackWriterTargetRef,
 };
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -371,6 +373,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free(),
         eval_proofpack_manifest_digest_matches_exact_renderer_bytes(),
         eval_proofpack_writer_operation_evidence_model_is_side_effect_free(),
+        eval_proofpack_writer_preflight_plan_model_is_side_effect_free(),
         eval_artifact_hash_policy_accepts_canonical_digest(),
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
@@ -390,10 +393,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -415,6 +418,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
             "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts",
             "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims",
+            "proofpack writer preflight plan smoke case models writer-ready plans without attempting side effects",
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
@@ -1458,6 +1462,105 @@ fn eval_proofpack_writer_operation_evidence_model_is_side_effect_free() -> Smoke
     }
 }
 
+fn eval_proofpack_writer_preflight_plan_model_is_side_effect_free() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let plan = ProofpackWriterPreflightPlan::new(
+        &proofpack,
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        vec![
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+            ProofpackWriterPlannedSideEffect::IndexUpdate,
+        ],
+        vec![ProofBoundaryNote::new(
+            "Preflight plan is evidence-only and does not attempt writes.",
+        )
+        .expect("boundary note should be valid")],
+    );
+    let evidence = plan
+        .to_operation_evidence(
+            ProofpackWriterOperationId::new("writer_preflight_smoke_001")
+                .expect("operation id should be valid"),
+            ProofpackWriterAttemptedAt::new("2026-04-26T14:40:00Z")
+                .expect("attempted_at should be valid"),
+        )
+        .expect("planned-only operation evidence should be derivable");
+    let boundary = plan.boundary();
+
+    let partial_proofpack = sample_proofpack_with_partial_integrity("decision_eval_001");
+    let missing_plan = ProofpackWriterPreflightPlan::new(
+        &partial_proofpack,
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_002.json")
+            .expect("target ref should be valid"),
+        vec![],
+        vec![],
+    );
+    let missing_preconditions = missing_plan.missing_preconditions();
+    let missing_required_digests = missing_preconditions
+        .contains(&ProofpackWriterMissingPrecondition::MissingRequiredArtifactDigests);
+    let missing_planned_side_effects = missing_preconditions
+        .contains(&ProofpackWriterMissingPrecondition::MissingPlannedSideEffects);
+    let missing_boundary_notes =
+        missing_preconditions.contains(&ProofpackWriterMissingPrecondition::MissingBoundaryNotes);
+
+    let ready_plan_ok = plan.is_writer_ready()
+        && plan.status().as_str() == "ready"
+        && plan.schema_version() == "punk.proofpack.writer_preflight_plan.v0.1"
+        && plan.target_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && plan.manifest_self_digest() == &compute_proofpack_manifest_digest(&proofpack)
+        && plan.plans_side_effect(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite)
+        && plan.plans_side_effect(ProofpackWriterPlannedSideEffect::IndexUpdate)
+        && !plan.plans_side_effect(ProofpackWriterPlannedSideEffect::LatestPointerUpdate)
+        && plan.missing_preconditions().is_empty();
+    let evidence_ok = evidence.outcome() == ProofpackWriterOperationOutcome::PlannedOnly
+        && evidence.canonical_artifact_status()
+            == ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        && !evidence.canonical_artifact_available()
+        && evidence.index_status() == ProofpackWriterSideEffectStatus::NotAttempted
+        && evidence.latest_pointer_status() == ProofpackWriterSideEffectStatus::NotSelected
+        && !evidence.creates_acceptance_claim();
+    let missing_plan_ok = !missing_plan.is_writer_ready()
+        && missing_plan.operation_outcome() == ProofpackWriterOperationOutcome::PreflightFailed
+        && missing_required_digests
+        && missing_planned_side_effects
+        && missing_boundary_notes;
+    let boundary_ok = boundary.models_writer_preflight_plan
+        && boundary.computes_manifest_self_digest
+        && boundary.evidence_only
+        && boundary.separates_preflight_from_artifact_availability
+        && !boundary.planned_side_effects_are_attempts
+        && !boundary.writes_proofpack
+        && !boundary.writes_writer_operation_evidence
+        && !boundary.writes_final_decision
+        && !boundary.creates_acceptance_claim
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.writes_schema_files;
+
+    if ready_plan_ok && evidence_ok && missing_plan_ok && boundary_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_writer_preflight_plan_model_is_side_effect_free",
+            "proofpack writer preflight plan model is side-effect-free",
+            "writer preflight planning exposes target, manifest self-digest, planned side effects, and missing preconditions without writing proofpacks, operation evidence, schemas, CLI output, or acceptance claims",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_writer_preflight_plan_model_is_side_effect_free",
+            "proofpack writer preflight plan model is side-effect-free",
+            format!(
+                "writer preflight plan drifted; ready_plan={ready_plan_ok} evidence={evidence_ok} missing_plan={missing_plan_ok} boundary={boundary_ok} writes={} writes_evidence={} storage={} cli={} schemas={} acceptance={} side_effects_attempted={}",
+                boundary.writes_proofpack,
+                boundary.writes_writer_operation_evidence,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.writes_schema_files,
+                boundary.creates_acceptance_claim,
+                boundary.planned_side_effects_are_attempts,
+            ),
+        )
+    }
+}
+
 fn eval_artifact_hash_policy_accepts_canonical_digest() -> SmokeEvalCaseResult {
     let digest_value = valid_artifact_digest();
     let digest = ArtifactDigest::new(digest_value.clone());
@@ -1962,7 +2065,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 31);
+        assert_eq!(report.cases().len(), 32);
     }
 
     #[test]
@@ -1987,7 +2090,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -2011,6 +2114,9 @@ mod tests {
             .contains("  - id: eval_proofpack_manifest_digest_matches_exact_renderer_bytes"));
         assert!(rendered.contains(
             "  - id: eval_proofpack_writer_operation_evidence_model_is_side_effect_free"
+        ));
+        assert!(rendered.contains(
+            "  - id: eval_proofpack_writer_preflight_plan_model_is_side_effect_free"
         ));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
@@ -2040,6 +2146,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims"
+        ));
+        assert!(rendered.contains(
+            "proofpack writer preflight plan smoke case models writer-ready plans without attempting side effects"
         ));
         assert!(rendered.contains(
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes"
@@ -2110,6 +2219,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_writer_operation_evidence_model_is_side_effect_free\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_writer_preflight_plan_model_is_side_effect_free\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));
