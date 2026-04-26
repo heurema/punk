@@ -1,7 +1,7 @@
 ---
 id: goal_define_proofpack_manifest_digest_boundary_v0_1
 title: "Define proofpack manifest digest boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -40,7 +40,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-crate-status-exact-byte-hash-computation.md"
   - "work/reports/2026-04-26-twenty-fifth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -93,3 +94,14 @@ Do not add file IO hashing.
 Do not write gate decisions.
 Do not create acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed proofpack manifest digest boundary v0.1.
+
+Defined the future helper boundary as deterministic in-memory proofpack manifest string to exact UTF-8 bytes to canonical `sha256:<64 lowercase hex>` digest metadata.
+
+The boundary keeps manifest self-digest separate from referenced artifact digests, file IO hashing, proofpack writer behavior, runtime storage, schema files, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init`.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
