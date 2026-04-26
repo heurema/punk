@@ -60,6 +60,9 @@ version = "0.1.0"
 [[package]]
 name = "punk-proof"
 version = "0.1.0"
+dependencies = [
+ "punk-core",
+]
 
 [[package]]
 name = "punk-rules"

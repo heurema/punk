@@ -7,6 +7,8 @@
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROOFPACK_SCHEMA_VERSION: &str = "punk.proofpack.v0.1";
 
+use punk_core::{validate_artifact_digest, ArtifactHashPolicyError};
+
 fn non_empty(value: impl Into<String>, error: ProofpackError) -> Result<String, ProofpackError> {
     let value = value.into().trim().to_string();
 
@@ -158,7 +160,9 @@ pub struct ProofArtifactHash(String);
 
 impl ProofArtifactHash {
     pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
-        Ok(Self(non_empty(value, ProofpackError::EmptyArtifactHash)?))
+        let value = non_empty(value, ProofpackError::EmptyArtifactHash)?;
+        validate_artifact_digest(&value).map_err(ProofpackError::InvalidArtifactHash)?;
+        Ok(Self(value))
     }
 
     pub fn as_str(&self) -> &str {
@@ -518,6 +522,7 @@ pub enum ProofpackError {
     EmptyBoundaryNote,
     EmptyArtifactRef,
     EmptyArtifactHash,
+    InvalidArtifactHash(ArtifactHashPolicyError),
     MissingContractRefs,
     MissingRunReceiptRefs,
     MissingBoundaryNotes,
@@ -574,6 +579,21 @@ pub fn positive_acceptance_preconditions_met(inputs: PositiveAcceptanceInputs) -
 mod tests {
     use super::*;
 
+    const PROOF_HASH_GATE_DECISION: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000001";
+    const PROOF_HASH_CONTRACT: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000002";
+    const PROOF_HASH_RUN_RECEIPT: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000003";
+    const PROOF_HASH_EVAL: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000004";
+    const PROOF_HASH_EVENT: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000005";
+    const PROOF_HASH_OUTPUT: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000006";
+    const PROOF_HASH_OTHER: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000007";
+
     fn sample_proofpack_without_digests() -> Proofpack {
         Proofpack::new(
             ProofpackId::new("proofpack_local_001").expect("proofpack id should be valid"),
@@ -607,19 +627,18 @@ mod tests {
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::GateDecision,
                 ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:decisionhash")
+                ProofArtifactHash::new(PROOF_HASH_GATE_DECISION)
                     .expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::Contract,
                 ProofArtifactRef::new("contract_local_001").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:contracthash")
-                    .expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_CONTRACT).expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::RunReceipt,
                 ProofArtifactRef::new("receipt_local_001").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:receipthash")
+                ProofArtifactHash::new(PROOF_HASH_RUN_RECEIPT)
                     .expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
@@ -628,18 +647,18 @@ mod tests {
                     "work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md",
                 )
                 .expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:evalhash").expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_EVAL).expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::Event,
                 ProofArtifactRef::new("evt_0000000000000001")
                     .expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:eventhash").expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_EVENT).expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::OutputArtifact,
                 ProofArtifactRef::new("target/debug/punk").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:outputhash").expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_OUTPUT).expect("artifact hash should be valid"),
             ))
     }
 
@@ -673,7 +692,7 @@ mod tests {
         );
         assert_eq!(
             proofpack.artifact_digests()[0].artifact_hash().as_str(),
-            "sha256:decisionhash"
+            PROOF_HASH_GATE_DECISION
         );
         assert_eq!(proofpack.created_at().as_str(), "2026-04-25T20:00:00Z");
         assert_eq!(proofpack.boundary_notes().len(), 1);
@@ -687,14 +706,13 @@ mod tests {
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::GateDecision,
                 ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:decisionhash")
+                ProofArtifactHash::new(PROOF_HASH_GATE_DECISION)
                     .expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::Contract,
                 ProofArtifactRef::new("contract_local_001").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:contracthash")
-                    .expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_CONTRACT).expect("artifact hash should be valid"),
             ));
 
         let report = proofpack.link_hash_integrity_report();
@@ -756,17 +774,18 @@ mod tests {
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::GateDecision,
             ProofArtifactRef::new("decision_minimal_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:decisionhash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_GATE_DECISION)
+                .expect("artifact hash should be valid"),
         ))
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::Contract,
             ProofArtifactRef::new("contract_minimal_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:contracthash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_CONTRACT).expect("artifact hash should be valid"),
         ))
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::RunReceipt,
             ProofArtifactRef::new("receipt_minimal_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:receipthash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_RUN_RECEIPT).expect("artifact hash should be valid"),
         ));
 
         let report = proofpack.link_hash_integrity_report();
@@ -782,14 +801,13 @@ mod tests {
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::Contract,
                 ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
-                ProofArtifactHash::new("not-normalized-but-non-empty")
-                    .expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_CONTRACT).expect("artifact hash should be valid"),
             ))
             .with_artifact_digest(ProofArtifactDigest::new(
                 ProofArtifactKind::GateDecision,
                 ProofArtifactRef::new("decision_local_other")
                     .expect("artifact ref should be valid"),
-                ProofArtifactHash::new("sha256:other").expect("artifact hash should be valid"),
+                ProofArtifactHash::new(PROOF_HASH_OTHER).expect("artifact hash should be valid"),
             ));
 
         let required_decision =
@@ -968,6 +986,54 @@ mod tests {
         assert_eq!(
             ProofArtifactHash::new(" "),
             Err(ProofpackError::EmptyArtifactHash)
+        );
+    }
+
+    #[test]
+    fn artifact_hashes_validate_artifact_hash_policy_shape() {
+        let lowercase_bare = "0123456789abcdef".repeat(4);
+        let uppercase_digest = format!("sha256:{}", "ABCDEF0123456789".repeat(4));
+
+        assert_eq!(
+            ProofArtifactHash::new(PROOF_HASH_GATE_DECISION)
+                .expect("canonical digest should be valid")
+                .as_str(),
+            PROOF_HASH_GATE_DECISION
+        );
+        assert_eq!(
+            ProofArtifactHash::new("unknown"),
+            Err(ProofpackError::InvalidArtifactHash(
+                ArtifactHashPolicyError::PlaceholderDigest
+            ))
+        );
+        assert_eq!(
+            ProofArtifactHash::new(lowercase_bare),
+            Err(ProofpackError::InvalidArtifactHash(
+                ArtifactHashPolicyError::BareDigest
+            ))
+        );
+        assert_eq!(
+            ProofArtifactHash::new(uppercase_digest),
+            Err(ProofpackError::InvalidArtifactHash(
+                ArtifactHashPolicyError::InvalidDigestHex
+            ))
+        );
+        assert_eq!(
+            ProofArtifactHash::new("sha256:abc"),
+            Err(ProofpackError::InvalidArtifactHash(
+                ArtifactHashPolicyError::InvalidDigestLength {
+                    expected: 64,
+                    actual: 3
+                }
+            ))
+        );
+        assert_eq!(
+            ProofArtifactHash::new(
+                "sha512:0000000000000000000000000000000000000000000000000000000000000001"
+            ),
+            Err(ProofpackError::InvalidArtifactHash(
+                ArtifactHashPolicyError::UnsupportedDigestAlgorithm
+            ))
         );
     }
 }

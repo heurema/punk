@@ -32,6 +32,18 @@ use punk_proof::{
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const SMOKE_SUITE_ID: &str = "smoke.v0";
 pub const SMOKE_REPORT_SCHEMA_VERSION: &str = "smoke-eval-report.v0.1";
+const PROOF_HASH_GATE_DECISION: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000001";
+const PROOF_HASH_CONTRACT: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000002";
+const PROOF_HASH_RUN_RECEIPT: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000003";
+const PROOF_HASH_EVAL: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000004";
+const PROOF_HASH_EVENT: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000005";
+const PROOF_HASH_OUTPUT: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000006";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SmokeEvalStatus {
@@ -972,22 +984,22 @@ fn sample_proofpack(decision_ref: &str) -> Proofpack {
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::RunReceipt,
             ProofArtifactRef::new("receipt_eval_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:receipthash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_RUN_RECEIPT).expect("artifact hash should be valid"),
         ))
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::Eval,
             ProofArtifactRef::new("eval_smoke_gate_proof").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:evalhash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_EVAL).expect("artifact hash should be valid"),
         ))
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::Event,
             ProofArtifactRef::new("evt_eval_001").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:eventhash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_EVENT).expect("artifact hash should be valid"),
         ))
         .with_artifact_digest(ProofArtifactDigest::new(
             ProofArtifactKind::OutputArtifact,
             ProofArtifactRef::new("target/debug/punk").expect("artifact ref should be valid"),
-            ProofArtifactHash::new("sha256:outputhash").expect("artifact hash should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_OUTPUT).expect("artifact hash should be valid"),
         ))
 }
 
@@ -1013,12 +1025,12 @@ fn sample_proofpack_with_partial_integrity(decision_ref: &str) -> Proofpack {
     .with_artifact_digest(ProofArtifactDigest::new(
         ProofArtifactKind::GateDecision,
         ProofArtifactRef::new(decision_ref).expect("artifact ref should be valid"),
-        ProofArtifactHash::new("sha256:decisionhash").expect("artifact hash should be valid"),
+        ProofArtifactHash::new(PROOF_HASH_GATE_DECISION).expect("artifact hash should be valid"),
     ))
     .with_artifact_digest(ProofArtifactDigest::new(
         ProofArtifactKind::Contract,
         ProofArtifactRef::new("contract_eval_001").expect("artifact ref should be valid"),
-        ProofArtifactHash::new("sha256:contracthash").expect("artifact hash should be valid"),
+        ProofArtifactHash::new(PROOF_HASH_CONTRACT).expect("artifact hash should be valid"),
     ))
 }
 

@@ -1,7 +1,7 @@
 ---
 id: goal_integrate_artifact_hash_policy_helpers_into_punk_proof_v0_1
 title: "Integrate artifact hash policy helpers into punk-proof v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -37,7 +37,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-artifact-hash-policy-smoke-eval-coverage.md"
   - "work/reports/2026-04-26-nineteenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-punk-proof-artifact-hash-policy-helper-integration.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -80,3 +81,11 @@ Do not write `.punk/` runtime state.
 Do not add CLI behavior.
 Do not add schema files.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Integrated artifact hash policy helper validation into `punk-proof`.
+
+`ProofArtifactHash::new` now uses the shared `punk-core` artifact hash policy helpers for non-empty digest validation. Proof and eval fixtures now use deterministic canonical-shaped static digest strings instead of placeholder strings.
+
+Proofpack link/hash integrity remains structural only: no hash computation, byte normalization, proofpack writer, gate decision writer, acceptance claim writer, runtime storage, schema file, CLI behavior, adapter, automation, or `punk init` was added.
