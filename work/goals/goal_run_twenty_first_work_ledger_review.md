@@ -1,7 +1,7 @@
 ---
 id: goal_run_twenty_first_work_ledger_review
 title: "Run the twenty-first advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-policy.v0.1.md"
   - "work/reports/2026-04-26-crate-status-artifact-hash-helper-status.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-twenty-first-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -54,7 +55,7 @@ research_gate:
 doc_impact:
   classification: none
   required_updates: []
-  rationale: "Advisory review goal only; execution will produce a work report and selected-next update."
+  rationale: "Advisory review goal only; execution produced a work report and selected-next update."
 ---
 
 ## Context
@@ -66,3 +67,18 @@ Before selecting proofpack writer behavior, runtime storage, gate/eval/proof orc
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the twenty-first advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_proofpack_manifest_renderer_v0_1.md` as the next bounded goal.
+
+Rationale:
+
+- proofpack data shape exists;
+- artifact digest shape validation is now shared and covered;
+- canonical docs reflect the current helper status;
+- deterministic manifest rendering is narrower than proofpack writer, runtime storage, schema files, CLI behavior, active hash computation, byte normalization, or gate/eval/proof orchestration.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
