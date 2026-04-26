@@ -1,9 +1,11 @@
 //! Minimal side-effect-free active-core helpers for Punk.
 //!
-//! This crate exposes deterministic validation helpers only. It does not
-//! compute artifact hashes, normalize artifact bytes, write schemas, write
+//! This crate exposes deterministic validation and exact-byte hashing helpers.
+//! It does not normalize artifact bytes, read files, write schemas, write
 //! proofpacks, write gate decisions, expose CLI behavior, or touch `.punk/`
 //! runtime state.
+
+use sha2::{Digest as ShaDigest, Sha256};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const ARTIFACT_HASH_POLICY_VERSION: &str = "artifact-hash-policy.v0.1";
@@ -69,13 +71,24 @@ pub const ARTIFACT_HASH_POLICY_CAPABILITIES: ArtifactHashPolicyCapabilities =
     ArtifactHashPolicyCapabilities {
         validates_digest_format: true,
         validates_repo_relative_refs: true,
-        computes_hashes: false,
+        computes_hashes: true,
         normalizes_artifact_bytes: false,
         writes_runtime_state: false,
     };
 
 pub fn is_canonical_artifact_digest(value: &str) -> bool {
     validate_artifact_digest(value).is_ok()
+}
+
+pub fn compute_artifact_digest(bytes: &[u8]) -> ArtifactDigest {
+    let digest = Sha256::digest(bytes);
+    let mut value = String::with_capacity(
+        CANONICAL_SHA256_DIGEST_PREFIX.len() + CANONICAL_SHA256_DIGEST_HEX_LEN,
+    );
+    value.push_str(CANONICAL_SHA256_DIGEST_PREFIX);
+    push_lower_hex_bytes(&mut value, digest.iter());
+
+    ArtifactDigest::new(value).expect("computed SHA-256 digest should match artifact hash policy")
 }
 
 pub fn validate_artifact_digest(value: &str) -> Result<(), ArtifactHashPolicyError> {
@@ -151,6 +164,15 @@ pub fn validate_repo_relative_artifact_ref(value: &str) -> Result<(), ArtifactHa
     }
 
     Ok(())
+}
+
+fn push_lower_hex_bytes<'a>(output: &mut String, bytes: impl IntoIterator<Item = &'a u8>) {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
+    for byte in bytes {
+        output.push(HEX[(byte >> 4) as usize] as char);
+        output.push(HEX[(byte & 0x0f) as usize] as char);
+    }
 }
 
 fn has_url_scheme(value: &str) -> bool {
@@ -317,10 +339,43 @@ mod tests {
     }
 
     #[test]
-    fn helper_capabilities_do_not_claim_runtime_or_hashing_behavior() {
+    fn computed_empty_bytes_digest_matches_known_vector() {
+        let digest = compute_artifact_digest(b"");
+
+        assert_eq!(
+            digest.as_str(),
+            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        assert!(is_canonical_artifact_digest(digest.as_str()));
+    }
+
+    #[test]
+    fn computed_known_bytes_digest_matches_known_vector() {
+        let digest = compute_artifact_digest(b"abc");
+
+        assert_eq!(
+            digest.as_str(),
+            "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        assert_eq!(validate_artifact_digest(digest.as_str()), Ok(()));
+    }
+
+    #[test]
+    fn computed_digest_preserves_exact_bytes_without_normalization() {
+        let unix_line = compute_artifact_digest(b"line\n");
+        let windows_line = compute_artifact_digest(b"line\r\n");
+        let trailing_space = compute_artifact_digest(b"line\n ");
+
+        assert_ne!(unix_line, windows_line);
+        assert_ne!(unix_line, trailing_space);
+        assert_ne!(windows_line, trailing_space);
+    }
+
+    #[test]
+    fn helper_capabilities_claim_hashing_without_runtime_or_normalization() {
         assert!(ARTIFACT_HASH_POLICY_CAPABILITIES.validates_digest_format);
         assert!(ARTIFACT_HASH_POLICY_CAPABILITIES.validates_repo_relative_refs);
-        assert!(!ARTIFACT_HASH_POLICY_CAPABILITIES.computes_hashes);
+        assert!(ARTIFACT_HASH_POLICY_CAPABILITIES.computes_hashes);
         assert!(!ARTIFACT_HASH_POLICY_CAPABILITIES.normalizes_artifact_bytes);
         assert!(!ARTIFACT_HASH_POLICY_CAPABILITIES.writes_runtime_state);
     }

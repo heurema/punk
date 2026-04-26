@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Add artifact hash computation helper v0.1"
-selected_next: "work/goals/goal_add_artifact_hash_computation_helper_v0_1.md"
+current_focus: "Run twenty-fourth advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_twenty_fourth_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,16 +17,16 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: add artifact hash computation helper v0.1.
-- Selected next: `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`
-- Why this is next: artifact hash policy, validation helpers, proofpack manifest rendering, and exact-byte helper boundary are in place; the next smallest active-core implementation is a side-effect-free `punk-core` helper that computes canonical SHA-256 digests from caller-provided bytes, with smoke eval coverage and no file IO/runtime/writer/CLI behavior.
+- Current focus: run the twenty-fourth advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_twenty_fourth_work_ledger_review.md`
+- Why this is next: `punk-core` can now compute exact-byte canonical SHA-256 artifact digests from caller-provided bytes; run a short advisory review before selecting CRATE-STATUS reconciliation, proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - twenty-third advisory Work Ledger Review is completed and recorded.
-  - next selected work is a bounded helper implementation: exact caller-provided bytes to canonical `sha256:<64 lowercase hex>` digest metadata.
-  - if a SHA-256 dependency is added, it is narrow, owned by `punk-core`, and does not leak dependency types into public Punk APIs.
-  - no file IO hashing, path/ref mapping, proofpack writer, runtime storage, schema file, CLI behavior, gate decision writer, acceptance claim, adapter, automation, provider/model runner, or `punk init` is selected.
+  - `punk-core` exposes side-effect-free exact-byte artifact hash computation.
+  - computed digests are canonical `sha256:<64 lowercase hex>` metadata and pass existing digest validation.
+  - smoke eval covers known hash vectors and exact-byte preservation as local assessment only.
+  - no file IO hashing, path/ref mapping, proofpack writer, runtime storage, schema file, CLI behavior, gate decision writer, acceptance claim, adapter, automation, provider/model runner, or `punk init` was added.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -34,13 +34,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md` | `ready` | Exact-byte hash computation boundary is defined; implement the narrow `punk-core` helper and smoke eval coverage before writer/runtime/CLI work. | — |
+| `work/goals/goal_run_twenty_fourth_work_ledger_review.md` | `ready` | Exact-byte hash computation is implemented; review before selecting docs-currentness reconciliation, writer prep, file IO boundary, or another guardrail. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, active hash computation implementation, proofpack writer hash-policy integration, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, and artifact hash computation helper boundary are in place; still select and scope implementation/writer/orchestration/runtime work through separate goals after review. |
+| Proofpack writer, gate/eval orchestration, proofpack writer hash-policy integration, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, and exact-byte hash computation are in place; still reconcile docs-currentness and select writer/orchestration/runtime work through separate goals after review. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -50,6 +50,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Added artifact hash computation helper v0.1 | `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`, `work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md`, `crates/punk-core/src/lib.rs` |
 | 2026-04-26 | Ran the twenty-third advisory Work Ledger Review | `work/goals/goal_run_twenty_third_work_ledger_review.md`, `work/reports/2026-04-26-twenty-third-work-ledger-review.md`, `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md` |
 | 2026-04-26 | Defined artifact hash computation helper boundary v0.1 | `work/goals/goal_define_artifact_hash_computation_helper_boundary_v0_1.md`, `evals/specs/artifact-hash-computation-helper.v0.1.md`, `work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md` |
 | 2026-04-26 | Ran the twenty-second advisory Work Ledger Review | `work/goals/goal_run_twenty_second_work_ledger_review.md`, `work/reports/2026-04-26-twenty-second-work-ledger-review.md`, `work/goals/goal_define_artifact_hash_computation_helper_boundary_v0_1.md` |
@@ -117,11 +118,13 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_third_work_ledger_review.md work/goals/goal_add_artifact_hash_computation_helper_v0_1.md work/reports/2026-04-26-twenty-third-work-ledger-review.md --report work/reports/2026-04-26-twenty-third-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `cargo fmt --all && cargo test -p punk-core && cargo test -p punk-eval && cargo run -p punk-cli -- eval run smoke && cargo run -p punk-cli -- eval run smoke --format json && git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files Cargo.lock crates/punk-core/Cargo.toml crates/punk-core/src/lib.rs crates/punk-eval/src/lib.rs work/STATUS.md work/goals/goal_add_artifact_hash_computation_helper_v0_1.md work/goals/goal_run_twenty_fourth_work_ledger_review.md work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md --report work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`
-  - twenty-third advisory Work Ledger Review completed without runtime/code/schema/CLI/`.punk` changes
-  - docs-governance had 0 failures and 0 warnings for this review diff
+  - `selected_next` is now `work/goals/goal_run_twenty_fourth_work_ledger_review.md`
+  - artifact hash computation helper completed without file IO/runtime/schema/CLI/`.punk` changes
+  - docs-governance had 0 failures and 0 warnings for this implementation diff
+  - `sha2` was added narrowly to `punk-core` only
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - file IO hashing, proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
+  - `docs/product/CRATE-STATUS.md` may need a separate currentness reconciliation after review

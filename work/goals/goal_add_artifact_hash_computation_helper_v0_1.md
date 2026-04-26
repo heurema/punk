@@ -1,7 +1,7 @@
 ---
 id: goal_add_artifact_hash_computation_helper_v0_1
 title: "Add artifact hash computation helper v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,11 +9,12 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
+    - "Cargo.lock"
     - "crates/punk-core/Cargo.toml"
     - "crates/punk-core/src/lib.rs"
     - "crates/punk-eval/Cargo.toml"
@@ -41,7 +42,8 @@ knowledge_refs:
   - "docs/product/CRATE-STATUS.md"
   - "work/reports/2026-04-26-twenty-third-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -90,3 +92,11 @@ Do not implement proofpack writer behavior.
 Do not write gate decisions.
 Do not create acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Completed artifact hash computation helper v0.1.
+
+`punk-core` now exposes `compute_artifact_digest(bytes: &[u8]) -> ArtifactDigest`, computing canonical SHA-256 digest metadata from exact caller-provided bytes.
+
+The implementation added a narrow `sha2` dependency to `punk-core`, updated capability flags to `computes_hashes = true`, and added smoke eval coverage without file IO, byte normalization, runtime storage, schema, CLI, proofpack writer, gate decision, adapter, automation, provider/model runner, or `punk init` behavior.

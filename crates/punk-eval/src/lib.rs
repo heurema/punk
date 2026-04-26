@@ -11,9 +11,10 @@ use punk_contract::{
     ContractStatus,
 };
 use punk_core::{
-    is_canonical_artifact_digest, is_valid_repo_relative_artifact_ref, validate_artifact_digest,
-    validate_repo_relative_artifact_ref, ArtifactDigest, ArtifactHashPolicyError,
-    RepoRelativeArtifactRef, ARTIFACT_HASH_POLICY_CAPABILITIES, ARTIFACT_HASH_POLICY_VERSION,
+    compute_artifact_digest, is_canonical_artifact_digest, is_valid_repo_relative_artifact_ref,
+    validate_artifact_digest, validate_repo_relative_artifact_ref, ArtifactDigest,
+    ArtifactHashPolicyError, RepoRelativeArtifactRef, ARTIFACT_HASH_POLICY_CAPABILITIES,
+    ARTIFACT_HASH_POLICY_VERSION,
 };
 use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
 use punk_events::{schema_fixture, MemoryEventLog};
@@ -360,6 +361,8 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
         eval_artifact_hash_policy_rejects_invalid_ref(),
+        eval_artifact_hash_computation_matches_known_vectors(),
+        eval_artifact_hash_computation_preserves_exact_bytes(),
         eval_artifact_hash_policy_helper_boundary_flags(),
     ];
     let smoke_result = if cases
@@ -371,10 +374,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, and artifact hash policy helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, artifact hash policy, and exact-byte hash computation helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, and artifact hash policy helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, artifact hash policy, and exact-byte hash computation helper kernels"
             .to_owned()
     };
 
@@ -394,14 +397,14 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "run receipt evidence remains pre-gate and does not imply final acceptance",
             "gate/proof smoke cases remain local assessment and do not claim acceptance",
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
-            "artifact hash policy smoke cases validate helper shape only and do not compute hashes",
+            "artifact hash smoke cases validate helper shape and exact-byte computation without file IO or runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
             "baseline, waiver, and stored eval reports are not active",
             "schema validation and export adapters are not active",
             "proofpack writer and runtime proof storage are not active",
-            "active artifact hash computation and byte normalization are not active",
+            "file IO hashing, byte normalization, and hash/reference verification policy are not active",
         ],
     }
 }
@@ -1435,24 +1438,92 @@ fn eval_artifact_hash_policy_rejects_invalid_ref() -> SmokeEvalCaseResult {
     }
 }
 
+fn eval_artifact_hash_computation_matches_known_vectors() -> SmokeEvalCaseResult {
+    let empty = compute_artifact_digest(b"");
+    let abc = compute_artifact_digest(b"abc");
+
+    let empty_matches =
+        empty.as_str() == "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    let abc_matches =
+        abc.as_str() == "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+    let both_canonical = validate_artifact_digest(empty.as_str()).is_ok()
+        && validate_artifact_digest(abc.as_str()).is_ok()
+        && is_canonical_artifact_digest(empty.as_str())
+        && is_canonical_artifact_digest(abc.as_str());
+
+    if empty_matches && abc_matches && both_canonical {
+        SmokeEvalCaseResult::pass(
+            "eval_artifact_hash_computation_matches_known_vectors",
+            "exact-byte artifact hash computation matches known vectors",
+            "empty bytes and abc compute canonical sha256-prefixed lowercase digest metadata",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_computation_matches_known_vectors",
+            "exact-byte artifact hash computation matches known vectors",
+            format!(
+                "hash computation drifted; empty={} empty_ok={} abc={} abc_ok={} canonical={both_canonical}",
+                empty.as_str(),
+                empty_matches,
+                abc.as_str(),
+                abc_matches
+            ),
+        )
+    }
+}
+
+fn eval_artifact_hash_computation_preserves_exact_bytes() -> SmokeEvalCaseResult {
+    let unix_line = compute_artifact_digest(b"line\n");
+    let windows_line = compute_artifact_digest(b"line\r\n");
+    let trailing_space = compute_artifact_digest(b"line\n ");
+    let capabilities = ARTIFACT_HASH_POLICY_CAPABILITIES;
+
+    let distinct =
+        unix_line != windows_line && unix_line != trailing_space && windows_line != trailing_space;
+
+    if distinct
+        && capabilities.computes_hashes
+        && !capabilities.normalizes_artifact_bytes
+        && !capabilities.writes_runtime_state
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_artifact_hash_computation_preserves_exact_bytes",
+            "artifact hash computation preserves exact bytes",
+            "different newline and whitespace bytes produce different digests without normalization or runtime writes",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_computation_preserves_exact_bytes",
+            "artifact hash computation preserves exact bytes",
+            format!(
+                "exact-byte hash boundary drifted; distinct={} computes={} normalizes={} writes={}",
+                distinct,
+                capabilities.computes_hashes,
+                capabilities.normalizes_artifact_bytes,
+                capabilities.writes_runtime_state
+            ),
+        )
+    }
+}
+
 fn eval_artifact_hash_policy_helper_boundary_flags() -> SmokeEvalCaseResult {
     let capabilities = ARTIFACT_HASH_POLICY_CAPABILITIES;
 
     if capabilities.validates_digest_format
         && capabilities.validates_repo_relative_refs
-        && !capabilities.computes_hashes
+        && capabilities.computes_hashes
         && !capabilities.normalizes_artifact_bytes
         && !capabilities.writes_runtime_state
     {
         SmokeEvalCaseResult::pass(
             "eval_artifact_hash_policy_helper_boundary_flags",
-            "artifact hash policy helpers stay validation-only",
-            "helper capabilities still validate digest/ref shape without hash computation, byte normalization, or runtime writes",
+            "artifact hash helpers stay side-effect-free",
+            "helper capabilities validate digest/ref shape and compute exact-byte hashes without byte normalization or runtime writes",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_artifact_hash_policy_helper_boundary_flags",
-            "artifact hash policy helpers stay validation-only",
+            "artifact hash helpers stay side-effect-free",
             format!(
                 "artifact hash helper boundary drifted; digest={} refs={} computes={} normalizes={} writes={}",
                 capabilities.validates_digest_format,
@@ -1489,7 +1560,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 25);
+        assert_eq!(report.cases().len(), 27);
     }
 
     #[test]
@@ -1514,7 +1585,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, and artifact hash policy helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, artifact hash policy, and exact-byte hash computation helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -1538,6 +1609,8 @@ mod tests {
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_repo_relative_ref"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_ref"));
+        assert!(rendered.contains("  - id: eval_artifact_hash_computation_matches_known_vectors"));
+        assert!(rendered.contains("  - id: eval_artifact_hash_computation_preserves_exact_bytes"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_helper_boundary_flags"));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
@@ -1551,7 +1624,7 @@ mod tests {
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks"
         ));
         assert!(rendered.contains(
-            "artifact hash policy smoke cases validate helper shape only and do not compute hashes"
+            "artifact hash smoke cases validate helper shape and exact-byte computation without file IO or runtime writes"
         ));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
@@ -1559,7 +1632,7 @@ mod tests {
         assert!(rendered.contains("baseline, waiver, and stored eval reports are not active"));
         assert!(rendered.contains("proofpack writer and runtime proof storage are not active"));
         assert!(rendered
-            .contains("active artifact hash computation and byte normalization are not active"));
+            .contains("file IO hashing, byte normalization, and hash/reference verification policy are not active"));
     }
 
     #[test]
