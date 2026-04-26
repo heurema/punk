@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_crate_status_referenced_artifact_verification_helper
 title: "Reconcile CRATE-STATUS referenced artifact verification helper status"
-status: ready
+status: done
 owner: "vitaly"
 module: "docs"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -38,7 +38,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-referenced-artifact-verification-helper-v0-1.md"
   - "work/reports/2026-04-26-thirty-third-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-crate-status-referenced-artifact-verification-helper.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -83,3 +84,12 @@ Keep the wording narrow:
 - the helper compares a canonical expected digest with the observed digest for one explicit regular file under one explicit repo root and validated repo-relative ref;
 - the helper returns evidence-only outcomes;
 - proofpack writer integration, proofpack referenced-ref verification integration, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init` remain deferred.
+
+
+## Outcome
+
+Completed CRATE-STATUS referenced artifact verification helper status reconciliation.
+
+`docs/product/CRATE-STATUS.md` now reflects the narrow evidence-only referenced artifact verification helper and smoke eval coverage while keeping proofpack writer integration, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init` deferred.
+
+No Rust code, `.punk/` runtime state, schema files, CLI behavior, proofpack writer behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init` were added.
