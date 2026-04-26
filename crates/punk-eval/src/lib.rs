@@ -17,9 +17,11 @@ use punk_contract::{
 use punk_core::{
     compute_artifact_digest, compute_artifact_file_digest, is_canonical_artifact_digest,
     is_valid_repo_relative_artifact_ref, validate_artifact_digest,
-    validate_repo_relative_artifact_ref, ArtifactDigest, ArtifactHashPolicyError,
-    FileArtifactHashError, RepoRelativeArtifactRef, RepoRoot, ARTIFACT_HASH_POLICY_CAPABILITIES,
+    validate_repo_relative_artifact_ref, verify_referenced_artifact_digest, ArtifactDigest,
+    ArtifactHashPolicyError, FileArtifactHashError, ReferencedArtifactVerificationOutcome,
+    RepoRelativeArtifactRef, RepoRoot, ARTIFACT_HASH_POLICY_CAPABILITIES,
     ARTIFACT_HASH_POLICY_VERSION, FILE_ARTIFACT_HASHING_CAPABILITIES,
+    REFERENCED_ARTIFACT_VERIFICATION_CAPABILITIES,
 };
 use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
 use punk_events::{schema_fixture, MemoryEventLog};
@@ -373,6 +375,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_artifact_hash_computation_matches_known_vectors(),
         eval_artifact_hash_computation_preserves_exact_bytes(),
         eval_file_artifact_hashing_helper_hashes_explicit_regular_file(),
+        eval_referenced_artifact_verification_helper_compares_expected_digest(),
         eval_artifact_hash_policy_helper_boundary_flags(),
     ];
     let smoke_result = if cases
@@ -384,10 +387,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, and file IO artifact hashing helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, and file IO artifact hashing helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -408,14 +411,14 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "gate/proof smoke cases remain local assessment and do not claim acceptance",
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
             "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts",
-            "artifact hash smoke cases validate helper shape, exact-byte computation, and explicit file IO hashing without runtime writes",
+            "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
             "baseline, waiver, and stored eval reports are not active",
             "schema validation and export adapters are not active",
             "proofpack writer and runtime proof storage are not active",
-            "byte normalization and referenced-artifact byte verification policy are not active",
+            "byte normalization and proofpack writer integration for referenced artifact verification are not active",
         ],
     }
 }
@@ -1687,9 +1690,125 @@ fn eval_file_artifact_hashing_helper_hashes_explicit_regular_file() -> SmokeEval
     }
 }
 
+fn eval_referenced_artifact_verification_helper_compares_expected_digest() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let artifacts_dir = temp_path.join("artifacts");
+    let file_path = artifacts_dir.join("result.txt");
+    let dir_path = artifacts_dir.join("dir");
+
+    let setup_result = fs::create_dir_all(&dir_path)
+        .and_then(|_| fs::write(&file_path, b"line\n"))
+        .map(|_| ());
+
+    if let Err(error) = setup_result {
+        let _ = fs::remove_dir_all(&temp_path);
+        return SmokeEvalCaseResult::fail(
+            "eval_referenced_artifact_verification_helper_compares_expected_digest",
+            "referenced artifact verification helper compares expected and observed digests",
+            format!("temporary artifact setup failed with {error:?}"),
+        );
+    }
+
+    let repo_root = match RepoRoot::new(temp_path.clone()) {
+        Ok(repo_root) => repo_root,
+        Err(error) => {
+            let _ = fs::remove_dir_all(&temp_path);
+            return SmokeEvalCaseResult::fail(
+                "eval_referenced_artifact_verification_helper_compares_expected_digest",
+                "referenced artifact verification helper compares expected and observed digests",
+                format!("temporary repo root was rejected with {error:?}"),
+            );
+        }
+    };
+    let file_ref =
+        RepoRelativeArtifactRef::new("artifacts/result.txt").expect("file ref should be valid");
+    let missing_ref =
+        RepoRelativeArtifactRef::new("artifacts/missing.txt").expect("missing ref should be valid");
+    let dir_ref = RepoRelativeArtifactRef::new("artifacts/dir").expect("dir ref should be valid");
+
+    let expected = compute_artifact_digest(b"line\n");
+    let different = compute_artifact_digest(b"line\r\n");
+    let verified = verify_referenced_artifact_digest(&repo_root, &file_ref, &expected);
+    let mismatch = verify_referenced_artifact_digest(&repo_root, &file_ref, &different);
+    let missing = verify_referenced_artifact_digest(&repo_root, &missing_ref, &expected);
+    let directory = verify_referenced_artifact_digest(&repo_root, &dir_ref, &expected);
+    let invalid_ref_rejected = RepoRelativeArtifactRef::new("../outside.txt")
+        == Err(ArtifactHashPolicyError::InvalidArtifactRefSegment);
+    let invalid_digest_rejected = ArtifactDigest::new("sha256:ABCDEF")
+        == Err(ArtifactHashPolicyError::InvalidDigestLength {
+            expected: 64,
+            actual: 6,
+        });
+    let capabilities = REFERENCED_ARTIFACT_VERIFICATION_CAPABILITIES;
+    let cleanup_ok = fs::remove_dir_all(&temp_path).is_ok();
+
+    let verified_ok = verified.is_verified()
+        && verified.outcome() == ReferencedArtifactVerificationOutcome::Verified
+        && verified.outcome().as_str() == "verified"
+        && verified.artifact_ref() == &file_ref
+        && verified.expected_digest() == &expected
+        && verified.observed_digest() == Some(&expected);
+    let mismatch_ok = mismatch.outcome() == ReferencedArtifactVerificationOutcome::DigestMismatch
+        && mismatch.outcome().as_str() == "digest_mismatch"
+        && mismatch.expected_digest() == &different
+        && mismatch.observed_digest() == Some(&expected);
+    let missing_ok = missing.outcome() == ReferencedArtifactVerificationOutcome::Missing
+        && missing.observed_digest().is_none();
+    let directory_ok = directory.outcome() == ReferencedArtifactVerificationOutcome::NotRegularFile
+        && directory.observed_digest().is_none();
+    let boundary_ok = capabilities.verifies_referenced_artifact_bytes
+        && capabilities.reads_regular_files
+        && !capabilities.follows_symlinks
+        && !capabilities.scans_directories
+        && !capabilities.normalizes_artifact_bytes
+        && !capabilities.writes_runtime_state
+        && !capabilities.requires_runtime_storage
+        && !capabilities.writes_proofpack
+        && !capabilities.writes_gate_decision
+        && !capabilities.writes_cli_output
+        && !capabilities.creates_acceptance_claim;
+
+    if verified_ok
+        && mismatch_ok
+        && missing_ok
+        && directory_ok
+        && invalid_ref_rejected
+        && invalid_digest_rejected
+        && boundary_ok
+        && cleanup_ok
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_referenced_artifact_verification_helper_compares_expected_digest",
+            "referenced artifact verification helper compares expected and observed digests",
+            "explicit repo root, repo-relative ref, and canonical expected digest produced evidence-only verified, mismatch, missing, and non-regular outcomes without proof or runtime authority",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_referenced_artifact_verification_helper_compares_expected_digest",
+            "referenced artifact verification helper compares expected and observed digests",
+            format!(
+                "referenced verification drifted; verified_ok={} mismatch_ok={} missing_ok={} directory_ok={} invalid_ref={} invalid_digest={} boundary_ok={} cleanup_ok={} verified={:?} mismatch={:?} missing={:?} directory={:?}",
+                verified_ok,
+                mismatch_ok,
+                missing_ok,
+                directory_ok,
+                invalid_ref_rejected,
+                invalid_digest_rejected,
+                boundary_ok,
+                cleanup_ok,
+                verified,
+                mismatch,
+                missing,
+                directory
+            ),
+        )
+    }
+}
+
 fn eval_artifact_hash_policy_helper_boundary_flags() -> SmokeEvalCaseResult {
     let capabilities = ARTIFACT_HASH_POLICY_CAPABILITIES;
     let file_capabilities = FILE_ARTIFACT_HASHING_CAPABILITIES;
+    let verification_capabilities = REFERENCED_ARTIFACT_VERIFICATION_CAPABILITIES;
 
     if capabilities.validates_digest_format
         && capabilities.validates_repo_relative_refs
@@ -1698,6 +1817,13 @@ fn eval_artifact_hash_policy_helper_boundary_flags() -> SmokeEvalCaseResult {
         && !capabilities.writes_runtime_state
         && file_capabilities.computes_file_artifact_digests
         && !file_capabilities.verifies_referenced_artifact_bytes
+        && verification_capabilities.verifies_referenced_artifact_bytes
+        && !verification_capabilities.normalizes_artifact_bytes
+        && !verification_capabilities.writes_runtime_state
+        && !verification_capabilities.writes_proofpack
+        && !verification_capabilities.writes_gate_decision
+        && !verification_capabilities.writes_cli_output
+        && !verification_capabilities.creates_acceptance_claim
         && !file_capabilities.normalizes_artifact_bytes
         && !file_capabilities.writes_runtime_state
         && !file_capabilities.writes_proofpack
@@ -1707,24 +1833,26 @@ fn eval_artifact_hash_policy_helper_boundary_flags() -> SmokeEvalCaseResult {
         SmokeEvalCaseResult::pass(
             "eval_artifact_hash_policy_helper_boundary_flags",
             "artifact hash helpers stay bounded",
-            "helper capabilities validate digest/ref shape and compute exact-byte and file artifact hashes without byte normalization, referenced artifact verification, or runtime writes",
+            "helper capabilities validate digest/ref shape, compute exact-byte and file artifact hashes, and compare referenced artifact digests without byte normalization, proofpack writes, final-decision writes, or runtime writes",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_artifact_hash_policy_helper_boundary_flags",
             "artifact hash helpers stay bounded",
             format!(
-                "artifact hash helper boundary drifted; digest={} refs={} computes={} file_computes={} verifies_refs={} normalizes={} writes={} proofpack={} cli={} acceptance={}",
+                "artifact hash helper boundary drifted; digest={} refs={} computes={} file_computes={} file_verifies_refs={} verifies_refs={} normalizes={} writes={} proofpack={} gate={} cli={} acceptance={}",
                 capabilities.validates_digest_format,
                 capabilities.validates_repo_relative_refs,
                 capabilities.computes_hashes,
                 file_capabilities.computes_file_artifact_digests,
                 file_capabilities.verifies_referenced_artifact_bytes,
+                verification_capabilities.verifies_referenced_artifact_bytes,
                 capabilities.normalizes_artifact_bytes,
                 capabilities.writes_runtime_state,
-                file_capabilities.writes_proofpack,
-                file_capabilities.writes_cli_output,
-                file_capabilities.creates_acceptance_claim
+                verification_capabilities.writes_proofpack,
+                verification_capabilities.writes_gate_decision,
+                verification_capabilities.writes_cli_output,
+                verification_capabilities.creates_acceptance_claim
             ),
         )
     }
@@ -1768,7 +1896,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 29);
+        assert_eq!(report.cases().len(), 30);
     }
 
     #[test]
@@ -1793,7 +1921,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, and file IO artifact hashing helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -1823,6 +1951,9 @@ mod tests {
         assert!(rendered.contains("  - id: eval_artifact_hash_computation_preserves_exact_bytes"));
         assert!(rendered
             .contains("  - id: eval_file_artifact_hashing_helper_hashes_explicit_regular_file"));
+        assert!(rendered.contains(
+            "  - id: eval_referenced_artifact_verification_helper_compares_expected_digest"
+        ));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_helper_boundary_flags"));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
@@ -1839,7 +1970,7 @@ mod tests {
             "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts"
         ));
         assert!(rendered.contains(
-            "artifact hash smoke cases validate helper shape, exact-byte computation, and explicit file IO hashing without runtime writes"
+            "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes"
         ));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
@@ -1847,7 +1978,7 @@ mod tests {
         assert!(rendered.contains("baseline, waiver, and stored eval reports are not active"));
         assert!(rendered.contains("proofpack writer and runtime proof storage are not active"));
         assert!(rendered.contains(
-            "byte normalization and referenced-artifact byte verification policy are not active"
+            "byte normalization and proofpack writer integration for referenced artifact verification are not active"
         ));
     }
 
@@ -1915,6 +2046,9 @@ mod tests {
         assert!(rendered.contains("\"case_id\": \"eval_artifact_hash_policy_rejects_invalid_ref\""));
         assert!(rendered.contains(
             "\"case_id\": \"eval_file_artifact_hashing_helper_hashes_explicit_regular_file\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_referenced_artifact_verification_helper_compares_expected_digest\""
         ));
         assert!(
             rendered.contains("\"case_id\": \"eval_artifact_hash_policy_helper_boundary_flags\"")

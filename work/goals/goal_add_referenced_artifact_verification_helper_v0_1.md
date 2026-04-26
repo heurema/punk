@@ -1,7 +1,7 @@
 ---
 id: goal_add_referenced_artifact_verification_helper_v0_1
 title: "Add referenced artifact verification helper v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -42,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-referenced-artifact-verification-boundary-v0-1.md"
   - "work/reports/2026-04-26-thirty-second-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-referenced-artifact-verification-helper-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -68,7 +69,7 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: code-and-docs
+  classification: code-doc
   required_updates:
     - "work/reports/2026-04-26-referenced-artifact-verification-helper-v0-1.md"
   rationale: "The selected implementation should update `punk-core`, smoke eval coverage, work status, and a work report while preserving runtime/proof/CLI boundaries."
@@ -96,3 +97,14 @@ Do not implement proofpack writer behavior.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
 Keep setup-neutral behavior: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
+
+
+## Outcome
+
+Completed referenced artifact verification helper v0.1.
+
+`punk-core` now exposes evidence-only referenced artifact verification over explicit typed repo root, repo-relative artifact ref, and expected canonical digest inputs. The helper compares the expected digest with the observed digest from one explicit regular file and returns structured outcomes without proofpack writer, runtime, CLI, gate decision, or acceptance authority.
+
+`punk-eval` smoke coverage now includes referenced artifact verification helper behavior as local assessment only.
+
+No `.punk/` runtime state, schema files, CLI behavior, proofpack writer behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init` were added.

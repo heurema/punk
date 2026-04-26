@@ -2,7 +2,8 @@
 //!
 //! This crate exposes deterministic validation and hashing helpers.
 //! It can compute exact-byte digests for caller-provided bytes and for one
-//! explicit regular file under one explicit repo root.
+//! explicit regular file under one explicit repo root. It can also compare a
+//! canonical expected digest to that explicit file digest as evidence only.
 //! It does not normalize artifact bytes, write schemas, write proofpacks,
 //! write gate decisions, expose CLI behavior, or touch `.punk/` runtime state.
 
@@ -98,6 +99,65 @@ pub enum FileArtifactHashError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ReferencedArtifactVerificationOutcome {
+    Verified,
+    DigestMismatch,
+    Missing,
+    NotRegularFile,
+    Symlink,
+    ReadDenied,
+    ReadError,
+    InvalidRepoRoot,
+    OutsideRepoRoot,
+}
+
+impl ReferencedArtifactVerificationOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Verified => "verified",
+            Self::DigestMismatch => "digest_mismatch",
+            Self::Missing => "missing",
+            Self::NotRegularFile => "not_regular_file",
+            Self::Symlink => "symlink",
+            Self::ReadDenied => "read_denied",
+            Self::ReadError => "read_error",
+            Self::InvalidRepoRoot => "invalid_repo_root",
+            Self::OutsideRepoRoot => "outside_repo_root",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ReferencedArtifactVerification {
+    artifact_ref: RepoRelativeArtifactRef,
+    expected_digest: ArtifactDigest,
+    observed_digest: Option<ArtifactDigest>,
+    outcome: ReferencedArtifactVerificationOutcome,
+}
+
+impl ReferencedArtifactVerification {
+    pub fn artifact_ref(&self) -> &RepoRelativeArtifactRef {
+        &self.artifact_ref
+    }
+
+    pub fn expected_digest(&self) -> &ArtifactDigest {
+        &self.expected_digest
+    }
+
+    pub fn observed_digest(&self) -> Option<&ArtifactDigest> {
+        self.observed_digest.as_ref()
+    }
+
+    pub fn outcome(&self) -> ReferencedArtifactVerificationOutcome {
+        self.outcome
+    }
+
+    pub fn is_verified(&self) -> bool {
+        self.outcome == ReferencedArtifactVerificationOutcome::Verified
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArtifactHashPolicyCapabilities {
     pub validates_digest_format: bool,
     pub validates_repo_relative_refs: bool,
@@ -117,6 +177,21 @@ pub struct FileArtifactHashingCapabilities {
     pub writes_runtime_state: bool,
     pub requires_runtime_storage: bool,
     pub writes_proofpack: bool,
+    pub writes_cli_output: bool,
+    pub creates_acceptance_claim: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ReferencedArtifactVerificationCapabilities {
+    pub verifies_referenced_artifact_bytes: bool,
+    pub reads_regular_files: bool,
+    pub follows_symlinks: bool,
+    pub scans_directories: bool,
+    pub normalizes_artifact_bytes: bool,
+    pub writes_runtime_state: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_proofpack: bool,
+    pub writes_gate_decision: bool,
     pub writes_cli_output: bool,
     pub creates_acceptance_claim: bool,
 }
@@ -144,6 +219,21 @@ pub const FILE_ARTIFACT_HASHING_CAPABILITIES: FileArtifactHashingCapabilities =
         writes_cli_output: false,
         creates_acceptance_claim: false,
     };
+
+pub const REFERENCED_ARTIFACT_VERIFICATION_CAPABILITIES:
+    ReferencedArtifactVerificationCapabilities = ReferencedArtifactVerificationCapabilities {
+    verifies_referenced_artifact_bytes: true,
+    reads_regular_files: true,
+    follows_symlinks: false,
+    scans_directories: false,
+    normalizes_artifact_bytes: false,
+    writes_runtime_state: false,
+    requires_runtime_storage: false,
+    writes_proofpack: false,
+    writes_gate_decision: false,
+    writes_cli_output: false,
+    creates_acceptance_claim: false,
+};
 
 pub fn is_canonical_artifact_digest(value: &str) -> bool {
     validate_artifact_digest(value).is_ok()
@@ -179,6 +269,35 @@ pub fn compute_artifact_file_digest(
     let bytes = fs::read(&artifact_path).map_err(file_artifact_hash_error)?;
 
     Ok(compute_artifact_digest(&bytes))
+}
+
+pub fn verify_referenced_artifact_digest(
+    repo_root: &RepoRoot,
+    artifact_ref: &RepoRelativeArtifactRef,
+    expected_digest: &ArtifactDigest,
+) -> ReferencedArtifactVerification {
+    match compute_artifact_file_digest(repo_root, artifact_ref) {
+        Ok(observed_digest) if &observed_digest == expected_digest => {
+            ReferencedArtifactVerification {
+                artifact_ref: artifact_ref.clone(),
+                expected_digest: expected_digest.clone(),
+                observed_digest: Some(observed_digest),
+                outcome: ReferencedArtifactVerificationOutcome::Verified,
+            }
+        }
+        Ok(observed_digest) => ReferencedArtifactVerification {
+            artifact_ref: artifact_ref.clone(),
+            expected_digest: expected_digest.clone(),
+            observed_digest: Some(observed_digest),
+            outcome: ReferencedArtifactVerificationOutcome::DigestMismatch,
+        },
+        Err(error) => ReferencedArtifactVerification {
+            artifact_ref: artifact_ref.clone(),
+            expected_digest: expected_digest.clone(),
+            observed_digest: None,
+            outcome: referenced_artifact_verification_outcome(error),
+        },
+    }
 }
 
 pub fn validate_artifact_digest(value: &str) -> Result<(), ArtifactHashPolicyError> {
@@ -305,6 +424,28 @@ fn file_artifact_hash_error(error: io::Error) -> FileArtifactHashError {
         io::ErrorKind::NotFound => FileArtifactHashError::Missing,
         io::ErrorKind::PermissionDenied => FileArtifactHashError::ReadDenied,
         _ => FileArtifactHashError::ReadError,
+    }
+}
+
+fn referenced_artifact_verification_outcome(
+    error: FileArtifactHashError,
+) -> ReferencedArtifactVerificationOutcome {
+    match error {
+        FileArtifactHashError::EmptyRepoRoot | FileArtifactHashError::RelativeRepoRoot => {
+            ReferencedArtifactVerificationOutcome::InvalidRepoRoot
+        }
+        FileArtifactHashError::OutsideRepoRoot => {
+            ReferencedArtifactVerificationOutcome::OutsideRepoRoot
+        }
+        FileArtifactHashError::Missing => ReferencedArtifactVerificationOutcome::Missing,
+        FileArtifactHashError::NotRegularFile => {
+            ReferencedArtifactVerificationOutcome::NotRegularFile
+        }
+        FileArtifactHashError::SymlinkNotSupported => {
+            ReferencedArtifactVerificationOutcome::Symlink
+        }
+        FileArtifactHashError::ReadDenied => ReferencedArtifactVerificationOutcome::ReadDenied,
+        FileArtifactHashError::ReadError => ReferencedArtifactVerificationOutcome::ReadError,
     }
 }
 
@@ -605,6 +746,100 @@ mod tests {
         assert!(!capabilities.creates_acceptance_claim);
     }
 
+    #[test]
+    fn referenced_artifact_verification_reports_verified_and_mismatch() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts")).expect("temp repo should be created");
+        fs::write(temp_path.join("artifacts/output.txt"), b"line\n")
+            .expect("artifact file should be written");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let artifact_ref =
+            RepoRelativeArtifactRef::new("artifacts/output.txt").expect("ref should be valid");
+        let expected = compute_artifact_digest(b"line\n");
+        let different = compute_artifact_digest(b"line\r\n");
+
+        let verified = verify_referenced_artifact_digest(&repo_root, &artifact_ref, &expected);
+        let mismatch = verify_referenced_artifact_digest(&repo_root, &artifact_ref, &different);
+
+        assert!(verified.is_verified());
+        assert_eq!(
+            verified.outcome(),
+            ReferencedArtifactVerificationOutcome::Verified
+        );
+        assert_eq!(verified.outcome().as_str(), "verified");
+        assert_eq!(verified.artifact_ref(), &artifact_ref);
+        assert_eq!(verified.expected_digest(), &expected);
+        assert_eq!(verified.observed_digest(), Some(&expected));
+        assert_eq!(
+            mismatch.outcome(),
+            ReferencedArtifactVerificationOutcome::DigestMismatch
+        );
+        assert_eq!(mismatch.outcome().as_str(), "digest_mismatch");
+        assert_eq!(mismatch.expected_digest(), &different);
+        assert_eq!(mismatch.observed_digest(), Some(&expected));
+        assert!(
+            !temp_path.join(".punk").exists(),
+            "verification helper must not write runtime state"
+        );
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[test]
+    fn referenced_artifact_verification_reports_file_boundary_outcomes() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts/dir")).expect("temp repo should be created");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let missing_ref =
+            RepoRelativeArtifactRef::new("artifacts/missing.txt").expect("ref should be valid");
+        let dir_ref = RepoRelativeArtifactRef::new("artifacts/dir").expect("ref should be valid");
+        let expected = compute_artifact_digest(b"expected");
+
+        let missing = verify_referenced_artifact_digest(&repo_root, &missing_ref, &expected);
+        let directory = verify_referenced_artifact_digest(&repo_root, &dir_ref, &expected);
+
+        assert_eq!(
+            missing.outcome(),
+            ReferencedArtifactVerificationOutcome::Missing
+        );
+        assert_eq!(missing.observed_digest(), None);
+        assert_eq!(
+            directory.outcome(),
+            ReferencedArtifactVerificationOutcome::NotRegularFile
+        );
+        assert_eq!(directory.observed_digest(), None);
+        assert_eq!(
+            RepoRelativeArtifactRef::new("../outside.txt"),
+            Err(ArtifactHashPolicyError::InvalidArtifactRefSegment)
+        );
+        assert_eq!(
+            ArtifactDigest::new("sha256:ABCDEF"),
+            Err(ArtifactHashPolicyError::InvalidDigestLength {
+                expected: 64,
+                actual: 6,
+            })
+        );
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[test]
+    fn referenced_artifact_verification_capabilities_stay_evidence_only() {
+        let capabilities = REFERENCED_ARTIFACT_VERIFICATION_CAPABILITIES;
+
+        assert!(capabilities.verifies_referenced_artifact_bytes);
+        assert!(capabilities.reads_regular_files);
+        assert!(!capabilities.follows_symlinks);
+        assert!(!capabilities.scans_directories);
+        assert!(!capabilities.normalizes_artifact_bytes);
+        assert!(!capabilities.writes_runtime_state);
+        assert!(!capabilities.requires_runtime_storage);
+        assert!(!capabilities.writes_proofpack);
+        assert!(!capabilities.writes_gate_decision);
+        assert!(!capabilities.writes_cli_output);
+        assert!(!capabilities.creates_acceptance_claim);
+    }
+
     #[cfg(unix)]
     #[test]
     fn file_artifact_digest_reports_symlinks_without_following() {
@@ -624,6 +859,33 @@ mod tests {
             compute_artifact_file_digest(&repo_root, &link_ref),
             Err(FileArtifactHashError::SymlinkNotSupported)
         );
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn referenced_artifact_verification_reports_symlinks_without_following() {
+        use std::os::unix::fs::symlink;
+
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts")).expect("temp repo should be created");
+        fs::write(temp_path.join("artifacts/target.txt"), b"secret target")
+            .expect("target file should be written");
+        symlink("target.txt", temp_path.join("artifacts/link.txt"))
+            .expect("symlink should be created");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let link_ref =
+            RepoRelativeArtifactRef::new("artifacts/link.txt").expect("ref should be valid");
+        let expected = compute_artifact_digest(b"secret target");
+
+        let verification = verify_referenced_artifact_digest(&repo_root, &link_ref, &expected);
+
+        assert_eq!(
+            verification.outcome(),
+            ReferencedArtifactVerificationOutcome::Symlink
+        );
+        assert_eq!(verification.observed_digest(), None);
 
         fs::remove_dir_all(temp_path).expect("temp repo should be removed");
     }
