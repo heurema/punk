@@ -1,7 +1,7 @@
 ---
 id: goal_run_twenty_third_work_ledger_review
 title: "Run the twenty-third advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "evals/specs/proofpack-boundary.v0.1.md"
   - "work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-twenty-third-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -56,9 +57,10 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Advisory review goal only; execution will produce a work report and selected-next update."
+  classification: docs-only
+  required_updates:
+    - "work/reports/2026-04-26-twenty-third-work-ledger-review.md"
+  rationale: "Execution produced a work report, created the next selected goal, and updated the work ledger."
 ---
 
 ## Context
@@ -70,3 +72,9 @@ Before implementing exact-byte hash computation, adding smoke eval coverage, sel
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement hash computation, add dependencies, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the twenty-third advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md` as the next bounded goal so exact-byte artifact hash computation can be implemented in `punk-core` with smoke eval coverage before file IO hashing, proofpack writer, runtime storage, schema, CLI, or orchestration work.

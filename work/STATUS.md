@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run twenty-third advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_twenty_third_work_ledger_review.md"
+current_focus: "Add artifact hash computation helper v0.1"
+selected_next: "work/goals/goal_add_artifact_hash_computation_helper_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,25 +17,24 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the twenty-third advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_twenty_third_work_ledger_review.md`
-- Why this is next: artifact hash computation helper boundary v0.1 is now defined; run a short advisory review before implementing exact-byte hash computation, adding smoke eval coverage, preparing proofpack writer behavior, or touching runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
+- Current focus: add artifact hash computation helper v0.1.
+- Selected next: `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`
+- Why this is next: artifact hash policy, validation helpers, proofpack manifest rendering, and exact-byte helper boundary are in place; the next smallest active-core implementation is a side-effect-free `punk-core` helper that computes canonical SHA-256 digests from caller-provided bytes, with smoke eval coverage and no file IO/runtime/writer/CLI behavior.
 - Acceptance:
   - `work/STATUS.md` remains the only live work-state source of truth.
   - `selected_next` points to one `ready` goal.
-  - artifact hash computation helper boundary v0.1 is defined as docs/spec.
-  - future hash computation boundary is exact caller-provided bytes to canonical `sha256:<64 lowercase hex>` digest metadata.
-  - dependency stance is explicit: no hand-rolled SHA-256; future implementation may add one narrow maintained SHA-256 dependency in `punk-core` through a separate bounded goal.
-  - no runtime/code/schema/CLI/`.punk` changes were made by the boundary task.
+  - twenty-third advisory Work Ledger Review is completed and recorded.
+  - next selected work is a bounded helper implementation: exact caller-provided bytes to canonical `sha256:<64 lowercase hex>` digest metadata.
+  - if a SHA-256 dependency is added, it is narrow, owned by `punk-core`, and does not leak dependency types into public Punk APIs.
+  - no file IO hashing, path/ref mapping, proofpack writer, runtime storage, schema file, CLI behavior, gate decision writer, acceptance claim, adapter, automation, provider/model runner, or `punk init` is selected.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
-  - proofpack writer, active hash computation implementation, file IO hashing, runtime storage, schema files, gate/eval/proof orchestration, adapters, automation, service-backed storage, and `punk init` remain deferred until later bounded goals explicitly activate them.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_twenty_third_work_ledger_review.md` | `ready` | Hash computation helper boundary is defined; review before selecting implementation, eval coverage, proofpack writer prep, or another guardrail. | — |
+| `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md` | `ready` | Exact-byte hash computation boundary is defined; implement the narrow `punk-core` helper and smoke eval coverage before writer/runtime/CLI work. | — |
 
 ## Blocked
 
@@ -51,6 +50,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Ran the twenty-third advisory Work Ledger Review | `work/goals/goal_run_twenty_third_work_ledger_review.md`, `work/reports/2026-04-26-twenty-third-work-ledger-review.md`, `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md` |
 | 2026-04-26 | Defined artifact hash computation helper boundary v0.1 | `work/goals/goal_define_artifact_hash_computation_helper_boundary_v0_1.md`, `evals/specs/artifact-hash-computation-helper.v0.1.md`, `work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md` |
 | 2026-04-26 | Ran the twenty-second advisory Work Ledger Review | `work/goals/goal_run_twenty_second_work_ledger_review.md`, `work/reports/2026-04-26-twenty-second-work-ledger-review.md`, `work/goals/goal_define_artifact_hash_computation_helper_boundary_v0_1.md` |
 | 2026-04-26 | Added proofpack manifest renderer v0.1 | `work/goals/goal_add_proofpack_manifest_renderer_v0_1.md`, `work/reports/2026-04-26-proofpack-manifest-renderer-v0-1.md`, `crates/punk-proof/src/lib.rs` |
@@ -117,11 +117,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/artifact-hash-computation-helper.v0.1.md work/STATUS.md work/goals/goal_define_artifact_hash_computation_helper_boundary_v0_1.md work/goals/goal_run_twenty_third_work_ledger_review.md work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md --report work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_third_work_ledger_review.md work/goals/goal_add_artifact_hash_computation_helper_v0_1.md work/reports/2026-04-26-twenty-third-work-ledger-review.md --report work/reports/2026-04-26-twenty-third-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_twenty_third_work_ledger_review.md`
-  - artifact hash computation helper boundary completed without runtime/code/schema/CLI/`.punk` changes
-  - docs-governance had 0 failures and 0 warnings after correcting `DocImpact` classification to `docs-only`
+  - `selected_next` is now `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`
+  - twenty-third advisory Work Ledger Review completed without runtime/code/schema/CLI/`.punk` changes
+  - docs-governance had 0 failures and 0 warnings for this review diff
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
-  - active hash computation implementation, file IO hashing, proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
+  - file IO hashing, proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
