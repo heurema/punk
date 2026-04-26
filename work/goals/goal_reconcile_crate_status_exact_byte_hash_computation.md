@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_crate_status_exact_byte_hash_computation
 title: "Reconcile CRATE-STATUS exact-byte hash computation status"
-status: ready
+status: done
 owner: "vitaly"
 module: "docs"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -35,7 +35,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md"
   - "work/reports/2026-04-26-twenty-fourth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-crate-status-exact-byte-hash-computation.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -80,3 +81,17 @@ Do not add file IO hashing.
 Do not normalize bytes or hashes.
 Do not add schema files.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed the CRATE-STATUS exact-byte hash computation reconciliation.
+
+`docs/product/CRATE-STATUS.md` now records that:
+
+- `punk-core` owns side-effect-free exact-byte artifact hash computation plus artifact digest and repo-relative artifact ref validation helpers;
+- `punk-core` owns a narrow `sha2` dependency for SHA-256 computation without exposing dependency types in public Punk APIs;
+- `punk-eval` smoke coverage includes exact-byte artifact hash computation helper behavior;
+- file IO hashing, byte/hash normalization, proofpack writer behavior, `.punk/` runtime storage, schema files, gate decision writing, CLI behavior, adapters, automation, provider/model runners, and `punk init` remain deferred.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
