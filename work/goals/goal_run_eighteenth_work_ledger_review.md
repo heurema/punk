@@ -1,16 +1,16 @@
 ---
 id: goal_run_eighteenth_work_ledger_review
 title: "Run the eighteenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
 authority: canonical
 created_at: 2026-04-25
-updated_at: 2026-04-25
+updated_at: 2026-04-26
 selected_at: 2026-04-25
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-policy.v0.1.md"
   - "work/reports/2026-04-25-artifact-hash-policy-helpers-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-eighteenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -66,3 +67,11 @@ Before selecting `punk-proof` helper integration, smoke eval coverage for AHP ca
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the eighteenth advisory Work Ledger Review.
+
+Selected next: `work/goals/goal_add_artifact_hash_policy_smoke_eval_coverage.md`
+
+Rationale: artifact hash policy helpers now exist in `punk-core` with unit coverage, but smoke eval does not yet guard helper behavior. Adding local smoke eval coverage is narrower than `punk-proof` integration, proofpack writer, runtime storage, schema work, CLI behavior, or active hash computation.

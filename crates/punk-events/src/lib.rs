@@ -489,7 +489,10 @@ mod tests {
     use std::io::Cursor;
     use std::path::PathBuf;
     use std::process;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMP_PATH_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     #[test]
     fn appending_assigns_monotonic_sequence_and_stable_ids() {
@@ -656,6 +659,12 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("clock should be after epoch")
             .as_nanos();
-        std::env::temp_dir().join(format!("punk-events-tests-{}-{}", process::id(), unique))
+        let counter = TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!(
+            "punk-events-tests-{}-{}-{}",
+            process::id(),
+            unique,
+            counter
+        ))
     }
 }
