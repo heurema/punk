@@ -22,6 +22,8 @@ pub const PROOFPACK_WRITER_TARGET_PATH_POLICY_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_target_path_policy_model.v0.1";
 pub const PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_canonical_artifact_model.v0.1";
+pub const PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_target_artifact_ref_policy_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -947,6 +949,449 @@ pub const fn proofpack_writer_canonical_artifact_model_boundary(
         writes_schema_files: false,
         verifies_referenced_artifacts: false,
         uses_indexes_or_latest_as_authority: false,
+        evidence_only: true,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterTargetArtifactRefPolicyStatus {
+    Accepted,
+    Rejected,
+}
+
+impl ProofpackWriterTargetArtifactRefPolicyStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterTargetArtifactRefPolicyReason {
+    MissingProofpackId,
+    MissingManifestSelfDigest,
+    InvalidManifestSelfDigest,
+}
+
+impl ProofpackWriterTargetArtifactRefPolicyReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingProofpackId => "missing_proofpack_id",
+            Self::MissingManifestSelfDigest => "missing_manifest_self_digest",
+            Self::InvalidManifestSelfDigest => "invalid_manifest_self_digest",
+        }
+    }
+
+    pub fn is_missing_precondition(self) -> bool {
+        matches!(
+            self,
+            Self::MissingProofpackId | Self::MissingManifestSelfDigest
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterTargetArtifactIdentity {
+    proofpack_id: ProofpackId,
+    manifest_self_digest: ArtifactDigest,
+    layout: ProofpackWriterCanonicalArtifactLayout,
+}
+
+impl ProofpackWriterTargetArtifactIdentity {
+    pub fn new(
+        proofpack_id: ProofpackId,
+        manifest_self_digest: ArtifactDigest,
+        layout: ProofpackWriterCanonicalArtifactLayout,
+    ) -> Self {
+        Self {
+            proofpack_id,
+            manifest_self_digest,
+            layout,
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn manifest_self_digest(&self) -> &ArtifactDigest {
+        &self.manifest_self_digest
+    }
+
+    pub fn layout(&self) -> ProofpackWriterCanonicalArtifactLayout {
+        self.layout
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterTargetArtifactRef(String);
+
+impl ProofpackWriterTargetArtifactRef {
+    pub fn from_identity(identity: &ProofpackWriterTargetArtifactIdentity) -> Self {
+        let mut value = String::new();
+        write!(
+            &mut value,
+            "proofpack:{}@{}",
+            identity.proofpack_id().as_str(),
+            identity.manifest_self_digest().as_str()
+        )
+        .expect("writing to String should succeed");
+        Self(value)
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterTargetArtifactRefPolicyModel {
+    schema_version: &'static str,
+    identity: Option<ProofpackWriterTargetArtifactIdentity>,
+    logical_ref: Option<ProofpackWriterTargetArtifactRef>,
+    status: ProofpackWriterTargetArtifactRefPolicyStatus,
+    reasons: Vec<ProofpackWriterTargetArtifactRefPolicyReason>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterTargetArtifactRefPolicyModel {
+    pub fn evaluate(
+        proofpack_id: Option<ProofpackId>,
+        manifest_self_digest: Option<ArtifactDigest>,
+        layout: ProofpackWriterCanonicalArtifactLayout,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::from_parts(
+            proofpack_id,
+            manifest_self_digest,
+            layout,
+            Vec::new(),
+            boundary_notes,
+        )
+    }
+
+    pub fn evaluate_raw(
+        proofpack_id: Option<&str>,
+        manifest_self_digest: Option<&str>,
+        layout: ProofpackWriterCanonicalArtifactLayout,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let mut reasons = Vec::new();
+        let proofpack_id = match proofpack_id {
+            Some(value) => match ProofpackId::new(value) {
+                Ok(proofpack_id) => Some(proofpack_id),
+                Err(ProofpackError::EmptyProofpackId) => {
+                    reasons.push(ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId);
+                    None
+                }
+                Err(_) => None,
+            },
+            None => {
+                reasons.push(ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId);
+                None
+            }
+        };
+        let manifest_self_digest = match manifest_self_digest {
+            Some(value) if value.trim().is_empty() => {
+                reasons
+                    .push(ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest);
+                None
+            }
+            Some(value) => match ArtifactDigest::new(value.trim()) {
+                Ok(digest) => Some(digest),
+                Err(_) => {
+                    reasons.push(
+                        ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest,
+                    );
+                    None
+                }
+            },
+            None => {
+                reasons
+                    .push(ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest);
+                None
+            }
+        };
+
+        Self::from_parts(
+            proofpack_id,
+            manifest_self_digest,
+            layout,
+            reasons,
+            boundary_notes,
+        )
+    }
+
+    pub fn from_canonical_artifact_model(
+        canonical_artifact: &ProofpackWriterCanonicalArtifactModel,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::evaluate(
+            Some(canonical_artifact.proofpack_id().clone()),
+            Some(canonical_artifact.manifest_self_digest().clone()),
+            canonical_artifact.layout(),
+            boundary_notes,
+        )
+    }
+
+    fn from_parts(
+        proofpack_id: Option<ProofpackId>,
+        manifest_self_digest: Option<ArtifactDigest>,
+        layout: ProofpackWriterCanonicalArtifactLayout,
+        mut reasons: Vec<ProofpackWriterTargetArtifactRefPolicyReason>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        if proofpack_id.is_none()
+            && !reasons.contains(&ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId)
+        {
+            reasons.push(ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId);
+        }
+        if manifest_self_digest.is_none()
+            && !reasons
+                .contains(&ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest)
+            && !reasons
+                .contains(&ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest)
+        {
+            reasons.push(ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest);
+        }
+
+        let identity = match (proofpack_id, manifest_self_digest) {
+            (Some(proofpack_id), Some(manifest_self_digest)) => {
+                Some(ProofpackWriterTargetArtifactIdentity::new(
+                    proofpack_id,
+                    manifest_self_digest,
+                    layout,
+                ))
+            }
+            _ => None,
+        };
+        let logical_ref = identity
+            .as_ref()
+            .map(ProofpackWriterTargetArtifactRef::from_identity);
+        let status = if identity.is_some() && reasons.is_empty() {
+            ProofpackWriterTargetArtifactRefPolicyStatus::Accepted
+        } else {
+            ProofpackWriterTargetArtifactRefPolicyStatus::Rejected
+        };
+
+        Self {
+            schema_version: PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION,
+            identity,
+            logical_ref,
+            status,
+            reasons,
+            boundary_notes: proofpack_writer_target_artifact_ref_policy_boundary_notes(
+                boundary_notes,
+            ),
+        }
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn identity(&self) -> Option<&ProofpackWriterTargetArtifactIdentity> {
+        self.identity.as_ref()
+    }
+
+    pub fn proofpack_id(&self) -> Option<&ProofpackId> {
+        self.identity()
+            .map(ProofpackWriterTargetArtifactIdentity::proofpack_id)
+    }
+
+    pub fn manifest_self_digest(&self) -> Option<&ArtifactDigest> {
+        self.identity()
+            .map(ProofpackWriterTargetArtifactIdentity::manifest_self_digest)
+    }
+
+    pub fn layout(&self) -> Option<ProofpackWriterCanonicalArtifactLayout> {
+        self.identity()
+            .map(ProofpackWriterTargetArtifactIdentity::layout)
+    }
+
+    pub fn logical_ref(&self) -> Option<&ProofpackWriterTargetArtifactRef> {
+        self.logical_ref.as_ref()
+    }
+
+    pub fn logical_display_ref(&self) -> Option<&str> {
+        self.logical_ref()
+            .map(ProofpackWriterTargetArtifactRef::as_str)
+    }
+
+    pub fn status(&self) -> ProofpackWriterTargetArtifactRefPolicyStatus {
+        self.status
+    }
+
+    pub fn reasons(&self) -> &[ProofpackWriterTargetArtifactRefPolicyReason] {
+        &self.reasons
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn is_accepted(&self) -> bool {
+        self.status == ProofpackWriterTargetArtifactRefPolicyStatus::Accepted
+    }
+
+    pub fn is_rejected(&self) -> bool {
+        self.status == ProofpackWriterTargetArtifactRefPolicyStatus::Rejected
+    }
+
+    pub fn has_complete_identity(&self) -> bool {
+        self.identity.is_some()
+    }
+
+    pub fn has_reason(&self, reason: ProofpackWriterTargetArtifactRefPolicyReason) -> bool {
+        self.reasons.contains(&reason)
+    }
+
+    pub fn has_missing_precondition(&self) -> bool {
+        self.reasons
+            .iter()
+            .any(|reason| reason.is_missing_precondition())
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterTargetArtifactRefPolicyModelBoundary {
+        proofpack_writer_target_artifact_ref_policy_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn canonicalizes_host_paths(&self) -> bool {
+        self.boundary().canonicalizes_host_paths
+    }
+
+    pub fn display_ref_is_filesystem_path(&self) -> bool {
+        self.boundary().display_ref_is_filesystem_path
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn uses_indexes_or_latest_as_authority(&self) -> bool {
+        self.boundary().uses_indexes_or_latest_as_authority
+    }
+
+    pub fn uses_service_mirror_as_authority(&self) -> bool {
+        self.boundary().uses_service_mirror_as_authority
+    }
+
+    pub fn executor_claims_are_proof(&self) -> bool {
+        self.boundary().executor_claims_are_proof
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+}
+
+fn proofpack_writer_target_artifact_ref_policy_boundary_notes(
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    if boundary_notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer target artifact ref policy is side-effect-free; it requires proofpack id plus manifest self-digest and renders only a logical non-path ref.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterTargetArtifactRefPolicyModelBoundary {
+    pub models_target_artifact_ref_policy: bool,
+    pub requires_proofpack_id_and_manifest_self_digest: bool,
+    pub renders_logical_display_ref: bool,
+    pub display_ref_is_filesystem_path: bool,
+    pub keeps_target_artifact_ref_separate_from_canonical_bytes: bool,
+    pub keeps_target_artifact_ref_separate_from_target_path: bool,
+    pub keeps_target_artifact_ref_separate_from_storage_root: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub uses_service_mirror_as_authority: bool,
+    pub executor_claims_are_proof: bool,
+    pub evidence_only: bool,
+}
+
+pub const fn proofpack_writer_target_artifact_ref_policy_model_boundary(
+) -> ProofpackWriterTargetArtifactRefPolicyModelBoundary {
+    ProofpackWriterTargetArtifactRefPolicyModelBoundary {
+        models_target_artifact_ref_policy: true,
+        requires_proofpack_id_and_manifest_self_digest: true,
+        renders_logical_display_ref: true,
+        display_ref_is_filesystem_path: false,
+        keeps_target_artifact_ref_separate_from_canonical_bytes: true,
+        keeps_target_artifact_ref_separate_from_target_path: true,
+        keeps_target_artifact_ref_separate_from_storage_root: true,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_writer_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        uses_indexes_or_latest_as_authority: false,
+        uses_service_mirror_as_authority: false,
+        executor_claims_are_proof: false,
         evidence_only: true,
     }
 }
@@ -4392,6 +4837,179 @@ mod tests {
         assert!(!boundary.canonicalizes_host_paths);
         assert!(!boundary.writes_final_decision);
         assert!(!boundary.creates_acceptance_claim);
+    }
+
+    #[test]
+    fn proofpack_writer_target_artifact_ref_policy_vocabulary_is_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION,
+            "punk.proofpack.writer_target_artifact_ref_policy_model.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterTargetArtifactRefPolicyStatus::Accepted.as_str(),
+            "accepted"
+        );
+        assert_eq!(
+            ProofpackWriterTargetArtifactRefPolicyStatus::Rejected.as_str(),
+            "rejected"
+        );
+        assert_eq!(
+            ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId.as_str(),
+            "missing_proofpack_id"
+        );
+        assert_eq!(
+            ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest.as_str(),
+            "missing_manifest_self_digest"
+        );
+        assert_eq!(
+            ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest.as_str(),
+            "invalid_manifest_self_digest"
+        );
+        assert!(
+            ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId
+                .is_missing_precondition()
+        );
+        assert!(
+            !ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest
+                .is_missing_precondition()
+        );
+    }
+
+    #[test]
+    fn proofpack_writer_target_artifact_ref_policy_accepts_explicit_identity_pair() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let model = ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+            &canonical,
+            vec![ProofBoundaryNote::new(
+                "Target artifact ref policy renders a logical non-path ref.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let expected_ref = format!(
+            "proofpack:{}@{}",
+            canonical.proofpack_id().as_str(),
+            canonical.manifest_self_digest().as_str()
+        );
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION
+        );
+        assert!(model.is_accepted());
+        assert!(!model.is_rejected());
+        assert!(model.has_complete_identity());
+        assert_eq!(
+            model.status(),
+            ProofpackWriterTargetArtifactRefPolicyStatus::Accepted
+        );
+        assert_eq!(model.reasons().len(), 0);
+        assert_eq!(
+            model
+                .proofpack_id()
+                .expect("identity should exist")
+                .as_str(),
+            proofpack.id().as_str()
+        );
+        assert_eq!(
+            model.manifest_self_digest(),
+            Some(canonical.manifest_self_digest())
+        );
+        assert_eq!(
+            model.layout(),
+            Some(ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson)
+        );
+        assert_eq!(model.logical_display_ref(), Some(expected_ref.as_str()));
+        assert_eq!(
+            model
+                .logical_ref()
+                .expect("logical ref should exist")
+                .as_str(),
+            expected_ref
+        );
+        assert!(!model.display_ref_is_filesystem_path());
+        assert_eq!(model.boundary_notes().len(), 1);
+    }
+
+    #[test]
+    fn proofpack_writer_target_artifact_ref_policy_rejects_missing_or_invalid_identity_parts() {
+        let valid_digest =
+            ArtifactDigest::new(PROOF_HASH_GATE_DECISION).expect("digest should be valid");
+
+        let missing_proofpack_id = ProofpackWriterTargetArtifactRefPolicyModel::evaluate(
+            None,
+            Some(valid_digest.clone()),
+            ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+            vec![],
+        );
+        let missing_digest = ProofpackWriterTargetArtifactRefPolicyModel::evaluate(
+            Some(ProofpackId::new("proofpack_local_001").expect("id should be valid")),
+            None,
+            ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+            vec![],
+        );
+        let invalid_digest = ProofpackWriterTargetArtifactRefPolicyModel::evaluate_raw(
+            Some("proofpack_local_001"),
+            Some("sha256:not-valid"),
+            ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+            vec![],
+        );
+
+        assert!(missing_proofpack_id.is_rejected());
+        assert!(missing_proofpack_id.has_missing_precondition());
+        assert!(missing_proofpack_id
+            .has_reason(ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId));
+        assert_eq!(missing_proofpack_id.logical_display_ref(), None);
+
+        assert!(missing_digest.is_rejected());
+        assert!(missing_digest.has_missing_precondition());
+        assert!(missing_digest
+            .has_reason(ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest));
+        assert_eq!(missing_digest.logical_ref(), None);
+
+        assert!(invalid_digest.is_rejected());
+        assert!(!invalid_digest.has_missing_precondition());
+        assert!(invalid_digest
+            .has_reason(ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest));
+        assert_eq!(invalid_digest.manifest_self_digest(), None);
+        assert_eq!(invalid_digest.logical_display_ref(), None);
+        assert_eq!(invalid_digest.boundary_notes().len(), 1);
+    }
+
+    #[test]
+    fn proofpack_writer_target_artifact_ref_policy_is_side_effect_free_and_non_authoritative() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let model = ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+            &canonical,
+            vec![],
+        );
+        let boundary = model.boundary();
+
+        assert!(model.is_evidence_only());
+        assert!(boundary.models_target_artifact_ref_policy);
+        assert!(boundary.requires_proofpack_id_and_manifest_self_digest);
+        assert!(boundary.renders_logical_display_ref);
+        assert!(boundary.keeps_target_artifact_ref_separate_from_canonical_bytes);
+        assert!(boundary.keeps_target_artifact_ref_separate_from_target_path);
+        assert!(boundary.keeps_target_artifact_ref_separate_from_storage_root);
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.display_ref_is_filesystem_path());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!model.writes_indexes_or_latest());
+        assert!(!boundary.writes_final_decision);
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.writes_schema_files());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!model.uses_indexes_or_latest_as_authority());
+        assert!(!model.uses_service_mirror_as_authority());
+        assert!(!model.executor_claims_are_proof());
+        assert!(!model.can_claim_acceptance_by_itself());
     }
 
     #[test]

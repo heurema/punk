@@ -49,10 +49,12 @@ use punk_proof::{
     ProofpackWriterOperationId, ProofpackWriterOperationKind, ProofpackWriterOperationOutcome,
     ProofpackWriterPlannedSideEffect, ProofpackWriterPreflightPlan,
     ProofpackWriterSideEffectStatus, ProofpackWriterStorageRootRef,
-    ProofpackWriterTargetPathPolicyModel, ProofpackWriterTargetPathPolicyReason,
-    ProofpackWriterTargetPathPolicyStatus, ProofpackWriterTargetPathRef, ProofpackWriterTargetRef,
-    ProofpackWriterTempAtomicPolicy, ProofpackWriterWritePolicy,
-    PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION,
+    ProofpackWriterTargetArtifactRefPolicyModel, ProofpackWriterTargetArtifactRefPolicyReason,
+    ProofpackWriterTargetArtifactRefPolicyStatus, ProofpackWriterTargetPathPolicyModel,
+    ProofpackWriterTargetPathPolicyReason, ProofpackWriterTargetPathPolicyStatus,
+    ProofpackWriterTargetPathRef, ProofpackWriterTargetRef, ProofpackWriterTempAtomicPolicy,
+    ProofpackWriterWritePolicy, PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION,
+    PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION,
 };
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -386,6 +388,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free(),
         eval_proofpack_manifest_digest_matches_exact_renderer_bytes(),
         eval_proofpack_writer_canonical_artifact_model_is_side_effect_free(),
+        eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free(),
         eval_proofpack_writer_operation_evidence_model_is_side_effect_free(),
         eval_proofpack_writer_preflight_plan_model_is_side_effect_free(),
         eval_proofpack_writer_file_io_plan_model_is_side_effect_free(),
@@ -411,10 +414,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -436,6 +439,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
             "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts",
             "proofpack writer canonical artifact model smoke case keeps exact manifest bytes canonical and surrounding metadata non-canonical without writer side effects",
+            "proofpack writer target artifact ref policy smoke case requires proofpack id plus manifest self-digest and renders logical non-path refs without writer side effects",
             "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims",
             "proofpack writer preflight plan smoke case models writer-ready plans without attempting side effects",
             "proofpack writer file IO plan smoke case models storage roots, target paths, write policy, idempotency, and rollback visibility without filesystem side effects",
@@ -1530,6 +1534,133 @@ fn eval_proofpack_writer_canonical_artifact_model_is_side_effect_free() -> Smoke
                 boundary.verifies_referenced_artifacts,
                 boundary.creates_acceptance_claim,
                 boundary.uses_indexes_or_latest_as_authority
+            ),
+        )
+    }
+}
+
+fn eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free(
+) -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+    let model = ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+        &canonical,
+        vec![
+            ProofBoundaryNote::new("Target artifact ref policy renders logical refs only.")
+                .expect("boundary note should be valid"),
+        ],
+    );
+    let missing_proofpack_id = ProofpackWriterTargetArtifactRefPolicyModel::evaluate(
+        None,
+        Some(canonical.manifest_self_digest().clone()),
+        ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+        vec![],
+    );
+    let missing_digest = ProofpackWriterTargetArtifactRefPolicyModel::evaluate(
+        Some(ProofpackId::new("proofpack_eval_001").expect("id should be valid")),
+        None,
+        ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+        vec![],
+    );
+    let invalid_digest = ProofpackWriterTargetArtifactRefPolicyModel::evaluate_raw(
+        Some("proofpack_eval_001"),
+        Some("sha256:not-valid"),
+        ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+        vec![],
+    );
+    let boundary = model.boundary();
+    let expected_ref = format!(
+        "proofpack:{}@{}",
+        canonical.proofpack_id().as_str(),
+        canonical.manifest_self_digest().as_str()
+    );
+
+    let vocabulary_ok = ProofpackWriterTargetArtifactRefPolicyStatus::Accepted.as_str()
+        == "accepted"
+        && ProofpackWriterTargetArtifactRefPolicyStatus::Rejected.as_str() == "rejected"
+        && ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId.as_str()
+            == "missing_proofpack_id"
+        && ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest.as_str()
+            == "missing_manifest_self_digest"
+        && ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest.as_str()
+            == "invalid_manifest_self_digest";
+    let accepted_ok = model.schema_version()
+        == PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION
+        && model.is_accepted()
+        && model.status() == ProofpackWriterTargetArtifactRefPolicyStatus::Accepted
+        && model.has_complete_identity()
+        && model.reasons().is_empty()
+        && model.proofpack_id().map(ProofpackId::as_str) == Some("proofpack_eval_001")
+        && model.manifest_self_digest() == Some(canonical.manifest_self_digest())
+        && model.layout() == Some(ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson)
+        && model.logical_display_ref() == Some(expected_ref.as_str())
+        && !model.display_ref_is_filesystem_path();
+    let rejection_ok = missing_proofpack_id.is_rejected()
+        && missing_proofpack_id.has_missing_precondition()
+        && missing_proofpack_id
+            .has_reason(ProofpackWriterTargetArtifactRefPolicyReason::MissingProofpackId)
+        && missing_proofpack_id.logical_ref().is_none()
+        && missing_digest.is_rejected()
+        && missing_digest
+            .has_reason(ProofpackWriterTargetArtifactRefPolicyReason::MissingManifestSelfDigest)
+        && missing_digest.logical_display_ref().is_none()
+        && invalid_digest.is_rejected()
+        && invalid_digest
+            .has_reason(ProofpackWriterTargetArtifactRefPolicyReason::InvalidManifestSelfDigest)
+        && invalid_digest.manifest_self_digest().is_none()
+        && invalid_digest.logical_ref().is_none();
+    let boundary_ok = boundary.models_target_artifact_ref_policy
+        && boundary.requires_proofpack_id_and_manifest_self_digest
+        && boundary.renders_logical_display_ref
+        && boundary.keeps_target_artifact_ref_separate_from_canonical_bytes
+        && boundary.keeps_target_artifact_ref_separate_from_target_path
+        && boundary.keeps_target_artifact_ref_separate_from_storage_root
+        && boundary.evidence_only
+        && !boundary.display_ref_is_filesystem_path
+        && !boundary.reads_filesystem
+        && !boundary.touches_filesystem
+        && !boundary.canonicalizes_host_paths
+        && !boundary.writes_proofpack
+        && !boundary.writes_writer_operation_evidence
+        && !boundary.writes_indexes_or_latest
+        && !boundary.writes_final_decision
+        && !boundary.creates_acceptance_claim
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.writes_schema_files
+        && !boundary.verifies_referenced_artifacts
+        && !boundary.uses_indexes_or_latest_as_authority
+        && !boundary.uses_service_mirror_as_authority
+        && !boundary.executor_claims_are_proof
+        && !model.can_claim_acceptance_by_itself();
+
+    if vocabulary_ok && accepted_ok && rejection_ok && boundary_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free",
+            "proofpack writer target artifact ref policy model is side-effect-free",
+            "writer target artifact ref policy requires proofpack id plus manifest self-digest, renders a logical non-path ref, and rejects missing or invalid identity parts without runtime writes",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free",
+            "proofpack writer target artifact ref policy model is side-effect-free",
+            format!(
+                "writer target artifact ref policy drifted; vocabulary={vocabulary_ok} accepted={accepted_ok} rejection={rejection_ok} boundary={boundary_ok} reads_fs={} touches_fs={} canonicalizes={} display_path={} writes={} writes_evidence={} writes_index_latest={} storage={} cli={} schemas={} verifies={} acceptance={} index_latest_authority={} service_mirror_authority={} executor_claims={}",
+                boundary.reads_filesystem,
+                boundary.touches_filesystem,
+                boundary.canonicalizes_host_paths,
+                boundary.display_ref_is_filesystem_path,
+                boundary.writes_proofpack,
+                boundary.writes_writer_operation_evidence,
+                boundary.writes_indexes_or_latest,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.writes_schema_files,
+                boundary.verifies_referenced_artifacts,
+                boundary.creates_acceptance_claim,
+                boundary.uses_indexes_or_latest_as_authority,
+                boundary.uses_service_mirror_as_authority,
+                boundary.executor_claims_are_proof,
             ),
         )
     }
@@ -2856,7 +2987,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 37);
+        assert_eq!(report.cases().len(), 38);
     }
 
     #[test]
@@ -2881,7 +3012,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -2905,6 +3036,9 @@ mod tests {
             .contains("  - id: eval_proofpack_manifest_digest_matches_exact_renderer_bytes"));
         assert!(rendered.contains(
             "  - id: eval_proofpack_writer_canonical_artifact_model_is_side_effect_free"
+        ));
+        assert!(rendered.contains(
+            "  - id: eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free"
         ));
         assert!(rendered.contains(
             "  - id: eval_proofpack_writer_operation_evidence_model_is_side_effect_free"
@@ -2949,6 +3083,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "proofpack writer canonical artifact model smoke case keeps exact manifest bytes canonical and surrounding metadata non-canonical without writer side effects"
+        ));
+        assert!(rendered.contains(
+            "proofpack writer target artifact ref policy smoke case requires proofpack id plus manifest self-digest and renders logical non-path refs without writer side effects"
         ));
         assert!(rendered.contains(
             "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims"
@@ -3034,6 +3171,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_manifest_digest_matches_exact_renderer_bytes\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free\""
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_writer_operation_evidence_model_is_side_effect_free\""
