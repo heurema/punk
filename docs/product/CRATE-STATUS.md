@@ -66,11 +66,11 @@ Current implemented behavior remains narrower:
 - `punk-flow` provides state-machine and guard evidence kernels, but no persisted runtime flow state.
 - `punk-contract` provides a side-effect-free contract lifecycle kernel, but no `.punk/contracts` storage.
 - `punk-domain` provides run receipt and validation evidence data models, but no `.punk/runs` writer.
-- `punk-eval` provides the local smoke eval harness, including opt-in JSON output, artifact hash policy helper behavior coverage, exact-byte artifact hash computation helper coverage, file IO artifact hashing helper coverage, referenced artifact verification helper coverage, proofpack manifest digest helper coverage, proofpack writer operation evidence model coverage, and proofpack writer preflight plan model coverage, but no `.punk/evals` report storage, baseline, waiver system, or runtime eval report writer.
+- `punk-eval` provides the local smoke eval harness, including opt-in JSON output, artifact hash policy helper behavior coverage, exact-byte artifact hash computation helper coverage, file IO artifact hashing helper coverage, referenced artifact verification helper coverage, proofpack manifest digest helper coverage, proofpack writer operation evidence model coverage, proofpack writer preflight plan model coverage, and proofpack writer file IO plan model coverage, but no `.punk/evals` report storage, baseline, waiver system, or runtime eval report writer.
 - `punk-gate` provides a side-effect-free gate decision kernel, but no `.punk/decisions` writer, CLI behavior, runtime storage, or acceptance claim writer.
-- `punk-proof` provides side-effect-free proofpack provenance, deterministic manifest rendering, proofpack manifest self-digest computation from in-memory renderer bytes through `punk-core` exact-byte hashing, digest metadata, structural link/hash integrity checks, proof readiness helpers, proof artifact hash string-shape validation through `punk-core` artifact hash policy helpers, a side-effect-free proofpack writer operation evidence model for planned, written, idempotent, conflict, preflight-failed, write-failed, partial-write, index-failed, latest-failed, and aborted outcomes, and a side-effect-free proofpack writer preflight plan model for intended target refs, manifest self-digests, planned side effects, and missing preconditions, but no `.punk/proofs` writer, referenced artifact hash computation, file IO hashing, byte/hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
+- `punk-proof` provides side-effect-free proofpack provenance, deterministic manifest rendering, proofpack manifest self-digest computation from in-memory renderer bytes through `punk-core` exact-byte hashing, digest metadata, structural link/hash integrity checks, proof readiness helpers, proof artifact hash string-shape validation through `punk-core` artifact hash policy helpers, a side-effect-free proofpack writer operation evidence model for planned, written, idempotent, conflict, preflight-failed, write-failed, partial-write, index-failed, latest-failed, and aborted outcomes, a side-effect-free proofpack writer preflight plan model for intended target refs, manifest self-digests, planned side effects, and missing preconditions, and a side-effect-free proofpack writer file IO plan model for explicit storage-root refs, target artifact refs, target path refs, write policy, idempotency basis, temp/atomic policy, planned side effects, and error/rollback visibility, but no `.punk/proofs` writer, referenced artifact hash computation, file IO hashing, byte/hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
 
-Future writer, storage, referenced artifact hash computation or verification for proofpack refs, broader file IO or referenced artifact verification beyond the narrow explicit-file helper, hash normalization, and proofpack writer hash-integration behavior must be added only through separate bounded goals.
+Future writer, storage, referenced artifact hash computation or verification for proofpack refs, actual proofpack file IO, broader referenced artifact verification beyond the narrow explicit-file helper, hash normalization, and proofpack writer hash-integration behavior must be added only through separate bounded goals.
 
 ## Current CLI surface
 
@@ -110,13 +110,13 @@ The current active-core responsibility is:
 - receipt/evidence shape
 - eval report shape
 - gate decision exclusivity
-- proofpack links, manifest self-digest metadata, digest metadata, structural link/hash integrity, validation-only artifact hash policy shape checks, exact-byte artifact hash computation, narrow evidence-only file artifact digest computation, narrow evidence-only referenced artifact digest comparison for one explicit file, a side-effect-free proofpack writer operation evidence model, and a side-effect-free proofpack writer preflight plan model
+- proofpack links, manifest self-digest metadata, digest metadata, structural link/hash integrity, validation-only artifact hash policy shape checks, exact-byte artifact hash computation, narrow evidence-only file artifact digest computation, narrow evidence-only referenced artifact digest comparison for one explicit file, a side-effect-free proofpack writer operation evidence model, a side-effect-free proofpack writer preflight plan model, and a side-effect-free proofpack writer file IO plan model
 
 This does not mean referenced artifact hash computation for proofpack refs,
 proofpack-referenced artifact verification integration, broad referenced
-artifact verification beyond explicit typed file refs, broad file IO hashing,
-hash normalization, proofpack writing, proofpack writer hash-integration, or
-gate decision writing.
+artifact verification beyond explicit typed file refs, actual proofpack file IO,
+broad file IO hashing, hash normalization, proofpack writing, proofpack writer
+hash-integration, or gate decision writing.
 
 Punk may run validators in the user's environment, but the user's executor, provider, prompt, skill, or local model setup must not become active-core authority.
 

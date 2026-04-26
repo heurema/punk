@@ -12,6 +12,8 @@ pub const PROOFPACK_WRITER_OPERATION_EVIDENCE_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_operation_evidence.v0.1";
 pub const PROOFPACK_WRITER_PREFLIGHT_PLAN_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_preflight_plan.v0.1";
+pub const PROOFPACK_WRITER_FILE_IO_PLAN_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_file_io_plan.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -735,6 +737,38 @@ impl ProofpackWriterTargetRef {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterStorageRootRef(String);
+
+impl ProofpackWriterStorageRootRef {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterStorageRootRef,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterTargetPathRef(String);
+
+impl ProofpackWriterTargetPathRef {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterTargetPathRef,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProofpackWriterOperationKind {
     PlannedOnly,
@@ -1356,6 +1390,481 @@ pub const fn proofpack_writer_preflight_plan_boundary() -> ProofpackWriterPrefli
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFileIoPlanStatus {
+    Ready,
+    FileIoBlocked,
+}
+
+impl ProofpackWriterFileIoPlanStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::FileIoBlocked => "file_io_blocked",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFileIoBlocker {
+    PreflightPlanMissingPreconditions,
+    MissingCanonicalArtifactWriteSelection,
+    MissingErrorRollbackVisibility,
+    MissingBoundaryNotes,
+}
+
+impl ProofpackWriterFileIoBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PreflightPlanMissingPreconditions => "preflight_plan_missing_preconditions",
+            Self::MissingCanonicalArtifactWriteSelection => {
+                "missing_canonical_artifact_write_selection"
+            }
+            Self::MissingErrorRollbackVisibility => "missing_error_rollback_visibility",
+            Self::MissingBoundaryNotes => "missing_boundary_notes",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterWritePolicy {
+    AppendOnlyCreateNew,
+    IdempotentIfMatching,
+    FailIfExists,
+}
+
+impl ProofpackWriterWritePolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AppendOnlyCreateNew => "append_only_create_new",
+            Self::IdempotentIfMatching => "idempotent_if_matching",
+            Self::FailIfExists => "fail_if_exists",
+        }
+    }
+
+    pub fn supports_idempotency(self) -> bool {
+        self == Self::IdempotentIfMatching
+    }
+
+    pub fn allows_silent_overwrite(self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterIdempotencyBasis {
+    ExactManifestBytes,
+    ManifestSelfDigest,
+    ContentIdentity,
+}
+
+impl ProofpackWriterIdempotencyBasis {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ExactManifestBytes => "exact_manifest_bytes",
+            Self::ManifestSelfDigest => "manifest_self_digest",
+            Self::ContentIdentity => "content_identity",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterTempAtomicPolicy {
+    AtomicSiblingTemp,
+    ExplicitNonAtomic,
+    FailClosedIfAtomicUnavailable,
+}
+
+impl ProofpackWriterTempAtomicPolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AtomicSiblingTemp => "atomic_sibling_temp",
+            Self::ExplicitNonAtomic => "explicit_non_atomic",
+            Self::FailClosedIfAtomicUnavailable => "fail_closed_if_atomic_unavailable",
+        }
+    }
+
+    pub fn prefers_atomic_move(self) -> bool {
+        matches!(
+            self,
+            Self::AtomicSiblingTemp | Self::FailClosedIfAtomicUnavailable
+        )
+    }
+
+    pub fn fails_closed_when_atomic_unavailable(self) -> bool {
+        self == Self::FailClosedIfAtomicUnavailable
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFileIoFailureVisibility {
+    StorageRootMissing,
+    StorageRootDisallowed,
+    TargetPathInvalid,
+    ParentDirectoryMissing,
+    ExistingTargetMatching,
+    ExistingTargetDifferent,
+    TempWriteDenied,
+    TempWriteFailed,
+    FlushOrSyncFailed,
+    AtomicMoveUnsupported,
+    AtomicMoveFailed,
+    CleanupFailed,
+    PartialCanonicalArtifactAmbiguous,
+    IndexUpdateFailed,
+    LatestPointerUpdateFailed,
+}
+
+impl ProofpackWriterFileIoFailureVisibility {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::StorageRootMissing => "storage_root_missing",
+            Self::StorageRootDisallowed => "storage_root_disallowed",
+            Self::TargetPathInvalid => "target_path_invalid",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ExistingTargetMatching => "existing_target_matching",
+            Self::ExistingTargetDifferent => "existing_target_different",
+            Self::TempWriteDenied => "temp_write_denied",
+            Self::TempWriteFailed => "temp_write_failed",
+            Self::FlushOrSyncFailed => "flush_or_sync_failed",
+            Self::AtomicMoveUnsupported => "atomic_move_unsupported",
+            Self::AtomicMoveFailed => "atomic_move_failed",
+            Self::CleanupFailed => "cleanup_failed",
+            Self::PartialCanonicalArtifactAmbiguous => "partial_canonical_artifact_ambiguous",
+            Self::IndexUpdateFailed => "index_update_failed",
+            Self::LatestPointerUpdateFailed => "latest_pointer_update_failed",
+        }
+    }
+
+    pub fn is_conflict_related(self) -> bool {
+        self == Self::ExistingTargetDifferent
+    }
+
+    pub fn is_rollback_related(self) -> bool {
+        matches!(
+            self,
+            Self::CleanupFailed | Self::PartialCanonicalArtifactAmbiguous
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoPlan {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    storage_root_ref: ProofpackWriterStorageRootRef,
+    target_artifact_ref: ProofpackWriterTargetRef,
+    target_path_ref: ProofpackWriterTargetPathRef,
+    manifest_self_digest: ArtifactDigest,
+    write_policy: ProofpackWriterWritePolicy,
+    idempotency_basis: ProofpackWriterIdempotencyBasis,
+    temp_atomic_policy: ProofpackWriterTempAtomicPolicy,
+    planned_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    failure_visibility: Vec<ProofpackWriterFileIoFailureVisibility>,
+    blockers: Vec<ProofpackWriterFileIoBlocker>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterFileIoPlan {
+    pub fn new(
+        preflight_plan: &ProofpackWriterPreflightPlan,
+        storage_root_ref: ProofpackWriterStorageRootRef,
+        target_path_ref: ProofpackWriterTargetPathRef,
+        write_policy: ProofpackWriterWritePolicy,
+        idempotency_basis: ProofpackWriterIdempotencyBasis,
+        temp_atomic_policy: ProofpackWriterTempAtomicPolicy,
+        failure_visibility: Vec<ProofpackWriterFileIoFailureVisibility>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let blockers =
+            writer_file_io_plan_blockers(preflight_plan, &failure_visibility, &boundary_notes);
+
+        Self {
+            proofpack_id: preflight_plan.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_FILE_IO_PLAN_SCHEMA_VERSION,
+            storage_root_ref,
+            target_artifact_ref: preflight_plan.target_ref().clone(),
+            target_path_ref,
+            manifest_self_digest: preflight_plan.manifest_self_digest().clone(),
+            write_policy,
+            idempotency_basis,
+            temp_atomic_policy,
+            planned_side_effects: preflight_plan.planned_side_effects().to_vec(),
+            failure_visibility,
+            blockers,
+            boundary_notes,
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn storage_root_ref(&self) -> &ProofpackWriterStorageRootRef {
+        &self.storage_root_ref
+    }
+
+    pub fn target_artifact_ref(&self) -> &ProofpackWriterTargetRef {
+        &self.target_artifact_ref
+    }
+
+    pub fn target_ref(&self) -> &ProofpackWriterTargetRef {
+        self.target_artifact_ref()
+    }
+
+    pub fn target_path_ref(&self) -> &ProofpackWriterTargetPathRef {
+        &self.target_path_ref
+    }
+
+    pub fn manifest_self_digest(&self) -> &ArtifactDigest {
+        &self.manifest_self_digest
+    }
+
+    pub fn write_policy(&self) -> ProofpackWriterWritePolicy {
+        self.write_policy
+    }
+
+    pub fn idempotency_basis(&self) -> ProofpackWriterIdempotencyBasis {
+        self.idempotency_basis
+    }
+
+    pub fn temp_atomic_policy(&self) -> ProofpackWriterTempAtomicPolicy {
+        self.temp_atomic_policy
+    }
+
+    pub fn planned_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.planned_side_effects
+    }
+
+    pub fn failure_visibility(&self) -> &[ProofpackWriterFileIoFailureVisibility] {
+        &self.failure_visibility
+    }
+
+    pub fn blockers(&self) -> &[ProofpackWriterFileIoBlocker] {
+        &self.blockers
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn status(&self) -> ProofpackWriterFileIoPlanStatus {
+        if self.blockers.is_empty() {
+            ProofpackWriterFileIoPlanStatus::Ready
+        } else {
+            ProofpackWriterFileIoPlanStatus::FileIoBlocked
+        }
+    }
+
+    pub fn is_file_io_ready(&self) -> bool {
+        self.status() == ProofpackWriterFileIoPlanStatus::Ready
+    }
+
+    pub fn has_file_io_blockers(&self) -> bool {
+        !self.blockers.is_empty()
+    }
+
+    pub fn plans_side_effect(&self, side_effect: ProofpackWriterPlannedSideEffect) -> bool {
+        self.planned_side_effects.contains(&side_effect)
+    }
+
+    pub fn selects_canonical_artifact_write(&self) -> bool {
+        self.plans_side_effect(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite)
+    }
+
+    pub fn selects_index_update(&self) -> bool {
+        self.plans_side_effect(ProofpackWriterPlannedSideEffect::IndexUpdate)
+    }
+
+    pub fn selects_latest_pointer_update(&self) -> bool {
+        self.plans_side_effect(ProofpackWriterPlannedSideEffect::LatestPointerUpdate)
+    }
+
+    pub fn tracks_failure(&self, failure: ProofpackWriterFileIoFailureVisibility) -> bool {
+        self.failure_visibility.contains(&failure)
+    }
+
+    pub fn tracks_conflict_visibility(&self) -> bool {
+        self.failure_visibility
+            .iter()
+            .any(|failure| failure.is_conflict_related())
+    }
+
+    pub fn tracks_rollback_visibility(&self) -> bool {
+        self.failure_visibility
+            .iter()
+            .any(|failure| failure.is_rollback_related())
+    }
+
+    pub fn operation_outcome(&self) -> ProofpackWriterOperationOutcome {
+        if self.is_file_io_ready() {
+            ProofpackWriterOperationOutcome::PlannedOnly
+        } else {
+            ProofpackWriterOperationOutcome::PreflightFailed
+        }
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        ProofpackWriterOperationKind::PlannedOnly
+    }
+
+    pub fn to_operation_evidence(
+        &self,
+        operation_id: ProofpackWriterOperationId,
+        attempted_at: ProofpackWriterAttemptedAt,
+    ) -> Result<ProofpackWriterOperationEvidence, ProofpackError> {
+        ProofpackWriterOperationEvidence::new(
+            operation_id,
+            self.operation_kind(),
+            self.proofpack_id.clone(),
+            attempted_at,
+            self.target_artifact_ref.clone(),
+            self.operation_outcome(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+            self.side_effect_status(ProofpackWriterPlannedSideEffect::IndexUpdate),
+            self.side_effect_status(ProofpackWriterPlannedSideEffect::LatestPointerUpdate),
+            self.operation_evidence_boundary_notes(),
+        )
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterFileIoPlanBoundary {
+        proofpack_writer_file_io_plan_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn index_latest_are_canonical(&self) -> bool {
+        self.boundary().index_latest_are_canonical
+    }
+
+    fn side_effect_status(
+        &self,
+        side_effect: ProofpackWriterPlannedSideEffect,
+    ) -> ProofpackWriterSideEffectStatus {
+        if self.plans_side_effect(side_effect) {
+            ProofpackWriterSideEffectStatus::NotAttempted
+        } else {
+            ProofpackWriterSideEffectStatus::NotSelected
+        }
+    }
+
+    fn operation_evidence_boundary_notes(&self) -> Vec<ProofBoundaryNote> {
+        if self.boundary_notes.is_empty() {
+            return vec![ProofBoundaryNote::new(
+                "Writer file IO plan is evidence-only; missing plan boundary notes are explicit blocker data.",
+            )
+            .expect("fallback boundary note should be valid")];
+        }
+
+        self.boundary_notes.clone()
+    }
+}
+
+fn writer_file_io_plan_blockers(
+    preflight_plan: &ProofpackWriterPreflightPlan,
+    failure_visibility: &[ProofpackWriterFileIoFailureVisibility],
+    boundary_notes: &[ProofBoundaryNote],
+) -> Vec<ProofpackWriterFileIoBlocker> {
+    let mut blockers = Vec::new();
+
+    if preflight_plan.has_missing_preconditions() {
+        blockers.push(ProofpackWriterFileIoBlocker::PreflightPlanMissingPreconditions);
+    }
+
+    if !preflight_plan.plans_side_effect(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite) {
+        blockers.push(ProofpackWriterFileIoBlocker::MissingCanonicalArtifactWriteSelection);
+    }
+
+    if failure_visibility.is_empty() {
+        blockers.push(ProofpackWriterFileIoBlocker::MissingErrorRollbackVisibility);
+    }
+
+    if boundary_notes.is_empty() {
+        blockers.push(ProofpackWriterFileIoBlocker::MissingBoundaryNotes);
+    }
+
+    blockers
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoPlanBoundary {
+    pub models_writer_file_io_plan: bool,
+    pub models_explicit_storage_root: bool,
+    pub models_target_artifact_ref: bool,
+    pub models_target_path_ref: bool,
+    pub models_write_policy: bool,
+    pub models_idempotency_basis: bool,
+    pub models_temp_atomic_policy: bool,
+    pub models_error_rollback_visibility: bool,
+    pub writes_proofpack: bool,
+    pub touches_filesystem: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub evidence_only: bool,
+    pub target_path_is_authority: bool,
+    pub index_latest_are_canonical: bool,
+    pub separates_file_io_plan_from_artifact_availability: bool,
+}
+
+pub const fn proofpack_writer_file_io_plan_boundary() -> ProofpackWriterFileIoPlanBoundary {
+    ProofpackWriterFileIoPlanBoundary {
+        models_writer_file_io_plan: true,
+        models_explicit_storage_root: true,
+        models_target_artifact_ref: true,
+        models_target_path_ref: true,
+        models_write_policy: true,
+        models_idempotency_basis: true,
+        models_temp_atomic_policy: true,
+        models_error_rollback_visibility: true,
+        writes_proofpack: false,
+        touches_filesystem: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        evidence_only: true,
+        target_path_is_authority: false,
+        index_latest_are_canonical: false,
+        separates_file_io_plan_from_artifact_availability: true,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -1372,6 +1881,8 @@ pub enum ProofpackError {
     EmptyWriterOperationId,
     EmptyWriterAttemptedAt,
     EmptyWriterTargetRef,
+    EmptyWriterStorageRootRef,
+    EmptyWriterTargetPathRef,
     InvalidArtifactHash(ArtifactHashPolicyError),
     MissingContractRefs,
     MissingRunReceiptRefs,
@@ -1563,6 +2074,25 @@ mod tests {
             ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
                 .expect("target ref should be valid"),
             planned_side_effects,
+            boundary_notes,
+        )
+    }
+
+    fn sample_writer_file_io_plan(
+        preflight_plan: &ProofpackWriterPreflightPlan,
+        failure_visibility: Vec<ProofpackWriterFileIoFailureVisibility>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> ProofpackWriterFileIoPlan {
+        ProofpackWriterFileIoPlan::new(
+            preflight_plan,
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+            failure_visibility,
             boundary_notes,
         )
     }
@@ -2114,13 +2644,9 @@ mod tests {
         assert_eq!(plan.status().as_str(), "ready");
         assert!(plan.is_writer_ready());
         assert!(plan.missing_preconditions().is_empty());
-        assert!(plan.plans_side_effect(
-            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite
-        ));
+        assert!(plan.plans_side_effect(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite));
         assert!(plan.plans_side_effect(ProofpackWriterPlannedSideEffect::IndexUpdate));
-        assert!(plan.plans_side_effect(
-            ProofpackWriterPlannedSideEffect::LatestPointerUpdate
-        ));
+        assert!(plan.plans_side_effect(ProofpackWriterPlannedSideEffect::LatestPointerUpdate));
 
         assert_eq!(evidence.operation_kind().as_str(), "planned_only");
         assert_eq!(evidence.outcome().as_str(), "planned_only");
@@ -2142,19 +2668,22 @@ mod tests {
 
     #[test]
     fn proofpack_writer_preflight_plan_records_missing_preconditions() {
-        let incomplete_proofpack = Proofpack::new(
-            ProofpackId::new("proofpack_incomplete_001").expect("proofpack id should be valid"),
-            ProofGateDecisionRef::new("decision_local_001")
-                .expect("gate decision ref should be valid"),
-            vec![ProofContractRef::new("contract_local_001")
-                .expect("contract ref should be valid")],
-            vec![ProofRunReceiptRef::new("receipt_local_001")
-                .expect("run receipt ref should be valid")],
-            ProofCreatedAt::new("2026-04-25T21:00:00Z").expect("created_at should be valid"),
-            vec![ProofBoundaryNote::new("Incomplete proofpack lacks required digest entries.")
-                .expect("boundary note should be valid")],
-        )
-        .expect("proofpack should be structurally valid");
+        let incomplete_proofpack =
+            Proofpack::new(
+                ProofpackId::new("proofpack_incomplete_001").expect("proofpack id should be valid"),
+                ProofGateDecisionRef::new("decision_local_001")
+                    .expect("gate decision ref should be valid"),
+                vec![ProofContractRef::new("contract_local_001")
+                    .expect("contract ref should be valid")],
+                vec![ProofRunReceiptRef::new("receipt_local_001")
+                    .expect("run receipt ref should be valid")],
+                ProofCreatedAt::new("2026-04-25T21:00:00Z").expect("created_at should be valid"),
+                vec![
+                    ProofBoundaryNote::new("Incomplete proofpack lacks required digest entries.")
+                        .expect("boundary note should be valid"),
+                ],
+            )
+            .expect("proofpack should be structurally valid");
         let plan = sample_writer_preflight_plan(&incomplete_proofpack, vec![], vec![]);
         let evidence = plan
             .to_operation_evidence(
@@ -2224,6 +2753,216 @@ mod tests {
         assert!(!plan.requires_runtime_storage());
         assert!(!plan.writes_cli_output());
         assert!(!boundary.writes_schema_files);
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_plan_records_explicit_targets_without_writing() {
+        let proofpack = sample_proofpack();
+        let preflight_plan = sample_writer_preflight_plan(
+            &proofpack,
+            vec![
+                ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+                ProofpackWriterPlannedSideEffect::IndexUpdate,
+                ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+            ],
+            vec![ProofBoundaryNote::new(
+                "Preflight plan is side-effect-free and does not write proofpacks.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let plan = sample_writer_file_io_plan(
+            &preflight_plan,
+            vec![
+                ProofpackWriterFileIoFailureVisibility::StorageRootMissing,
+                ProofpackWriterFileIoFailureVisibility::TargetPathInvalid,
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ProofpackWriterFileIoFailureVisibility::AtomicMoveFailed,
+                ProofpackWriterFileIoFailureVisibility::CleanupFailed,
+                ProofpackWriterFileIoFailureVisibility::IndexUpdateFailed,
+                ProofpackWriterFileIoFailureVisibility::LatestPointerUpdateFailed,
+            ],
+            vec![ProofBoundaryNote::new(
+                "File IO plan models explicit targets and policies without touching the filesystem.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let evidence = plan
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_file_io_plan_local_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-26T15:00:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("planned-only operation evidence should be derivable");
+
+        assert_eq!(
+            plan.schema_version(),
+            PROOFPACK_WRITER_FILE_IO_PLAN_SCHEMA_VERSION
+        );
+        assert_eq!(plan.proofpack_id(), proofpack.id());
+        assert_eq!(plan.storage_root_ref().as_str(), "repo_runtime_proofs_root");
+        assert_eq!(
+            plan.target_artifact_ref().as_str(),
+            "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert_eq!(
+            plan.target_path_ref().as_str(),
+            "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert_eq!(
+            plan.manifest_self_digest(),
+            preflight_plan.manifest_self_digest()
+        );
+        assert_eq!(plan.status().as_str(), "ready");
+        assert!(plan.is_file_io_ready());
+        assert!(plan.selects_canonical_artifact_write());
+        assert!(plan.selects_index_update());
+        assert!(plan.selects_latest_pointer_update());
+        assert!(plan.tracks_conflict_visibility());
+        assert!(plan.tracks_rollback_visibility());
+        assert_eq!(evidence.operation_kind().as_str(), "planned_only");
+        assert_eq!(evidence.outcome().as_str(), "planned_only");
+        assert_eq!(
+            evidence.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert!(!evidence.canonical_artifact_available());
+        assert!(!evidence.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_plan_exposes_idempotency_and_conflict_policy() {
+        let proofpack = sample_proofpack();
+        let preflight_plan = sample_writer_preflight_plan(
+            &proofpack,
+            vec![ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite],
+            vec![ProofBoundaryNote::new("Preflight is complete.")
+                .expect("boundary note should be valid")],
+        );
+        let plan = sample_writer_file_io_plan(
+            &preflight_plan,
+            vec![
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetMatching,
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ProofpackWriterFileIoFailureVisibility::PartialCanonicalArtifactAmbiguous,
+            ],
+            vec![ProofBoundaryNote::new(
+                "Idempotency and conflict handling are modeled as policy, not inferred from indexes.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert_eq!(plan.write_policy().as_str(), "idempotent_if_matching");
+        assert!(plan.write_policy().supports_idempotency());
+        assert!(!plan.write_policy().allows_silent_overwrite());
+        assert_eq!(plan.idempotency_basis().as_str(), "manifest_self_digest");
+        assert_eq!(plan.temp_atomic_policy().as_str(), "atomic_sibling_temp");
+        assert!(plan.temp_atomic_policy().prefers_atomic_move());
+        assert!(
+            plan.tracks_failure(ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent)
+        );
+        assert_eq!(
+            ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent.as_str(),
+            "existing_target_different"
+        );
+        assert!(!plan.target_path_is_authority());
+        assert!(!plan.index_latest_are_canonical());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_plan_records_blockers_without_artifact_availability() {
+        let incomplete_proofpack =
+            Proofpack::new(
+                ProofpackId::new("proofpack_file_io_blocked_001")
+                    .expect("proofpack id should be valid"),
+                ProofGateDecisionRef::new("decision_local_001")
+                    .expect("gate decision ref should be valid"),
+                vec![ProofContractRef::new("contract_local_001")
+                    .expect("contract ref should be valid")],
+                vec![ProofRunReceiptRef::new("receipt_local_001")
+                    .expect("run receipt ref should be valid")],
+                ProofCreatedAt::new("2026-04-25T22:00:00Z").expect("created_at should be valid"),
+                vec![
+                    ProofBoundaryNote::new("Incomplete proofpack lacks digest entries.")
+                        .expect("boundary note should be valid"),
+                ],
+            )
+            .expect("proofpack should be structurally valid");
+        let preflight_plan = sample_writer_preflight_plan(&incomplete_proofpack, vec![], vec![]);
+        let plan = sample_writer_file_io_plan(&preflight_plan, vec![], vec![]);
+        let evidence = plan
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_file_io_plan_blocked_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-26T15:01:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("blocked operation evidence should be derivable");
+
+        assert_eq!(plan.status().as_str(), "file_io_blocked");
+        assert!(!plan.is_file_io_ready());
+        assert!(plan.has_file_io_blockers());
+        assert_eq!(
+            plan.blockers(),
+            &[
+                ProofpackWriterFileIoBlocker::PreflightPlanMissingPreconditions,
+                ProofpackWriterFileIoBlocker::MissingCanonicalArtifactWriteSelection,
+                ProofpackWriterFileIoBlocker::MissingErrorRollbackVisibility,
+                ProofpackWriterFileIoBlocker::MissingBoundaryNotes,
+            ]
+        );
+        assert_eq!(
+            plan.blockers()[0].as_str(),
+            "preflight_plan_missing_preconditions"
+        );
+        assert_eq!(evidence.outcome().as_str(), "preflight_failed");
+        assert_eq!(
+            evidence.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert!(!evidence.canonical_artifact_available());
+        assert!(!evidence.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_plan_is_evidence_only_and_setup_neutral() {
+        let proofpack = sample_proofpack();
+        let preflight_plan = sample_writer_preflight_plan(
+            &proofpack,
+            vec![ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite],
+            vec![ProofBoundaryNote::new("Preflight is complete.")
+                .expect("boundary note should be valid")],
+        );
+        let plan = sample_writer_file_io_plan(
+            &preflight_plan,
+            vec![ProofpackWriterFileIoFailureVisibility::StorageRootDisallowed],
+            vec![
+                ProofBoundaryNote::new("File IO plan is model-only and setup-neutral.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let boundary = plan.boundary();
+
+        assert!(plan.is_evidence_only());
+        assert!(boundary.models_writer_file_io_plan);
+        assert!(boundary.models_explicit_storage_root);
+        assert!(boundary.models_target_artifact_ref);
+        assert!(boundary.models_target_path_ref);
+        assert!(boundary.models_write_policy);
+        assert!(boundary.models_idempotency_basis);
+        assert!(boundary.models_temp_atomic_policy);
+        assert!(boundary.models_error_rollback_visibility);
+        assert!(boundary.separates_file_io_plan_from_artifact_availability);
+        assert!(!plan.touches_filesystem());
+        assert!(!plan.writes_proofpack());
+        assert!(!boundary.writes_writer_operation_evidence);
+        assert!(!boundary.writes_final_decision);
+        assert!(!plan.creates_acceptance_claim());
+        assert!(!plan.requires_runtime_storage());
+        assert!(!plan.writes_cli_output());
+        assert!(!boundary.writes_schema_files);
+        assert!(!boundary.target_path_is_authority);
+        assert!(!boundary.index_latest_are_canonical);
     }
 
     #[test]

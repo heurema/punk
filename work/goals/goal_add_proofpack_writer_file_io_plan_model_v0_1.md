@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_writer_file_io_plan_model_v0_1
 title: "Add proofpack writer file IO plan model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -43,7 +43,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-file-io-boundary-v0-1.md"
   - "work/reports/2026-04-26-forty-first-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-file-io-plan-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -92,3 +93,13 @@ Do not implement proofpack file writing.
 Do not implement proofpack referenced-ref verification integration.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Implemented proofpack writer file IO plan model v0.1 as side-effect-free `punk-proof` behavior.
+
+The model records explicit storage-root refs, target artifact refs, target path refs, write policy, idempotency basis, temp/atomic policy, planned side effects, file IO blockers, and error/rollback visibility, and can derive planned-only or preflight-blocked operation evidence without claiming canonical artifact availability.
+
+Updated smoke eval coverage and reconciled `docs/product/CRATE-STATUS.md`.
+
+No runtime/storage/schema/CLI/`.punk` changes were made.
