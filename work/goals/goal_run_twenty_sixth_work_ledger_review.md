@@ -1,7 +1,7 @@
 ---
 id: goal_run_twenty_sixth_work_ledger_review
 title: "Run the twenty-sixth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -35,7 +35,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-computation-helper.v0.1.md"
   - "work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-twenty-sixth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -58,9 +59,10 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Advisory review goal only; execution will produce a work report and selected-next update."
+  classification: docs-only
+  required_updates:
+    - "work/reports/2026-04-26-twenty-sixth-work-ledger-review.md"
+  rationale: "Execution produced a work report, created the next selected goal, and updated the work ledger."
 ---
 
 ## Context
@@ -72,3 +74,12 @@ Before implementing a proofpack manifest digest helper, selecting proofpack writ
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement manifest digest computation, implement runtime storage, write `.punk` state, add file IO hashing, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the twenty-sixth advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md` as the next bounded implementation goal so `punk-proof` can compute a proofpack manifest self-digest from deterministic in-memory manifest bytes while keeping proofpack writer behavior, file IO hashing, referenced artifact verification, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, and `punk init` deferred.
+
+No runtime/code/schema/CLI/`.punk` changes were made.

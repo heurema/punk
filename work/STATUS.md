@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run twenty-sixth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_twenty_sixth_work_ledger_review.md"
+current_focus: "Add proofpack manifest digest helper v0.1"
+selected_next: "work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,15 +17,16 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the twenty-sixth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_twenty_sixth_work_ledger_review.md`
-- Why this is next: proofpack manifest digest boundary v0.1 is now defined; run a short advisory review before selecting proofpack manifest digest helper implementation, proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
+- Current focus: add proofpack manifest digest helper v0.1.
+- Selected next: `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md`
+- Why this is next: proofpack manifest digest boundary v0.1 is defined, `punk-proof` already renders deterministic in-memory manifests, and `punk-core` already computes exact-byte SHA-256 digests; implement the smallest helper before proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
 - Acceptance:
-  - `work/STATUS.md` remains the only live work-state source of truth.
-  - `selected_next` points to one `ready` goal.
-  - proofpack manifest digest boundary v0.1 distinguishes manifest self-digest from referenced artifact digests and file IO artifact hashing.
-  - proofpack manifest digest boundary v0.1 keeps proofpack writer behavior, runtime storage, gate decisions, acceptance claims, schema files, CLI behavior, adapters, automation, provider/model runners, and `punk init` deferred.
-  - no runtime/code/schema/CLI/`.punk` changes were made.
+  - `punk-proof` exposes side-effect-free proofpack manifest self-digest computation from exact UTF-8 renderer bytes.
+  - the helper reuses `punk-core` exact-byte hash computation and adds no new SHA-256 dependency to `punk-proof`.
+  - manifest self-digest remains separate from referenced artifact digest verification and file IO artifact hashing.
+  - smoke eval covers manifest digest helper behavior as local assessment only.
+  - no proofpack writer behavior, runtime storage, gate decisions, acceptance claims, schema files, CLI behavior, adapters, automation, provider/model runners, or `punk init` are added.
+  - `work/STATUS.md` remains the only live work-state source of truth and selects exactly one next ready goal.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -33,7 +34,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_twenty_sixth_work_ledger_review.md` | `ready` | Proofpack manifest digest boundary is defined; review before selecting implementation/writer/file-IO-hash/runtime/schema/CLI work. | — |
+| `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md` | `ready` | Boundary and prerequisites are in place; implement helper-only manifest self-digest without writer/runtime/CLI/file IO scope. | — |
 
 ## Blocked
 
@@ -49,6 +50,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Ran the twenty-sixth advisory Work Ledger Review | `work/goals/goal_run_twenty_sixth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-sixth-work-ledger-review.md`, `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md` |
 | 2026-04-26 | Defined proofpack manifest digest boundary v0.1 | `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md`, `evals/specs/proofpack-manifest-digest.v0.1.md`, `work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md` |
 | 2026-04-26 | Ran the twenty-fifth advisory Work Ledger Review | `work/goals/goal_run_twenty_fifth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-fifth-work-ledger-review.md`, `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md` |
 | 2026-04-26 | Reconciled CRATE-STATUS exact-byte hash computation status | `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md`, `work/reports/2026-04-26-crate-status-exact-byte-hash-computation.md`, `docs/product/CRATE-STATUS.md` |
@@ -121,13 +123,13 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/proofpack-manifest-digest.v0.1.md work/STATUS.md work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md work/goals/goal_run_twenty_sixth_work_ledger_review.md work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md --report work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_sixth_work_ledger_review.md work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md work/reports/2026-04-26-twenty-sixth-work-ledger-review.md --report work/reports/2026-04-26-twenty-sixth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - proofpack manifest digest boundary v0.1 completed
-  - `selected_next` is now `work/goals/goal_run_twenty_sixth_work_ledger_review.md`
+  - twenty-sixth advisory Work Ledger Review completed
+  - `selected_next` is now `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md`
   - no runtime/code/schema/CLI/`.punk` changes were made
-  - docs-governance had 0 failures and 0 warnings for this docs/spec diff
+  - docs-governance had 0 failures and 0 warnings for this review diff
   - cargo test --workspace passed
   - no repo-tracked absolute path leaks found
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
