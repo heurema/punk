@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run the forty-seventh advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_forty_seventh_work_ledger_review.md"
+current_focus: "Define proofpack writer target artifact ref policy v0.1"
+selected_next: "work/goals/goal_define_proofpack_writer_target_artifact_ref_policy_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,12 +17,12 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the forty-seventh advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_forty_seventh_work_ledger_review.md`
-- Why this is next: proofpack writer canonical artifact model v0.1 is implemented and validated; before selecting any active proofpack writer, `.punk/proofs` activation, schema files, CLI behavior, referenced-ref verification integration, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`, run an advisory review and select exactly one next bounded goal.
+- Current focus: define proofpack writer target artifact ref policy v0.1.
+- Selected next: `work/goals/goal_define_proofpack_writer_target_artifact_ref_policy_v0_1.md`
+- Why this is next: proofpack writer canonical artifact model v0.1 is implemented and validated, but target artifact refs still lack a policy boundary; before selecting any active proofpack writer, `.punk/proofs` activation, schema files, CLI behavior, referenced-ref verification integration, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`, define how a future writer identifies the target artifact without treating paths, indexes, `latest` pointers, service mirrors, or executor claims as authority.
 - Acceptance:
-  - review the completed canonical artifact model and open proofpack writer blockers.
-  - select exactly one next ready goal in `work/STATUS.md`.
+  - docs/spec-only policy defines target artifact ref identity and naming boundaries.
+  - proofpack id, manifest self-digest, canonical artifact identity, target artifact ref, target path ref, storage root ref, indexes, `latest` pointers, CLI output, and service mirrors stay separated.
   - no runtime/code/schema/CLI/`.punk`, active proofpack writer, filesystem write, referenced-ref verification integration, gate decision, or acceptance claim is added.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
@@ -31,13 +31,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_forty_seventh_work_ledger_review.md` | `ready` | Canonical artifact model is implemented; run advisory review before selecting active writer/storage/schema/CLI or proofpack referenced-ref integration work. | — |
+| `work/goals/goal_define_proofpack_writer_target_artifact_ref_policy_v0_1.md` | `ready` | Canonical artifact model is implemented; define target artifact ref policy before active writer/storage/schema/CLI or proofpack referenced-ref integration work. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, and side-effect-free canonical artifact model are in place; advisory review after canonical artifact model is selected before active writer, orchestration, runtime, schema files, CLI, or referenced-ref verification integration implementation work. |
+| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, side-effect-free canonical artifact model, and advisory review after canonical artifact model are in place; target artifact ref policy boundary is selected before active writer, orchestration, runtime, schema files, CLI, or referenced-ref verification integration implementation work. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -55,6 +55,7 @@ last_validated_commit: null
 | 2026-04-26 | Defined proofpack writer canonical artifact layout v0.1 | `work/goals/goal_define_proofpack_writer_canonical_artifact_layout_v0_1.md`, `evals/specs/proofpack-writer-canonical-artifact-layout.v0.1.md`, `work/reports/2026-04-26-proofpack-writer-canonical-artifact-layout-v0-1.md` |
 | 2026-04-26 | Ran the forty-sixth advisory Work Ledger Review | `work/goals/goal_run_forty_sixth_work_ledger_review.md`, `work/reports/2026-04-26-forty-sixth-work-ledger-review.md`, `work/goals/goal_add_proofpack_writer_canonical_artifact_model_v0_1.md` |
 | 2026-04-26 | Added proofpack writer canonical artifact model v0.1 | `work/goals/goal_add_proofpack_writer_canonical_artifact_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-26-proofpack-writer-canonical-artifact-model-v0-1.md` |
+| 2026-04-26 | Ran the forty-seventh advisory Work Ledger Review | `work/goals/goal_run_forty_seventh_work_ledger_review.md`, `work/reports/2026-04-26-forty-seventh-work-ledger-review.md`, `work/goals/goal_define_proofpack_writer_target_artifact_ref_policy_v0_1.md` |
 | 2026-04-26 | Ran the forty-second advisory Work Ledger Review | `work/goals/goal_run_forty_second_work_ledger_review.md`, `work/reports/2026-04-26-forty-second-work-ledger-review.md`, `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md` |
 | 2026-04-26 | Added proofpack writer file IO outcome model v0.1 | `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-26-proofpack-writer-file-io-outcome-model-v0-1.md` |
 | 2026-04-26 | Added proofpack writer file IO plan model v0.1 | `work/goals/goal_add_proofpack_writer_file_io_plan_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-26-proofpack-writer-file-io-plan-model-v0-1.md` |
@@ -161,11 +162,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files crates/punk-proof/src/lib.rs crates/punk-eval/src/lib.rs docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_add_proofpack_writer_canonical_artifact_model_v0_1.md work/goals/goal_run_forty_seventh_work_ledger_review.md work/reports/2026-04-26-proofpack-writer-canonical-artifact-model-v0-1.md --report work/reports/2026-04-26-proofpack-writer-canonical-artifact-model-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_forty_seventh_work_ledger_review.md work/goals/goal_define_proofpack_writer_target_artifact_ref_policy_v0_1.md work/reports/2026-04-26-forty-seventh-work-ledger-review.md --report work/reports/2026-04-26-forty-seventh-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - proofpack writer canonical artifact model v0.1 implemented and validated after the canonical artifact layout spec
-  - `selected_next` is now `work/goals/goal_run_forty_seventh_work_ledger_review.md`
+  - forty-seventh advisory Work Ledger Review completed and validated after proofpack writer canonical artifact model v0.1
+  - `selected_next` is now `work/goals/goal_define_proofpack_writer_target_artifact_ref_policy_v0_1.md`
   - no runtime/storage/schema/CLI/`.punk` changes were made
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
