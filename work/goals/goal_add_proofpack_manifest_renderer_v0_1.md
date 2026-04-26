@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_manifest_renderer_v0_1
 title: "Add proofpack manifest renderer v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -38,7 +38,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-policy.v0.1.md"
   - "work/reports/2026-04-26-twenty-first-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-manifest-renderer-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -61,7 +62,7 @@ doc_impact:
   classification: code-doc
   required_updates:
     - "work/reports/2026-04-26-proofpack-manifest-renderer-v0-1.md"
-  rationale: "Execution will add side-effect-free proofpack renderer behavior and record a work report; canonical docs/specs should not change unless implementation reveals a mismatch."
+  rationale: "Execution added side-effect-free proofpack renderer behavior and recorded a work report; canonical docs/specs did not change."
 ---
 
 ## Context
@@ -84,3 +85,11 @@ Do not normalize bytes or hashes.
 Do not write gate decisions.
 Do not create acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Completed proofpack manifest renderer v0.1.
+
+`punk-proof` can now render existing `Proofpack` values into deterministic in-memory JSON manifest content with explicit proofpack refs, artifact digests, created_at, and boundary notes.
+
+The implementation remains side-effect-free: no proofpack writer, `.punk/` storage, hash computation, byte/hash normalization, schema file, CLI behavior, gate decision writer, acceptance claim, adapter, automation, or `punk init` was added.

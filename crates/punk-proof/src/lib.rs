@@ -4,6 +4,8 @@
 //! `.punk/proofs`, expose CLI behavior, write gate decisions, claim
 //! acceptance, run validators, or require runtime storage.
 
+use std::fmt::Write as _;
+
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROOFPACK_SCHEMA_VERSION: &str = "punk.proofpack.v0.1";
 
@@ -499,6 +501,84 @@ impl Proofpack {
     ) -> bool {
         self.matches_gate_decision_ref(gate_decision_ref) && self.has_complete_link_hash_integrity()
     }
+
+    pub fn render_manifest_json(&self) -> String {
+        let mut output = String::new();
+        output.push_str("{\n");
+
+        write_manifest_string_field(&mut output, 1, "proofpack_id", self.id().as_str(), true);
+        write_manifest_string_field(
+            &mut output,
+            1,
+            "schema_version",
+            self.schema_version(),
+            true,
+        );
+        write_manifest_string_field(
+            &mut output,
+            1,
+            "gate_decision_ref",
+            self.gate_decision_ref().as_str(),
+            true,
+        );
+        write_manifest_string_array_field(
+            &mut output,
+            1,
+            "contract_refs",
+            self.contract_refs().iter().map(ProofContractRef::as_str),
+            true,
+        );
+        write_manifest_string_array_field(
+            &mut output,
+            1,
+            "run_receipt_refs",
+            self.run_receipt_refs()
+                .iter()
+                .map(ProofRunReceiptRef::as_str),
+            true,
+        );
+        write_manifest_string_array_field(
+            &mut output,
+            1,
+            "eval_refs",
+            self.eval_refs().iter().map(ProofEvalRef::as_str),
+            true,
+        );
+        write_manifest_string_array_field(
+            &mut output,
+            1,
+            "event_refs",
+            self.event_refs().iter().map(ProofEventRef::as_str),
+            true,
+        );
+        write_manifest_string_array_field(
+            &mut output,
+            1,
+            "output_artifact_refs",
+            self.output_artifact_refs()
+                .iter()
+                .map(ProofOutputArtifactRef::as_str),
+            true,
+        );
+        write_manifest_artifact_digests(&mut output, self.artifact_digests());
+        write_manifest_string_field(
+            &mut output,
+            1,
+            "created_at",
+            self.created_at().as_str(),
+            true,
+        );
+        write_manifest_string_array_field(
+            &mut output,
+            1,
+            "boundary_notes",
+            self.boundary_notes().iter().map(ProofBoundaryNote::as_str),
+            false,
+        );
+
+        output.push_str("}");
+        output
+    }
 }
 
 fn proof_artifact_digest_requirement(
@@ -507,6 +587,94 @@ fn proof_artifact_digest_requirement(
 ) -> ProofArtifactDigestRequirement {
     ProofArtifactDigestRequirement::new(kind, artifact_ref)
         .expect("proofpack refs are validated before integrity checks")
+}
+
+fn write_manifest_indent(output: &mut String, indent_level: usize) {
+    output.push_str(&"  ".repeat(indent_level));
+}
+
+fn write_manifest_string_field(
+    output: &mut String,
+    indent_level: usize,
+    key: &str,
+    value: &str,
+    trailing_comma: bool,
+) {
+    write_manifest_indent(output, indent_level);
+    push_manifest_json_string(output, key);
+    output.push_str(": ");
+    push_manifest_json_string(output, value);
+    if trailing_comma {
+        output.push(',');
+    }
+    output.push('\n');
+}
+
+fn write_manifest_string_array_field<'a, I>(
+    output: &mut String,
+    indent_level: usize,
+    key: &str,
+    values: I,
+    trailing_comma: bool,
+) where
+    I: IntoIterator<Item = &'a str>,
+{
+    write_manifest_indent(output, indent_level);
+    push_manifest_json_string(output, key);
+    output.push_str(": [");
+    for (index, value) in values.into_iter().enumerate() {
+        if index > 0 {
+            output.push_str(", ");
+        }
+        push_manifest_json_string(output, value);
+    }
+    output.push(']');
+    if trailing_comma {
+        output.push(',');
+    }
+    output.push('\n');
+}
+
+fn write_manifest_artifact_digests(output: &mut String, artifact_digests: &[ProofArtifactDigest]) {
+    write_manifest_indent(output, 1);
+    push_manifest_json_string(output, "artifact_digests");
+    output.push_str(": [\n");
+
+    for (index, digest) in artifact_digests.iter().enumerate() {
+        write_manifest_indent(output, 2);
+        output.push_str("{\n");
+        write_manifest_string_field(output, 3, "kind", digest.kind().as_str(), true);
+        write_manifest_string_field(output, 3, "ref", digest.artifact_ref().as_str(), true);
+        write_manifest_string_field(output, 3, "hash", digest.artifact_hash().as_str(), false);
+        write_manifest_indent(output, 2);
+        output.push('}');
+        if index + 1 != artifact_digests.len() {
+            output.push(',');
+        }
+        output.push('\n');
+    }
+
+    write_manifest_indent(output, 1);
+    output.push_str("],\n");
+}
+
+fn push_manifest_json_string(output: &mut String, value: &str) {
+    output.push('"');
+    for character in value.chars() {
+        match character {
+            '"' => output.push_str("\\\""),
+            '\\' => output.push_str("\\\\"),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            character if character.is_control() => {
+                write!(output, "\\u{:04x}", character as u32)
+                    .expect("writing to String should succeed");
+            }
+            character => output.push(character),
+        }
+    }
+    output.push('"');
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -698,6 +866,76 @@ mod tests {
         assert_eq!(proofpack.boundary_notes().len(), 1);
         assert!(proofpack.references_evidence_without_absorbing());
         assert!(!proofpack.boundary().absorbs_evidence);
+    }
+
+    #[test]
+    fn proofpack_manifest_renderer_is_deterministic_and_complete() {
+        let proofpack = sample_proofpack();
+        let rendered = proofpack.render_manifest_json();
+
+        assert_eq!(rendered, proofpack.render_manifest_json());
+        assert!(rendered.starts_with("{\n"));
+        assert!(rendered.contains("\"proofpack_id\": \"proofpack_local_001\""));
+        assert!(rendered.contains(&format!(
+            "\"schema_version\": \"{PROOFPACK_SCHEMA_VERSION}\""
+        )));
+        assert!(rendered.contains("\"gate_decision_ref\": \"decision_local_001\""));
+        assert!(rendered.contains("\"contract_refs\": [\"contract_local_001\"]"));
+        assert!(rendered.contains("\"run_receipt_refs\": [\"receipt_local_001\"]"));
+        assert!(rendered.contains(
+            "\"eval_refs\": [\"work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md\"]"
+        ));
+        assert!(rendered.contains("\"event_refs\": [\"evt_0000000000000001\"]"));
+        assert!(rendered.contains("\"output_artifact_refs\": [\"target/debug/punk\"]"));
+        assert!(rendered.contains("\"artifact_digests\": ["));
+        assert!(rendered.contains("\"kind\": \"gate_decision\""));
+        assert!(rendered.contains("\"ref\": \"decision_local_001\""));
+        assert!(rendered.contains(&format!("\"hash\": \"{PROOF_HASH_GATE_DECISION}\"")));
+        assert!(rendered.contains("\"created_at\": \"2026-04-25T20:00:00Z\""));
+        assert!(rendered.contains(
+            "\"boundary_notes\": [\"Proofpack references evidence; gate remains the decision authority.\"]"
+        ));
+    }
+
+    #[test]
+    fn proofpack_manifest_renderer_escapes_json_strings() {
+        let proofpack = Proofpack::new(
+            ProofpackId::new("proofpack_\"quoted\"").expect("proofpack id should be valid"),
+            ProofGateDecisionRef::new("decision\\local").expect("decision ref should be valid"),
+            vec![ProofContractRef::new("contract\nlocal").expect("contract ref should be valid")],
+            vec![ProofRunReceiptRef::new("receipt\tlocal").expect("receipt ref should be valid")],
+            ProofCreatedAt::new("2026-04-25T20:00:00Z").expect("created_at should be valid"),
+            vec![
+                ProofBoundaryNote::new("note with \"quote\", slash\\ and\nnewline")
+                    .expect("boundary note should be valid"),
+            ],
+        )
+        .expect("proofpack should be valid");
+
+        let rendered = proofpack.render_manifest_json();
+
+        assert!(rendered.contains("\"proofpack_id\": \"proofpack_\\\"quoted\\\"\""));
+        assert!(rendered.contains("\"gate_decision_ref\": \"decision\\\\local\""));
+        assert!(rendered.contains("\"contract_refs\": [\"contract\\nlocal\"]"));
+        assert!(rendered.contains("\"run_receipt_refs\": [\"receipt\\tlocal\"]"));
+        assert!(rendered.contains(
+            "\"boundary_notes\": [\"note with \\\"quote\\\", slash\\\\ and\\nnewline\"]"
+        ));
+    }
+
+    #[test]
+    fn proofpack_manifest_renderer_has_no_writer_or_hashing_side_effects() {
+        let proofpack = sample_proofpack();
+        let boundary = proofpack.boundary();
+        let rendered = proofpack.render_manifest_json();
+
+        assert!(!rendered.is_empty());
+        assert!(!boundary.writes_proofpack);
+        assert!(!boundary.requires_runtime_storage);
+        assert!(!boundary.writes_cli_output);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.computes_hashes);
+        assert!(!boundary.normalizes_hashes);
     }
 
     #[test]

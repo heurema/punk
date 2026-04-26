@@ -355,6 +355,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_acceptance_requires_accepting_decision_and_matching_proofpack(),
         eval_proofpack_integrity_ready_when_declared_digest_links_are_complete(),
         eval_proofpack_integrity_missing_digest_blocks_readiness(),
+        eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free(),
         eval_artifact_hash_policy_accepts_canonical_digest(),
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
@@ -370,10 +371,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, and artifact hash policy helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, and artifact hash policy helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, and artifact hash policy helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, and artifact hash policy helper kernels"
             .to_owned()
     };
 
@@ -392,12 +393,14 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "no .punk/evals runtime state is read or written",
             "run receipt evidence remains pre-gate and does not imply final acceptance",
             "gate/proof smoke cases remain local assessment and do not claim acceptance",
+            "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
             "artifact hash policy smoke cases validate helper shape only and do not compute hashes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
             "baseline, waiver, and stored eval reports are not active",
             "schema validation and export adapters are not active",
+            "proofpack writer and runtime proof storage are not active",
             "active artifact hash computation and byte normalization are not active",
         ],
     }
@@ -1247,6 +1250,59 @@ fn eval_proofpack_integrity_missing_digest_blocks_readiness() -> SmokeEvalCaseRe
     }
 }
 
+fn eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let rendered = proofpack.render_manifest_json();
+    let rerendered = proofpack.render_manifest_json();
+    let boundary = proofpack.boundary();
+
+    let includes_core_fields = rendered.contains("\"proofpack_id\": \"proofpack_eval_001\"")
+        && rendered.contains("\"schema_version\": \"punk.proofpack.v0.1\"")
+        && rendered.contains("\"gate_decision_ref\": \"decision_eval_001\"")
+        && rendered.contains("\"contract_refs\": [\"contract_eval_001\"]")
+        && rendered.contains("\"run_receipt_refs\": [\"receipt_eval_001\"]")
+        && rendered.contains("\"eval_refs\": [\"eval_smoke_gate_proof\"]")
+        && rendered.contains("\"event_refs\": [\"evt_eval_001\"]")
+        && rendered.contains("\"output_artifact_refs\": [\"target/debug/punk\"]")
+        && rendered.contains("\"artifact_digests\": [")
+        && rendered.contains("\"kind\": \"gate_decision\"")
+        && rendered.contains(&format!("\"hash\": \"{PROOF_HASH_GATE_DECISION}\""))
+        && rendered.contains("\"created_at\": \"2026-04-25T21:01:00Z\"")
+        && rendered.contains(
+            "\"boundary_notes\": [\"Proofpack references evidence; gate remains the authority.\"]",
+        );
+    let side_effect_free = !boundary.writes_proofpack
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.creates_acceptance_claim
+        && !boundary.computes_hashes
+        && !boundary.normalizes_hashes;
+
+    if rendered == rerendered && includes_core_fields && side_effect_free {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free",
+            "proofpack manifest renderer is deterministic and side-effect-free",
+            "proofpack manifest renderer returns stable in-memory content without writing proofpacks, computing hashes, or activating runtime storage",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free",
+            "proofpack manifest renderer is deterministic and side-effect-free",
+            format!(
+                "proofpack manifest renderer drifted; deterministic={} fields={} writes={} storage={} cli={} acceptance={} computes={} normalizes={}",
+                rendered == rerendered,
+                includes_core_fields,
+                boundary.writes_proofpack,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.creates_acceptance_claim,
+                boundary.computes_hashes,
+                boundary.normalizes_hashes
+            ),
+        )
+    }
+}
+
 fn valid_artifact_digest() -> String {
     format!("sha256:{}", "0123456789abcdef".repeat(4))
 }
@@ -1433,7 +1489,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 24);
+        assert_eq!(report.cases().len(), 25);
     }
 
     #[test]
@@ -1458,7 +1514,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, and artifact hash policy helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, and artifact hash policy helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -1475,6 +1531,9 @@ mod tests {
         assert!(
             rendered.contains("  - id: eval_proofpack_integrity_missing_digest_blocks_readiness")
         );
+        assert!(rendered.contains(
+            "  - id: eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free"
+        ));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_repo_relative_ref"));
@@ -1489,12 +1548,16 @@ mod tests {
             "gate/proof smoke cases remain local assessment and do not claim acceptance"
         ));
         assert!(rendered.contains(
+            "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks"
+        ));
+        assert!(rendered.contains(
             "artifact hash policy smoke cases validate helper shape only and do not compute hashes"
         ));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
         assert!(rendered.contains("deferred:"));
         assert!(rendered.contains("baseline, waiver, and stored eval reports are not active"));
+        assert!(rendered.contains("proofpack writer and runtime proof storage are not active"));
         assert!(rendered
             .contains("active artifact hash computation and byte normalization are not active"));
     }
@@ -1547,6 +1610,9 @@ mod tests {
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_proofpack_integrity_missing_digest_blocks_readiness\""));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free\""
+        ));
         assert!(rendered
             .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));
         assert!(
