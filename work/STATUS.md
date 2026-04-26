@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run thirty-third advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_thirty_third_work_ledger_review.md"
+current_focus: "Reconcile CRATE-STATUS referenced artifact verification helper status"
+selected_next: "work/goals/goal_reconcile_crate_status_referenced_artifact_verification_helper.md"
 last_validated_commit: null
 ---
 
@@ -17,13 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the thirty-third advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_thirty_third_work_ledger_review.md`
-- Why this is next: referenced artifact verification helper v0.1 is implemented with smoke eval coverage; review the ledger before selecting CRATE-STATUS currentness reconciliation, additional smoke eval/docs guardrails, proofpack writer preparation, proofpack writer hash-policy integration, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
+- Current focus: reconcile CRATE-STATUS referenced artifact verification helper status.
+- Selected next: `work/goals/goal_reconcile_crate_status_referenced_artifact_verification_helper.md`
+- Why this is next: referenced artifact verification helper v0.1 is implemented with smoke eval coverage, but `docs/product/CRATE-STATUS.md` still describes the pre-helper state. Reconcile canonical currentness before selecting proofpack writer preparation, proofpack writer hash-policy integration, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
 - Acceptance:
-  - advisory review records the current referenced artifact verification helper state and open blockers.
-  - `work/STATUS.md` selects exactly one next ready goal after the review.
-  - no runtime/code/schema/CLI/`.punk` changes are made.
+  - `docs/product/CRATE-STATUS.md` accurately records current referenced artifact verification helper behavior.
+  - helper wording remains evidence-only and does not claim proofpack writer, runtime, CLI, gate, or acceptance authority.
+  - no Rust code, schema, CLI, `.punk`, proofpack writer, gate decision, acceptance claim, adapter, automation, provider/model runner, or `punk init` behavior is added.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -31,13 +31,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_thirty_third_work_ledger_review.md` | `ready` | Referenced artifact verification helper is implemented with smoke coverage; review before selecting CRATE-STATUS reconciliation, writer, runtime, schema, CLI, or another guardrail branch. | — |
+| `work/goals/goal_reconcile_crate_status_referenced_artifact_verification_helper.md` | `ready` | Referenced artifact verification helper is implemented and smoke-covered; canonical CRATE-STATUS still needs currentness reconciliation. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, proofpack writer hash-policy integration, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, and file IO artifact hashing boundary are in place; file IO artifact hashing helper is implemented; CRATE-STATUS file IO helper currentness reconciliation is in place; referenced artifact verification boundary is in place; referenced artifact verification helper implementation is in place; still select writer, orchestration, or runtime work through separate goals after review. |
+| Proofpack writer, gate/eval orchestration, proofpack writer hash-policy integration, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, and referenced artifact verification helper implementation are in place; CRATE-STATUS referenced artifact verification helper currentness still needs reconciliation; still select writer, orchestration, or runtime work through separate goals after that reconciliation. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -47,6 +47,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Ran the thirty-third advisory Work Ledger Review | `work/goals/goal_run_thirty_third_work_ledger_review.md`, `work/reports/2026-04-26-thirty-third-work-ledger-review.md`, `work/goals/goal_reconcile_crate_status_referenced_artifact_verification_helper.md` |
 | 2026-04-26 | Added referenced artifact verification helper v0.1 | `work/goals/goal_add_referenced_artifact_verification_helper_v0_1.md`, `work/reports/2026-04-26-referenced-artifact-verification-helper-v0-1.md`, `crates/punk-core/src/lib.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-26 | Ran the thirty-second advisory Work Ledger Review | `work/goals/goal_run_thirty_second_work_ledger_review.md`, `work/reports/2026-04-26-thirty-second-work-ledger-review.md`, `work/goals/goal_add_referenced_artifact_verification_helper_v0_1.md` |
 | 2026-04-26 | Defined referenced artifact verification boundary v0.1 | `work/goals/goal_define_referenced_artifact_verification_boundary_v0_1.md`, `evals/specs/referenced-artifact-verification-boundary.v0.1.md`, `work/reports/2026-04-26-referenced-artifact-verification-boundary-v0-1.md` |
@@ -133,11 +134,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `cargo fmt --all && cargo check --workspace && git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files crates/punk-core/src/lib.rs crates/punk-eval/src/lib.rs work/STATUS.md work/goals/goal_add_referenced_artifact_verification_helper_v0_1.md work/goals/goal_run_thirty_third_work_ledger_review.md work/reports/2026-04-26-referenced-artifact-verification-helper-v0-1.md --report work/reports/2026-04-26-referenced-artifact-verification-helper-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_thirty_third_work_ledger_review.md work/goals/goal_reconcile_crate_status_referenced_artifact_verification_helper.md work/reports/2026-04-26-thirty-third-work-ledger-review.md --report work/reports/2026-04-26-thirty-third-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - referenced artifact verification helper v0.1 validated
-  - `selected_next` is now `work/goals/goal_run_thirty_third_work_ledger_review.md`
-  - no runtime/schema/CLI/`.punk` changes were made
+  - thirty-third advisory Work Ledger Review validated
+  - `selected_next` is now `work/goals/goal_reconcile_crate_status_referenced_artifact_verification_helper.md`
+  - no runtime/code/schema/CLI/`.punk` changes were made
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
