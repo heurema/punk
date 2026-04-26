@@ -1,7 +1,7 @@
 ---
 id: goal_define_artifact_hash_computation_helper_boundary_v0_1
 title: "Define artifact hash computation helper boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -30,13 +30,15 @@ acceptance:
   - "The boundary names minimal future tests/eval cases for deterministic byte hashing without claiming runtime proof or acceptance."
   - "No runtime/code/schema/CLI/`.punk` changes are made."
 knowledge_refs:
+  - "evals/specs/artifact-hash-computation-helper.v0.1.md"
   - "docs/product/ARCHITECTURE.md"
   - "docs/product/CRATE-STATUS.md"
   - "evals/specs/artifact-hash-policy.v0.1.md"
   - "evals/specs/proofpack-boundary.v0.1.md"
   - "work/reports/2026-04-26-twenty-second-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -56,7 +58,7 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: eval-spec
+  classification: docs-only
   required_updates:
     - "evals/specs/artifact-hash-computation-helper.v0.1.md"
     - "work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md"
@@ -86,3 +88,11 @@ Do not implement proofpack writer behavior.
 Do not write gate decisions.
 Do not create acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Completed artifact hash computation helper boundary v0.1.
+
+Defined the future helper as exact caller-provided bytes to canonical `sha256:<64 lowercase hex>` digest metadata, with no file IO, byte normalization, runtime storage, schema, CLI, proofpack writer, gate decision, adapter, automation, or `punk init` behavior.
+
+Recorded the dependency stance: Rust stdlib does not provide SHA-256, Punk should not hand-roll cryptographic SHA-256, and a future implementation may add one narrow maintained SHA-256 dependency in `punk-core` only through a separate bounded goal.
