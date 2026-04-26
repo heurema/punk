@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run twenty-fourth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_twenty_fourth_work_ledger_review.md"
+current_focus: "Reconcile CRATE-STATUS exact-byte hash computation status"
+selected_next: "work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md"
 last_validated_commit: null
 ---
 
@@ -17,16 +17,15 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the twenty-fourth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_twenty_fourth_work_ledger_review.md`
-- Why this is next: `punk-core` can now compute exact-byte canonical SHA-256 artifact digests from caller-provided bytes; run a short advisory review before selecting CRATE-STATUS reconciliation, proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
+- Current focus: reconcile `docs/product/CRATE-STATUS.md` with the newly implemented exact-byte artifact hash computation helper.
+- Selected next: `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md`
+- Why this is next: `punk-core` now computes canonical SHA-256 artifact digests from exact caller-provided bytes and owns a narrow `sha2` dependency; `docs/product/CRATE-STATUS.md` still says `punk-core` is dependency-free and does not compute hashes, so the canonical crate-status doc needs a docs-only currentness update before proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
 - Acceptance:
-  - `work/STATUS.md` remains the only live work-state source of truth.
-  - `selected_next` points to one `ready` goal.
-  - `punk-core` exposes side-effect-free exact-byte artifact hash computation.
-  - computed digests are canonical `sha256:<64 lowercase hex>` metadata and pass existing digest validation.
-  - smoke eval covers known hash vectors and exact-byte preservation as local assessment only.
-  - no file IO hashing, path/ref mapping, proofpack writer, runtime storage, schema file, CLI behavior, gate decision writer, acceptance claim, adapter, automation, provider/model runner, or `punk init` was added.
+  - `docs/product/CRATE-STATUS.md` accurately states that `punk-core` now provides side-effect-free exact-byte artifact hash computation plus artifact digest/ref validation helpers.
+  - `docs/product/CRATE-STATUS.md` records that `punk-core` has a narrow `sha2` dependency for SHA-256 computation without exposing dependency types in public Punk APIs.
+  - `docs/product/CRATE-STATUS.md` keeps file IO hashing, byte normalization, schema files, proofpack writer behavior, runtime storage, CLI behavior, gate decision writing, adapters, automation, provider/model runners, and `punk init` deferred.
+  - `docs/product/CRATE-STATUS.md` records that `punk-eval` smoke coverage includes exact-byte artifact hash computation helper behavior.
+  - `work/STATUS.md` remains the only live work-state source of truth and selects exactly one next ready goal.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -34,7 +33,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_twenty_fourth_work_ledger_review.md` | `ready` | Exact-byte hash computation is implemented; review before selecting docs-currentness reconciliation, writer prep, file IO boundary, or another guardrail. | — |
+| `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md` | `ready` | CRATE-STATUS is stale after exact-byte hash computation landed; reconcile docs-currentness before selecting writer/runtime/schema/CLI work. | — |
 
 ## Blocked
 
@@ -50,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Ran the twenty-fourth advisory Work Ledger Review | `work/goals/goal_run_twenty_fourth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-fourth-work-ledger-review.md`, `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md` |
 | 2026-04-26 | Added artifact hash computation helper v0.1 | `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`, `work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md`, `crates/punk-core/src/lib.rs` |
 | 2026-04-26 | Ran the twenty-third advisory Work Ledger Review | `work/goals/goal_run_twenty_third_work_ledger_review.md`, `work/reports/2026-04-26-twenty-third-work-ledger-review.md`, `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md` |
 | 2026-04-26 | Defined artifact hash computation helper boundary v0.1 | `work/goals/goal_define_artifact_hash_computation_helper_boundary_v0_1.md`, `evals/specs/artifact-hash-computation-helper.v0.1.md`, `work/reports/2026-04-26-artifact-hash-computation-helper-boundary-v0-1.md` |
@@ -118,13 +118,14 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `cargo fmt --all && cargo test -p punk-core && cargo test -p punk-eval && cargo run -p punk-cli -- eval run smoke && cargo run -p punk-cli -- eval run smoke --format json && git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files Cargo.lock crates/punk-core/Cargo.toml crates/punk-core/src/lib.rs crates/punk-eval/src/lib.rs work/STATUS.md work/goals/goal_add_artifact_hash_computation_helper_v0_1.md work/goals/goal_run_twenty_fourth_work_ledger_review.md work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md --report work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_fourth_work_ledger_review.md work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md work/reports/2026-04-26-twenty-fourth-work-ledger-review.md --report work/reports/2026-04-26-twenty-fourth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - `selected_next` is now `work/goals/goal_run_twenty_fourth_work_ledger_review.md`
-  - artifact hash computation helper completed without file IO/runtime/schema/CLI/`.punk` changes
-  - docs-governance had 0 failures and 0 warnings for this implementation diff
-  - `sha2` was added narrowly to `punk-core` only
+  - twenty-fourth advisory Work Ledger Review completed
+  - `selected_next` is now `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md`
+  - no runtime/code/schema/CLI/`.punk` changes were made
+  - docs-governance had 0 failures and 0 warnings for this review diff
+  - cargo test --workspace passed
+  - no repo-tracked absolute path leaks found
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - file IO hashing, proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
-  - `docs/product/CRATE-STATUS.md` may need a separate currentness reconciliation after review
