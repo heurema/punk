@@ -1,7 +1,7 @@
 ---
 id: goal_run_thirty_first_work_ledger_review
 title: "Run the thirty-first advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -37,7 +37,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-file-io-artifact-hashing-helper-v0-1.md"
   - "work/reports/2026-04-26-crate-status-file-io-artifact-hashing-helper.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-thirty-first-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -79,3 +80,12 @@ Before selecting the next implementation branch, run a short advisory review of 
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, verify referenced artifact bytes, write proofpacks, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the thirty-first advisory Work Ledger Review.
+
+Selected `work/goals/goal_define_referenced_artifact_verification_boundary_v0_1.md` as the next bounded docs/spec goal so Punk can define referenced artifact verification semantics before proofpack writer preparation, proofpack writer hash-policy integration, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init` are selected.
+
+No runtime/code/schema/CLI/`.punk` changes were made by the review.
