@@ -1,7 +1,7 @@
 ---
 id: goal_run_twenty_ninth_work_ledger_review
 title: "Run the twenty-ninth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "evals/specs/file-io-artifact-hashing-boundary.v0.1.md"
   - "work/reports/2026-04-26-file-io-artifact-hashing-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-twenty-ninth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -60,9 +61,10 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Advisory review goal only; execution will produce a work report and selected-next update."
+  classification: docs-only
+  required_updates:
+    - "work/reports/2026-04-26-twenty-ninth-work-ledger-review.md"
+  rationale: "Execution produced a work report, created the next selected implementation goal, and updated the work ledger."
 ---
 
 ## Context
@@ -74,3 +76,12 @@ Before selecting file IO hash helper implementation, referenced artifact verific
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, add file IO hashing, verify referenced artifact bytes, write proofpacks, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the twenty-ninth advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_file_io_artifact_hashing_helper_v0_1.md` as the next bounded implementation goal so Punk can add a narrow `punk-core` file IO artifact hashing helper before referenced artifact byte verification, proofpack writer integration, runtime storage, schema files, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
+
+No runtime/code/schema/CLI/`.punk` changes were made by the review.
