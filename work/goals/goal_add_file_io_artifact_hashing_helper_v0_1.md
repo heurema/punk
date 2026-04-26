@@ -1,7 +1,7 @@
 ---
 id: goal_add_file_io_artifact_hashing_helper_v0_1
 title: "Add file IO artifact hashing helper v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -45,7 +45,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-file-io-artifact-hashing-boundary-v0-1.md"
   - "work/reports/2026-04-26-twenty-ninth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-file-io-artifact-hashing-helper-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -98,3 +99,16 @@ Do not add schema files.
 Do not write gate decisions.
 Do not create acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Implemented file IO artifact hashing helper v0.1 in `punk-core`.
+
+`compute_artifact_file_digest(&RepoRoot, &RepoRelativeArtifactRef)` computes canonical digest metadata for one explicit regular file under one explicit absolute repo root by reading exact file bytes and delegating to `compute_artifact_digest(bytes)`.
+
+The implementation added explicit non-passing error outcomes for missing files, directories/non-regular files, symlinks, read failures, relative roots, and outside-root paths, plus capability flags that keep referenced artifact byte verification, proofpack writer behavior, runtime storage, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init` deferred.
+
+Smoke eval coverage records the helper as local assessment only.
+
+No proofpack writer, referenced artifact byte verification, `.punk` runtime storage, schema file, CLI command, gate decision writer, acceptance claim, provider/model/agent adapter, automation, or `punk init` was added.

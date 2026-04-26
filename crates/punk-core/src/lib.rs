@@ -1,11 +1,15 @@
-//! Minimal side-effect-free active-core helpers for Punk.
+//! Minimal bounded active-core helpers for Punk.
 //!
-//! This crate exposes deterministic validation and exact-byte hashing helpers.
-//! It does not normalize artifact bytes, read files, write schemas, write
-//! proofpacks, write gate decisions, expose CLI behavior, or touch `.punk/`
-//! runtime state.
+//! This crate exposes deterministic validation and hashing helpers.
+//! It can compute exact-byte digests for caller-provided bytes and for one
+//! explicit regular file under one explicit repo root.
+//! It does not normalize artifact bytes, write schemas, write proofpacks,
+//! write gate decisions, expose CLI behavior, or touch `.punk/` runtime state.
 
 use sha2::{Digest as ShaDigest, Sha256};
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const ARTIFACT_HASH_POLICY_VERSION: &str = "artifact-hash-policy.v0.1";
@@ -42,6 +46,29 @@ impl RepoRelativeArtifactRef {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RepoRoot(PathBuf);
+
+impl RepoRoot {
+    pub fn new(value: impl Into<PathBuf>) -> Result<Self, FileArtifactHashError> {
+        let value = value.into();
+
+        if value.as_os_str().is_empty() {
+            return Err(FileArtifactHashError::EmptyRepoRoot);
+        }
+
+        if !value.is_absolute() {
+            return Err(FileArtifactHashError::RelativeRepoRoot);
+        }
+
+        Ok(Self(value))
+    }
+
+    pub fn as_path(&self) -> &Path {
+        &self.0
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactHashPolicyError {
     EmptyDigest,
@@ -59,12 +86,39 @@ pub enum ArtifactHashPolicyError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FileArtifactHashError {
+    EmptyRepoRoot,
+    RelativeRepoRoot,
+    OutsideRepoRoot,
+    Missing,
+    NotRegularFile,
+    SymlinkNotSupported,
+    ReadDenied,
+    ReadError,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArtifactHashPolicyCapabilities {
     pub validates_digest_format: bool,
     pub validates_repo_relative_refs: bool,
     pub computes_hashes: bool,
     pub normalizes_artifact_bytes: bool,
     pub writes_runtime_state: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FileArtifactHashingCapabilities {
+    pub computes_file_artifact_digests: bool,
+    pub reads_regular_files: bool,
+    pub follows_symlinks: bool,
+    pub scans_directories: bool,
+    pub verifies_referenced_artifact_bytes: bool,
+    pub normalizes_artifact_bytes: bool,
+    pub writes_runtime_state: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_proofpack: bool,
+    pub writes_cli_output: bool,
+    pub creates_acceptance_claim: bool,
 }
 
 pub const ARTIFACT_HASH_POLICY_CAPABILITIES: ArtifactHashPolicyCapabilities =
@@ -74,6 +128,21 @@ pub const ARTIFACT_HASH_POLICY_CAPABILITIES: ArtifactHashPolicyCapabilities =
         computes_hashes: true,
         normalizes_artifact_bytes: false,
         writes_runtime_state: false,
+    };
+
+pub const FILE_ARTIFACT_HASHING_CAPABILITIES: FileArtifactHashingCapabilities =
+    FileArtifactHashingCapabilities {
+        computes_file_artifact_digests: true,
+        reads_regular_files: true,
+        follows_symlinks: false,
+        scans_directories: false,
+        verifies_referenced_artifact_bytes: false,
+        normalizes_artifact_bytes: false,
+        writes_runtime_state: false,
+        requires_runtime_storage: false,
+        writes_proofpack: false,
+        writes_cli_output: false,
+        creates_acceptance_claim: false,
     };
 
 pub fn is_canonical_artifact_digest(value: &str) -> bool {
@@ -89,6 +158,27 @@ pub fn compute_artifact_digest(bytes: &[u8]) -> ArtifactDigest {
     push_lower_hex_bytes(&mut value, digest.iter());
 
     ArtifactDigest::new(value).expect("computed SHA-256 digest should match artifact hash policy")
+}
+
+pub fn compute_artifact_file_digest(
+    repo_root: &RepoRoot,
+    artifact_ref: &RepoRelativeArtifactRef,
+) -> Result<ArtifactDigest, FileArtifactHashError> {
+    let artifact_path = artifact_path(repo_root, artifact_ref)?;
+    let metadata = fs::symlink_metadata(&artifact_path).map_err(file_artifact_hash_error)?;
+    let file_type = metadata.file_type();
+
+    if file_type.is_symlink() {
+        return Err(FileArtifactHashError::SymlinkNotSupported);
+    }
+
+    if !file_type.is_file() {
+        return Err(FileArtifactHashError::NotRegularFile);
+    }
+
+    let bytes = fs::read(&artifact_path).map_err(file_artifact_hash_error)?;
+
+    Ok(compute_artifact_digest(&bytes))
 }
 
 pub fn validate_artifact_digest(value: &str) -> Result<(), ArtifactHashPolicyError> {
@@ -197,9 +287,37 @@ fn has_url_scheme(value: &str) -> bool {
         })
 }
 
+fn artifact_path(
+    repo_root: &RepoRoot,
+    artifact_ref: &RepoRelativeArtifactRef,
+) -> Result<PathBuf, FileArtifactHashError> {
+    let path = repo_root.as_path().join(artifact_ref.as_str());
+
+    if !path.starts_with(repo_root.as_path()) {
+        return Err(FileArtifactHashError::OutsideRepoRoot);
+    }
+
+    Ok(path)
+}
+
+fn file_artifact_hash_error(error: io::Error) -> FileArtifactHashError {
+    match error.kind() {
+        io::ErrorKind::NotFound => FileArtifactHashError::Missing,
+        io::ErrorKind::PermissionDenied => FileArtifactHashError::ReadDenied,
+        _ => FileArtifactHashError::ReadError,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::process;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMP_PATH_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     fn valid_sha256() -> String {
         format!("sha256:{}", "0123456789abcdef".repeat(4))
@@ -378,5 +496,149 @@ mod tests {
         assert!(ARTIFACT_HASH_POLICY_CAPABILITIES.computes_hashes);
         assert!(!ARTIFACT_HASH_POLICY_CAPABILITIES.normalizes_artifact_bytes);
         assert!(!ARTIFACT_HASH_POLICY_CAPABILITIES.writes_runtime_state);
+    }
+
+    #[test]
+    fn file_artifact_digest_hashes_regular_file_exact_bytes() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts")).expect("temp repo should be created");
+        fs::write(temp_path.join("artifacts/output.bin"), b"abc")
+            .expect("artifact file should be written");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let artifact_ref =
+            RepoRelativeArtifactRef::new("artifacts/output.bin").expect("ref should be valid");
+
+        let digest = compute_artifact_file_digest(&repo_root, &artifact_ref)
+            .expect("file digest should compute");
+
+        assert_eq!(digest, compute_artifact_digest(b"abc"));
+        assert!(is_canonical_artifact_digest(digest.as_str()));
+        assert!(
+            !temp_path.join(".punk").exists(),
+            "file digest helper must not write runtime state"
+        );
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[test]
+    fn file_artifact_digest_preserves_exact_file_bytes_without_normalization() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts")).expect("temp repo should be created");
+        fs::write(temp_path.join("artifacts/unix.txt"), b"line\n")
+            .expect("unix file should be written");
+        fs::write(temp_path.join("artifacts/windows.txt"), b"line\r\n")
+            .expect("windows file should be written");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let unix_ref =
+            RepoRelativeArtifactRef::new("artifacts/unix.txt").expect("unix ref should be valid");
+        let windows_ref = RepoRelativeArtifactRef::new("artifacts/windows.txt")
+            .expect("windows ref should be valid");
+
+        let unix_digest = compute_artifact_file_digest(&repo_root, &unix_ref)
+            .expect("unix digest should compute");
+        let windows_digest = compute_artifact_file_digest(&repo_root, &windows_ref)
+            .expect("windows digest should compute");
+
+        assert_eq!(unix_digest, compute_artifact_digest(b"line\n"));
+        assert_eq!(windows_digest, compute_artifact_digest(b"line\r\n"));
+        assert_ne!(unix_digest, windows_digest);
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[test]
+    fn file_artifact_digest_reports_missing_and_directories() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts/dir")).expect("temp repo should be created");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let missing_ref =
+            RepoRelativeArtifactRef::new("artifacts/missing.txt").expect("ref should be valid");
+        let dir_ref = RepoRelativeArtifactRef::new("artifacts/dir").expect("ref should be valid");
+
+        assert_eq!(
+            compute_artifact_file_digest(&repo_root, &missing_ref),
+            Err(FileArtifactHashError::Missing)
+        );
+        assert_eq!(
+            compute_artifact_file_digest(&repo_root, &dir_ref),
+            Err(FileArtifactHashError::NotRegularFile)
+        );
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[test]
+    fn file_artifact_digest_requires_explicit_absolute_repo_root_and_valid_refs() {
+        assert_eq!(
+            RepoRoot::new(PathBuf::new()),
+            Err(FileArtifactHashError::EmptyRepoRoot)
+        );
+        assert_eq!(
+            RepoRoot::new("relative/repo"),
+            Err(FileArtifactHashError::RelativeRepoRoot)
+        );
+        assert_eq!(
+            RepoRelativeArtifactRef::new("../outside.txt"),
+            Err(ArtifactHashPolicyError::InvalidArtifactRefSegment)
+        );
+        assert_eq!(
+            RepoRelativeArtifactRef::new("/absolute/outside.txt"),
+            Err(ArtifactHashPolicyError::AbsoluteArtifactRef)
+        );
+    }
+
+    #[test]
+    fn file_artifact_hashing_capabilities_stay_non_authoritative() {
+        let capabilities = FILE_ARTIFACT_HASHING_CAPABILITIES;
+
+        assert!(capabilities.computes_file_artifact_digests);
+        assert!(capabilities.reads_regular_files);
+        assert!(!capabilities.follows_symlinks);
+        assert!(!capabilities.scans_directories);
+        assert!(!capabilities.verifies_referenced_artifact_bytes);
+        assert!(!capabilities.normalizes_artifact_bytes);
+        assert!(!capabilities.writes_runtime_state);
+        assert!(!capabilities.requires_runtime_storage);
+        assert!(!capabilities.writes_proofpack);
+        assert!(!capabilities.writes_cli_output);
+        assert!(!capabilities.creates_acceptance_claim);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_artifact_digest_reports_symlinks_without_following() {
+        use std::os::unix::fs::symlink;
+
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(temp_path.join("artifacts")).expect("temp repo should be created");
+        fs::write(temp_path.join("artifacts/target.txt"), b"secret target")
+            .expect("target file should be written");
+        symlink("target.txt", temp_path.join("artifacts/link.txt"))
+            .expect("symlink should be created");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let link_ref =
+            RepoRelativeArtifactRef::new("artifacts/link.txt").expect("ref should be valid");
+
+        assert_eq!(
+            compute_artifact_file_digest(&repo_root, &link_ref),
+            Err(FileArtifactHashError::SymlinkNotSupported)
+        );
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    fn unique_temp_path() -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let counter = TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!(
+            "punk-core-file-hash-tests-{}-{}-{}",
+            process::id(),
+            unique,
+            counter
+        ))
     }
 }
