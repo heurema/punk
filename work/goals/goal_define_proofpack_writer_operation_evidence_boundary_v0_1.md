@@ -1,7 +1,7 @@
 ---
 id: goal_define_proofpack_writer_operation_evidence_boundary_v0_1
 title: "Define proofpack writer operation evidence boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -41,7 +41,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-storage-schema-boundary-v0-1.md"
   - "work/reports/2026-04-26-thirty-seventh-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-operation-evidence-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -89,3 +90,12 @@ Do not implement proofpack writer behavior.
 Do not implement proofpack referenced-ref verification integration.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed proofpack writer operation evidence boundary v0.1 as docs/spec only.
+
+Added `evals/specs/proofpack-writer-operation-evidence-boundary.v0.1.md` to define future non-authoritative operation evidence for writer preflight, successful writes, idempotency, conflicts, partial writes, index/latest update failures, aborted operations, side-effect reporting, hidden-source-of-truth risks, and setup-neutral authority limits.
+
+No Rust code, `.punk` runtime state, schema files, CLI behavior, proofpack writer behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init` were added.
