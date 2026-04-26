@@ -1,7 +1,7 @@
 ---
 id: goal_run_thirty_fifth_work_ledger_review
 title: "Run the thirty-fifth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "evals/specs/referenced-artifact-verification-boundary.v0.1.md"
   - "work/reports/2026-04-26-proofpack-writer-preparation-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-thirty-fifth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -76,3 +77,12 @@ Before selecting writer implementation, runtime storage/schema/CLI work, or gate
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, write proofpacks, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the thirty-fifth advisory Work Ledger Review.
+
+The review found that proofpack writer preparation boundary v0.1 is defined and selected `work/goals/goal_define_proofpack_writer_hash_policy_integration_boundary_v0_1.md` as the next bounded docs/spec goal.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
