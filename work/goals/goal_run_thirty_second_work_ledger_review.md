@@ -1,7 +1,7 @@
 ---
 id: goal_run_thirty_second_work_ledger_review
 title: "Run the thirty-second advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -37,7 +37,8 @@ knowledge_refs:
   - "evals/specs/proofpack-manifest-digest.v0.1.md"
   - "work/reports/2026-04-26-referenced-artifact-verification-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-thirty-second-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -79,3 +80,14 @@ Before selecting implementation, smoke eval coverage, writer preparation, runtim
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, verify referenced artifact bytes, write proofpacks, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the thirty-second advisory Work Ledger Review.
+
+Selected `work/goals/goal_add_referenced_artifact_verification_helper_v0_1.md` as the next bounded implementation goal so Punk can add a side-effect-bounded referenced artifact verification helper after the boundary is defined.
+
+The selected implementation goal must keep proofpack writer behavior, proofpack writer hash-policy integration, runtime storage, schema files, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init` deferred.
+
+No runtime/code/schema/CLI/`.punk` changes were made by the review.
