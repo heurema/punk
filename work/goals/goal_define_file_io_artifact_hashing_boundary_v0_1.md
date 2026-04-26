@@ -1,7 +1,7 @@
 ---
 id: goal_define_file_io_artifact_hashing_boundary_v0_1
 title: "Define file IO artifact hashing boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -37,7 +37,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-crate-status-proofpack-manifest-digest-helper.md"
   - "work/reports/2026-04-26-twenty-eighth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-file-io-artifact-hashing-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -84,3 +85,14 @@ Do not implement file IO hashing.
 Do not verify referenced artifact bytes.
 Do not implement proofpack writer behavior.
 Do not imply gate or acceptance authority.
+
+
+## Outcome
+
+Defined `evals/specs/file-io-artifact-hashing-boundary.v0.1.md` as a docs/spec boundary before any file IO artifact hashing implementation.
+
+The boundary distinguishes caller-provided exact-byte hashing, proofpack manifest self-digest metadata, future artifact file reads, referenced artifact byte verification, proofpack writer behavior, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init`.
+
+The boundary keeps repo-relative refs, explicit repo roots, missing files, non-regular files, symlinks, directories, generated artifacts, privacy, and setup neutrality explicit.
+
+No Rust code, schema file, CLI command, runtime storage, `.punk/` state, proofpack writer, file IO hashing implementation, referenced artifact byte verification implementation, provider/model/agent adapter, automation, or `punk init` was added.
