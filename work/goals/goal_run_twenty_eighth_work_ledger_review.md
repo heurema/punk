@@ -1,7 +1,7 @@
 ---
 id: goal_run_twenty_eighth_work_ledger_review
 title: "Run the twenty-eighth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -35,7 +35,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-computation-helper.v0.1.md"
   - "work/reports/2026-04-26-crate-status-proofpack-manifest-digest-helper.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-twenty-eighth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -58,9 +59,10 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: none
-  required_updates: []
-  rationale: "Advisory review goal only; execution will produce a work report and selected-next update."
+  classification: docs-only
+  required_updates:
+    - "work/reports/2026-04-26-twenty-eighth-work-ledger-review.md"
+  rationale: "Execution produced a work report, created the next selected goal, and updated the work ledger."
 ---
 
 ## Context
@@ -72,3 +74,12 @@ Before selecting proofpack writer preparation, file IO hash boundaries, referenc
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, add file IO hashing, verify referenced artifact bytes, write proofpacks, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the twenty-eighth advisory Work Ledger Review.
+
+Selected `work/goals/goal_define_file_io_artifact_hashing_boundary_v0_1.md` as the next bounded docs/spec goal so Punk can define the future file IO artifact hashing boundary before any implementation reads files, verifies referenced artifact bytes, writes proofpacks, activates runtime storage, adds schema files, changes CLI behavior, writes gate decisions, creates acceptance claims, adds adapters/automation/provider/model runners, or implements `punk init`.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
