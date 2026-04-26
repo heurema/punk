@@ -35,7 +35,9 @@ use punk_proof::{
     PositiveAcceptanceInputs, ProofArtifactDigest, ProofArtifactHash, ProofArtifactKind,
     ProofArtifactRef, ProofBoundaryNote, ProofContractRef, ProofCreatedAt, ProofEvalRef,
     ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef, ProofRunReceiptRef, Proofpack,
-    ProofpackId,
+    ProofpackId, ProofpackWriterAttemptedAt, ProofpackWriterCanonicalArtifactStatus,
+    ProofpackWriterOperationEvidence, ProofpackWriterOperationId, ProofpackWriterOperationKind,
+    ProofpackWriterOperationOutcome, ProofpackWriterSideEffectStatus, ProofpackWriterTargetRef,
 };
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -368,6 +370,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_proofpack_integrity_missing_digest_blocks_readiness(),
         eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free(),
         eval_proofpack_manifest_digest_matches_exact_renderer_bytes(),
+        eval_proofpack_writer_operation_evidence_model_is_side_effect_free(),
         eval_artifact_hash_policy_accepts_canonical_digest(),
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
@@ -387,10 +390,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -411,6 +414,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "gate/proof smoke cases remain local assessment and do not claim acceptance",
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
             "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts",
+            "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims",
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
@@ -1392,6 +1396,68 @@ fn valid_artifact_digest() -> String {
     format!("sha256:{}", "0123456789abcdef".repeat(4))
 }
 
+fn eval_proofpack_writer_operation_evidence_model_is_side_effect_free() -> SmokeEvalCaseResult {
+    let evidence = ProofpackWriterOperationEvidence::new(
+        ProofpackWriterOperationId::new("writer_op_smoke_001")
+            .expect("operation id should be valid"),
+        ProofpackWriterOperationKind::Write,
+        ProofpackId::new("proofpack_eval_001").expect("proofpack id should be valid"),
+        ProofpackWriterAttemptedAt::new("2026-04-26T13:10:00Z")
+            .expect("attempted_at should be valid"),
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        ProofpackWriterOperationOutcome::IndexUpdateFailed,
+        ProofpackWriterCanonicalArtifactStatus::Written,
+        ProofpackWriterSideEffectStatus::Failed,
+        ProofpackWriterSideEffectStatus::Completed,
+        vec![ProofBoundaryNote::new(
+            "Operation evidence is evidence-only; gate remains the authority.",
+        )
+        .expect("boundary note should be valid")],
+    )
+    .expect("operation evidence should be consistent");
+    let boundary = evidence.boundary();
+
+    if evidence.canonical_artifact_available()
+        && evidence.has_index_or_latest_pointer_failure()
+        && evidence.is_evidence_only()
+        && !evidence.is_final_decision_authority()
+        && !evidence.creates_acceptance_claim()
+        && !evidence.can_claim_acceptance_by_itself()
+        && !boundary.writes_proofpack
+        && !boundary.writes_writer_operation_evidence
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.writes_schema_files
+        && boundary.separates_canonical_artifact_from_indexes
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_writer_operation_evidence_model_is_side_effect_free",
+            "proofpack writer operation evidence model is side-effect-free",
+            "writer operation evidence models canonical artifact status separately from index/latest side effects without writing proofpacks, decisions, schemas, CLI output, or acceptance claims",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_writer_operation_evidence_model_is_side_effect_free",
+            "proofpack writer operation evidence model is side-effect-free",
+            format!(
+                "writer operation evidence drifted; available={} side_effect_failure={} evidence_only={} decision={} acceptance={} writes={} writes_evidence={} storage={} cli={} schemas={} separates={}",
+                evidence.canonical_artifact_available(),
+                evidence.has_index_or_latest_pointer_failure(),
+                evidence.is_evidence_only(),
+                evidence.is_final_decision_authority(),
+                evidence.creates_acceptance_claim(),
+                boundary.writes_proofpack,
+                boundary.writes_writer_operation_evidence,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.writes_schema_files,
+                boundary.separates_canonical_artifact_from_indexes,
+            ),
+        )
+    }
+}
+
 fn eval_artifact_hash_policy_accepts_canonical_digest() -> SmokeEvalCaseResult {
     let digest_value = valid_artifact_digest();
     let digest = ArtifactDigest::new(digest_value.clone());
@@ -1896,7 +1962,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 30);
+        assert_eq!(report.cases().len(), 31);
     }
 
     #[test]
@@ -1921,7 +1987,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -1943,6 +2009,9 @@ mod tests {
         ));
         assert!(rendered
             .contains("  - id: eval_proofpack_manifest_digest_matches_exact_renderer_bytes"));
+        assert!(rendered.contains(
+            "  - id: eval_proofpack_writer_operation_evidence_model_is_side_effect_free"
+        ));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_repo_relative_ref"));
@@ -1968,6 +2037,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts"
+        ));
+        assert!(rendered.contains(
+            "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims"
         ));
         assert!(rendered.contains(
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes"
@@ -2035,6 +2107,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_manifest_digest_matches_exact_renderer_bytes\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_writer_operation_evidence_model_is_side_effect_free\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));

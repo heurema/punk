@@ -1,13 +1,15 @@
 //! Minimal side-effect-free proofpack kernel for Punk Phase 3.
 //!
-//! This crate models post-gate provenance as data only. It does not write
-//! `.punk/proofs`, expose CLI behavior, write gate decisions, claim
-//! acceptance, run validators, or require runtime storage.
+//! This crate models post-gate provenance and writer-operation evidence as data
+//! only. It does not write `.punk/proofs`, expose CLI behavior, write gate
+//! decisions, claim acceptance, run validators, or require runtime storage.
 
 use std::fmt::Write as _;
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROOFPACK_SCHEMA_VERSION: &str = "punk.proofpack.v0.1";
+pub const PROOFPACK_WRITER_OPERATION_EVIDENCE_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_operation_evidence.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -683,6 +685,409 @@ fn push_manifest_json_string(output: &mut String, value: &str) {
     output.push('"');
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterOperationId(String);
+
+impl ProofpackWriterOperationId {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterOperationId,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterAttemptedAt(String);
+
+impl ProofpackWriterAttemptedAt {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterAttemptedAt,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterTargetRef(String);
+
+impl ProofpackWriterTargetRef {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterTargetRef,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterOperationKind {
+    PlannedOnly,
+    Write,
+    IdempotencyCheck,
+    ConflictCheck,
+    Repair,
+    IndexUpdate,
+    LatestPointerUpdate,
+    Abort,
+}
+
+impl ProofpackWriterOperationKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PlannedOnly => "planned_only",
+            Self::Write => "write",
+            Self::IdempotencyCheck => "idempotency_check",
+            Self::ConflictCheck => "conflict_check",
+            Self::Repair => "repair",
+            Self::IndexUpdate => "index_update",
+            Self::LatestPointerUpdate => "latest_pointer_update",
+            Self::Abort => "abort",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterOperationOutcome {
+    PlannedOnly,
+    Written,
+    AlreadyExistsMatching,
+    ConflictExistingDifferent,
+    PreflightFailed,
+    WriteFailed,
+    PartialWriteDetected,
+    IndexUpdateFailed,
+    LatestPointerUpdateFailed,
+    Aborted,
+}
+
+impl ProofpackWriterOperationOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PlannedOnly => "planned_only",
+            Self::Written => "written",
+            Self::AlreadyExistsMatching => "already_exists_matching",
+            Self::ConflictExistingDifferent => "conflict_existing_different",
+            Self::PreflightFailed => "preflight_failed",
+            Self::WriteFailed => "write_failed",
+            Self::PartialWriteDetected => "partial_write_detected",
+            Self::IndexUpdateFailed => "index_update_failed",
+            Self::LatestPointerUpdateFailed => "latest_pointer_update_failed",
+            Self::Aborted => "aborted",
+        }
+    }
+
+    pub fn can_represent_canonical_artifact_availability(self) -> bool {
+        matches!(self, Self::Written | Self::AlreadyExistsMatching)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterCanonicalArtifactStatus {
+    NotAttempted,
+    Written,
+    AlreadyExistsMatching,
+    ConflictExistingDifferent,
+    WriteFailed,
+    PartialWriteDetected,
+}
+
+impl ProofpackWriterCanonicalArtifactStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotAttempted => "not_attempted",
+            Self::Written => "written",
+            Self::AlreadyExistsMatching => "already_exists_matching",
+            Self::ConflictExistingDifferent => "conflict_existing_different",
+            Self::WriteFailed => "write_failed",
+            Self::PartialWriteDetected => "partial_write_detected",
+        }
+    }
+
+    pub fn is_available(self) -> bool {
+        matches!(self, Self::Written | Self::AlreadyExistsMatching)
+    }
+
+    pub fn is_conflict(self) -> bool {
+        self == Self::ConflictExistingDifferent
+    }
+
+    pub fn is_partial(self) -> bool {
+        self == Self::PartialWriteDetected
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterSideEffectStatus {
+    NotSelected,
+    NotAttempted,
+    Completed,
+    Failed,
+    Skipped,
+}
+
+impl ProofpackWriterSideEffectStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotSelected => "not_selected",
+            Self::NotAttempted => "not_attempted",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Skipped => "skipped",
+        }
+    }
+
+    pub fn is_failed(self) -> bool {
+        self == Self::Failed
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterOperationEvidence {
+    operation_id: ProofpackWriterOperationId,
+    operation_kind: ProofpackWriterOperationKind,
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    attempted_at: ProofpackWriterAttemptedAt,
+    target_ref: ProofpackWriterTargetRef,
+    outcome: ProofpackWriterOperationOutcome,
+    canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+    index_status: ProofpackWriterSideEffectStatus,
+    latest_pointer_status: ProofpackWriterSideEffectStatus,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterOperationEvidence {
+    pub fn new(
+        operation_id: ProofpackWriterOperationId,
+        operation_kind: ProofpackWriterOperationKind,
+        proofpack_id: ProofpackId,
+        attempted_at: ProofpackWriterAttemptedAt,
+        target_ref: ProofpackWriterTargetRef,
+        outcome: ProofpackWriterOperationOutcome,
+        canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+        index_status: ProofpackWriterSideEffectStatus,
+        latest_pointer_status: ProofpackWriterSideEffectStatus,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Result<Self, ProofpackError> {
+        if boundary_notes.is_empty() {
+            return Err(ProofpackError::MissingWriterBoundaryNotes);
+        }
+
+        let evidence = Self {
+            operation_id,
+            operation_kind,
+            proofpack_id,
+            schema_version: PROOFPACK_WRITER_OPERATION_EVIDENCE_SCHEMA_VERSION,
+            attempted_at,
+            target_ref,
+            outcome,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            boundary_notes,
+        };
+
+        if !evidence.outcome_matches_reported_status() {
+            return Err(ProofpackError::InconsistentWriterOperationEvidence);
+        }
+
+        Ok(evidence)
+    }
+
+    pub fn operation_id(&self) -> &ProofpackWriterOperationId {
+        &self.operation_id
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        self.operation_kind
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn attempted_at(&self) -> &ProofpackWriterAttemptedAt {
+        &self.attempted_at
+    }
+
+    pub fn target_ref(&self) -> &ProofpackWriterTargetRef {
+        &self.target_ref
+    }
+
+    pub fn outcome(&self) -> ProofpackWriterOperationOutcome {
+        self.outcome
+    }
+
+    pub fn canonical_artifact_status(&self) -> ProofpackWriterCanonicalArtifactStatus {
+        self.canonical_artifact_status
+    }
+
+    pub fn index_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.index_status
+    }
+
+    pub fn latest_pointer_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.latest_pointer_status
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterOperationEvidenceBoundary {
+        proofpack_writer_operation_evidence_boundary()
+    }
+
+    pub fn canonical_artifact_available(&self) -> bool {
+        self.canonical_artifact_status.is_available()
+    }
+
+    pub fn represents_new_canonical_artifact_write(&self) -> bool {
+        self.outcome == ProofpackWriterOperationOutcome::Written
+            && self.canonical_artifact_status == ProofpackWriterCanonicalArtifactStatus::Written
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.canonical_artifact_status.is_conflict()
+    }
+
+    pub fn has_partial_write(&self) -> bool {
+        self.canonical_artifact_status.is_partial()
+    }
+
+    pub fn has_index_or_latest_pointer_failure(&self) -> bool {
+        self.index_status.is_failed() || self.latest_pointer_status.is_failed()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn is_final_decision_authority(&self) -> bool {
+        self.boundary().writes_final_decision
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn is_proofpack_artifact(&self) -> bool {
+        self.boundary().is_proofpack_artifact
+    }
+
+    pub fn is_run_receipt(&self) -> bool {
+        self.boundary().is_run_receipt
+    }
+
+    pub fn is_schema_validation(&self) -> bool {
+        self.boundary().is_schema_validation
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+
+    fn outcome_matches_reported_status(&self) -> bool {
+        match self.outcome {
+            ProofpackWriterOperationOutcome::PlannedOnly
+            | ProofpackWriterOperationOutcome::PreflightFailed
+            | ProofpackWriterOperationOutcome::Aborted => {
+                self.canonical_artifact_status
+                    == ProofpackWriterCanonicalArtifactStatus::NotAttempted
+            }
+            ProofpackWriterOperationOutcome::Written => {
+                self.canonical_artifact_status == ProofpackWriterCanonicalArtifactStatus::Written
+            }
+            ProofpackWriterOperationOutcome::AlreadyExistsMatching => {
+                self.canonical_artifact_status
+                    == ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching
+            }
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent => {
+                self.canonical_artifact_status
+                    == ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent
+            }
+            ProofpackWriterOperationOutcome::WriteFailed => {
+                self.canonical_artifact_status
+                    == ProofpackWriterCanonicalArtifactStatus::WriteFailed
+            }
+            ProofpackWriterOperationOutcome::PartialWriteDetected => {
+                self.canonical_artifact_status
+                    == ProofpackWriterCanonicalArtifactStatus::PartialWriteDetected
+            }
+            ProofpackWriterOperationOutcome::IndexUpdateFailed => {
+                self.canonical_artifact_status.is_available()
+                    && self.index_status == ProofpackWriterSideEffectStatus::Failed
+            }
+            ProofpackWriterOperationOutcome::LatestPointerUpdateFailed => {
+                self.canonical_artifact_status.is_available()
+                    && self.latest_pointer_status == ProofpackWriterSideEffectStatus::Failed
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterOperationEvidenceBoundary {
+    pub models_writer_operation_evidence: bool,
+    pub writes_proofpack: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub is_proofpack_artifact: bool,
+    pub is_run_receipt: bool,
+    pub is_schema_validation: bool,
+    pub evidence_only: bool,
+    pub separates_canonical_artifact_from_indexes: bool,
+}
+
+pub const fn proofpack_writer_operation_evidence_boundary(
+) -> ProofpackWriterOperationEvidenceBoundary {
+    ProofpackWriterOperationEvidenceBoundary {
+        models_writer_operation_evidence: true,
+        writes_proofpack: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        is_proofpack_artifact: false,
+        is_run_receipt: false,
+        is_schema_validation: false,
+        evidence_only: true,
+        separates_canonical_artifact_from_indexes: true,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -696,10 +1101,15 @@ pub enum ProofpackError {
     EmptyBoundaryNote,
     EmptyArtifactRef,
     EmptyArtifactHash,
+    EmptyWriterOperationId,
+    EmptyWriterAttemptedAt,
+    EmptyWriterTargetRef,
     InvalidArtifactHash(ArtifactHashPolicyError),
     MissingContractRefs,
     MissingRunReceiptRefs,
     MissingBoundaryNotes,
+    MissingWriterBoundaryNotes,
+    InconsistentWriterOperationEvidence,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -846,6 +1256,33 @@ mod tests {
     ) -> ProofArtifactDigestRequirement {
         ProofArtifactDigestRequirement::new(kind, artifact_ref)
             .expect("digest requirement should be valid")
+    }
+
+    fn sample_writer_operation_evidence(
+        outcome: ProofpackWriterOperationOutcome,
+        canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+        index_status: ProofpackWriterSideEffectStatus,
+        latest_pointer_status: ProofpackWriterSideEffectStatus,
+    ) -> ProofpackWriterOperationEvidence {
+        ProofpackWriterOperationEvidence::new(
+            ProofpackWriterOperationId::new("writer_op_local_001")
+                .expect("writer operation id should be valid"),
+            ProofpackWriterOperationKind::Write,
+            ProofpackId::new("proofpack_local_001").expect("proofpack id should be valid"),
+            ProofpackWriterAttemptedAt::new("2026-04-26T13:00:00Z")
+                .expect("attempted_at should be valid"),
+            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target ref should be valid"),
+            outcome,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            vec![ProofBoundaryNote::new(
+                "Writer operation evidence is evidence-only and does not claim acceptance.",
+            )
+            .expect("boundary note should be valid")],
+        )
+        .expect("writer operation evidence should be consistent")
     }
 
     #[test]
@@ -1270,6 +1707,223 @@ mod tests {
     }
 
     #[test]
+    fn proofpack_writer_operation_outcome_vocabulary_is_stable() {
+        assert_eq!(
+            ProofpackWriterOperationOutcome::PlannedOnly.as_str(),
+            "planned_only"
+        );
+        assert_eq!(ProofpackWriterOperationOutcome::Written.as_str(), "written");
+        assert_eq!(
+            ProofpackWriterOperationOutcome::AlreadyExistsMatching.as_str(),
+            "already_exists_matching"
+        );
+        assert_eq!(
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent.as_str(),
+            "conflict_existing_different"
+        );
+        assert_eq!(
+            ProofpackWriterOperationOutcome::PreflightFailed.as_str(),
+            "preflight_failed"
+        );
+        assert_eq!(
+            ProofpackWriterOperationOutcome::WriteFailed.as_str(),
+            "write_failed"
+        );
+        assert_eq!(
+            ProofpackWriterOperationOutcome::PartialWriteDetected.as_str(),
+            "partial_write_detected"
+        );
+        assert_eq!(
+            ProofpackWriterOperationOutcome::IndexUpdateFailed.as_str(),
+            "index_update_failed"
+        );
+        assert_eq!(
+            ProofpackWriterOperationOutcome::LatestPointerUpdateFailed.as_str(),
+            "latest_pointer_update_failed"
+        );
+        assert_eq!(ProofpackWriterOperationOutcome::Aborted.as_str(), "aborted");
+
+        assert!(ProofpackWriterOperationOutcome::Written
+            .can_represent_canonical_artifact_availability());
+        assert!(ProofpackWriterOperationOutcome::AlreadyExistsMatching
+            .can_represent_canonical_artifact_availability());
+        assert!(!ProofpackWriterOperationOutcome::IndexUpdateFailed
+            .can_represent_canonical_artifact_availability());
+        assert!(!ProofpackWriterOperationOutcome::LatestPointerUpdateFailed
+            .can_represent_canonical_artifact_availability());
+    }
+
+    #[test]
+    fn proofpack_writer_operation_evidence_is_evidence_only() {
+        let evidence = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::Written,
+            ProofpackWriterCanonicalArtifactStatus::Written,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+        );
+        let boundary = evidence.boundary();
+
+        assert_eq!(
+            evidence.schema_version(),
+            PROOFPACK_WRITER_OPERATION_EVIDENCE_SCHEMA_VERSION
+        );
+        assert_eq!(evidence.operation_id().as_str(), "writer_op_local_001");
+        assert_eq!(evidence.operation_kind().as_str(), "write");
+        assert_eq!(evidence.proofpack_id().as_str(), "proofpack_local_001");
+        assert_eq!(evidence.attempted_at().as_str(), "2026-04-26T13:00:00Z");
+        assert_eq!(
+            evidence.target_ref().as_str(),
+            "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert!(evidence.canonical_artifact_available());
+        assert!(evidence.represents_new_canonical_artifact_write());
+        assert!(evidence.is_evidence_only());
+        assert!(boundary.models_writer_operation_evidence);
+        assert!(boundary.separates_canonical_artifact_from_indexes);
+        assert!(!boundary.writes_proofpack);
+        assert!(!boundary.writes_writer_operation_evidence);
+        assert!(!boundary.writes_final_decision);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.requires_runtime_storage);
+        assert!(!boundary.writes_cli_output);
+        assert!(!boundary.writes_schema_files);
+        assert!(!boundary.is_proofpack_artifact);
+        assert!(!boundary.is_run_receipt);
+        assert!(!boundary.is_schema_validation);
+    }
+
+    #[test]
+    fn writer_operation_write_success_does_not_imply_acceptance() {
+        let evidence = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::Written,
+            ProofpackWriterCanonicalArtifactStatus::Written,
+            ProofpackWriterSideEffectStatus::Completed,
+            ProofpackWriterSideEffectStatus::Completed,
+        );
+
+        assert!(evidence.canonical_artifact_available());
+        assert!(!evidence.is_final_decision_authority());
+        assert!(!evidence.creates_acceptance_claim());
+        assert!(!evidence.can_claim_acceptance_by_itself());
+        assert!(!positive_acceptance_preconditions_met(
+            PositiveAcceptanceInputs {
+                accepting_gate_decision: false,
+                matching_proofpack: evidence.canonical_artifact_available(),
+            },
+        ));
+    }
+
+    #[test]
+    fn writer_operation_idempotent_existing_artifact_is_explicit() {
+        let evidence = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::AlreadyExistsMatching,
+            ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+        );
+
+        assert!(evidence.canonical_artifact_available());
+        assert_eq!(
+            evidence.canonical_artifact_status().as_str(),
+            "already_exists_matching"
+        );
+        assert!(!evidence.represents_new_canonical_artifact_write());
+        assert!(!evidence.has_conflict());
+        assert!(!evidence.has_index_or_latest_pointer_failure());
+    }
+
+    #[test]
+    fn writer_operation_conflict_existing_artifact_is_non_available() {
+        let evidence = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent,
+            ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+        );
+
+        assert!(!evidence.canonical_artifact_available());
+        assert!(evidence.has_conflict());
+        assert!(!evidence.represents_new_canonical_artifact_write());
+        assert!(!evidence.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn writer_operation_partial_and_side_effect_failures_remain_visible() {
+        let partial = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::PartialWriteDetected,
+            ProofpackWriterCanonicalArtifactStatus::PartialWriteDetected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+        );
+        let index_failed = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::IndexUpdateFailed,
+            ProofpackWriterCanonicalArtifactStatus::Written,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterSideEffectStatus::Completed,
+        );
+        let latest_failed = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::LatestPointerUpdateFailed,
+            ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching,
+            ProofpackWriterSideEffectStatus::Completed,
+            ProofpackWriterSideEffectStatus::Failed,
+        );
+
+        assert!(partial.has_partial_write());
+        assert!(!partial.canonical_artifact_available());
+        assert!(index_failed.canonical_artifact_available());
+        assert!(index_failed.has_index_or_latest_pointer_failure());
+        assert_eq!(index_failed.index_status().as_str(), "failed");
+        assert_eq!(index_failed.latest_pointer_status().as_str(), "completed");
+        assert!(latest_failed.canonical_artifact_available());
+        assert!(latest_failed.has_index_or_latest_pointer_failure());
+        assert_eq!(latest_failed.index_status().as_str(), "completed");
+        assert_eq!(latest_failed.latest_pointer_status().as_str(), "failed");
+    }
+
+    #[test]
+    fn writer_operation_evidence_rejects_inconsistent_status() {
+        let inconsistent = ProofpackWriterOperationEvidence::new(
+            ProofpackWriterOperationId::new("writer_op_local_002")
+                .expect("operation id should be valid"),
+            ProofpackWriterOperationKind::Write,
+            ProofpackId::new("proofpack_local_002").expect("proofpack id should be valid"),
+            ProofpackWriterAttemptedAt::new("2026-04-26T13:01:00Z")
+                .expect("attempted_at should be valid"),
+            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_002.json")
+                .expect("target ref should be valid"),
+            ProofpackWriterOperationOutcome::Written,
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![ProofBoundaryNote::new("status mismatch must stay visible")
+                .expect("boundary note should be valid")],
+        );
+
+        assert_eq!(
+            inconsistent,
+            Err(ProofpackError::InconsistentWriterOperationEvidence)
+        );
+    }
+
+    #[test]
+    fn writer_operation_evidence_stays_setup_neutral() {
+        let evidence = sample_writer_operation_evidence(
+            ProofpackWriterOperationOutcome::PlannedOnly,
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            ProofpackWriterSideEffectStatus::NotSelected,
+        );
+
+        assert!(!evidence.requires_runtime_storage());
+        assert!(!evidence.writes_cli_output());
+        assert!(!evidence.is_proofpack_artifact());
+        assert!(!evidence.is_run_receipt());
+        assert!(!evidence.is_schema_validation());
+        assert!(evidence.is_evidence_only());
+        assert_eq!(evidence.boundary_notes().len(), 1);
+    }
+
+    #[test]
     fn artifact_kind_vocabulary_is_stable() {
         assert_eq!(ProofArtifactKind::GateDecision.as_str(), "gate_decision");
         assert_eq!(ProofArtifactKind::Contract.as_str(), "contract");
@@ -1318,6 +1972,18 @@ mod tests {
         assert_eq!(
             ProofArtifactHash::new(" "),
             Err(ProofpackError::EmptyArtifactHash)
+        );
+        assert_eq!(
+            ProofpackWriterOperationId::new(" "),
+            Err(ProofpackError::EmptyWriterOperationId)
+        );
+        assert_eq!(
+            ProofpackWriterAttemptedAt::new(" "),
+            Err(ProofpackError::EmptyWriterAttemptedAt)
+        );
+        assert_eq!(
+            ProofpackWriterTargetRef::new(" "),
+            Err(ProofpackError::EmptyWriterTargetRef)
         );
     }
 
