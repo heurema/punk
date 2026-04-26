@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_writer_canonical_artifact_model_v0_1
 title: "Add proofpack writer canonical artifact model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -43,7 +43,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-canonical-artifact-layout-v0-1.md"
   - "work/reports/2026-04-26-forty-sixth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-canonical-artifact-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -94,3 +95,13 @@ Do not implement proofpack referenced-ref verification integration.
 Do not write operation evidence.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Implemented proofpack writer canonical artifact model v0.1 as side-effect-free `punk-proof` behavior.
+
+The model exposes exact deterministic proofpack manifest JSON renderer bytes as the v0.1 canonical artifact body, computes the manifest self-digest over exactly those bytes, and keeps manifest self-digest metadata, wrapper metadata, storage roots, target refs, target paths, operation evidence, schema validation reports, indexes, `latest` pointers, CLI output, and service mirrors outside canonical artifact bytes.
+
+Smoke eval coverage now verifies canonical byte identity, digest coverage, non-canonical metadata separation, and no runtime side effects.
+
+No `.punk` runtime state, schema file, CLI command, active proofpack writer, filesystem write, referenced-ref verification integration, gate decision, acceptance claim, provider/model runner, adapter, automation, or `punk init` was added.

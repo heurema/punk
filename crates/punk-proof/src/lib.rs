@@ -20,6 +20,8 @@ pub const PROOFPACK_WRITER_FILE_IO_ERROR_REASON_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_file_io_error_reason_model.v0.1";
 pub const PROOFPACK_WRITER_TARGET_PATH_POLICY_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_target_path_policy_model.v0.1";
+pub const PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_canonical_artifact_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -693,6 +695,260 @@ fn push_manifest_json_string(output: &mut String, value: &str) {
         }
     }
     output.push('"');
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterCanonicalArtifactLayout {
+    ManifestOnlyJson,
+}
+
+impl ProofpackWriterCanonicalArtifactLayout {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ManifestOnlyJson => "manifest_only_json",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterNonCanonicalArtifactSurface {
+    ManifestSelfDigestMetadata,
+    WrapperMetadata,
+    StorageRootRef,
+    TargetArtifactRef,
+    TargetPathRef,
+    WriterOperationEvidence,
+    SchemaValidationReport,
+    IndexView,
+    LatestPointer,
+    CliOutput,
+    ServiceMirror,
+}
+
+impl ProofpackWriterNonCanonicalArtifactSurface {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ManifestSelfDigestMetadata => "manifest_self_digest_metadata",
+            Self::WrapperMetadata => "wrapper_metadata",
+            Self::StorageRootRef => "storage_root_ref",
+            Self::TargetArtifactRef => "target_artifact_ref",
+            Self::TargetPathRef => "target_path_ref",
+            Self::WriterOperationEvidence => "writer_operation_evidence",
+            Self::SchemaValidationReport => "schema_validation_report",
+            Self::IndexView => "index_view",
+            Self::LatestPointer => "latest_pointer",
+            Self::CliOutput => "cli_output",
+            Self::ServiceMirror => "service_mirror",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterCanonicalArtifactModel {
+    schema_version: &'static str,
+    proofpack_id: ProofpackId,
+    layout: ProofpackWriterCanonicalArtifactLayout,
+    canonical_body: String,
+    manifest_self_digest: ArtifactDigest,
+    non_canonical_surfaces: Vec<ProofpackWriterNonCanonicalArtifactSurface>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterCanonicalArtifactModel {
+    pub fn from_proofpack(proofpack: &Proofpack, boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        let canonical_body = proofpack.render_manifest_json();
+        let manifest_self_digest = compute_artifact_digest(canonical_body.as_bytes());
+
+        Self {
+            schema_version: PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION,
+            proofpack_id: proofpack.id().clone(),
+            layout: ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+            canonical_body,
+            manifest_self_digest,
+            non_canonical_surfaces: proofpack_writer_non_canonical_artifact_surfaces(),
+            boundary_notes: proofpack_writer_canonical_artifact_boundary_notes(boundary_notes),
+        }
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn layout(&self) -> ProofpackWriterCanonicalArtifactLayout {
+        self.layout
+    }
+
+    pub fn canonical_body_utf8(&self) -> &str {
+        &self.canonical_body
+    }
+
+    pub fn canonical_body_bytes(&self) -> &[u8] {
+        self.canonical_body.as_bytes()
+    }
+
+    pub fn manifest_self_digest(&self) -> &ArtifactDigest {
+        &self.manifest_self_digest
+    }
+
+    pub fn non_canonical_surfaces(&self) -> &[ProofpackWriterNonCanonicalArtifactSurface] {
+        &self.non_canonical_surfaces
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn is_manifest_only_layout(&self) -> bool {
+        self.layout == ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson
+    }
+
+    pub fn canonical_body_matches_proofpack(&self, proofpack: &Proofpack) -> bool {
+        self.canonical_body == proofpack.render_manifest_json()
+    }
+
+    pub fn manifest_self_digest_covers_canonical_body(&self) -> bool {
+        compute_artifact_digest(self.canonical_body_bytes()) == self.manifest_self_digest
+    }
+
+    pub fn manifest_self_digest_is_embedded_in_canonical_body(&self) -> bool {
+        self.canonical_body
+            .contains(self.manifest_self_digest.as_str())
+    }
+
+    pub fn surface_is_non_canonical(
+        &self,
+        surface: ProofpackWriterNonCanonicalArtifactSurface,
+    ) -> bool {
+        self.non_canonical_surfaces.contains(&surface)
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterCanonicalArtifactModelBoundary {
+        proofpack_writer_canonical_artifact_model_boundary()
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn uses_indexes_or_latest_as_authority(&self) -> bool {
+        self.boundary().uses_indexes_or_latest_as_authority
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+}
+
+fn proofpack_writer_non_canonical_artifact_surfaces(
+) -> Vec<ProofpackWriterNonCanonicalArtifactSurface> {
+    vec![
+        ProofpackWriterNonCanonicalArtifactSurface::ManifestSelfDigestMetadata,
+        ProofpackWriterNonCanonicalArtifactSurface::WrapperMetadata,
+        ProofpackWriterNonCanonicalArtifactSurface::StorageRootRef,
+        ProofpackWriterNonCanonicalArtifactSurface::TargetArtifactRef,
+        ProofpackWriterNonCanonicalArtifactSurface::TargetPathRef,
+        ProofpackWriterNonCanonicalArtifactSurface::WriterOperationEvidence,
+        ProofpackWriterNonCanonicalArtifactSurface::SchemaValidationReport,
+        ProofpackWriterNonCanonicalArtifactSurface::IndexView,
+        ProofpackWriterNonCanonicalArtifactSurface::LatestPointer,
+        ProofpackWriterNonCanonicalArtifactSurface::CliOutput,
+        ProofpackWriterNonCanonicalArtifactSurface::ServiceMirror,
+    ]
+}
+
+fn proofpack_writer_canonical_artifact_boundary_notes(
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    if boundary_notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer canonical artifact model is side-effect-free; canonical bytes are exact manifest renderer bytes and surrounding metadata stays non-canonical.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterCanonicalArtifactModelBoundary {
+    pub models_canonical_artifact_body: bool,
+    pub canonical_body_is_manifest_renderer_bytes: bool,
+    pub manifest_self_digest_covers_canonical_body: bool,
+    pub manifest_self_digest_metadata_outside_body: bool,
+    pub separates_non_canonical_metadata: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub evidence_only: bool,
+}
+
+pub const fn proofpack_writer_canonical_artifact_model_boundary(
+) -> ProofpackWriterCanonicalArtifactModelBoundary {
+    ProofpackWriterCanonicalArtifactModelBoundary {
+        models_canonical_artifact_body: true,
+        canonical_body_is_manifest_renderer_bytes: true,
+        manifest_self_digest_covers_canonical_body: true,
+        manifest_self_digest_metadata_outside_body: true,
+        separates_non_canonical_metadata: true,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        uses_indexes_or_latest_as_authority: false,
+        evidence_only: true,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -3994,6 +4250,148 @@ mod tests {
         assert!(!boundary.writes_cli_output);
         assert!(!boundary.creates_acceptance_claim);
         assert!(!boundary.writes_final_decision);
+    }
+
+    #[test]
+    fn proofpack_writer_canonical_artifact_layout_vocabulary_is_stable() {
+        assert_eq!(
+            ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson.as_str(),
+            "manifest_only_json"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::ManifestSelfDigestMetadata.as_str(),
+            "manifest_self_digest_metadata"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::WrapperMetadata.as_str(),
+            "wrapper_metadata"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::StorageRootRef.as_str(),
+            "storage_root_ref"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::TargetArtifactRef.as_str(),
+            "target_artifact_ref"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::TargetPathRef.as_str(),
+            "target_path_ref"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::WriterOperationEvidence.as_str(),
+            "writer_operation_evidence"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::SchemaValidationReport.as_str(),
+            "schema_validation_report"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::IndexView.as_str(),
+            "index_view"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::LatestPointer.as_str(),
+            "latest_pointer"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::CliOutput.as_str(),
+            "cli_output"
+        );
+        assert_eq!(
+            ProofpackWriterNonCanonicalArtifactSurface::ServiceMirror.as_str(),
+            "service_mirror"
+        );
+    }
+
+    #[test]
+    fn proofpack_writer_canonical_artifact_model_uses_exact_manifest_bytes() {
+        let proofpack = sample_proofpack();
+        let rendered = proofpack.render_manifest_json();
+        let model = ProofpackWriterCanonicalArtifactModel::from_proofpack(
+            &proofpack,
+            vec![ProofBoundaryNote::new(
+                "Canonical artifact model is manifest-only and side-effect-free.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(model.proofpack_id().as_str(), proofpack.id().as_str());
+        assert_eq!(model.layout().as_str(), "manifest_only_json");
+        assert!(model.is_manifest_only_layout());
+        assert_eq!(model.canonical_body_utf8(), rendered);
+        assert_eq!(model.canonical_body_bytes(), rendered.as_bytes());
+        assert!(model.canonical_body_matches_proofpack(&proofpack));
+        assert_eq!(
+            model.manifest_self_digest(),
+            &compute_proofpack_manifest_digest(&proofpack)
+        );
+        assert_eq!(
+            model.manifest_self_digest(),
+            &compute_artifact_digest(model.canonical_body_bytes())
+        );
+        assert!(model.manifest_self_digest_covers_canonical_body());
+        assert!(!model.manifest_self_digest_is_embedded_in_canonical_body());
+        assert_eq!(model.boundary_notes().len(), 1);
+    }
+
+    #[test]
+    fn proofpack_writer_canonical_artifact_model_separates_non_canonical_metadata() {
+        let proofpack = sample_proofpack();
+        let model = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let boundary = model.boundary();
+
+        assert_eq!(model.non_canonical_surfaces().len(), 11);
+        for surface in [
+            ProofpackWriterNonCanonicalArtifactSurface::ManifestSelfDigestMetadata,
+            ProofpackWriterNonCanonicalArtifactSurface::WrapperMetadata,
+            ProofpackWriterNonCanonicalArtifactSurface::StorageRootRef,
+            ProofpackWriterNonCanonicalArtifactSurface::TargetArtifactRef,
+            ProofpackWriterNonCanonicalArtifactSurface::TargetPathRef,
+            ProofpackWriterNonCanonicalArtifactSurface::WriterOperationEvidence,
+            ProofpackWriterNonCanonicalArtifactSurface::SchemaValidationReport,
+            ProofpackWriterNonCanonicalArtifactSurface::IndexView,
+            ProofpackWriterNonCanonicalArtifactSurface::LatestPointer,
+            ProofpackWriterNonCanonicalArtifactSurface::CliOutput,
+            ProofpackWriterNonCanonicalArtifactSurface::ServiceMirror,
+        ] {
+            assert!(model.surface_is_non_canonical(surface));
+        }
+
+        assert!(boundary.models_canonical_artifact_body);
+        assert!(boundary.canonical_body_is_manifest_renderer_bytes);
+        assert!(boundary.manifest_self_digest_covers_canonical_body);
+        assert!(boundary.manifest_self_digest_metadata_outside_body);
+        assert!(boundary.separates_non_canonical_metadata);
+        assert!(boundary.evidence_only);
+        assert!(!boundary.uses_indexes_or_latest_as_authority);
+        assert_eq!(model.boundary_notes().len(), 1);
+    }
+
+    #[test]
+    fn proofpack_writer_canonical_artifact_model_is_side_effect_free() {
+        let proofpack = sample_proofpack();
+        let model = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let boundary = model.boundary();
+
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.writes_schema_files());
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.uses_indexes_or_latest_as_authority());
+        assert!(!model.can_claim_acceptance_by_itself());
+        assert!(!boundary.canonicalizes_host_paths);
+        assert!(!boundary.writes_final_decision);
+        assert!(!boundary.creates_acceptance_claim);
     }
 
     #[test]
