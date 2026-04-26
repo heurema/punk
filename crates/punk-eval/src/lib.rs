@@ -47,8 +47,9 @@ use punk_proof::{
     ProofpackWriterOperationEvidence, ProofpackWriterOperationId, ProofpackWriterOperationKind,
     ProofpackWriterOperationOutcome, ProofpackWriterPlannedSideEffect,
     ProofpackWriterPreflightPlan, ProofpackWriterSideEffectStatus, ProofpackWriterStorageRootRef,
-    ProofpackWriterTargetPathRef, ProofpackWriterTargetRef, ProofpackWriterTempAtomicPolicy,
-    ProofpackWriterWritePolicy,
+    ProofpackWriterTargetPathPolicyModel, ProofpackWriterTargetPathPolicyReason,
+    ProofpackWriterTargetPathPolicyStatus, ProofpackWriterTargetPathRef, ProofpackWriterTargetRef,
+    ProofpackWriterTempAtomicPolicy, ProofpackWriterWritePolicy,
 };
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -386,6 +387,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_proofpack_writer_file_io_plan_model_is_side_effect_free(),
         eval_proofpack_writer_file_io_outcome_model_is_side_effect_free(),
         eval_proofpack_writer_file_io_error_reason_model_is_side_effect_free(),
+        eval_proofpack_writer_target_path_policy_model_is_side_effect_free(),
         eval_artifact_hash_policy_accepts_canonical_digest(),
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
@@ -405,10 +407,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -434,6 +436,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "proofpack writer file IO plan smoke case models storage roots, target paths, write policy, idempotency, and rollback visibility without filesystem side effects",
             "proofpack writer file IO outcome smoke case maps explicit observations to operation evidence without filesystem, storage, CLI, schema, or acceptance side effects",
             "proofpack writer file IO error reason smoke case models stable diagnostic reason codes without filesystem, storage, CLI, schema, or acceptance side effects",
+            "proofpack writer target path policy smoke case rejects path injection and escape refs without filesystem, storage, CLI, schema, or acceptance side effects",
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
@@ -2076,6 +2079,162 @@ fn eval_proofpack_writer_file_io_error_reason_model_is_side_effect_free() -> Smo
     }
 }
 
+fn eval_proofpack_writer_target_path_policy_model_is_side_effect_free() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let preflight_plan = ProofpackWriterPreflightPlan::new(
+        &proofpack,
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        vec![
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+            ProofpackWriterPlannedSideEffect::IndexUpdate,
+        ],
+        vec![ProofBoundaryNote::new(
+            "Preflight plan is evidence-only and does not attempt writes.",
+        )
+        .expect("boundary note should be valid")],
+    );
+    let plan = ProofpackWriterFileIoPlan::new(
+        &preflight_plan,
+        ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+            .expect("storage root ref should be valid"),
+        ProofpackWriterTargetPathRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target path ref should be valid"),
+        ProofpackWriterWritePolicy::IdempotentIfMatching,
+        ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+        ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+        vec![
+            ProofpackWriterFileIoFailureVisibility::TargetPathInvalid,
+            ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+            ProofpackWriterFileIoFailureVisibility::AtomicMoveFailed,
+        ],
+        vec![ProofBoundaryNote::new(
+            "File IO plan models explicit target refs without touching the filesystem.",
+        )
+        .expect("boundary note should be valid")],
+    );
+    let accepted = ProofpackWriterTargetPathPolicyModel::from_plan(
+        &plan,
+        vec![
+            ProofBoundaryNote::new("Target path policy is evidence-only and setup-neutral.")
+                .expect("boundary note should be valid"),
+        ],
+    );
+    let traversal = ProofpackWriterTargetPathPolicyModel::evaluate(
+        ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+            .expect("storage root ref should be valid"),
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        ProofpackWriterTargetPathRef::new("future/.punk/../proofs/proofpack_eval_001.json")
+            .expect("target path ref should be valid"),
+        vec![],
+    );
+    let absolute = ProofpackWriterTargetPathPolicyModel::evaluate(
+        ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+            .expect("storage root ref should be valid"),
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        ProofpackWriterTargetPathRef::new("/tmp/proofpack_eval_001.json")
+            .expect("target path ref should be valid"),
+        vec![],
+    );
+    let backslash = ProofpackWriterTargetPathPolicyModel::evaluate(
+        ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+            .expect("storage root ref should be valid"),
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        ProofpackWriterTargetPathRef::new("future\\.punk\\proofpack_eval_001.json")
+            .expect("target path ref should be valid"),
+        vec![],
+    );
+    let boundary = accepted.boundary();
+
+    let vocabulary_ok = ProofpackWriterTargetPathPolicyStatus::Accepted.as_str() == "accepted"
+        && ProofpackWriterTargetPathPolicyStatus::Rejected.as_str() == "rejected"
+        && ProofpackWriterTargetPathPolicyReason::PathTraversal.as_str() == "path_traversal"
+        && ProofpackWriterTargetPathPolicyReason::StorageRootEscape.as_str()
+            == "storage_root_escape"
+        && ProofpackWriterTargetPathPolicyReason::StorageRootEscape.file_io_error_reason()
+            == ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot;
+    let accepted_ok = accepted.schema_version()
+        == "punk.proofpack.writer_target_path_policy_model.v0.1"
+        && accepted.is_accepted()
+        && accepted.status() == ProofpackWriterTargetPathPolicyStatus::Accepted
+        && accepted.reasons().is_empty()
+        && accepted.diagnostics().is_empty()
+        && accepted.storage_root_ref().as_str() == "repo_runtime_proofs_root"
+        && accepted.target_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && accepted.target_path_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && !accepted.target_path_is_authority()
+        && !accepted.storage_root_ref_is_authority()
+        && !accepted.derives_from_current_working_directory()
+        && !accepted.uses_indexes_or_latest_as_authority();
+    let rejected_ok = traversal.is_rejected()
+        && traversal.has_reason(ProofpackWriterTargetPathPolicyReason::PathTraversal)
+        && traversal.has_reason(ProofpackWriterTargetPathPolicyReason::StorageRootEscape)
+        && traversal.has_storage_root_escape()
+        && traversal
+            .diagnostic_reason_codes()
+            .contains(&"target_path_escapes_storage_root")
+        && absolute.has_reason(ProofpackWriterTargetPathPolicyReason::AbsolutePath)
+        && absolute.has_storage_root_escape()
+        && backslash.has_reason(ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash)
+        && backslash.diagnostics()[0].reason()
+            == ProofpackWriterFileIoErrorReason::TargetPathInvalid
+        && backslash
+            .diagnostics()
+            .iter()
+            .all(|diagnostic| !diagnostic.target_path_is_authority());
+    let boundary_ok = boundary.models_target_path_policy
+        && boundary.classifies_explicit_target_path_refs
+        && boundary.keeps_storage_root_target_ref_and_path_separate
+        && boundary.maps_to_file_io_diagnostics
+        && boundary.evidence_only
+        && !boundary.reads_filesystem
+        && !boundary.touches_filesystem
+        && !boundary.canonicalizes_host_paths
+        && !boundary.writes_proofpack
+        && !boundary.writes_writer_operation_evidence
+        && !boundary.writes_final_decision
+        && !boundary.creates_acceptance_claim
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.writes_schema_files
+        && !boundary.target_path_is_authority
+        && !boundary.storage_root_ref_is_authority
+        && !boundary.derives_from_current_working_directory
+        && !boundary.uses_indexes_or_latest_as_authority;
+
+    if vocabulary_ok && accepted_ok && rejected_ok && boundary_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_writer_target_path_policy_model_is_side_effect_free",
+            "proofpack writer target path policy model is side-effect-free",
+            "writer target path policy accepts explicit repo-runtime-style refs and rejects traversal, absolute, and backslash refs without reading, canonicalizing, or writing filesystem paths",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_writer_target_path_policy_model_is_side_effect_free",
+            "proofpack writer target path policy model is side-effect-free",
+            format!(
+                "writer target path policy drifted; vocabulary={vocabulary_ok} accepted={accepted_ok} rejected={rejected_ok} boundary={boundary_ok} reads_fs={} touches_fs={} canonicalizes={} writes={} writes_evidence={} storage={} cli={} schemas={} acceptance={} target_path_authority={} storage_root_authority={} cwd={} index_latest={}",
+                boundary.reads_filesystem,
+                boundary.touches_filesystem,
+                boundary.canonicalizes_host_paths,
+                boundary.writes_proofpack,
+                boundary.writes_writer_operation_evidence,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.writes_schema_files,
+                boundary.creates_acceptance_claim,
+                boundary.target_path_is_authority,
+                boundary.storage_root_ref_is_authority,
+                boundary.derives_from_current_working_directory,
+                boundary.uses_indexes_or_latest_as_authority,
+            ),
+        )
+    }
+}
+
 fn eval_artifact_hash_policy_accepts_canonical_digest() -> SmokeEvalCaseResult {
     let digest_value = valid_artifact_digest();
     let digest = ArtifactDigest::new(digest_value.clone());
@@ -2580,7 +2739,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 35);
+        assert_eq!(report.cases().len(), 36);
     }
 
     #[test]
@@ -2605,7 +2764,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -2638,6 +2797,9 @@ mod tests {
             .contains("  - id: eval_proofpack_writer_file_io_outcome_model_is_side_effect_free"));
         assert!(rendered.contains(
             "  - id: eval_proofpack_writer_file_io_error_reason_model_is_side_effect_free"
+        ));
+        assert!(rendered.contains(
+            "  - id: eval_proofpack_writer_target_path_policy_model_is_side_effect_free"
         ));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
@@ -2679,6 +2841,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "proofpack writer file IO error reason smoke case models stable diagnostic reason codes without filesystem, storage, CLI, schema, or acceptance side effects"
+        ));
+        assert!(rendered.contains(
+            "proofpack writer target path policy smoke case rejects path injection and escape refs without filesystem, storage, CLI, schema, or acceptance side effects"
         ));
         assert!(rendered.contains(
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes"
@@ -2761,6 +2926,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_writer_file_io_error_reason_model_is_side_effect_free\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_writer_target_path_policy_model_is_side_effect_free\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));

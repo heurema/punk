@@ -18,6 +18,8 @@ pub const PROOFPACK_WRITER_FILE_IO_OUTCOME_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_file_io_outcome_model.v0.1";
 pub const PROOFPACK_WRITER_FILE_IO_ERROR_REASON_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_file_io_error_reason_model.v0.1";
+pub const PROOFPACK_WRITER_TARGET_PATH_POLICY_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_target_path_policy_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -3166,6 +3168,386 @@ pub const fn proofpack_writer_file_io_error_reason_model_boundary(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterTargetPathPolicyStatus {
+    Accepted,
+    Rejected,
+}
+
+impl ProofpackWriterTargetPathPolicyStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterTargetPathPolicyReason {
+    AbsolutePath,
+    HomeRelativePath,
+    UrlRef,
+    PathTraversal,
+    AmbiguousDotSegment,
+    EmptySegment,
+    UnsupportedBackslash,
+    StorageRootEscape,
+}
+
+impl ProofpackWriterTargetPathPolicyReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AbsolutePath => "absolute_path",
+            Self::HomeRelativePath => "home_relative_path",
+            Self::UrlRef => "url_ref",
+            Self::PathTraversal => "path_traversal",
+            Self::AmbiguousDotSegment => "ambiguous_dot_segment",
+            Self::EmptySegment => "empty_segment",
+            Self::UnsupportedBackslash => "unsupported_backslash",
+            Self::StorageRootEscape => "storage_root_escape",
+        }
+    }
+
+    pub fn file_io_error_reason(self) -> ProofpackWriterFileIoErrorReason {
+        match self {
+            Self::StorageRootEscape => {
+                ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot
+            }
+            Self::AbsolutePath
+            | Self::HomeRelativePath
+            | Self::UrlRef
+            | Self::PathTraversal
+            | Self::AmbiguousDotSegment
+            | Self::EmptySegment
+            | Self::UnsupportedBackslash => ProofpackWriterFileIoErrorReason::TargetPathInvalid,
+        }
+    }
+
+    pub fn is_storage_root_escape(self) -> bool {
+        self == Self::StorageRootEscape
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterTargetPathPolicyModel {
+    schema_version: &'static str,
+    storage_root_ref: ProofpackWriterStorageRootRef,
+    target_artifact_ref: ProofpackWriterTargetRef,
+    target_path_ref: ProofpackWriterTargetPathRef,
+    status: ProofpackWriterTargetPathPolicyStatus,
+    reasons: Vec<ProofpackWriterTargetPathPolicyReason>,
+    diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterTargetPathPolicyModel {
+    pub fn evaluate(
+        storage_root_ref: ProofpackWriterStorageRootRef,
+        target_artifact_ref: ProofpackWriterTargetRef,
+        target_path_ref: ProofpackWriterTargetPathRef,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let reasons = writer_target_path_policy_reasons(target_path_ref.as_str());
+        let diagnostics = writer_target_path_policy_diagnostics(&target_path_ref, &reasons);
+        let status = if reasons.is_empty() {
+            ProofpackWriterTargetPathPolicyStatus::Accepted
+        } else {
+            ProofpackWriterTargetPathPolicyStatus::Rejected
+        };
+
+        Self {
+            schema_version: PROOFPACK_WRITER_TARGET_PATH_POLICY_MODEL_SCHEMA_VERSION,
+            storage_root_ref,
+            target_artifact_ref,
+            target_path_ref,
+            status,
+            reasons,
+            diagnostics,
+            boundary_notes: writer_target_path_policy_boundary_notes(boundary_notes),
+        }
+    }
+
+    pub fn from_plan(
+        plan: &ProofpackWriterFileIoPlan,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::evaluate(
+            plan.storage_root_ref().clone(),
+            plan.target_artifact_ref().clone(),
+            plan.target_path_ref().clone(),
+            boundary_notes,
+        )
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn storage_root_ref(&self) -> &ProofpackWriterStorageRootRef {
+        &self.storage_root_ref
+    }
+
+    pub fn target_artifact_ref(&self) -> &ProofpackWriterTargetRef {
+        &self.target_artifact_ref
+    }
+
+    pub fn target_ref(&self) -> &ProofpackWriterTargetRef {
+        self.target_artifact_ref()
+    }
+
+    pub fn target_path_ref(&self) -> &ProofpackWriterTargetPathRef {
+        &self.target_path_ref
+    }
+
+    pub fn status(&self) -> ProofpackWriterTargetPathPolicyStatus {
+        self.status
+    }
+
+    pub fn reasons(&self) -> &[ProofpackWriterTargetPathPolicyReason] {
+        &self.reasons
+    }
+
+    pub fn diagnostics(&self) -> &[ProofpackWriterFileIoDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn is_accepted(&self) -> bool {
+        self.status == ProofpackWriterTargetPathPolicyStatus::Accepted
+    }
+
+    pub fn is_rejected(&self) -> bool {
+        self.status == ProofpackWriterTargetPathPolicyStatus::Rejected
+    }
+
+    pub fn has_reason(&self, reason: ProofpackWriterTargetPathPolicyReason) -> bool {
+        self.reasons.contains(&reason)
+    }
+
+    pub fn has_storage_root_escape(&self) -> bool {
+        self.reasons
+            .iter()
+            .any(|reason| reason.is_storage_root_escape())
+    }
+
+    pub fn diagnostic_reason_codes(&self) -> Vec<&'static str> {
+        self.diagnostics
+            .iter()
+            .map(ProofpackWriterFileIoDiagnostic::reason_code)
+            .collect()
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterTargetPathPolicyModelBoundary {
+        proofpack_writer_target_path_policy_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn canonicalizes_host_paths(&self) -> bool {
+        self.boundary().canonicalizes_host_paths
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn storage_root_ref_is_authority(&self) -> bool {
+        self.boundary().storage_root_ref_is_authority
+    }
+
+    pub fn derives_from_current_working_directory(&self) -> bool {
+        self.boundary().derives_from_current_working_directory
+    }
+
+    pub fn uses_indexes_or_latest_as_authority(&self) -> bool {
+        self.boundary().uses_indexes_or_latest_as_authority
+    }
+}
+
+fn writer_target_path_policy_reasons(
+    target_path: &str,
+) -> Vec<ProofpackWriterTargetPathPolicyReason> {
+    let mut reasons = Vec::new();
+
+    let absolute_path = writer_target_path_is_absolute(target_path);
+    let home_relative = target_path.starts_with('~');
+    let url_ref = writer_target_path_is_url_ref(target_path);
+    let unsupported_backslash = target_path.contains('\\');
+    let mut path_traversal = false;
+    let mut ambiguous_dot_segment = false;
+    let mut empty_segment = false;
+
+    for segment in target_path.split('/') {
+        if segment.is_empty() {
+            empty_segment = true;
+        } else if segment == "." {
+            ambiguous_dot_segment = true;
+        } else if segment == ".." {
+            path_traversal = true;
+        }
+    }
+
+    if absolute_path {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::AbsolutePath);
+    }
+    if home_relative {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::HomeRelativePath);
+    }
+    if url_ref {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::UrlRef);
+    }
+    if path_traversal {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::PathTraversal);
+    }
+    if ambiguous_dot_segment {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment);
+    }
+    if empty_segment {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::EmptySegment);
+    }
+    if unsupported_backslash {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash);
+    }
+    if absolute_path || home_relative || url_ref || path_traversal {
+        reasons.push(ProofpackWriterTargetPathPolicyReason::StorageRootEscape);
+    }
+
+    reasons
+}
+
+fn writer_target_path_is_absolute(target_path: &str) -> bool {
+    if target_path.starts_with('/') {
+        return true;
+    }
+
+    let bytes = target_path.as_bytes();
+    bytes.len() >= 3
+        && bytes[1] == b':'
+        && (bytes[2] == b'/' || bytes[2] == b'\\')
+        && bytes[0].is_ascii_alphabetic()
+}
+
+fn writer_target_path_is_url_ref(target_path: &str) -> bool {
+    target_path.contains("://")
+        || target_path.starts_with("file:")
+        || target_path.starts_with("http:")
+        || target_path.starts_with("https:")
+        || target_path.starts_with("ssh:")
+}
+
+fn writer_target_path_policy_diagnostics(
+    target_path_ref: &ProofpackWriterTargetPathRef,
+    reasons: &[ProofpackWriterTargetPathPolicyReason],
+) -> Vec<ProofpackWriterFileIoDiagnostic> {
+    reasons
+        .iter()
+        .map(|reason| {
+            ProofpackWriterFileIoDiagnostic::for_reason(reason.file_io_error_reason())
+                .with_target_path_ref(target_path_ref.clone())
+                .with_source(ProofpackWriterFileIoDiagnosticSource::WriterDiagnostic)
+        })
+        .collect()
+}
+
+fn writer_target_path_policy_boundary_notes(
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    if boundary_notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer target path policy is evidence-only; it classifies explicit refs without resolving host paths or touching the filesystem.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterTargetPathPolicyModelBoundary {
+    pub models_target_path_policy: bool,
+    pub classifies_explicit_target_path_refs: bool,
+    pub keeps_storage_root_target_ref_and_path_separate: bool,
+    pub maps_to_file_io_diagnostics: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub evidence_only: bool,
+    pub target_path_is_authority: bool,
+    pub storage_root_ref_is_authority: bool,
+    pub derives_from_current_working_directory: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+}
+
+pub const fn proofpack_writer_target_path_policy_model_boundary(
+) -> ProofpackWriterTargetPathPolicyModelBoundary {
+    ProofpackWriterTargetPathPolicyModelBoundary {
+        models_target_path_policy: true,
+        classifies_explicit_target_path_refs: true,
+        keeps_storage_root_target_ref_and_path_separate: true,
+        maps_to_file_io_diagnostics: true,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        evidence_only: true,
+        target_path_is_authority: false,
+        storage_root_ref_is_authority: false,
+        derives_from_current_working_directory: false,
+        uses_indexes_or_latest_as_authority: false,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -4864,6 +5246,213 @@ mod tests {
         assert!(!model.diagnostics()[0].source_is_proof_authority());
         assert_eq!(model.boundary_notes().len(), outcome.boundary_notes().len());
         assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_target_path_policy_vocabulary_is_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_TARGET_PATH_POLICY_MODEL_SCHEMA_VERSION,
+            "punk.proofpack.writer_target_path_policy_model.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyStatus::Accepted.as_str(),
+            "accepted"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyStatus::Rejected.as_str(),
+            "rejected"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::AbsolutePath.as_str(),
+            "absolute_path"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::HomeRelativePath.as_str(),
+            "home_relative_path"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::UrlRef.as_str(),
+            "url_ref"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::PathTraversal.as_str(),
+            "path_traversal"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment.as_str(),
+            "ambiguous_dot_segment"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::EmptySegment.as_str(),
+            "empty_segment"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash.as_str(),
+            "unsupported_backslash"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::StorageRootEscape.as_str(),
+            "storage_root_escape"
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::StorageRootEscape.file_io_error_reason(),
+            ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathPolicyReason::PathTraversal.file_io_error_reason(),
+            ProofpackWriterFileIoErrorReason::TargetPathInvalid
+        );
+    }
+
+    #[test]
+    fn proofpack_writer_target_path_policy_accepts_repo_runtime_style_refs() {
+        let plan = sample_writer_file_io_ready_plan();
+        let model = ProofpackWriterTargetPathPolicyModel::from_plan(
+            &plan,
+            vec![ProofBoundaryNote::new(
+                "Target path policy classifies explicit refs without filesystem access.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let boundary = model.boundary();
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_TARGET_PATH_POLICY_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            model.status(),
+            ProofpackWriterTargetPathPolicyStatus::Accepted
+        );
+        assert!(model.is_accepted());
+        assert!(!model.is_rejected());
+        assert_eq!(model.reasons().len(), 0);
+        assert_eq!(model.diagnostics().len(), 0);
+        assert_eq!(model.storage_root_ref(), plan.storage_root_ref());
+        assert_eq!(model.target_artifact_ref(), plan.target_artifact_ref());
+        assert_eq!(model.target_path_ref(), plan.target_path_ref());
+        assert_ne!(
+            model.storage_root_ref().as_str(),
+            model.target_path_ref().as_str()
+        );
+        assert_eq!(
+            model.target_artifact_ref().as_str(),
+            "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert_eq!(
+            model.target_path_ref().as_str(),
+            "future/.punk/proofs/proofpack_local_001.json"
+        );
+
+        assert!(model.is_evidence_only());
+        assert!(boundary.models_target_path_policy);
+        assert!(boundary.classifies_explicit_target_path_refs);
+        assert!(boundary.keeps_storage_root_target_ref_and_path_separate);
+        assert!(boundary.maps_to_file_io_diagnostics);
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.target_path_is_authority());
+        assert!(!model.storage_root_ref_is_authority());
+        assert!(!model.derives_from_current_working_directory());
+        assert!(!model.uses_indexes_or_latest_as_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_target_path_policy_rejects_path_injection_and_escape_cases() {
+        let storage_root_ref = ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+            .expect("storage root ref should be valid");
+        let target_ref =
+            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target ref should be valid");
+        let model_for = |target_path: &str| {
+            ProofpackWriterTargetPathPolicyModel::evaluate(
+                storage_root_ref.clone(),
+                target_ref.clone(),
+                ProofpackWriterTargetPathRef::new(target_path)
+                    .expect("target path ref should be non-empty"),
+                vec![],
+            )
+        };
+
+        let absolute = model_for("/tmp/proofpack.json");
+        let windows_absolute = model_for("C:\\tmp\\proofpack.json");
+        let home = model_for("~/proofpack.json");
+        let url = model_for("file:///tmp/proofpack.json");
+        let traversal = model_for("future/.punk/../proofs/proofpack.json");
+        let dot = model_for("future/./proofpack.json");
+        let empty_segment = model_for("future//proofpack.json");
+        let backslash = model_for("future\\.punk\\proofpack.json");
+
+        assert!(absolute.is_rejected());
+        assert!(absolute.has_reason(ProofpackWriterTargetPathPolicyReason::AbsolutePath));
+        assert!(absolute.has_reason(ProofpackWriterTargetPathPolicyReason::StorageRootEscape));
+        assert!(absolute.has_storage_root_escape());
+        assert!(absolute
+            .diagnostic_reason_codes()
+            .contains(&"target_path_escapes_storage_root"));
+
+        assert!(windows_absolute.has_reason(ProofpackWriterTargetPathPolicyReason::AbsolutePath));
+        assert!(windows_absolute
+            .has_reason(ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash));
+        assert!(windows_absolute.has_storage_root_escape());
+
+        assert!(home.has_reason(ProofpackWriterTargetPathPolicyReason::HomeRelativePath));
+        assert!(home.has_storage_root_escape());
+        assert!(url.has_reason(ProofpackWriterTargetPathPolicyReason::UrlRef));
+        assert!(url.has_storage_root_escape());
+        assert!(traversal.has_reason(ProofpackWriterTargetPathPolicyReason::PathTraversal));
+        assert!(traversal.has_storage_root_escape());
+        assert!(dot.has_reason(ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment));
+        assert!(empty_segment.has_reason(ProofpackWriterTargetPathPolicyReason::EmptySegment));
+        assert!(backslash.has_reason(ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash));
+        assert!(backslash.diagnostics().iter().all(|diagnostic| {
+            diagnostic.surface() == ProofpackWriterFileIoDiagnosticSurface::TargetPath
+                && !diagnostic.target_path_is_authority()
+                && !diagnostic.source_is_proof_authority()
+        }));
+        assert!(traversal.diagnostics().iter().any(|diagnostic| {
+            diagnostic.reason() == ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot
+        }));
+    }
+
+    #[test]
+    fn proofpack_writer_target_path_policy_is_setup_neutral_and_side_effect_free() {
+        let model = ProofpackWriterTargetPathPolicyModel::evaluate(
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target ref should be valid"),
+            ProofpackWriterTargetPathRef::new("future/./proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            vec![],
+        );
+        let boundary = model.boundary();
+
+        assert_eq!(model.status().as_str(), "rejected");
+        assert!(model.has_reason(ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment));
+        assert_eq!(model.diagnostics().len(), 1);
+        assert_eq!(model.diagnostics()[0].reason_code(), "target_path_invalid");
+        assert_eq!(
+            model.diagnostics()[0].source(),
+            ProofpackWriterFileIoDiagnosticSource::WriterDiagnostic
+        );
+        assert_eq!(model.boundary_notes().len(), 1);
+        assert!(model.is_evidence_only());
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!boundary.writes_final_decision);
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.writes_schema_files());
+        assert!(!model.target_path_is_authority());
+        assert!(!model.storage_root_ref_is_authority());
+        assert!(!model.derives_from_current_working_directory());
+        assert!(!model.uses_indexes_or_latest_as_authority());
     }
 
     #[test]
