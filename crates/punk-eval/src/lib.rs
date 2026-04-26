@@ -24,10 +24,11 @@ use punk_gate::{
     GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
 };
 use punk_proof::{
-    positive_acceptance_preconditions_met, PositiveAcceptanceInputs, ProofArtifactDigest,
-    ProofArtifactHash, ProofArtifactKind, ProofArtifactRef, ProofBoundaryNote, ProofContractRef,
-    ProofCreatedAt, ProofEvalRef, ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef,
-    ProofRunReceiptRef, Proofpack, ProofpackId,
+    compute_proofpack_manifest_digest, positive_acceptance_preconditions_met,
+    PositiveAcceptanceInputs, ProofArtifactDigest, ProofArtifactHash, ProofArtifactKind,
+    ProofArtifactRef, ProofBoundaryNote, ProofContractRef, ProofCreatedAt, ProofEvalRef,
+    ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef, ProofRunReceiptRef, Proofpack,
+    ProofpackId,
 };
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -357,6 +358,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_proofpack_integrity_ready_when_declared_digest_links_are_complete(),
         eval_proofpack_integrity_missing_digest_blocks_readiness(),
         eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free(),
+        eval_proofpack_manifest_digest_matches_exact_renderer_bytes(),
         eval_artifact_hash_policy_accepts_canonical_digest(),
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
@@ -374,10 +376,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, artifact hash policy, and exact-byte hash computation helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, and exact-byte hash computation helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, artifact hash policy, and exact-byte hash computation helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, and exact-byte hash computation helper kernels"
             .to_owned()
     };
 
@@ -397,6 +399,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "run receipt evidence remains pre-gate and does not imply final acceptance",
             "gate/proof smoke cases remain local assessment and do not claim acceptance",
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks",
+            "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts",
             "artifact hash smoke cases validate helper shape and exact-byte computation without file IO or runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
@@ -404,7 +407,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "baseline, waiver, and stored eval reports are not active",
             "schema validation and export adapters are not active",
             "proofpack writer and runtime proof storage are not active",
-            "file IO hashing, byte normalization, and hash/reference verification policy are not active",
+            "file IO hashing, byte normalization, and referenced-artifact byte verification policy are not active",
         ],
     }
 }
@@ -1306,6 +1309,74 @@ fn eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free() -> S
     }
 }
 
+fn eval_proofpack_manifest_digest_matches_exact_renderer_bytes() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let rendered = proofpack.render_manifest_json();
+    let digest = compute_proofpack_manifest_digest(&proofpack);
+    let expected = compute_artifact_digest(rendered.as_bytes());
+    let digest_with_trailing_newline = compute_artifact_digest(format!("{rendered}\n").as_bytes());
+    let boundary = proofpack.boundary();
+    let partial_proofpack = sample_proofpack_with_partial_integrity("decision_eval_001");
+    let before_missing = partial_proofpack
+        .link_hash_integrity_report()
+        .missing_digest_refs()
+        .len();
+    let _partial_manifest_digest = compute_proofpack_manifest_digest(&partial_proofpack);
+    let after_missing = partial_proofpack
+        .link_hash_integrity_report()
+        .missing_digest_refs()
+        .len();
+
+    let exact_renderer_bytes = digest == expected;
+    let canonical = validate_artifact_digest(digest.as_str()).is_ok()
+        && is_canonical_artifact_digest(digest.as_str());
+    let no_formatting_normalization = digest != digest_with_trailing_newline;
+    let no_referenced_artifact_verification = before_missing > 0
+        && before_missing == after_missing
+        && !partial_proofpack.has_complete_link_hash_integrity();
+    let boundary_ok = boundary.computes_manifest_digest
+        && !boundary.computes_referenced_artifact_hashes
+        && !boundary.computes_hashes
+        && !boundary.normalizes_hashes
+        && !boundary.writes_proofpack
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.creates_acceptance_claim
+        && !boundary.writes_final_decision;
+
+    if exact_renderer_bytes
+        && canonical
+        && no_formatting_normalization
+        && no_referenced_artifact_verification
+        && boundary_ok
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_manifest_digest_matches_exact_renderer_bytes",
+            "proofpack manifest digest hashes exact renderer bytes",
+            "manifest digest matches exact in-memory renderer bytes, stays canonical, and does not verify referenced artifacts or write runtime state",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_manifest_digest_matches_exact_renderer_bytes",
+            "proofpack manifest digest hashes exact renderer bytes",
+            format!(
+                "proofpack manifest digest drifted; exact={} canonical={} no_normalization={} no_ref_verification={} boundary_ok={} writes={} storage={} cli={} acceptance={} computes_manifest={} computes_referenced={}",
+                exact_renderer_bytes,
+                canonical,
+                no_formatting_normalization,
+                no_referenced_artifact_verification,
+                boundary_ok,
+                boundary.writes_proofpack,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.creates_acceptance_claim,
+                boundary.computes_manifest_digest,
+                boundary.computes_referenced_artifact_hashes
+            ),
+        )
+    }
+}
+
 fn valid_artifact_digest() -> String {
     format!("sha256:{}", "0123456789abcdef".repeat(4))
 }
@@ -1560,7 +1631,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 27);
+        assert_eq!(report.cases().len(), 28);
     }
 
     #[test]
@@ -1585,7 +1656,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, artifact hash policy, and exact-byte hash computation helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, artifact hash policy, and exact-byte hash computation helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -1605,6 +1676,8 @@ mod tests {
         assert!(rendered.contains(
             "  - id: eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free"
         ));
+        assert!(rendered
+            .contains("  - id: eval_proofpack_manifest_digest_matches_exact_renderer_bytes"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_repo_relative_ref"));
@@ -1624,6 +1697,9 @@ mod tests {
             "proofpack manifest renderer smoke case renders in memory only and does not write proofpacks"
         ));
         assert!(rendered.contains(
+            "proofpack manifest digest smoke case hashes exact in-memory renderer bytes only and does not verify referenced artifacts"
+        ));
+        assert!(rendered.contains(
             "artifact hash smoke cases validate helper shape and exact-byte computation without file IO or runtime writes"
         ));
         assert!(rendered
@@ -1632,7 +1708,7 @@ mod tests {
         assert!(rendered.contains("baseline, waiver, and stored eval reports are not active"));
         assert!(rendered.contains("proofpack writer and runtime proof storage are not active"));
         assert!(rendered
-            .contains("file IO hashing, byte normalization, and hash/reference verification policy are not active"));
+            .contains("file IO hashing, byte normalization, and referenced-artifact byte verification policy are not active"));
     }
 
     #[test]
@@ -1685,6 +1761,9 @@ mod tests {
             .contains("\"case_id\": \"eval_proofpack_integrity_missing_digest_blocks_readiness\""));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_manifest_renderer_is_deterministic_and_side_effect_free\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_manifest_digest_matches_exact_renderer_bytes\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));

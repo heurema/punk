@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_manifest_digest_helper_v0_1
 title: "Add proofpack manifest digest helper v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -42,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md"
   - "work/reports/2026-04-26-twenty-sixth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-manifest-digest-helper-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -94,3 +95,14 @@ Do not add CLI behavior.
 Do not write gate decisions.
 Do not create acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Implemented a side-effect-free `compute_proofpack_manifest_digest(&Proofpack)` helper in `punk-proof`.
+
+The helper hashes the exact UTF-8 bytes returned by `Proofpack::render_manifest_json()` through `punk-core` exact-byte hash computation and returns canonical `sha256:<64 lowercase hex>` metadata.
+
+Smoke eval coverage now records the manifest digest helper as local assessment only. Boundary flags distinguish manifest self-digest computation from referenced artifact hash computation, file IO hashing, hash normalization, proofpack writer behavior, runtime storage, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init`.
+
+No `.punk/` state, runtime writer, schema file, CLI command, provider/model/agent adapter, automation, file IO hashing, proofpack writer, gate decision writer, or acceptance claim was added.

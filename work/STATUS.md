@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Add proofpack manifest digest helper v0.1"
-selected_next: "work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md"
+current_focus: "Run twenty-seventh advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_twenty_seventh_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,16 +17,15 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: add proofpack manifest digest helper v0.1.
-- Selected next: `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md`
-- Why this is next: proofpack manifest digest boundary v0.1 is defined, `punk-proof` already renders deterministic in-memory manifests, and `punk-core` already computes exact-byte SHA-256 digests; implement the smallest helper before proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
+- Current focus: run the twenty-seventh advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_twenty_seventh_work_ledger_review.md`
+- Why this is next: proofpack manifest digest helper v0.1 is now implemented as a side-effect-free active-core primitive; run a short advisory review before selecting CRATE-STATUS currentness reconciliation, proofpack writer preparation, file IO hash boundary, referenced artifact verification policy, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
 - Acceptance:
-  - `punk-proof` exposes side-effect-free proofpack manifest self-digest computation from exact UTF-8 renderer bytes.
-  - the helper reuses `punk-core` exact-byte hash computation and adds no new SHA-256 dependency to `punk-proof`.
-  - manifest self-digest remains separate from referenced artifact digest verification and file IO artifact hashing.
-  - smoke eval covers manifest digest helper behavior as local assessment only.
-  - no proofpack writer behavior, runtime storage, gate decisions, acceptance claims, schema files, CLI behavior, adapters, automation, provider/model runners, or `punk init` are added.
-  - `work/STATUS.md` remains the only live work-state source of truth and selects exactly one next ready goal.
+  - `work/STATUS.md` remains the only live work-state source of truth.
+  - `selected_next` points to one `ready` goal.
+  - proofpack manifest digest helper v0.1 remains side-effect-free manifest byte identity metadata, not referenced artifact verification, proofpack writer behavior, gate decision, or acceptance authority.
+  - review identifies the next bounded active-core step without activating proofpack writer behavior, file IO hashing, runtime storage, schemas, CLI behavior, adapters, automation, provider/model runners, or `punk init`.
+  - no runtime/code/schema/CLI/`.punk` changes are made by the review.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -34,13 +33,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md` | `ready` | Boundary and prerequisites are in place; implement helper-only manifest self-digest without writer/runtime/CLI/file IO scope. | — |
+| `work/goals/goal_run_twenty_seventh_work_ledger_review.md` | `ready` | Manifest digest helper is implemented; review before selecting CRATE-STATUS currentness, writer/file-IO/reference-verification/runtime/schema/CLI work, or another guardrail. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, proofpack writer hash-policy integration, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, and proofpack manifest digest boundary are in place; still select writer/orchestration/runtime work through separate goals after review. |
+| Proofpack writer, gate/eval orchestration, proofpack writer hash-policy integration, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, and proofpack manifest digest helper are in place; still select writer/orchestration/runtime work through separate goals after review. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -50,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Added proofpack manifest digest helper v0.1 | `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md`, `work/reports/2026-04-26-proofpack-manifest-digest-helper-v0-1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-26 | Ran the twenty-sixth advisory Work Ledger Review | `work/goals/goal_run_twenty_sixth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-sixth-work-ledger-review.md`, `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md` |
 | 2026-04-26 | Defined proofpack manifest digest boundary v0.1 | `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md`, `evals/specs/proofpack-manifest-digest.v0.1.md`, `work/reports/2026-04-26-proofpack-manifest-digest-boundary-v0-1.md` |
 | 2026-04-26 | Ran the twenty-fifth advisory Work Ledger Review | `work/goals/goal_run_twenty_fifth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-fifth-work-ledger-review.md`, `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md` |
@@ -123,14 +123,16 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_sixth_work_ledger_review.md work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md work/reports/2026-04-26-twenty-sixth-work-ledger-review.md --report work/reports/2026-04-26-twenty-sixth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `cargo fmt --all && cargo test -p punk-proof && cargo test -p punk-eval && cargo run -p punk-cli -- eval run smoke && cargo run -p punk-cli -- eval run smoke --format json && git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files crates/punk-proof/src/lib.rs crates/punk-eval/src/lib.rs work/STATUS.md work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md work/goals/goal_run_twenty_seventh_work_ledger_review.md work/reports/2026-04-26-proofpack-manifest-digest-helper-v0-1.md --report work/reports/2026-04-26-proofpack-manifest-digest-helper-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - twenty-sixth advisory Work Ledger Review completed
-  - `selected_next` is now `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md`
-  - no runtime/code/schema/CLI/`.punk` changes were made
-  - docs-governance had 0 failures and 0 warnings for this review diff
-  - cargo test --workspace passed
+  - proofpack manifest digest helper v0.1 implemented
+  - `selected_next` is now `work/goals/goal_run_twenty_seventh_work_ledger_review.md`
+  - no runtime/schema/CLI/`.punk` changes were made
+  - docs-governance had 0 failures and 0 warnings for this code-doc diff
+  - cargo check --workspace and cargo test --workspace passed
   - no repo-tracked absolute path leaks found
+  - no new dependency was added to `punk-proof`
+  - smoke eval coverage includes manifest digest helper behavior as local assessment only
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
-  - proofpack writer, file IO hashing, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
+  - proofpack writer, file IO hashing, referenced artifact byte verification, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred

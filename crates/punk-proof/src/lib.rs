@@ -9,7 +9,9 @@ use std::fmt::Write as _;
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROOFPACK_SCHEMA_VERSION: &str = "punk.proofpack.v0.1";
 
-use punk_core::{validate_artifact_digest, ArtifactHashPolicyError};
+use punk_core::{
+    compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
+};
 
 fn non_empty(value: impl Into<String>, error: ProofpackError) -> Result<String, ProofpackError> {
     let value = value.into().trim().to_string();
@@ -581,6 +583,10 @@ impl Proofpack {
     }
 }
 
+pub fn compute_proofpack_manifest_digest(proofpack: &Proofpack) -> ArtifactDigest {
+    compute_artifact_digest(proofpack.render_manifest_json().as_bytes())
+}
+
 fn proof_artifact_digest_requirement(
     kind: ProofArtifactKind,
     artifact_ref: &str,
@@ -710,6 +716,8 @@ pub struct ProofpackBoundary {
     pub absorbs_evidence: bool,
     pub post_gate_only: bool,
     pub checks_structural_link_hash_integrity: bool,
+    pub computes_manifest_digest: bool,
+    pub computes_referenced_artifact_hashes: bool,
     pub computes_hashes: bool,
     pub normalizes_hashes: bool,
 }
@@ -728,6 +736,8 @@ pub const fn proofpack_boundary() -> ProofpackBoundary {
         absorbs_evidence: false,
         post_gate_only: true,
         checks_structural_link_hash_integrity: true,
+        computes_manifest_digest: true,
+        computes_referenced_artifact_hashes: false,
         computes_hashes: false,
         normalizes_hashes: false,
     }
@@ -936,6 +946,90 @@ mod tests {
         assert!(!boundary.creates_acceptance_claim);
         assert!(!boundary.computes_hashes);
         assert!(!boundary.normalizes_hashes);
+    }
+
+    #[test]
+    fn proofpack_manifest_digest_is_deterministic_and_canonical() {
+        let proofpack = sample_proofpack();
+        let digest = compute_proofpack_manifest_digest(&proofpack);
+
+        assert_eq!(digest, compute_proofpack_manifest_digest(&proofpack));
+        assert!(digest.as_str().starts_with("sha256:"));
+        assert_eq!(digest.as_str().len(), "sha256:".len() + 64);
+        assert!(validate_artifact_digest(digest.as_str()).is_ok());
+    }
+
+    #[test]
+    fn proofpack_manifest_digest_uses_exact_renderer_bytes() {
+        let proofpack = sample_proofpack();
+        let rendered = proofpack.render_manifest_json();
+        let digest = compute_proofpack_manifest_digest(&proofpack);
+        let expected = compute_artifact_digest(rendered.as_bytes());
+
+        assert_eq!(digest, expected);
+    }
+
+    #[test]
+    fn proofpack_manifest_digest_preserves_renderer_byte_identity() {
+        let proofpack = sample_proofpack();
+        let rendered = proofpack.render_manifest_json();
+        let digest = compute_proofpack_manifest_digest(&proofpack);
+        let digest_with_trailing_newline =
+            compute_artifact_digest(format!("{rendered}\n").as_bytes());
+
+        assert_ne!(digest, digest_with_trailing_newline);
+        assert!(!rendered.ends_with('\n'));
+    }
+
+    #[test]
+    fn proofpack_manifest_digest_has_no_recursive_self_inclusion() {
+        let proofpack = sample_proofpack();
+        let rendered_before = proofpack.render_manifest_json();
+        let digest = compute_proofpack_manifest_digest(&proofpack);
+        let rendered_after = proofpack.render_manifest_json();
+
+        assert_eq!(rendered_before, rendered_after);
+        assert!(!rendered_after.contains(digest.as_str()));
+    }
+
+    #[test]
+    fn proofpack_manifest_digest_does_not_satisfy_referenced_artifact_integrity() {
+        let proofpack = sample_proofpack_without_digests();
+        let before = proofpack.link_hash_integrity_report();
+        let digest = compute_proofpack_manifest_digest(&proofpack);
+        let after = proofpack.link_hash_integrity_report();
+
+        assert!(validate_artifact_digest(digest.as_str()).is_ok());
+        assert!(before.has_missing_required_digests());
+        assert!(after.has_missing_required_digests());
+        assert_eq!(
+            before.required_digest_refs().len(),
+            after.required_digest_refs().len()
+        );
+        assert_eq!(
+            before.missing_digest_refs().len(),
+            after.missing_digest_refs().len()
+        );
+        assert_eq!(proofpack.artifact_digests().len(), 0);
+        assert!(!proofpack.has_complete_link_hash_integrity());
+    }
+
+    #[test]
+    fn proofpack_manifest_digest_has_no_writer_or_runtime_side_effects() {
+        let proofpack = sample_proofpack();
+        let boundary = proofpack.boundary();
+        let digest = compute_proofpack_manifest_digest(&proofpack);
+
+        assert!(validate_artifact_digest(digest.as_str()).is_ok());
+        assert!(boundary.computes_manifest_digest);
+        assert!(!boundary.computes_referenced_artifact_hashes);
+        assert!(!boundary.computes_hashes);
+        assert!(!boundary.normalizes_hashes);
+        assert!(!boundary.writes_proofpack);
+        assert!(!boundary.requires_runtime_storage);
+        assert!(!boundary.writes_cli_output);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.writes_final_decision);
     }
 
     #[test]
