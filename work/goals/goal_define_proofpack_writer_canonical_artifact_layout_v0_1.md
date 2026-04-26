@@ -1,7 +1,7 @@
 ---
 id: goal_define_proofpack_writer_canonical_artifact_layout_v0_1
 title: "Define proofpack writer canonical artifact layout v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -34,6 +34,7 @@ knowledge_refs:
   - "docs/product/CRATE-STATUS.md"
   - "docs/product/PROJECT-MEMORY.md"
   - "evals/specs/proofpack-boundary.v0.1.md"
+  - "evals/specs/proofpack-manifest-digest.v0.1.md"
   - "evals/specs/proofpack-writer-preparation-boundary.v0.1.md"
   - "evals/specs/proofpack-writer-storage-schema-boundary.v0.1.md"
   - "evals/specs/proofpack-writer-operation-evidence-boundary.v0.1.md"
@@ -41,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-target-path-policy-model-v0-1.md"
   - "work/reports/2026-04-26-forty-fifth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-canonical-artifact-layout-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -55,6 +57,7 @@ research_gate:
     - "docs/product/CRATE-STATUS.md"
     - "docs/product/PROJECT-MEMORY.md"
     - "evals/specs/proofpack-boundary.v0.1.md"
+    - "evals/specs/proofpack-manifest-digest.v0.1.md"
     - "evals/specs/proofpack-writer-preparation-boundary.v0.1.md"
     - "evals/specs/proofpack-writer-storage-schema-boundary.v0.1.md"
     - "evals/specs/proofpack-writer-operation-evidence-boundary.v0.1.md"
@@ -91,3 +94,14 @@ Do not implement proofpack referenced-ref verification integration.
 Do not write writer operation evidence.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed proofpack writer canonical artifact layout v0.1 as docs/spec only.
+
+Added `evals/specs/proofpack-writer-canonical-artifact-layout.v0.1.md` to select exact deterministic proofpack manifest JSON renderer bytes as the v0.1 canonical proofpack artifact body.
+
+Manifest self-digest covers exactly those canonical artifact body bytes. Wrapper metadata, target refs, target paths, operation evidence, schema validation reports, indexes, `latest` pointers, CLI output, and service mirrors remain non-canonical.
+
+No Rust code, `.punk/` runtime state, schema files, CLI behavior, proofpack writer behavior, filesystem writes, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init` were added.
