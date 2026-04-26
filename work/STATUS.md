@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run twenty-fifth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_twenty_fifth_work_ledger_review.md"
+current_focus: "Define proofpack manifest digest boundary v0.1"
+selected_next: "work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,15 +17,15 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the twenty-fifth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_twenty_fifth_work_ledger_review.md`
-- Why this is next: `docs/product/CRATE-STATUS.md` now reflects active exact-byte artifact hash computation in `punk-core`; run a short advisory review before selecting proofpack writer preparation, file IO hash boundary, proofpack hash integration, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
+- Current focus: define proofpack manifest digest boundary v0.1.
+- Selected next: `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md`
+- Why this is next: `punk-proof` can render deterministic in-memory proofpack manifests and `punk-core` can compute exact-byte SHA-256 digests; define the boundary for manifest self-digest before adding `punk-proof` digest implementation, proofpack writer preparation, file IO hash boundary, runtime storage, schemas, CLI behavior, gate/eval/proof orchestration, adapters, automation, or `punk init`.
 - Acceptance:
-  - `work/STATUS.md` remains the only live work-state source of truth.
-  - `selected_next` points to one `ready` goal.
-  - `docs/product/CRATE-STATUS.md` accurately records `punk-core` exact-byte hash computation and narrow `sha2` dependency.
-  - `docs/product/CRATE-STATUS.md` keeps file IO hashing, byte normalization, schema files, proofpack writer behavior, runtime storage, CLI behavior, gate decision writing, adapters, automation, provider/model runners, and `punk init` deferred.
-  - no runtime/code/schema/CLI/`.punk` changes were made.
+  - `evals/specs/proofpack-manifest-digest.v0.1.md` defines the future helper boundary before implementation.
+  - the boundary hashes exact UTF-8 bytes of deterministic in-memory proofpack manifest rendering.
+  - the boundary distinguishes proofpack manifest self-digest from referenced artifact digests and file IO artifact hashing.
+  - the boundary prevents overclaiming proofpack writer behavior, runtime storage, gate decisions, acceptance claims, schema files, CLI behavior, adapters, automation, provider/model runners, or `punk init`.
+  - `work/STATUS.md` remains the only live work-state source of truth and selects exactly one next ready goal.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -33,7 +33,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_twenty_fifth_work_ledger_review.md` | `ready` | CRATE-STATUS now reflects exact-byte hash computation; review before selecting writer/file-IO-hash/runtime/schema/CLI work. | — |
+| `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md` | `ready` | Manifest renderer and exact-byte hash helper are in place; define manifest digest boundary before code/writer/runtime work. | — |
 
 ## Blocked
 
@@ -49,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Ran the twenty-fifth advisory Work Ledger Review | `work/goals/goal_run_twenty_fifth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-fifth-work-ledger-review.md`, `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md` |
 | 2026-04-26 | Reconciled CRATE-STATUS exact-byte hash computation status | `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md`, `work/reports/2026-04-26-crate-status-exact-byte-hash-computation.md`, `docs/product/CRATE-STATUS.md` |
 | 2026-04-26 | Ran the twenty-fourth advisory Work Ledger Review | `work/goals/goal_run_twenty_fourth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-fourth-work-ledger-review.md`, `work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md` |
 | 2026-04-26 | Added artifact hash computation helper v0.1 | `work/goals/goal_add_artifact_hash_computation_helper_v0_1.md`, `work/reports/2026-04-26-artifact-hash-computation-helper-v0-1.md`, `crates/punk-core/src/lib.rs` |
@@ -119,14 +120,14 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_reconcile_crate_status_exact_byte_hash_computation.md work/goals/goal_run_twenty_fifth_work_ledger_review.md work/reports/2026-04-26-crate-status-exact-byte-hash-computation.md --report work/reports/2026-04-26-crate-status-exact-byte-hash-computation.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_fifth_work_ledger_review.md work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md work/reports/2026-04-26-twenty-fifth-work-ledger-review.md --report work/reports/2026-04-26-twenty-fifth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - CRATE-STATUS exact-byte hash computation status reconciliation completed
-  - `selected_next` is now `work/goals/goal_run_twenty_fifth_work_ledger_review.md`
+  - twenty-fifth advisory Work Ledger Review completed
+  - `selected_next` is now `work/goals/goal_define_proofpack_manifest_digest_boundary_v0_1.md`
   - no runtime/code/schema/CLI/`.punk` changes were made
-  - docs-governance passed with 0 failures and 2 existing duplicate-definition warnings for CRATE-STATUS headings
+  - docs-governance had 0 failures and 0 warnings for this review diff
   - cargo test --workspace passed
   - no repo-tracked absolute path leaks found
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
-  - file IO hashing, proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
+  - proofpack writer, file IO hashing, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
