@@ -1,7 +1,7 @@
 ---
 id: goal_run_nineteenth_work_ledger_review
 title: "Run the nineteenth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "evals/specs/artifact-hash-policy.v0.1.md"
   - "work/reports/2026-04-26-artifact-hash-policy-smoke-eval-coverage.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-nineteenth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -66,3 +67,11 @@ Before selecting `punk-proof` helper integration, proofpack writer behavior, run
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, or change CLI/schema/code.
+
+## Outcome
+
+Completed the nineteenth advisory Work Ledger Review.
+
+Selected next: `work/goals/goal_integrate_artifact_hash_policy_helpers_into_punk_proof_v0_1.md`
+
+Rationale: artifact hash policy helpers are now implemented and smoke-covered, while `punk-proof` still accepts non-canonical placeholder digest strings. Integrating shared helper validation into `punk-proof` is narrower than proofpack writer, runtime storage, schema work, CLI behavior, gate/eval/proof orchestration, or active hash computation.
