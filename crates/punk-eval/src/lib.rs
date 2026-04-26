@@ -35,14 +35,17 @@ use punk_proof::{
     PositiveAcceptanceInputs, ProofArtifactDigest, ProofArtifactHash, ProofArtifactKind,
     ProofArtifactRef, ProofBoundaryNote, ProofContractRef, ProofCreatedAt, ProofEvalRef,
     ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef, ProofRunReceiptRef, Proofpack,
-    ProofpackId, ProofpackWriterAttemptedAt, ProofpackWriterCanonicalArtifactStatus,
-    ProofpackWriterFileIoBlocker, ProofpackWriterFileIoFailureVisibility,
-    ProofpackWriterFileIoPlan, ProofpackWriterIdempotencyBasis, ProofpackWriterMissingPrecondition,
-    ProofpackWriterOperationEvidence, ProofpackWriterOperationId, ProofpackWriterOperationKind,
-    ProofpackWriterOperationOutcome, ProofpackWriterPlannedSideEffect,
-    ProofpackWriterPreflightPlan, ProofpackWriterSideEffectStatus, ProofpackWriterStorageRootRef,
-    ProofpackWriterTargetPathRef, ProofpackWriterTargetRef, ProofpackWriterTempAtomicPolicy,
-    ProofpackWriterWritePolicy,
+    ProofpackId, ProofpackWriterAbortState, ProofpackWriterAttemptedAt,
+    ProofpackWriterCanonicalArtifactStatus, ProofpackWriterFileIoBlocker,
+    ProofpackWriterFileIoFailureVisibility, ProofpackWriterFileIoObservation,
+    ProofpackWriterFileIoOutcomeModel, ProofpackWriterFileIoPlan, ProofpackWriterIdempotencyBasis,
+    ProofpackWriterIdempotencyObservation, ProofpackWriterMissingPrecondition,
+    ProofpackWriterObservedPartialState, ProofpackWriterObservedTargetState,
+    ProofpackWriterObservedWriteResult, ProofpackWriterOperationEvidence,
+    ProofpackWriterOperationId, ProofpackWriterOperationKind, ProofpackWriterOperationOutcome,
+    ProofpackWriterPlannedSideEffect, ProofpackWriterPreflightPlan,
+    ProofpackWriterSideEffectStatus, ProofpackWriterStorageRootRef, ProofpackWriterTargetPathRef,
+    ProofpackWriterTargetRef, ProofpackWriterTempAtomicPolicy, ProofpackWriterWritePolicy,
 };
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -378,6 +381,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_proofpack_writer_operation_evidence_model_is_side_effect_free(),
         eval_proofpack_writer_preflight_plan_model_is_side_effect_free(),
         eval_proofpack_writer_file_io_plan_model_is_side_effect_free(),
+        eval_proofpack_writer_file_io_outcome_model_is_side_effect_free(),
         eval_artifact_hash_policy_accepts_canonical_digest(),
         eval_artifact_hash_policy_rejects_invalid_digest(),
         eval_artifact_hash_policy_accepts_repo_relative_ref(),
@@ -397,10 +401,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -424,6 +428,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "proofpack writer operation evidence smoke case models writer outcomes without writing proofpacks or acceptance claims",
             "proofpack writer preflight plan smoke case models writer-ready plans without attempting side effects",
             "proofpack writer file IO plan smoke case models storage roots, target paths, write policy, idempotency, and rollback visibility without filesystem side effects",
+            "proofpack writer file IO outcome smoke case maps explicit observations to operation evidence without filesystem, storage, CLI, schema, or acceptance side effects",
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
@@ -1721,6 +1726,184 @@ fn eval_proofpack_writer_file_io_plan_model_is_side_effect_free() -> SmokeEvalCa
     }
 }
 
+fn eval_proofpack_writer_file_io_outcome_model_is_side_effect_free() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
+    let preflight_plan = ProofpackWriterPreflightPlan::new(
+        &proofpack,
+        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target ref should be valid"),
+        vec![
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+            ProofpackWriterPlannedSideEffect::IndexUpdate,
+            ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+        ],
+        vec![ProofBoundaryNote::new(
+            "Preflight plan is evidence-only and does not attempt writes.",
+        )
+        .expect("boundary note should be valid")],
+    );
+    let plan = ProofpackWriterFileIoPlan::new(
+        &preflight_plan,
+        ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+            .expect("storage root ref should be valid"),
+        ProofpackWriterTargetPathRef::new("future/.punk/proofs/proofpack_eval_001.json")
+            .expect("target path ref should be valid"),
+        ProofpackWriterWritePolicy::IdempotentIfMatching,
+        ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+        ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+        vec![
+            ProofpackWriterFileIoFailureVisibility::ExistingTargetMatching,
+            ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+            ProofpackWriterFileIoFailureVisibility::AtomicMoveFailed,
+            ProofpackWriterFileIoFailureVisibility::CleanupFailed,
+            ProofpackWriterFileIoFailureVisibility::PartialCanonicalArtifactAmbiguous,
+            ProofpackWriterFileIoFailureVisibility::IndexUpdateFailed,
+            ProofpackWriterFileIoFailureVisibility::LatestPointerUpdateFailed,
+        ],
+        vec![ProofBoundaryNote::new(
+            "File IO plan models explicit targets and policies without touching the filesystem.",
+        )
+        .expect("boundary note should be valid")],
+    );
+    let written = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+        &plan,
+        ProofpackWriterFileIoObservation::target_missing_write_completed(
+            ProofpackWriterSideEffectStatus::Completed,
+            ProofpackWriterSideEffectStatus::Completed,
+            vec![ProofBoundaryNote::new(
+                "Explicit caller observation reports completed write and pointers.",
+            )
+            .expect("boundary note should be valid")],
+        ),
+    );
+    let index_failed = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+        &plan,
+        ProofpackWriterFileIoObservation::index_failed_after_available(vec![
+            ProofBoundaryNote::new("Index update failed after canonical artifact availability.")
+                .expect("boundary note should be valid"),
+        ]),
+    );
+    let latest_failed = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+        &plan,
+        ProofpackWriterFileIoObservation::latest_failed_after_available(vec![
+            ProofBoundaryNote::new(
+                "Latest pointer update failed after canonical artifact availability.",
+            )
+            .expect("boundary note should be valid"),
+        ]),
+    );
+    let conflict = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+        &plan,
+        ProofpackWriterFileIoObservation::target_exists_different(vec![ProofBoundaryNote::new(
+            "Existing target differed from the planned manifest.",
+        )
+        .expect("boundary note should be valid")]),
+    );
+    let partial = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+        &plan,
+        ProofpackWriterFileIoObservation::new(
+            ProofpackWriterObservedTargetState::AmbiguousPartial,
+            ProofpackWriterIdempotencyObservation::NotChecked,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterObservedWriteResult::PartialWriteDetected,
+            ProofpackWriterObservedPartialState::CleanupIncomplete,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterAbortState::AbortedAfterPartial,
+            vec![
+                ProofBoundaryNote::new("Partial write and cleanup failure remain visible.")
+                    .expect("boundary note should be valid"),
+            ],
+        ),
+    );
+    let aborted = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+        &plan,
+        ProofpackWriterFileIoObservation::aborted(vec![ProofBoundaryNote::new(
+            "Operation was aborted before canonical artifact write.",
+        )
+        .expect("boundary note should be valid")]),
+    );
+    let evidence = index_failed
+        .to_operation_evidence(
+            ProofpackWriterOperationId::new("writer_file_io_outcome_smoke_001")
+                .expect("operation id should be valid"),
+            ProofpackWriterAttemptedAt::new("2026-04-26T15:40:00Z")
+                .expect("attempted_at should be valid"),
+        )
+        .expect("operation evidence should be derivable from outcome model");
+    let boundary = written.boundary();
+
+    let written_ok = written.outcome() == ProofpackWriterOperationOutcome::Written
+        && written.canonical_artifact_status() == ProofpackWriterCanonicalArtifactStatus::Written
+        && written.canonical_artifact_available()
+        && written.observation().target_state() == ProofpackWriterObservedTargetState::Missing
+        && written.observation().idempotency_observation()
+            == ProofpackWriterIdempotencyObservation::NotApplicable
+        && written.observation().write_result() == ProofpackWriterObservedWriteResult::Written
+        && !written.has_index_or_latest_pointer_failure();
+    let failure_mapping_ok = index_failed.outcome()
+        == ProofpackWriterOperationOutcome::IndexUpdateFailed
+        && index_failed.operation_kind() == ProofpackWriterOperationKind::IndexUpdate
+        && latest_failed.outcome() == ProofpackWriterOperationOutcome::LatestPointerUpdateFailed
+        && latest_failed.operation_kind() == ProofpackWriterOperationKind::LatestPointerUpdate
+        && conflict.outcome() == ProofpackWriterOperationOutcome::ConflictExistingDifferent
+        && conflict.has_conflict()
+        && partial.outcome() == ProofpackWriterOperationOutcome::PartialWriteDetected
+        && partial.has_partial_or_cleanup_issue()
+        && aborted.outcome() == ProofpackWriterOperationOutcome::Aborted
+        && aborted.operation_kind() == ProofpackWriterOperationKind::Abort;
+    let evidence_ok = evidence.outcome() == ProofpackWriterOperationOutcome::IndexUpdateFailed
+        && evidence.canonical_artifact_status() == ProofpackWriterCanonicalArtifactStatus::Written
+        && evidence.index_status() == ProofpackWriterSideEffectStatus::Failed
+        && evidence.latest_pointer_status() == ProofpackWriterSideEffectStatus::Completed
+        && evidence.canonical_artifact_available()
+        && !evidence.creates_acceptance_claim();
+    let boundary_ok = boundary.models_writer_file_io_outcome
+        && boundary.accepts_explicit_observations
+        && boundary.maps_observations_to_operation_evidence
+        && boundary.evidence_only
+        && boundary.separates_observation_from_artifact_availability
+        && boundary.preserves_partial_cleanup_visibility
+        && !boundary.reads_filesystem
+        && !boundary.touches_filesystem
+        && !boundary.writes_proofpack
+        && !boundary.writes_writer_operation_evidence
+        && !boundary.writes_final_decision
+        && !boundary.creates_acceptance_claim
+        && !boundary.requires_runtime_storage
+        && !boundary.writes_cli_output
+        && !boundary.writes_schema_files
+        && !boundary.target_path_is_authority
+        && !boundary.index_latest_are_canonical;
+
+    if written_ok && failure_mapping_ok && evidence_ok && boundary_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_proofpack_writer_file_io_outcome_model_is_side_effect_free",
+            "proofpack writer file IO outcome model is side-effect-free",
+            "writer file IO outcome model maps explicit target, idempotency, temp/write, partial/cleanup, index/latest, and abort observations into operation evidence without touching filesystem, runtime storage, schemas, CLI output, or acceptance claims",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_proofpack_writer_file_io_outcome_model_is_side_effect_free",
+            "proofpack writer file IO outcome model is side-effect-free",
+            format!(
+                "writer file IO outcome model drifted; written={written_ok} failures={failure_mapping_ok} evidence={evidence_ok} boundary={boundary_ok} reads_fs={} touches_fs={} writes={} writes_evidence={} storage={} cli={} schemas={} acceptance={} target_path_authority={} index_latest_canonical={}",
+                boundary.reads_filesystem,
+                boundary.touches_filesystem,
+                boundary.writes_proofpack,
+                boundary.writes_writer_operation_evidence,
+                boundary.requires_runtime_storage,
+                boundary.writes_cli_output,
+                boundary.writes_schema_files,
+                boundary.creates_acceptance_claim,
+                boundary.target_path_is_authority,
+                boundary.index_latest_are_canonical,
+            ),
+        )
+    }
+}
+
 fn eval_artifact_hash_policy_accepts_canonical_digest() -> SmokeEvalCaseResult {
     let digest_value = valid_artifact_digest();
     let digest = ArtifactDigest::new(digest_value.clone());
@@ -2225,7 +2408,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 33);
+        assert_eq!(report.cases().len(), 34);
     }
 
     #[test]
@@ -2250,7 +2433,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -2279,6 +2462,8 @@ mod tests {
             .contains("  - id: eval_proofpack_writer_preflight_plan_model_is_side_effect_free"));
         assert!(rendered
             .contains("  - id: eval_proofpack_writer_file_io_plan_model_is_side_effect_free"));
+        assert!(rendered
+            .contains("  - id: eval_proofpack_writer_file_io_outcome_model_is_side_effect_free"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
         assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_repo_relative_ref"));
@@ -2313,6 +2498,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "proofpack writer file IO plan smoke case models storage roots, target paths, write policy, idempotency, and rollback visibility without filesystem side effects"
+        ));
+        assert!(rendered.contains(
+            "proofpack writer file IO outcome smoke case maps explicit observations to operation evidence without filesystem, storage, CLI, schema, or acceptance side effects"
         ));
         assert!(rendered.contains(
             "artifact hash smoke cases validate helper shape, exact-byte computation, explicit file IO hashing, and referenced artifact verification without runtime writes"
@@ -2389,6 +2577,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_proofpack_writer_file_io_plan_model_is_side_effect_free\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_proofpack_writer_file_io_outcome_model_is_side_effect_free\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));

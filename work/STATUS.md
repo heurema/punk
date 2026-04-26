@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Add proofpack writer file IO outcome model v0.1"
-selected_next: "work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md"
+current_focus: "Run the forty-third advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_forty_third_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,14 +17,14 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: add proofpack writer file IO outcome model v0.1.
-- Selected next: `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md`
-- Why this is next: proofpack writer file IO plan model v0.1 is implemented; the next safe active-core implementation slice is a side-effect-free `punk-proof` outcome/evidence mapping model for explicit file IO observations, not actual proofpack file writing, `.punk/proofs`, schema files, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
+- Current focus: run the forty-third advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_forty_third_work_ledger_review.md`
+- Why this is next: proofpack writer file IO outcome model v0.1 is implemented and validated; before selecting any active proofpack writer, `.punk/proofs` activation, schema files, CLI behavior, referenced-ref verification integration, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`, run the advisory ledger review and choose exactly one next bounded goal.
 - Acceptance:
-  - `punk-proof` exposes a side-effect-free proofpack writer file IO outcome/evidence mapping model aligned with the file IO plan model and file IO boundary.
-  - the model accepts explicit caller-provided observations for target state, idempotency match/conflict, temp/atomic/write result, partial/cleanup state, index/latest results, and abort state without reading or writing the filesystem.
-  - the model derives or holds writer operation evidence for planned-only, preflight/file-io-blocked, written, already-exists-matching, conflict-existing-different, write-failed, partial-write, index-failed, latest-failed, and aborted outcomes without implying acceptance.
-  - tests cover blocked plan mapping, idempotent matching, conflict different, write failure, partial/cleanup visibility, index/latest failure separation, no hidden authority, setup-neutral behavior, and no writer/storage/CLI/schema side effects.
+  - advisory Work Ledger Review is completed after proofpack writer file IO outcome model v0.1.
+  - review considers whether the next safest branch is writer implementation preparation, `.punk/proofs` activation, schema files, proofpack referenced-ref verification integration implementation, additional smoke eval/docs guardrails, or another active-core setup step.
+  - `work/STATUS.md` selects exactly one next ready goal after the review.
+  - no runtime/schema/CLI/`.punk` changes are made by the review.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -32,13 +32,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md` | `ready` | File IO plan model is implemented; add the side-effect-free outcome/evidence mapping model before any active writer/storage/schema/CLI work. | — |
+| `work/goals/goal_run_forty_third_work_ledger_review.md` | `ready` | Outcome model is implemented; run the advisory review before selecting any active writer/storage/schema/CLI or proofpack referenced-ref integration work. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, and proofpack writer file IO boundary are in place; side-effect-free file IO plan/model is now in place; side-effect-free file IO outcome mapping is still needed before selecting active writer, orchestration, runtime, schema files, CLI, or referenced-ref verification integration implementation work. |
+| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, and side-effect-free file IO outcome mapping are in place; advisory review is needed before selecting active writer, orchestration, runtime, schema files, CLI, or referenced-ref verification integration implementation work. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -49,6 +49,7 @@ last_validated_commit: null
 | Date | Item | Evidence |
 |---|---|---|
 | 2026-04-26 | Ran the forty-second advisory Work Ledger Review | `work/goals/goal_run_forty_second_work_ledger_review.md`, `work/reports/2026-04-26-forty-second-work-ledger-review.md`, `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md` |
+| 2026-04-26 | Added proofpack writer file IO outcome model v0.1 | `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-26-proofpack-writer-file-io-outcome-model-v0-1.md` |
 | 2026-04-26 | Added proofpack writer file IO plan model v0.1 | `work/goals/goal_add_proofpack_writer_file_io_plan_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-26-proofpack-writer-file-io-plan-model-v0-1.md` |
 | 2026-04-26 | Ran the forty-first advisory Work Ledger Review | `work/goals/goal_run_forty_first_work_ledger_review.md`, `work/reports/2026-04-26-forty-first-work-ledger-review.md`, `work/goals/goal_add_proofpack_writer_file_io_plan_model_v0_1.md` |
 | 2026-04-26 | Ran the fortieth advisory Work Ledger Review | `work/goals/goal_run_fortieth_work_ledger_review.md`, `work/reports/2026-04-26-fortieth-work-ledger-review.md`, `work/goals/goal_define_proofpack_writer_file_io_boundary_v0_1.md` |
@@ -153,11 +154,12 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_forty_second_work_ledger_review.md work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md work/reports/2026-04-26-forty-second-work-ledger-review.md --report work/reports/2026-04-26-forty-second-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files crates/punk-proof/src/lib.rs crates/punk-eval/src/lib.rs docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md work/goals/goal_run_forty_third_work_ledger_review.md work/reports/2026-04-26-proofpack-writer-file-io-outcome-model-v0-1.md --report work/reports/2026-04-26-proofpack-writer-file-io-outcome-model-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - forty-second advisory Work Ledger Review completed
-  - `selected_next` is now `work/goals/goal_add_proofpack_writer_file_io_outcome_model_v0_1.md`
-  - no runtime/code/schema/CLI/`.punk` changes were made by the review
+  - proofpack writer file IO outcome model v0.1 implemented and validated
+  - `selected_next` is now `work/goals/goal_run_forty_third_work_ledger_review.md`
+  - no runtime/storage/schema/CLI/`.punk` changes were made
+  - docs-governance passed with 2 existing CRATE-STATUS duplicate-definition warnings
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred

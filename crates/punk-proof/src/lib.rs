@@ -14,6 +14,8 @@ pub const PROOFPACK_WRITER_PREFLIGHT_PLAN_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_preflight_plan.v0.1";
 pub const PROOFPACK_WRITER_FILE_IO_PLAN_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_file_io_plan.v0.1";
+pub const PROOFPACK_WRITER_FILE_IO_OUTCOME_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_file_io_outcome_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -1865,6 +1867,760 @@ pub const fn proofpack_writer_file_io_plan_boundary() -> ProofpackWriterFileIoPl
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterObservedTargetState {
+    NotChecked,
+    Missing,
+    ExistsMatching,
+    ExistsDifferent,
+    AmbiguousPartial,
+}
+
+impl ProofpackWriterObservedTargetState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotChecked => "not_checked",
+            Self::Missing => "missing",
+            Self::ExistsMatching => "exists_matching",
+            Self::ExistsDifferent => "exists_different",
+            Self::AmbiguousPartial => "ambiguous_partial",
+        }
+    }
+
+    pub fn is_matching(self) -> bool {
+        self == Self::ExistsMatching
+    }
+
+    pub fn is_conflict(self) -> bool {
+        self == Self::ExistsDifferent
+    }
+
+    pub fn is_partial_or_ambiguous(self) -> bool {
+        self == Self::AmbiguousPartial
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterIdempotencyObservation {
+    NotChecked,
+    NotApplicable,
+    Matching,
+    Different,
+}
+
+impl ProofpackWriterIdempotencyObservation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotChecked => "not_checked",
+            Self::NotApplicable => "not_applicable",
+            Self::Matching => "matching",
+            Self::Different => "different",
+        }
+    }
+
+    pub fn is_matching(self) -> bool {
+        self == Self::Matching
+    }
+
+    pub fn is_conflict(self) -> bool {
+        self == Self::Different
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterObservedWriteResult {
+    NotAttempted,
+    Written,
+    WriteFailed,
+    PartialWriteDetected,
+}
+
+impl ProofpackWriterObservedWriteResult {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotAttempted => "not_attempted",
+            Self::Written => "written",
+            Self::WriteFailed => "write_failed",
+            Self::PartialWriteDetected => "partial_write_detected",
+        }
+    }
+
+    pub fn is_written(self) -> bool {
+        self == Self::Written
+    }
+
+    pub fn is_failed(self) -> bool {
+        self == Self::WriteFailed
+    }
+
+    pub fn is_partial(self) -> bool {
+        self == Self::PartialWriteDetected
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterObservedPartialState {
+    NotObserved,
+    AmbiguousCanonicalArtifact,
+    CleanupIncomplete,
+}
+
+impl ProofpackWriterObservedPartialState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotObserved => "not_observed",
+            Self::AmbiguousCanonicalArtifact => "ambiguous_canonical_artifact",
+            Self::CleanupIncomplete => "cleanup_incomplete",
+        }
+    }
+
+    pub fn is_partial_or_ambiguous(self) -> bool {
+        self != Self::NotObserved
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterAbortState {
+    NotAborted,
+    AbortedBeforeWrite,
+    AbortedAfterPartial,
+}
+
+impl ProofpackWriterAbortState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotAborted => "not_aborted",
+            Self::AbortedBeforeWrite => "aborted_before_write",
+            Self::AbortedAfterPartial => "aborted_after_partial",
+        }
+    }
+
+    pub fn is_aborted(self) -> bool {
+        self != Self::NotAborted
+    }
+
+    pub fn has_partial_visibility(self) -> bool {
+        self == Self::AbortedAfterPartial
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoObservation {
+    target_state: ProofpackWriterObservedTargetState,
+    idempotency_observation: ProofpackWriterIdempotencyObservation,
+    temp_atomic_status: ProofpackWriterSideEffectStatus,
+    write_result: ProofpackWriterObservedWriteResult,
+    partial_state: ProofpackWriterObservedPartialState,
+    cleanup_status: ProofpackWriterSideEffectStatus,
+    index_status: ProofpackWriterSideEffectStatus,
+    latest_pointer_status: ProofpackWriterSideEffectStatus,
+    abort_state: ProofpackWriterAbortState,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterFileIoObservation {
+    pub fn new(
+        target_state: ProofpackWriterObservedTargetState,
+        idempotency_observation: ProofpackWriterIdempotencyObservation,
+        temp_atomic_status: ProofpackWriterSideEffectStatus,
+        write_result: ProofpackWriterObservedWriteResult,
+        partial_state: ProofpackWriterObservedPartialState,
+        cleanup_status: ProofpackWriterSideEffectStatus,
+        index_status: ProofpackWriterSideEffectStatus,
+        latest_pointer_status: ProofpackWriterSideEffectStatus,
+        abort_state: ProofpackWriterAbortState,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            target_state,
+            idempotency_observation,
+            temp_atomic_status,
+            write_result,
+            partial_state,
+            cleanup_status,
+            index_status,
+            latest_pointer_status,
+            abort_state,
+            boundary_notes,
+        }
+    }
+
+    pub fn planned_only() -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::NotChecked,
+            ProofpackWriterIdempotencyObservation::NotChecked,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterObservedWriteResult::NotAttempted,
+            ProofpackWriterObservedPartialState::NotObserved,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterAbortState::NotAborted,
+            vec![ProofBoundaryNote::new(
+                "Writer file IO outcome model is observation-only and does not touch the filesystem.",
+            )
+            .expect("fallback boundary note should be valid")],
+        )
+    }
+
+    pub fn target_missing_write_completed(
+        index_status: ProofpackWriterSideEffectStatus,
+        latest_pointer_status: ProofpackWriterSideEffectStatus,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::Missing,
+            ProofpackWriterIdempotencyObservation::NotApplicable,
+            ProofpackWriterSideEffectStatus::Completed,
+            ProofpackWriterObservedWriteResult::Written,
+            ProofpackWriterObservedPartialState::NotObserved,
+            ProofpackWriterSideEffectStatus::Completed,
+            index_status,
+            latest_pointer_status,
+            ProofpackWriterAbortState::NotAborted,
+            boundary_notes,
+        )
+    }
+
+    pub fn target_exists_matching(boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::ExistsMatching,
+            ProofpackWriterIdempotencyObservation::Matching,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterObservedWriteResult::NotAttempted,
+            ProofpackWriterObservedPartialState::NotObserved,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::Skipped,
+            ProofpackWriterSideEffectStatus::Skipped,
+            ProofpackWriterAbortState::NotAborted,
+            boundary_notes,
+        )
+    }
+
+    pub fn target_exists_different(boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::ExistsDifferent,
+            ProofpackWriterIdempotencyObservation::Different,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterObservedWriteResult::NotAttempted,
+            ProofpackWriterObservedPartialState::NotObserved,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::Skipped,
+            ProofpackWriterSideEffectStatus::Skipped,
+            ProofpackWriterAbortState::NotAborted,
+            boundary_notes,
+        )
+    }
+
+    pub fn write_failed(boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::Missing,
+            ProofpackWriterIdempotencyObservation::NotApplicable,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterObservedWriteResult::WriteFailed,
+            ProofpackWriterObservedPartialState::NotObserved,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterAbortState::NotAborted,
+            boundary_notes,
+        )
+    }
+
+    pub fn partial_write_detected(
+        cleanup_status: ProofpackWriterSideEffectStatus,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::AmbiguousPartial,
+            ProofpackWriterIdempotencyObservation::NotChecked,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterObservedWriteResult::PartialWriteDetected,
+            ProofpackWriterObservedPartialState::AmbiguousCanonicalArtifact,
+            cleanup_status,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterAbortState::NotAborted,
+            boundary_notes,
+        )
+    }
+
+    pub fn index_failed_after_available(boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self::target_missing_write_completed(
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterSideEffectStatus::Completed,
+            boundary_notes,
+        )
+    }
+
+    pub fn latest_failed_after_available(boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self::target_missing_write_completed(
+            ProofpackWriterSideEffectStatus::Completed,
+            ProofpackWriterSideEffectStatus::Failed,
+            boundary_notes,
+        )
+    }
+
+    pub fn aborted(boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self::new(
+            ProofpackWriterObservedTargetState::NotChecked,
+            ProofpackWriterIdempotencyObservation::NotChecked,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterObservedWriteResult::NotAttempted,
+            ProofpackWriterObservedPartialState::NotObserved,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            ProofpackWriterAbortState::AbortedBeforeWrite,
+            boundary_notes,
+        )
+    }
+
+    pub fn target_state(&self) -> ProofpackWriterObservedTargetState {
+        self.target_state
+    }
+
+    pub fn idempotency_observation(&self) -> ProofpackWriterIdempotencyObservation {
+        self.idempotency_observation
+    }
+
+    pub fn temp_atomic_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.temp_atomic_status
+    }
+
+    pub fn write_result(&self) -> ProofpackWriterObservedWriteResult {
+        self.write_result
+    }
+
+    pub fn partial_state(&self) -> ProofpackWriterObservedPartialState {
+        self.partial_state
+    }
+
+    pub fn cleanup_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.cleanup_status
+    }
+
+    pub fn index_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.index_status
+    }
+
+    pub fn latest_pointer_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.latest_pointer_status
+    }
+
+    pub fn abort_state(&self) -> ProofpackWriterAbortState {
+        self.abort_state
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn has_idempotent_match(&self) -> bool {
+        self.target_state.is_matching() || self.idempotency_observation.is_matching()
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.target_state.is_conflict() || self.idempotency_observation.is_conflict()
+    }
+
+    pub fn has_cleanup_failure(&self) -> bool {
+        self.cleanup_status.is_failed()
+            || self.partial_state == ProofpackWriterObservedPartialState::CleanupIncomplete
+    }
+
+    pub fn has_partial_or_ambiguous_state(&self) -> bool {
+        self.target_state.is_partial_or_ambiguous()
+            || self.write_result.is_partial()
+            || self.partial_state.is_partial_or_ambiguous()
+            || self.has_cleanup_failure()
+            || self.abort_state.has_partial_visibility()
+    }
+
+    pub fn is_aborted(&self) -> bool {
+        self.abort_state.is_aborted()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoOutcomeModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    target_artifact_ref: ProofpackWriterTargetRef,
+    target_path_ref: ProofpackWriterTargetPathRef,
+    operation_kind: ProofpackWriterOperationKind,
+    outcome: ProofpackWriterOperationOutcome,
+    canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+    index_status: ProofpackWriterSideEffectStatus,
+    latest_pointer_status: ProofpackWriterSideEffectStatus,
+    cleanup_status: ProofpackWriterSideEffectStatus,
+    observation: ProofpackWriterFileIoObservation,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterFileIoOutcomeModel {
+    pub fn from_plan_and_observation(
+        plan: &ProofpackWriterFileIoPlan,
+        observation: ProofpackWriterFileIoObservation,
+    ) -> Self {
+        let outcome = writer_file_io_outcome(plan, &observation);
+        let canonical_artifact_status =
+            writer_file_io_canonical_artifact_status(outcome, &observation);
+        let operation_kind = writer_file_io_operation_kind(outcome);
+        let index_status = writer_file_io_side_effect_status(
+            plan,
+            ProofpackWriterPlannedSideEffect::IndexUpdate,
+            observation.index_status(),
+        );
+        let latest_pointer_status = writer_file_io_side_effect_status(
+            plan,
+            ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+            observation.latest_pointer_status(),
+        );
+        let cleanup_status = observation.cleanup_status();
+        let boundary_notes = writer_file_io_outcome_boundary_notes(plan, &observation);
+
+        Self {
+            proofpack_id: plan.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_FILE_IO_OUTCOME_MODEL_SCHEMA_VERSION,
+            target_artifact_ref: plan.target_artifact_ref().clone(),
+            target_path_ref: plan.target_path_ref().clone(),
+            operation_kind,
+            outcome,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            cleanup_status,
+            observation,
+            boundary_notes,
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn target_artifact_ref(&self) -> &ProofpackWriterTargetRef {
+        &self.target_artifact_ref
+    }
+
+    pub fn target_ref(&self) -> &ProofpackWriterTargetRef {
+        self.target_artifact_ref()
+    }
+
+    pub fn target_path_ref(&self) -> &ProofpackWriterTargetPathRef {
+        &self.target_path_ref
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        self.operation_kind
+    }
+
+    pub fn outcome(&self) -> ProofpackWriterOperationOutcome {
+        self.outcome
+    }
+
+    pub fn canonical_artifact_status(&self) -> ProofpackWriterCanonicalArtifactStatus {
+        self.canonical_artifact_status
+    }
+
+    pub fn index_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.index_status
+    }
+
+    pub fn latest_pointer_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.latest_pointer_status
+    }
+
+    pub fn cleanup_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.cleanup_status
+    }
+
+    pub fn observation(&self) -> &ProofpackWriterFileIoObservation {
+        &self.observation
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn to_operation_evidence(
+        &self,
+        operation_id: ProofpackWriterOperationId,
+        attempted_at: ProofpackWriterAttemptedAt,
+    ) -> Result<ProofpackWriterOperationEvidence, ProofpackError> {
+        ProofpackWriterOperationEvidence::new(
+            operation_id,
+            self.operation_kind,
+            self.proofpack_id.clone(),
+            attempted_at,
+            self.target_artifact_ref.clone(),
+            self.outcome,
+            self.canonical_artifact_status,
+            self.index_status,
+            self.latest_pointer_status,
+            self.boundary_notes.clone(),
+        )
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterFileIoOutcomeModelBoundary {
+        proofpack_writer_file_io_outcome_model_boundary()
+    }
+
+    pub fn canonical_artifact_available(&self) -> bool {
+        self.canonical_artifact_status.is_available()
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.canonical_artifact_status.is_conflict()
+    }
+
+    pub fn has_partial_or_cleanup_issue(&self) -> bool {
+        self.canonical_artifact_status.is_partial() || self.cleanup_status.is_failed()
+    }
+
+    pub fn has_index_or_latest_pointer_failure(&self) -> bool {
+        self.index_status.is_failed() || self.latest_pointer_status.is_failed()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn index_latest_are_canonical(&self) -> bool {
+        self.boundary().index_latest_are_canonical
+    }
+}
+
+fn writer_file_io_outcome(
+    plan: &ProofpackWriterFileIoPlan,
+    observation: &ProofpackWriterFileIoObservation,
+) -> ProofpackWriterOperationOutcome {
+    if !plan.is_file_io_ready() {
+        return ProofpackWriterOperationOutcome::PreflightFailed;
+    }
+
+    if observation.has_partial_or_ambiguous_state() {
+        return ProofpackWriterOperationOutcome::PartialWriteDetected;
+    }
+
+    if observation.abort_state() == ProofpackWriterAbortState::AbortedBeforeWrite {
+        return ProofpackWriterOperationOutcome::Aborted;
+    }
+
+    if observation.has_conflict() {
+        return ProofpackWriterOperationOutcome::ConflictExistingDifferent;
+    }
+
+    if observation.has_idempotent_match() {
+        return ProofpackWriterOperationOutcome::AlreadyExistsMatching;
+    }
+
+    if observation.write_result().is_failed() {
+        return ProofpackWriterOperationOutcome::WriteFailed;
+    }
+
+    if observation.write_result().is_written()
+        && observation.index_status().is_failed()
+        && plan.selects_index_update()
+    {
+        return ProofpackWriterOperationOutcome::IndexUpdateFailed;
+    }
+
+    if observation.write_result().is_written()
+        && observation.latest_pointer_status().is_failed()
+        && plan.selects_latest_pointer_update()
+    {
+        return ProofpackWriterOperationOutcome::LatestPointerUpdateFailed;
+    }
+
+    if observation.write_result().is_written() {
+        return ProofpackWriterOperationOutcome::Written;
+    }
+
+    ProofpackWriterOperationOutcome::PlannedOnly
+}
+
+fn writer_file_io_canonical_artifact_status(
+    outcome: ProofpackWriterOperationOutcome,
+    observation: &ProofpackWriterFileIoObservation,
+) -> ProofpackWriterCanonicalArtifactStatus {
+    match outcome {
+        ProofpackWriterOperationOutcome::PlannedOnly
+        | ProofpackWriterOperationOutcome::PreflightFailed
+        | ProofpackWriterOperationOutcome::Aborted => {
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        }
+        ProofpackWriterOperationOutcome::Written
+        | ProofpackWriterOperationOutcome::IndexUpdateFailed
+        | ProofpackWriterOperationOutcome::LatestPointerUpdateFailed => {
+            if observation.has_idempotent_match() {
+                ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching
+            } else {
+                ProofpackWriterCanonicalArtifactStatus::Written
+            }
+        }
+        ProofpackWriterOperationOutcome::AlreadyExistsMatching => {
+            ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching
+        }
+        ProofpackWriterOperationOutcome::ConflictExistingDifferent => {
+            ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent
+        }
+        ProofpackWriterOperationOutcome::WriteFailed => {
+            ProofpackWriterCanonicalArtifactStatus::WriteFailed
+        }
+        ProofpackWriterOperationOutcome::PartialWriteDetected => {
+            ProofpackWriterCanonicalArtifactStatus::PartialWriteDetected
+        }
+    }
+}
+
+fn writer_file_io_operation_kind(
+    outcome: ProofpackWriterOperationOutcome,
+) -> ProofpackWriterOperationKind {
+    match outcome {
+        ProofpackWriterOperationOutcome::PlannedOnly
+        | ProofpackWriterOperationOutcome::PreflightFailed => {
+            ProofpackWriterOperationKind::PlannedOnly
+        }
+        ProofpackWriterOperationOutcome::Written
+        | ProofpackWriterOperationOutcome::WriteFailed
+        | ProofpackWriterOperationOutcome::PartialWriteDetected => {
+            ProofpackWriterOperationKind::Write
+        }
+        ProofpackWriterOperationOutcome::AlreadyExistsMatching => {
+            ProofpackWriterOperationKind::IdempotencyCheck
+        }
+        ProofpackWriterOperationOutcome::ConflictExistingDifferent => {
+            ProofpackWriterOperationKind::ConflictCheck
+        }
+        ProofpackWriterOperationOutcome::IndexUpdateFailed => {
+            ProofpackWriterOperationKind::IndexUpdate
+        }
+        ProofpackWriterOperationOutcome::LatestPointerUpdateFailed => {
+            ProofpackWriterOperationKind::LatestPointerUpdate
+        }
+        ProofpackWriterOperationOutcome::Aborted => ProofpackWriterOperationKind::Abort,
+    }
+}
+
+fn writer_file_io_side_effect_status(
+    plan: &ProofpackWriterFileIoPlan,
+    side_effect: ProofpackWriterPlannedSideEffect,
+    observed_status: ProofpackWriterSideEffectStatus,
+) -> ProofpackWriterSideEffectStatus {
+    if !plan.plans_side_effect(side_effect) {
+        return ProofpackWriterSideEffectStatus::NotSelected;
+    }
+
+    if !plan.is_file_io_ready() {
+        return ProofpackWriterSideEffectStatus::NotAttempted;
+    }
+
+    if observed_status == ProofpackWriterSideEffectStatus::NotSelected {
+        ProofpackWriterSideEffectStatus::NotAttempted
+    } else {
+        observed_status
+    }
+}
+
+fn writer_file_io_outcome_boundary_notes(
+    plan: &ProofpackWriterFileIoPlan,
+    observation: &ProofpackWriterFileIoObservation,
+) -> Vec<ProofBoundaryNote> {
+    let mut boundary_notes = plan.boundary_notes().to_vec();
+    boundary_notes.extend(observation.boundary_notes().iter().cloned());
+
+    if boundary_notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer file IO outcome model is evidence-only; missing notes are explicit observation data.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoOutcomeModelBoundary {
+    pub models_writer_file_io_outcome: bool,
+    pub accepts_explicit_observations: bool,
+    pub maps_observations_to_operation_evidence: bool,
+    pub reads_filesystem: bool,
+    pub writes_proofpack: bool,
+    pub touches_filesystem: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub evidence_only: bool,
+    pub target_path_is_authority: bool,
+    pub index_latest_are_canonical: bool,
+    pub separates_observation_from_artifact_availability: bool,
+    pub preserves_partial_cleanup_visibility: bool,
+}
+
+pub const fn proofpack_writer_file_io_outcome_model_boundary(
+) -> ProofpackWriterFileIoOutcomeModelBoundary {
+    ProofpackWriterFileIoOutcomeModelBoundary {
+        models_writer_file_io_outcome: true,
+        accepts_explicit_observations: true,
+        maps_observations_to_operation_evidence: true,
+        reads_filesystem: false,
+        writes_proofpack: false,
+        touches_filesystem: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        evidence_only: true,
+        target_path_is_authority: false,
+        index_latest_are_canonical: false,
+        separates_observation_from_artifact_availability: true,
+        preserves_partial_cleanup_visibility: true,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -2094,6 +2850,37 @@ mod tests {
             ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
             failure_visibility,
             boundary_notes,
+        )
+    }
+
+    fn sample_writer_file_io_ready_plan() -> ProofpackWriterFileIoPlan {
+        let proofpack = sample_proofpack();
+        let preflight_plan = sample_writer_preflight_plan(
+            &proofpack,
+            vec![
+                ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+                ProofpackWriterPlannedSideEffect::IndexUpdate,
+                ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+            ],
+            vec![ProofBoundaryNote::new("Preflight is complete.")
+                .expect("boundary note should be valid")],
+        );
+
+        sample_writer_file_io_plan(
+            &preflight_plan,
+            vec![
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetMatching,
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ProofpackWriterFileIoFailureVisibility::AtomicMoveFailed,
+                ProofpackWriterFileIoFailureVisibility::CleanupFailed,
+                ProofpackWriterFileIoFailureVisibility::PartialCanonicalArtifactAmbiguous,
+                ProofpackWriterFileIoFailureVisibility::IndexUpdateFailed,
+                ProofpackWriterFileIoFailureVisibility::LatestPointerUpdateFailed,
+            ],
+            vec![ProofBoundaryNote::new(
+                "File IO plan is model-only and keeps runtime writes deferred.",
+            )
+            .expect("boundary note should be valid")],
         )
     }
 
@@ -2963,6 +3750,346 @@ mod tests {
         assert!(!boundary.writes_schema_files);
         assert!(!boundary.target_path_is_authority);
         assert!(!boundary.index_latest_are_canonical);
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_outcome_model_maps_blocked_plan_without_artifact_availability() {
+        let incomplete_proofpack =
+            Proofpack::new(
+                ProofpackId::new("proofpack_outcome_blocked_001")
+                    .expect("proofpack id should be valid"),
+                ProofGateDecisionRef::new("decision_local_001")
+                    .expect("gate decision ref should be valid"),
+                vec![ProofContractRef::new("contract_local_001")
+                    .expect("contract ref should be valid")],
+                vec![ProofRunReceiptRef::new("receipt_local_001")
+                    .expect("run receipt ref should be valid")],
+                ProofCreatedAt::new("2026-04-26T15:30:00Z").expect("created_at should be valid"),
+                vec![
+                    ProofBoundaryNote::new("Incomplete proofpack keeps file IO blocked.")
+                        .expect("boundary note should be valid"),
+                ],
+            )
+            .expect("proofpack should be structurally valid");
+        let preflight_plan = sample_writer_preflight_plan(&incomplete_proofpack, vec![], vec![]);
+        let plan = sample_writer_file_io_plan(&preflight_plan, vec![], vec![]);
+        let outcome = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::target_missing_write_completed(
+                ProofpackWriterSideEffectStatus::Completed,
+                ProofpackWriterSideEffectStatus::Completed,
+                vec![ProofBoundaryNote::new(
+                    "Caller observation is ignored for artifact availability while plan is blocked.",
+                )
+                .expect("boundary note should be valid")],
+            ),
+        );
+        let evidence = outcome
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_file_io_outcome_blocked_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-26T15:31:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("blocked outcome evidence should be derivable");
+
+        assert_eq!(
+            outcome.schema_version(),
+            PROOFPACK_WRITER_FILE_IO_OUTCOME_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            outcome.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert_eq!(
+            outcome.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert_eq!(
+            outcome.index_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert_eq!(
+            outcome.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert!(!outcome.canonical_artifact_available());
+        assert_eq!(
+            evidence.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(!evidence.canonical_artifact_available());
+        assert!(!evidence.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_outcome_model_maps_idempotent_match_and_conflict() {
+        let plan = sample_writer_file_io_ready_plan();
+        let matching = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::target_exists_matching(vec![ProofBoundaryNote::new(
+                "Existing target matched the manifest self-digest.",
+            )
+            .expect("boundary note should be valid")]),
+        );
+        let conflict = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::target_exists_different(vec![
+                ProofBoundaryNote::new("Existing target differed from the planned manifest.")
+                    .expect("boundary note should be valid"),
+            ]),
+        );
+
+        assert_eq!(
+            matching.outcome(),
+            ProofpackWriterOperationOutcome::AlreadyExistsMatching
+        );
+        assert_eq!(
+            matching.operation_kind(),
+            ProofpackWriterOperationKind::IdempotencyCheck
+        );
+        assert_eq!(
+            matching.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching
+        );
+        assert!(matching.canonical_artifact_available());
+        assert!(!matching.has_conflict());
+
+        assert_eq!(
+            conflict.outcome(),
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent
+        );
+        assert_eq!(
+            conflict.operation_kind(),
+            ProofpackWriterOperationKind::ConflictCheck
+        );
+        assert_eq!(
+            conflict.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent
+        );
+        assert!(!conflict.canonical_artifact_available());
+        assert!(conflict.has_conflict());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_outcome_model_maps_write_failure_and_partial_cleanup() {
+        let plan = sample_writer_file_io_ready_plan();
+        let write_failed = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::write_failed(vec![ProofBoundaryNote::new(
+                "Temp write failed before canonical artifact availability.",
+            )
+            .expect("boundary note should be valid")]),
+        );
+        let partial = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::partial_write_detected(
+                ProofpackWriterSideEffectStatus::Failed,
+                vec![ProofBoundaryNote::new(
+                    "Partial canonical artifact and cleanup failure remain visible.",
+                )
+                .expect("boundary note should be valid")],
+            ),
+        );
+
+        assert_eq!(
+            write_failed.outcome(),
+            ProofpackWriterOperationOutcome::WriteFailed
+        );
+        assert_eq!(
+            write_failed.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::WriteFailed
+        );
+        assert_eq!(
+            write_failed.observation().write_result().as_str(),
+            "write_failed"
+        );
+        assert!(!write_failed.canonical_artifact_available());
+
+        assert_eq!(
+            partial.outcome(),
+            ProofpackWriterOperationOutcome::PartialWriteDetected
+        );
+        assert_eq!(
+            partial.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::PartialWriteDetected
+        );
+        assert!(partial.has_partial_or_cleanup_issue());
+        assert!(partial.observation().has_cleanup_failure());
+        assert_eq!(
+            partial.observation().partial_state().as_str(),
+            "ambiguous_canonical_artifact"
+        );
+        assert!(!partial.canonical_artifact_available());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_outcome_model_separates_index_latest_failures() {
+        let plan = sample_writer_file_io_ready_plan();
+        let written = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::target_missing_write_completed(
+                ProofpackWriterSideEffectStatus::Completed,
+                ProofpackWriterSideEffectStatus::Completed,
+                vec![ProofBoundaryNote::new(
+                    "Canonical artifact write completed before index/latest side effects.",
+                )
+                .expect("boundary note should be valid")],
+            ),
+        );
+        let index_failed = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::index_failed_after_available(vec![
+                ProofBoundaryNote::new(
+                    "Index update failed after canonical artifact availability.",
+                )
+                .expect("boundary note should be valid"),
+            ]),
+        );
+        let latest_failed = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::latest_failed_after_available(vec![
+                ProofBoundaryNote::new(
+                    "Latest pointer update failed after canonical artifact availability.",
+                )
+                .expect("boundary note should be valid"),
+            ]),
+        );
+
+        assert_eq!(written.outcome(), ProofpackWriterOperationOutcome::Written);
+        assert_eq!(
+            written.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::Written
+        );
+        assert!(written.canonical_artifact_available());
+        assert!(!written.has_index_or_latest_pointer_failure());
+
+        assert_eq!(
+            index_failed.outcome(),
+            ProofpackWriterOperationOutcome::IndexUpdateFailed
+        );
+        assert_eq!(
+            index_failed.operation_kind(),
+            ProofpackWriterOperationKind::IndexUpdate
+        );
+        assert_eq!(
+            index_failed.index_status(),
+            ProofpackWriterSideEffectStatus::Failed
+        );
+        assert_eq!(
+            index_failed.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::Completed
+        );
+        assert!(index_failed.canonical_artifact_available());
+        assert!(index_failed.has_index_or_latest_pointer_failure());
+
+        assert_eq!(
+            latest_failed.outcome(),
+            ProofpackWriterOperationOutcome::LatestPointerUpdateFailed
+        );
+        assert_eq!(
+            latest_failed.operation_kind(),
+            ProofpackWriterOperationKind::LatestPointerUpdate
+        );
+        assert_eq!(
+            latest_failed.index_status(),
+            ProofpackWriterSideEffectStatus::Completed
+        );
+        assert_eq!(
+            latest_failed.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::Failed
+        );
+        assert!(latest_failed.canonical_artifact_available());
+        assert!(latest_failed.has_index_or_latest_pointer_failure());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_outcome_model_is_evidence_only_and_setup_neutral() {
+        let plan = sample_writer_file_io_ready_plan();
+        let planned = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::planned_only(),
+        );
+        let aborted = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::aborted(vec![ProofBoundaryNote::new(
+                "Operation was aborted before canonical artifact write.",
+            )
+            .expect("boundary note should be valid")]),
+        );
+        let evidence = aborted
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_file_io_outcome_aborted_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-26T15:32:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("aborted operation evidence should be derivable");
+        let boundary = planned.boundary();
+
+        assert_eq!(
+            planned.outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert_eq!(
+            planned.operation_kind(),
+            ProofpackWriterOperationKind::PlannedOnly
+        );
+        assert_eq!(aborted.outcome(), ProofpackWriterOperationOutcome::Aborted);
+        assert_eq!(
+            aborted.operation_kind(),
+            ProofpackWriterOperationKind::Abort
+        );
+        assert_eq!(evidence.outcome(), ProofpackWriterOperationOutcome::Aborted);
+        assert!(!aborted.canonical_artifact_available());
+        assert!(aborted.observation().is_aborted());
+
+        assert!(planned.is_evidence_only());
+        assert!(boundary.models_writer_file_io_outcome);
+        assert!(boundary.accepts_explicit_observations);
+        assert!(boundary.maps_observations_to_operation_evidence);
+        assert!(boundary.separates_observation_from_artifact_availability);
+        assert!(boundary.preserves_partial_cleanup_visibility);
+        assert!(!boundary.reads_filesystem);
+        assert!(!planned.touches_filesystem());
+        assert!(!planned.writes_proofpack());
+        assert!(!planned.writes_writer_operation_evidence());
+        assert!(!boundary.writes_final_decision);
+        assert!(!planned.creates_acceptance_claim());
+        assert!(!planned.requires_runtime_storage());
+        assert!(!planned.writes_cli_output());
+        assert!(!planned.writes_schema_files());
+        assert!(!planned.target_path_is_authority());
+        assert!(!planned.index_latest_are_canonical());
+        assert!(!evidence.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_observation_vocabulary_is_stable() {
+        assert_eq!(
+            ProofpackWriterObservedTargetState::Missing.as_str(),
+            "missing"
+        );
+        assert_eq!(
+            ProofpackWriterObservedTargetState::ExistsMatching.as_str(),
+            "exists_matching"
+        );
+        assert_eq!(
+            ProofpackWriterIdempotencyObservation::Different.as_str(),
+            "different"
+        );
+        assert_eq!(
+            ProofpackWriterObservedWriteResult::Written.as_str(),
+            "written"
+        );
+        assert_eq!(
+            ProofpackWriterObservedPartialState::CleanupIncomplete.as_str(),
+            "cleanup_incomplete"
+        );
+        assert_eq!(
+            ProofpackWriterAbortState::AbortedAfterPartial.as_str(),
+            "aborted_after_partial"
+        );
     }
 
     #[test]
