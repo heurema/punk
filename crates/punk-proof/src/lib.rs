@@ -16,6 +16,8 @@ pub const PROOFPACK_WRITER_FILE_IO_PLAN_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_file_io_plan.v0.1";
 pub const PROOFPACK_WRITER_FILE_IO_OUTCOME_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_file_io_outcome_model.v0.1";
+pub const PROOFPACK_WRITER_FILE_IO_ERROR_REASON_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_file_io_error_reason_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -763,6 +765,22 @@ impl ProofpackWriterTargetPathRef {
         Ok(Self(non_empty(
             value,
             ProofpackError::EmptyWriterTargetPathRef,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterDiagnosticPathRef(String);
+
+impl ProofpackWriterDiagnosticPathRef {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterDiagnosticPathRef,
         )?))
     }
 
@@ -2621,6 +2639,533 @@ pub const fn proofpack_writer_file_io_outcome_model_boundary(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFileIoDiagnosticSurface {
+    StorageRoot,
+    TargetPath,
+    ExistingTarget,
+    TempWrite,
+    Durability,
+    AtomicMove,
+    Cleanup,
+    PartialCanonicalArtifact,
+    Index,
+    LatestPointer,
+    OperationEvidencePersistence,
+    Abort,
+}
+
+impl ProofpackWriterFileIoDiagnosticSurface {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::StorageRoot => "storage_root",
+            Self::TargetPath => "target_path",
+            Self::ExistingTarget => "existing_target",
+            Self::TempWrite => "temp_write",
+            Self::Durability => "durability",
+            Self::AtomicMove => "atomic_move",
+            Self::Cleanup => "cleanup",
+            Self::PartialCanonicalArtifact => "partial_canonical_artifact",
+            Self::Index => "index",
+            Self::LatestPointer => "latest_pointer",
+            Self::OperationEvidencePersistence => "operation_evidence_persistence",
+            Self::Abort => "abort",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFileIoErrorReason {
+    StorageRootMissing,
+    StorageRootDisallowed,
+    TargetPathInvalid,
+    TargetPathEscapesStorageRoot,
+    ParentDirectoryMissing,
+    ExistingTargetMatching,
+    ExistingTargetDifferent,
+    TempWriteDenied,
+    TempWriteFailed,
+    FlushOrSyncFailed,
+    AtomicMoveUnsupported,
+    AtomicMoveFailed,
+    CleanupFailed,
+    PartialCanonicalArtifactAmbiguous,
+    IndexUpdateFailed,
+    LatestPointerUpdateFailed,
+    OperationEvidencePersistenceFailed,
+    OperationAborted,
+}
+
+impl ProofpackWriterFileIoErrorReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::StorageRootMissing => "storage_root_missing",
+            Self::StorageRootDisallowed => "storage_root_disallowed",
+            Self::TargetPathInvalid => "target_path_invalid",
+            Self::TargetPathEscapesStorageRoot => "target_path_escapes_storage_root",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ExistingTargetMatching => "existing_target_matching",
+            Self::ExistingTargetDifferent => "existing_target_different",
+            Self::TempWriteDenied => "temp_write_denied",
+            Self::TempWriteFailed => "temp_write_failed",
+            Self::FlushOrSyncFailed => "flush_or_sync_failed",
+            Self::AtomicMoveUnsupported => "atomic_move_unsupported",
+            Self::AtomicMoveFailed => "atomic_move_failed",
+            Self::CleanupFailed => "cleanup_failed",
+            Self::PartialCanonicalArtifactAmbiguous => "partial_canonical_artifact_ambiguous",
+            Self::IndexUpdateFailed => "index_update_failed",
+            Self::LatestPointerUpdateFailed => "latest_pointer_update_failed",
+            Self::OperationEvidencePersistenceFailed => "operation_evidence_persistence_failed",
+            Self::OperationAborted => "operation_aborted",
+        }
+    }
+
+    pub fn surface(self) -> ProofpackWriterFileIoDiagnosticSurface {
+        match self {
+            Self::StorageRootMissing | Self::StorageRootDisallowed => {
+                ProofpackWriterFileIoDiagnosticSurface::StorageRoot
+            }
+            Self::TargetPathInvalid
+            | Self::TargetPathEscapesStorageRoot
+            | Self::ParentDirectoryMissing => ProofpackWriterFileIoDiagnosticSurface::TargetPath,
+            Self::ExistingTargetMatching | Self::ExistingTargetDifferent => {
+                ProofpackWriterFileIoDiagnosticSurface::ExistingTarget
+            }
+            Self::TempWriteDenied | Self::TempWriteFailed => {
+                ProofpackWriterFileIoDiagnosticSurface::TempWrite
+            }
+            Self::FlushOrSyncFailed => ProofpackWriterFileIoDiagnosticSurface::Durability,
+            Self::AtomicMoveUnsupported | Self::AtomicMoveFailed => {
+                ProofpackWriterFileIoDiagnosticSurface::AtomicMove
+            }
+            Self::CleanupFailed => ProofpackWriterFileIoDiagnosticSurface::Cleanup,
+            Self::PartialCanonicalArtifactAmbiguous => {
+                ProofpackWriterFileIoDiagnosticSurface::PartialCanonicalArtifact
+            }
+            Self::IndexUpdateFailed => ProofpackWriterFileIoDiagnosticSurface::Index,
+            Self::LatestPointerUpdateFailed => {
+                ProofpackWriterFileIoDiagnosticSurface::LatestPointer
+            }
+            Self::OperationEvidencePersistenceFailed => {
+                ProofpackWriterFileIoDiagnosticSurface::OperationEvidencePersistence
+            }
+            Self::OperationAborted => ProofpackWriterFileIoDiagnosticSurface::Abort,
+        }
+    }
+
+    pub fn is_storage_or_target_reason(self) -> bool {
+        matches!(
+            self.surface(),
+            ProofpackWriterFileIoDiagnosticSurface::StorageRoot
+                | ProofpackWriterFileIoDiagnosticSurface::TargetPath
+        )
+    }
+
+    pub fn is_write_reason(self) -> bool {
+        matches!(
+            self,
+            Self::TempWriteDenied
+                | Self::TempWriteFailed
+                | Self::FlushOrSyncFailed
+                | Self::AtomicMoveUnsupported
+                | Self::AtomicMoveFailed
+        )
+    }
+
+    pub fn is_index_or_latest_reason(self) -> bool {
+        matches!(
+            self,
+            Self::IndexUpdateFailed | Self::LatestPointerUpdateFailed
+        )
+    }
+
+    pub fn is_partial_or_cleanup_reason(self) -> bool {
+        matches!(
+            self,
+            Self::CleanupFailed | Self::PartialCanonicalArtifactAmbiguous
+        )
+    }
+
+    pub fn is_operation_evidence_persistence_reason(self) -> bool {
+        self == Self::OperationEvidencePersistenceFailed
+    }
+
+    pub fn is_abort_reason(self) -> bool {
+        self == Self::OperationAborted
+    }
+
+    pub fn is_conflict_reason(self) -> bool {
+        self == Self::ExistingTargetDifferent
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFileIoDiagnosticSource {
+    CallerObservation,
+    WriterDiagnostic,
+    ExecutorClaim,
+}
+
+impl ProofpackWriterFileIoDiagnosticSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::CallerObservation => "caller_observation",
+            Self::WriterDiagnostic => "writer_diagnostic",
+            Self::ExecutorClaim => "executor_claim",
+        }
+    }
+
+    pub fn is_proof_authority(self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoDiagnostic {
+    reason: ProofpackWriterFileIoErrorReason,
+    source: ProofpackWriterFileIoDiagnosticSource,
+    target_path_ref: Option<ProofpackWriterTargetPathRef>,
+    diagnostic_path_ref: Option<ProofpackWriterDiagnosticPathRef>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterFileIoDiagnostic {
+    pub fn new(
+        reason: ProofpackWriterFileIoErrorReason,
+        source: ProofpackWriterFileIoDiagnosticSource,
+        target_path_ref: Option<ProofpackWriterTargetPathRef>,
+        diagnostic_path_ref: Option<ProofpackWriterDiagnosticPathRef>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            reason,
+            source,
+            target_path_ref,
+            diagnostic_path_ref,
+            boundary_notes,
+        }
+    }
+
+    pub fn for_reason(reason: ProofpackWriterFileIoErrorReason) -> Self {
+        Self::new(
+            reason,
+            ProofpackWriterFileIoDiagnosticSource::CallerObservation,
+            None,
+            None,
+            vec![ProofBoundaryNote::new(
+                "Writer file IO diagnostic is evidence-only and does not touch the filesystem.",
+            )
+            .expect("fallback boundary note should be valid")],
+        )
+    }
+
+    pub fn with_target_path_ref(mut self, target_path_ref: ProofpackWriterTargetPathRef) -> Self {
+        self.target_path_ref = Some(target_path_ref);
+        self
+    }
+
+    pub fn with_diagnostic_path_ref(
+        mut self,
+        diagnostic_path_ref: ProofpackWriterDiagnosticPathRef,
+    ) -> Self {
+        self.diagnostic_path_ref = Some(diagnostic_path_ref);
+        self
+    }
+
+    pub fn with_source(mut self, source: ProofpackWriterFileIoDiagnosticSource) -> Self {
+        self.source = source;
+        self
+    }
+
+    pub fn with_boundary_notes(mut self, boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        self.boundary_notes = boundary_notes;
+        self
+    }
+
+    pub fn reason(&self) -> ProofpackWriterFileIoErrorReason {
+        self.reason
+    }
+
+    pub fn reason_code(&self) -> &'static str {
+        self.reason.as_str()
+    }
+
+    pub fn surface(&self) -> ProofpackWriterFileIoDiagnosticSurface {
+        self.reason.surface()
+    }
+
+    pub fn source(&self) -> ProofpackWriterFileIoDiagnosticSource {
+        self.source
+    }
+
+    pub fn target_path_ref(&self) -> Option<&ProofpackWriterTargetPathRef> {
+        self.target_path_ref.as_ref()
+    }
+
+    pub fn diagnostic_path_ref(&self) -> Option<&ProofpackWriterDiagnosticPathRef> {
+        self.diagnostic_path_ref.as_ref()
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn has_diagnostic_path_ref(&self) -> bool {
+        self.diagnostic_path_ref.is_some()
+    }
+
+    pub fn diagnostic_path_is_authority(&self) -> bool {
+        false
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        false
+    }
+
+    pub fn source_is_proof_authority(&self) -> bool {
+        self.source.is_proof_authority()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoErrorReasonModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    target_artifact_ref: ProofpackWriterTargetRef,
+    target_path_ref: ProofpackWriterTargetPathRef,
+    outcome: ProofpackWriterOperationOutcome,
+    canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+    diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterFileIoErrorReasonModel {
+    pub fn from_outcome_and_diagnostics(
+        outcome: &ProofpackWriterFileIoOutcomeModel,
+        diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            proofpack_id: outcome.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_FILE_IO_ERROR_REASON_MODEL_SCHEMA_VERSION,
+            target_artifact_ref: outcome.target_artifact_ref().clone(),
+            target_path_ref: outcome.target_path_ref().clone(),
+            outcome: outcome.outcome(),
+            canonical_artifact_status: outcome.canonical_artifact_status(),
+            diagnostics,
+            boundary_notes: writer_file_io_error_reason_boundary_notes(outcome, boundary_notes),
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn target_artifact_ref(&self) -> &ProofpackWriterTargetRef {
+        &self.target_artifact_ref
+    }
+
+    pub fn target_ref(&self) -> &ProofpackWriterTargetRef {
+        self.target_artifact_ref()
+    }
+
+    pub fn target_path_ref(&self) -> &ProofpackWriterTargetPathRef {
+        &self.target_path_ref
+    }
+
+    pub fn outcome(&self) -> ProofpackWriterOperationOutcome {
+        self.outcome
+    }
+
+    pub fn canonical_artifact_status(&self) -> ProofpackWriterCanonicalArtifactStatus {
+        self.canonical_artifact_status
+    }
+
+    pub fn diagnostics(&self) -> &[ProofpackWriterFileIoDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn reasons(&self) -> Vec<ProofpackWriterFileIoErrorReason> {
+        self.diagnostics
+            .iter()
+            .map(ProofpackWriterFileIoDiagnostic::reason)
+            .collect()
+    }
+
+    pub fn has_reason(&self, reason: ProofpackWriterFileIoErrorReason) -> bool {
+        self.diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.reason() == reason)
+    }
+
+    pub fn has_write_reason(&self) -> bool {
+        self.diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.reason().is_write_reason())
+    }
+
+    pub fn has_index_or_latest_reason(&self) -> bool {
+        self.diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.reason().is_index_or_latest_reason())
+    }
+
+    pub fn has_partial_or_cleanup_reason(&self) -> bool {
+        self.diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.reason().is_partial_or_cleanup_reason())
+    }
+
+    pub fn has_operation_evidence_persistence_reason(&self) -> bool {
+        self.diagnostics.iter().any(|diagnostic| {
+            diagnostic
+                .reason()
+                .is_operation_evidence_persistence_reason()
+        })
+    }
+
+    pub fn has_abort_reason(&self) -> bool {
+        self.diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.reason().is_abort_reason())
+    }
+
+    pub fn has_diagnostic_path_refs(&self) -> bool {
+        self.diagnostics
+            .iter()
+            .any(ProofpackWriterFileIoDiagnostic::has_diagnostic_path_ref)
+    }
+
+    pub fn has_executor_claims(&self) -> bool {
+        self.diagnostics.iter().any(|diagnostic| {
+            diagnostic.source() == ProofpackWriterFileIoDiagnosticSource::ExecutorClaim
+        })
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterFileIoErrorReasonModelBoundary {
+        proofpack_writer_file_io_error_reason_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn diagnostic_paths_are_authority(&self) -> bool {
+        self.boundary().diagnostic_paths_are_authority
+    }
+
+    pub fn index_latest_are_canonical(&self) -> bool {
+        self.boundary().index_latest_are_canonical
+    }
+
+    pub fn executor_claims_are_proof(&self) -> bool {
+        self.boundary().executor_claims_are_proof
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+}
+
+fn writer_file_io_error_reason_boundary_notes(
+    outcome: &ProofpackWriterFileIoOutcomeModel,
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    if boundary_notes.is_empty() {
+        return outcome.boundary_notes().to_vec();
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterFileIoErrorReasonModelBoundary {
+    pub models_writer_file_io_error_reasons: bool,
+    pub stable_reason_codes: bool,
+    pub attaches_to_file_io_outcomes: bool,
+    pub reads_filesystem: bool,
+    pub writes_proofpack: bool,
+    pub touches_filesystem: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub evidence_only: bool,
+    pub target_path_is_authority: bool,
+    pub diagnostic_paths_are_authority: bool,
+    pub index_latest_are_canonical: bool,
+    pub executor_claims_are_proof: bool,
+}
+
+pub const fn proofpack_writer_file_io_error_reason_model_boundary(
+) -> ProofpackWriterFileIoErrorReasonModelBoundary {
+    ProofpackWriterFileIoErrorReasonModelBoundary {
+        models_writer_file_io_error_reasons: true,
+        stable_reason_codes: true,
+        attaches_to_file_io_outcomes: true,
+        reads_filesystem: false,
+        writes_proofpack: false,
+        touches_filesystem: false,
+        writes_writer_operation_evidence: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        evidence_only: true,
+        target_path_is_authority: false,
+        diagnostic_paths_are_authority: false,
+        index_latest_are_canonical: false,
+        executor_claims_are_proof: false,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -2639,6 +3184,7 @@ pub enum ProofpackError {
     EmptyWriterTargetRef,
     EmptyWriterStorageRootRef,
     EmptyWriterTargetPathRef,
+    EmptyWriterDiagnosticPathRef,
     InvalidArtifactHash(ArtifactHashPolicyError),
     MissingContractRefs,
     MissingRunReceiptRefs,
@@ -4093,6 +4639,234 @@ mod tests {
     }
 
     #[test]
+    fn proofpack_writer_file_io_error_reason_vocabulary_is_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_FILE_IO_ERROR_REASON_MODEL_SCHEMA_VERSION,
+            "punk.proofpack.writer_file_io_error_reason_model.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::StorageRootMissing.as_str(),
+            "storage_root_missing"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot.as_str(),
+            "target_path_escapes_storage_root"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::ExistingTargetDifferent.as_str(),
+            "existing_target_different"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::FlushOrSyncFailed.as_str(),
+            "flush_or_sync_failed"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::OperationEvidencePersistenceFailed.as_str(),
+            "operation_evidence_persistence_failed"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::OperationAborted.as_str(),
+            "operation_aborted"
+        );
+        assert_eq!(
+            ProofpackWriterFileIoErrorReason::IndexUpdateFailed.surface(),
+            ProofpackWriterFileIoDiagnosticSurface::Index
+        );
+        assert_eq!(
+            ProofpackWriterFileIoDiagnosticSurface::OperationEvidencePersistence.as_str(),
+            "operation_evidence_persistence"
+        );
+        assert!(ProofpackWriterFileIoErrorReason::AtomicMoveFailed.is_write_reason());
+        assert!(
+            ProofpackWriterFileIoErrorReason::LatestPointerUpdateFailed.is_index_or_latest_reason()
+        );
+        assert!(ProofpackWriterFileIoErrorReason::CleanupFailed.is_partial_or_cleanup_reason());
+        assert!(
+            ProofpackWriterFileIoErrorReason::OperationEvidencePersistenceFailed
+                .is_operation_evidence_persistence_reason()
+        );
+        assert!(ProofpackWriterFileIoErrorReason::OperationAborted.is_abort_reason());
+        assert!(
+            ProofpackWriterFileIoErrorReason::StorageRootDisallowed.is_storage_or_target_reason()
+        );
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_error_reason_model_attaches_to_outcome_without_authority() {
+        let plan = sample_writer_file_io_ready_plan();
+        let outcome = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::write_failed(vec![ProofBoundaryNote::new(
+                "Temp write failed before canonical artifact availability.",
+            )
+            .expect("boundary note should be valid")]),
+        );
+        let diagnostic = ProofpackWriterFileIoDiagnostic::for_reason(
+            ProofpackWriterFileIoErrorReason::TempWriteFailed,
+        )
+        .with_target_path_ref(
+            ProofpackWriterTargetPathRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+        )
+        .with_diagnostic_path_ref(
+            ProofpackWriterDiagnosticPathRef::new(
+                "/diagnostic-only/not-canonical/proofpack_local_001.tmp",
+            )
+            .expect("diagnostic path ref should be valid"),
+        );
+        let model = ProofpackWriterFileIoErrorReasonModel::from_outcome_and_diagnostics(
+            &outcome,
+            vec![diagnostic.clone()],
+            vec![ProofBoundaryNote::new(
+                "Diagnostic paths are debug evidence only, not proof authority.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let boundary = model.boundary();
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_FILE_IO_ERROR_REASON_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(model.proofpack_id(), outcome.proofpack_id());
+        assert_eq!(model.target_artifact_ref(), outcome.target_artifact_ref());
+        assert_eq!(model.target_path_ref(), outcome.target_path_ref());
+        assert_eq!(
+            model.outcome(),
+            ProofpackWriterOperationOutcome::WriteFailed
+        );
+        assert_eq!(
+            model.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::WriteFailed
+        );
+        assert_eq!(model.diagnostics().len(), 1);
+        assert_eq!(model.diagnostics()[0].reason_code(), "temp_write_failed");
+        assert_eq!(model.diagnostics()[0].surface().as_str(), "temp_write");
+        assert!(model.has_reason(ProofpackWriterFileIoErrorReason::TempWriteFailed));
+        assert!(model.has_write_reason());
+        assert!(model.has_diagnostic_path_refs());
+        assert!(!diagnostic.target_path_is_authority());
+        assert!(!diagnostic.diagnostic_path_is_authority());
+        assert!(!diagnostic.source_is_proof_authority());
+
+        assert!(model.is_evidence_only());
+        assert!(boundary.models_writer_file_io_error_reasons);
+        assert!(boundary.stable_reason_codes);
+        assert!(boundary.attaches_to_file_io_outcomes);
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!boundary.writes_final_decision);
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.writes_schema_files());
+        assert!(!model.target_path_is_authority());
+        assert!(!model.diagnostic_paths_are_authority());
+        assert!(!model.index_latest_are_canonical());
+        assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_error_reason_model_separates_side_effect_reasons() {
+        let plan = sample_writer_file_io_ready_plan();
+        let outcome = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::partial_write_detected(
+                ProofpackWriterSideEffectStatus::Failed,
+                vec![
+                    ProofBoundaryNote::new("Partial write and cleanup failure remain visible.")
+                        .expect("boundary note should be valid"),
+                ],
+            ),
+        );
+        let model = ProofpackWriterFileIoErrorReasonModel::from_outcome_and_diagnostics(
+            &outcome,
+            vec![
+                ProofpackWriterFileIoDiagnostic::for_reason(
+                    ProofpackWriterFileIoErrorReason::PartialCanonicalArtifactAmbiguous,
+                ),
+                ProofpackWriterFileIoDiagnostic::for_reason(
+                    ProofpackWriterFileIoErrorReason::CleanupFailed,
+                ),
+                ProofpackWriterFileIoDiagnostic::for_reason(
+                    ProofpackWriterFileIoErrorReason::IndexUpdateFailed,
+                ),
+                ProofpackWriterFileIoDiagnostic::for_reason(
+                    ProofpackWriterFileIoErrorReason::LatestPointerUpdateFailed,
+                ),
+                ProofpackWriterFileIoDiagnostic::for_reason(
+                    ProofpackWriterFileIoErrorReason::OperationEvidencePersistenceFailed,
+                ),
+                ProofpackWriterFileIoDiagnostic::for_reason(
+                    ProofpackWriterFileIoErrorReason::OperationAborted,
+                ),
+            ],
+            vec![ProofBoundaryNote::new(
+                "Side-effect reason codes stay separate from canonical artifact authority.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert_eq!(
+            model.outcome(),
+            ProofpackWriterOperationOutcome::PartialWriteDetected
+        );
+        assert!(model.has_partial_or_cleanup_reason());
+        assert!(model.has_index_or_latest_reason());
+        assert!(model.has_operation_evidence_persistence_reason());
+        assert!(model.has_abort_reason());
+        assert!(model
+            .reasons()
+            .contains(&ProofpackWriterFileIoErrorReason::IndexUpdateFailed));
+        assert!(model
+            .reasons()
+            .contains(&ProofpackWriterFileIoErrorReason::LatestPointerUpdateFailed));
+        assert!(model
+            .reasons()
+            .contains(&ProofpackWriterFileIoErrorReason::CleanupFailed));
+        assert!(!model.index_latest_are_canonical());
+        assert!(!model.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_file_io_error_reason_model_keeps_executor_claims_non_proof() {
+        let plan = sample_writer_file_io_ready_plan();
+        let outcome = ProofpackWriterFileIoOutcomeModel::from_plan_and_observation(
+            &plan,
+            ProofpackWriterFileIoObservation::target_exists_different(vec![
+                ProofBoundaryNote::new("Existing target differed from the planned manifest.")
+                    .expect("boundary note should be valid"),
+            ]),
+        );
+        let executor_claim = ProofpackWriterFileIoDiagnostic::for_reason(
+            ProofpackWriterFileIoErrorReason::ExistingTargetMatching,
+        )
+        .with_source(ProofpackWriterFileIoDiagnosticSource::ExecutorClaim)
+        .with_boundary_notes(vec![ProofBoundaryNote::new(
+            "Executor claims are diagnostic input only and never proof authority.",
+        )
+        .expect("boundary note should be valid")]);
+        let model = ProofpackWriterFileIoErrorReasonModel::from_outcome_and_diagnostics(
+            &outcome,
+            vec![executor_claim],
+            vec![],
+        );
+
+        assert_eq!(
+            model.outcome(),
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent
+        );
+        assert!(model.has_executor_claims());
+        assert!(!model.executor_claims_are_proof());
+        assert_eq!(model.diagnostics()[0].source().as_str(), "executor_claim");
+        assert!(!model.diagnostics()[0].source_is_proof_authority());
+        assert_eq!(model.boundary_notes().len(), outcome.boundary_notes().len());
+        assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
     fn writer_operation_write_success_does_not_imply_acceptance() {
         let evidence = sample_writer_operation_evidence(
             ProofpackWriterOperationOutcome::Written,
@@ -4284,6 +5058,18 @@ mod tests {
         assert_eq!(
             ProofpackWriterTargetRef::new(" "),
             Err(ProofpackError::EmptyWriterTargetRef)
+        );
+        assert_eq!(
+            ProofpackWriterStorageRootRef::new(" "),
+            Err(ProofpackError::EmptyWriterStorageRootRef)
+        );
+        assert_eq!(
+            ProofpackWriterTargetPathRef::new(" "),
+            Err(ProofpackError::EmptyWriterTargetPathRef)
+        );
+        assert_eq!(
+            ProofpackWriterDiagnosticPathRef::new(" "),
+            Err(ProofpackError::EmptyWriterDiagnosticPathRef)
         );
     }
 

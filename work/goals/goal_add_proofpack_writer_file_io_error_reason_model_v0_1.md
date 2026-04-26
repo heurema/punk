@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_writer_file_io_error_reason_model_v0_1
 title: "Add proofpack writer file IO error reason model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -44,7 +44,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-file-io-outcome-model-v0-1.md"
   - "work/reports/2026-04-26-forty-third-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-file-io-error-reason-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -92,3 +93,13 @@ Do not implement proofpack file writing.
 Do not implement proofpack referenced-ref verification integration.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Implemented proofpack writer file IO error reason model v0.1 as side-effect-free `punk-proof` behavior.
+
+The model exposes stable diagnostics for storage-root, target-path, existing-target, temp/write, flush/sync, atomic move, cleanup, index/latest, operation-evidence persistence, and abort failures. It can summarize file IO outcomes without reading or writing the filesystem and without turning diagnostic paths, target paths, index/latest pointers, or executor claims into proof authority.
+
+Added smoke eval coverage and reconciled `docs/product/CRATE-STATUS.md`.
+
+No `.punk/` runtime state, schema files, CLI behavior, proofpack file writer, gate decisions, acceptance claims, provider/model/agent adapters, automation, or `punk init` were added.
