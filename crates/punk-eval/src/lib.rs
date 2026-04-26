@@ -10,6 +10,11 @@ use punk_contract::{
     approve_contract, validate_contract, ContractDraft, ContractError, ContractId, ContractScope,
     ContractStatus,
 };
+use punk_core::{
+    is_canonical_artifact_digest, is_valid_repo_relative_artifact_ref, validate_artifact_digest,
+    validate_repo_relative_artifact_ref, ArtifactDigest, ArtifactHashPolicyError,
+    RepoRelativeArtifactRef, ARTIFACT_HASH_POLICY_CAPABILITIES, ARTIFACT_HASH_POLICY_VERSION,
+};
 use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
 use punk_events::{schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
@@ -338,6 +343,11 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_acceptance_requires_accepting_decision_and_matching_proofpack(),
         eval_proofpack_integrity_ready_when_declared_digest_links_are_complete(),
         eval_proofpack_integrity_missing_digest_blocks_readiness(),
+        eval_artifact_hash_policy_accepts_canonical_digest(),
+        eval_artifact_hash_policy_rejects_invalid_digest(),
+        eval_artifact_hash_policy_accepts_repo_relative_ref(),
+        eval_artifact_hash_policy_rejects_invalid_ref(),
+        eval_artifact_hash_policy_helper_boundary_flags(),
     ];
     let smoke_result = if cases
         .iter()
@@ -348,10 +358,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, and proof kernels"
+        "local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, and artifact hash policy helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, and proof kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, flow, receipt, event, gate, proof, and artifact hash policy helper kernels"
             .to_owned()
     };
 
@@ -370,11 +380,13 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "no .punk/evals runtime state is read or written",
             "run receipt evidence remains pre-gate and does not imply final acceptance",
             "gate/proof smoke cases remain local assessment and do not claim acceptance",
+            "artifact hash policy smoke cases validate helper shape only and do not compute hashes",
             "JSON output is opt-in only and does not imply a stable public contract",
         ],
         deferred_notes: vec![
             "baseline, waiver, and stored eval reports are not active",
             "schema validation and export adapters are not active",
+            "active artifact hash computation and byte normalization are not active",
         ],
     }
 }
@@ -1223,6 +1235,168 @@ fn eval_proofpack_integrity_missing_digest_blocks_readiness() -> SmokeEvalCaseRe
     }
 }
 
+fn valid_artifact_digest() -> String {
+    format!("sha256:{}", "0123456789abcdef".repeat(4))
+}
+
+fn eval_artifact_hash_policy_accepts_canonical_digest() -> SmokeEvalCaseResult {
+    let digest_value = valid_artifact_digest();
+    let digest = ArtifactDigest::new(digest_value.clone());
+
+    match digest {
+        Ok(digest)
+            if digest.as_str() == digest_value
+                && is_canonical_artifact_digest(digest.as_str())
+                && validate_artifact_digest(digest.as_str()).is_ok()
+                && ARTIFACT_HASH_POLICY_VERSION == "artifact-hash-policy.v0.1" =>
+        {
+            SmokeEvalCaseResult::pass(
+                "eval_artifact_hash_policy_accepts_canonical_digest",
+                "canonical artifact digest shape remains valid",
+                "sha256-prefixed lowercase 64-hex digest matches valid helper-level policy shape",
+            )
+        }
+        Ok(digest) => SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_accepts_canonical_digest",
+            "canonical artifact digest shape remains valid",
+            format!(
+                "canonical digest helper drifted; digest={} is_canonical={} version={}",
+                digest.as_str(),
+                is_canonical_artifact_digest(digest.as_str()),
+                ARTIFACT_HASH_POLICY_VERSION
+            ),
+        ),
+        Err(error) => SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_accepts_canonical_digest",
+            "canonical artifact digest shape remains valid",
+            format!("canonical digest was rejected with {error:?}"),
+        ),
+    }
+}
+
+fn eval_artifact_hash_policy_rejects_invalid_digest() -> SmokeEvalCaseResult {
+    let bare_digest = "0123456789abcdef".repeat(4);
+    let uppercase_digest = format!("sha256:{}", "ABCDEF0123456789".repeat(4));
+
+    let placeholder_rejected =
+        validate_artifact_digest("unknown") == Err(ArtifactHashPolicyError::PlaceholderDigest);
+    let bare_rejected =
+        validate_artifact_digest(&bare_digest) == Err(ArtifactHashPolicyError::BareDigest);
+    let uppercase_rejected = validate_artifact_digest(&uppercase_digest)
+        == Err(ArtifactHashPolicyError::InvalidDigestHex);
+    let short_rejected = validate_artifact_digest("sha256:abc")
+        == Err(ArtifactHashPolicyError::InvalidDigestLength {
+            expected: 64,
+            actual: 3,
+        });
+
+    if placeholder_rejected && bare_rejected && uppercase_rejected && short_rejected {
+        SmokeEvalCaseResult::pass(
+            "eval_artifact_hash_policy_rejects_invalid_digest",
+            "invalid artifact digest shapes remain rejected",
+            "placeholder, bare, uppercase, and short digests remain rejected by helper validation",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_rejects_invalid_digest",
+            "invalid artifact digest shapes remain rejected",
+            format!(
+                "invalid digest rejection drifted; placeholder={placeholder_rejected} bare={bare_rejected} uppercase={uppercase_rejected} short={short_rejected}"
+            ),
+        )
+    }
+}
+
+fn eval_artifact_hash_policy_accepts_repo_relative_ref() -> SmokeEvalCaseResult {
+    let ref_value = "work/reports/2026-04-26-artifact-hash-policy-smoke-eval-coverage.md";
+    let artifact_ref = RepoRelativeArtifactRef::new(ref_value);
+
+    match artifact_ref {
+        Ok(artifact_ref)
+            if artifact_ref.as_str() == ref_value
+                && is_valid_repo_relative_artifact_ref(artifact_ref.as_str())
+                && validate_repo_relative_artifact_ref(artifact_ref.as_str()).is_ok() =>
+        {
+            SmokeEvalCaseResult::pass(
+                "eval_artifact_hash_policy_accepts_repo_relative_ref",
+                "repo-relative artifact refs remain valid",
+                "repo-relative work report path matches valid helper-level policy shape",
+            )
+        }
+        Ok(artifact_ref) => SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_accepts_repo_relative_ref",
+            "repo-relative artifact refs remain valid",
+            format!(
+                "repo-relative artifact ref helper drifted; ref={} valid={}",
+                artifact_ref.as_str(),
+                is_valid_repo_relative_artifact_ref(artifact_ref.as_str())
+            ),
+        ),
+        Err(error) => SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_accepts_repo_relative_ref",
+            "repo-relative artifact refs remain valid",
+            format!("repo-relative artifact ref was rejected with {error:?}"),
+        ),
+    }
+}
+
+fn eval_artifact_hash_policy_rejects_invalid_ref() -> SmokeEvalCaseResult {
+    let absolute_rejected = validate_repo_relative_artifact_ref("/tmp/events.jsonl")
+        == Err(ArtifactHashPolicyError::AbsoluteArtifactRef);
+    let parent_rejected = validate_repo_relative_artifact_ref("../events.jsonl")
+        == Err(ArtifactHashPolicyError::InvalidArtifactRefSegment);
+    let url_rejected = validate_repo_relative_artifact_ref("https://example.com/events.jsonl")
+        == Err(ArtifactHashPolicyError::UrlArtifactRef);
+    let backslash_rejected = validate_repo_relative_artifact_ref("work\\reports\\events.jsonl")
+        == Err(ArtifactHashPolicyError::BackslashArtifactRef);
+
+    if absolute_rejected && parent_rejected && url_rejected && backslash_rejected {
+        SmokeEvalCaseResult::pass(
+            "eval_artifact_hash_policy_rejects_invalid_ref",
+            "invalid artifact refs remain rejected",
+            "absolute, parent traversal, URL, and backslash refs remain rejected by helper validation",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_rejects_invalid_ref",
+            "invalid artifact refs remain rejected",
+            format!(
+                "invalid ref rejection drifted; absolute={absolute_rejected} parent={parent_rejected} url={url_rejected} backslash={backslash_rejected}"
+            ),
+        )
+    }
+}
+
+fn eval_artifact_hash_policy_helper_boundary_flags() -> SmokeEvalCaseResult {
+    let capabilities = ARTIFACT_HASH_POLICY_CAPABILITIES;
+
+    if capabilities.validates_digest_format
+        && capabilities.validates_repo_relative_refs
+        && !capabilities.computes_hashes
+        && !capabilities.normalizes_artifact_bytes
+        && !capabilities.writes_runtime_state
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_artifact_hash_policy_helper_boundary_flags",
+            "artifact hash policy helpers stay validation-only",
+            "helper capabilities still validate digest/ref shape without hash computation, byte normalization, or runtime writes",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_artifact_hash_policy_helper_boundary_flags",
+            "artifact hash policy helpers stay validation-only",
+            format!(
+                "artifact hash helper boundary drifted; digest={} refs={} computes={} normalizes={} writes={}",
+                capabilities.validates_digest_format,
+                capabilities.validates_repo_relative_refs,
+                capabilities.computes_hashes,
+                capabilities.normalizes_artifact_bytes,
+                capabilities.writes_runtime_state
+            ),
+        )
+    }
+}
+
 fn format_commands(commands: &[FlowCommand]) -> String {
     commands
         .iter()
@@ -1247,7 +1421,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 19);
+        assert_eq!(report.cases().len(), 24);
     }
 
     #[test]
@@ -1272,7 +1446,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, and proof kernels"
+            "assessment: local deterministic smoke harness passed over current contract, flow, receipt, event, gate, proof, and artifact hash policy helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -1289,6 +1463,11 @@ mod tests {
         assert!(
             rendered.contains("  - id: eval_proofpack_integrity_missing_digest_blocks_readiness")
         );
+        assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_canonical_digest"));
+        assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_digest"));
+        assert!(rendered.contains("  - id: eval_artifact_hash_policy_accepts_repo_relative_ref"));
+        assert!(rendered.contains("  - id: eval_artifact_hash_policy_rejects_invalid_ref"));
+        assert!(rendered.contains("  - id: eval_artifact_hash_policy_helper_boundary_flags"));
         assert!(rendered.contains("    status: pass"));
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
@@ -1297,10 +1476,15 @@ mod tests {
         assert!(rendered.contains(
             "gate/proof smoke cases remain local assessment and do not claim acceptance"
         ));
+        assert!(rendered.contains(
+            "artifact hash policy smoke cases validate helper shape only and do not compute hashes"
+        ));
         assert!(rendered
             .contains("JSON output is opt-in only and does not imply a stable public contract"));
         assert!(rendered.contains("deferred:"));
         assert!(rendered.contains("baseline, waiver, and stored eval reports are not active"));
+        assert!(rendered
+            .contains("active artifact hash computation and byte normalization are not active"));
     }
 
     #[test]
@@ -1351,6 +1535,17 @@ mod tests {
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_proofpack_integrity_missing_digest_blocks_readiness\""));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_canonical_digest\""));
+        assert!(
+            rendered.contains("\"case_id\": \"eval_artifact_hash_policy_rejects_invalid_digest\"")
+        );
+        assert!(rendered
+            .contains("\"case_id\": \"eval_artifact_hash_policy_accepts_repo_relative_ref\""));
+        assert!(rendered.contains("\"case_id\": \"eval_artifact_hash_policy_rejects_invalid_ref\""));
+        assert!(
+            rendered.contains("\"case_id\": \"eval_artifact_hash_policy_helper_boundary_flags\"")
+        );
         assert!(rendered.contains("\"status\": \"pass\""));
         assert!(rendered.contains("\"boundary_notes\": ["));
         assert!(rendered.contains("\"deferred\": ["));

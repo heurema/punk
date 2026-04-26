@@ -1,7 +1,7 @@
 ---
 id: goal_add_artifact_hash_policy_smoke_eval_coverage
 title: "Add artifact hash policy smoke eval coverage"
-status: ready
+status: done
 owner: "vitaly"
 module: "core"
 priority: P1
@@ -9,11 +9,12 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
+    - "Cargo.lock"
     - "crates/punk-eval/Cargo.toml"
     - "crates/punk-eval/src/lib.rs"
     - "work/STATUS.md"
@@ -33,7 +34,8 @@ knowledge_refs:
   - "work/reports/2026-04-25-artifact-hash-policy-helpers-v0-1.md"
   - "work/reports/2026-04-26-eighteenth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-artifact-hash-policy-smoke-eval-coverage.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -77,3 +79,11 @@ Do not compute hashes.
 Do not normalize artifact bytes.
 Do not add schema files.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Added local smoke eval coverage for artifact hash policy helper behavior.
+
+The smoke suite now includes cases for canonical digest acceptance, invalid digest rejection, valid repo-relative artifact ref acceptance, invalid artifact ref rejection, and validation-only helper boundary flags.
+
+No `.punk/` state, gate decisions, proofpacks, acceptance claims, runtime storage, schema files, CLI commands, adapters, automation, active hash computation, byte normalization, or `punk init` were added.
