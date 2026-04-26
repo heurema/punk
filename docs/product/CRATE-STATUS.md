@@ -44,7 +44,7 @@ superseded_by: null
 | `punk-eval` | active-core | smoke/local eval harness |
 | `punk-contract` | active-core | contract schema and validation |
 | `punk-gate` | active-core | gate decision model and future decision writer |
-| `punk-proof` | active-core | proofpack manifest, artifact hash refs, and future proofpack writer |
+| `punk-proof` | active-core | proofpack manifest, manifest self-digest metadata, artifact hash refs, and future proofpack writer |
 | `punk-project` | active-core | project identity and memory roots |
 | `punk-module-host` | parked | module manifest and hook routing |
 | `punk-adapters` | parked | provider/tool wrappers |
@@ -66,11 +66,11 @@ Current implemented behavior remains narrower:
 - `punk-flow` provides state-machine and guard evidence kernels, but no persisted runtime flow state.
 - `punk-contract` provides a side-effect-free contract lifecycle kernel, but no `.punk/contracts` storage.
 - `punk-domain` provides run receipt and validation evidence data models, but no `.punk/runs` writer.
-- `punk-eval` provides the local smoke eval harness, including opt-in JSON output, artifact hash policy helper behavior coverage, and exact-byte artifact hash computation helper coverage, but no `.punk/evals` report storage, baseline, waiver system, or runtime eval report writer.
+- `punk-eval` provides the local smoke eval harness, including opt-in JSON output, artifact hash policy helper behavior coverage, exact-byte artifact hash computation helper coverage, and proofpack manifest digest helper coverage, but no `.punk/evals` report storage, baseline, waiver system, or runtime eval report writer.
 - `punk-gate` provides a side-effect-free gate decision kernel, but no `.punk/decisions` writer, CLI behavior, runtime storage, or acceptance claim writer.
-- `punk-proof` provides side-effect-free proofpack provenance, digest metadata, structural link/hash integrity checks, proof readiness helpers, and proof artifact hash string-shape validation through `punk-core` artifact hash policy helpers, but no `.punk/proofs` writer, proofpack/file IO hash computation, byte/hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
+- `punk-proof` provides side-effect-free proofpack provenance, deterministic manifest rendering, proofpack manifest self-digest computation from in-memory renderer bytes through `punk-core` exact-byte hashing, digest metadata, structural link/hash integrity checks, proof readiness helpers, and proof artifact hash string-shape validation through `punk-core` artifact hash policy helpers, but no `.punk/proofs` writer, referenced artifact hash computation, file IO hashing, byte/hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
 
-Future writer, storage, file IO hashing, hash normalization, and proofpack hash-integration behavior must be added only through separate bounded goals.
+Future writer, storage, referenced artifact hash computation or verification, file IO hashing, hash normalization, and proofpack writer hash-integration behavior must be added only through separate bounded goals.
 
 ## Current CLI surface
 
@@ -93,7 +93,7 @@ Current implemented behavior remains bounded by the section above.
 - `punk-flow`: transition and guard events
 - `punk-eval`: eval run events, smoke assessments, and helper-behavior coverage
 - `punk-gate`: future final decision events
-- `punk-proof`: proofpack manifest and artifact hash refs
+- `punk-proof`: proofpack manifest, manifest self-digest metadata, and artifact hash refs
 - `punk-project`: project identity and memory-link boundaries
 
 Future export adapters, dashboards, or remote sinks are parked and must not be listed as active-core.
@@ -110,10 +110,11 @@ The current active-core responsibility is:
 - receipt/evidence shape
 - eval report shape
 - gate decision exclusivity
-- proofpack links, digest metadata, structural link/hash integrity, validation-only artifact hash policy shape checks, and side-effect-free exact-byte artifact hash computation
+- proofpack links, manifest self-digest metadata, digest metadata, structural link/hash integrity, validation-only artifact hash policy shape checks, and side-effect-free exact-byte artifact hash computation
 
-This does not mean file IO hash computation, hash normalization, proofpack
-writing, proofpack hash-integration, or gate decision writing.
+This does not mean referenced artifact hash computation, referenced artifact
+byte verification, file IO hashing, hash normalization, proofpack writing,
+proofpack writer hash-integration, or gate decision writing.
 
 Punk may run validators in the user's environment, but the user's executor, provider, prompt, skill, or local model setup must not become active-core authority.
 

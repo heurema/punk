@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-26
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Reconcile CRATE-STATUS proofpack manifest digest helper status"
-selected_next: "work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md"
+current_focus: "Run twenty-eighth advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_twenty_eighth_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,15 +17,15 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: reconcile CRATE-STATUS proofpack manifest digest helper status.
-- Selected next: `work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md`
-- Why this is next: proofpack manifest digest helper v0.1 is now active in `punk-proof`; canonical crate status should distinguish active manifest self-digest computation from deferred referenced artifact hash computation, file IO hashing, hash normalization, proofpack writer behavior, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
+- Current focus: run the twenty-eighth advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_twenty_eighth_work_ledger_review.md`
+- Why this is next: CRATE-STATUS now reflects the active proofpack manifest digest helper while keeping referenced artifact hash computation, file IO hashing, hash normalization, proofpack writer behavior, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init` deferred; run a short advisory review before selecting writer/hash/runtime/schema/CLI work or another guardrail.
 - Acceptance:
-  - `docs/product/CRATE-STATUS.md` reflects active proofpack manifest self-digest computation from deterministic in-memory renderer bytes.
-  - CRATE-STATUS wording keeps referenced artifact hash computation, file IO hashing, hash normalization, proofpack writer behavior, runtime storage, schemas, CLI behavior, gate decisions, acceptance claims, adapters, automation, provider/model runners, and `punk init` deferred.
-  - CRATE-STATUS keeps `punk-core` as the SHA-256 dependency owner and does not imply a new hash dependency in `punk-proof`.
-  - no runtime/code/schema/CLI/`.punk` changes are made.
-  - `work/STATUS.md` remains the only live work-state source of truth and selects exactly one next ready goal.
+  - `work/STATUS.md` remains the only live work-state source of truth.
+  - `selected_next` points to one `ready` goal.
+  - CRATE-STATUS remains aligned with active proofpack manifest self-digest behavior and does not overclaim referenced artifact verification, proofpack writer behavior, gate decision, or acceptance authority.
+  - review identifies the next bounded active-core step without activating proofpack writer behavior, file IO hashing, runtime storage, schemas, CLI behavior, adapters, automation, provider/model runners, or `punk init`.
+  - no runtime/code/schema/CLI/`.punk` changes are made by the review.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -33,7 +33,7 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md` | `ready` | Manifest digest helper is implemented; canonical crate status should record it without overclaiming writer/file-IO/reference-verification/runtime/schema/CLI authority. | — |
+| `work/goals/goal_run_twenty_eighth_work_ledger_review.md` | `ready` | CRATE-STATUS is reconciled; review before selecting writer/file-IO/reference-verification/runtime/schema/CLI work, or another guardrail. | — |
 
 ## Blocked
 
@@ -49,6 +49,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-26 | Reconciled CRATE-STATUS proofpack manifest digest helper status | `work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md`, `work/reports/2026-04-26-crate-status-proofpack-manifest-digest-helper.md`, `docs/product/CRATE-STATUS.md` |
 | 2026-04-26 | Ran the twenty-seventh advisory Work Ledger Review | `work/goals/goal_run_twenty_seventh_work_ledger_review.md`, `work/reports/2026-04-26-twenty-seventh-work-ledger-review.md`, `work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md` |
 | 2026-04-26 | Added proofpack manifest digest helper v0.1 | `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md`, `work/reports/2026-04-26-proofpack-manifest-digest-helper-v0-1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-04-26 | Ran the twenty-sixth advisory Work Ledger Review | `work/goals/goal_run_twenty_sixth_work_ledger_review.md`, `work/reports/2026-04-26-twenty-sixth-work-ledger-review.md`, `work/goals/goal_add_proofpack_manifest_digest_helper_v0_1.md` |
@@ -124,13 +125,13 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-26
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_twenty_seventh_work_ledger_review.md work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md work/reports/2026-04-26-twenty-seventh-work-ledger-review.md --report work/reports/2026-04-26-twenty-seventh-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md work/goals/goal_run_twenty_eighth_work_ledger_review.md work/reports/2026-04-26-crate-status-proofpack-manifest-digest-helper.md --report work/reports/2026-04-26-crate-status-proofpack-manifest-digest-helper.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - twenty-seventh advisory Work Ledger Review completed
-  - `selected_next` is now `work/goals/goal_reconcile_crate_status_proofpack_manifest_digest_helper.md`
+  - CRATE-STATUS proofpack manifest digest helper currentness reconciled
+  - `selected_next` is now `work/goals/goal_run_twenty_eighth_work_ledger_review.md`
   - no runtime/code/schema/CLI/`.punk` changes were made
-  - docs-governance had 0 failures and 0 warnings for this review diff
+  - docs-governance had 0 failures and 2 warnings for existing CRATE-STATUS definition-like sections
   - cargo test --workspace passed
   - no repo-tracked absolute path leaks found
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
