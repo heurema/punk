@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-04-26
 review_after: 2026-07-20
 canonical_for:
   - crate-status
@@ -60,15 +60,15 @@ It is not a claim that every target behavior is active today.
 Current implemented behavior remains narrower:
 
 - `punk-cli` routes only the current implemented commands listed below.
-- `punk-core` is still a minimal helper crate skeleton; no active hashing API is exposed yet.
+- `punk-core` provides dependency-free, side-effect-free artifact digest and repo-relative artifact ref validation helpers for artifact hash policy v0.1; it does not compute hashes, normalize artifact bytes, write schemas, write proofpacks, write gate decisions, expose CLI behavior, or touch `.punk/` runtime state.
 - `punk-rules` and `punk-project` are still minimal skeleton crates.
 - `punk-events` provides an append-only event-log kernel and deterministic JSONL behavior, but `.punk/events` runtime storage is not active.
 - `punk-flow` provides state-machine and guard evidence kernels, but no persisted runtime flow state.
 - `punk-contract` provides a side-effect-free contract lifecycle kernel, but no `.punk/contracts` storage.
 - `punk-domain` provides run receipt and validation evidence data models, but no `.punk/runs` writer.
-- `punk-eval` provides the local smoke eval harness, including opt-in JSON output, but no `.punk/evals` report storage, baseline, or waiver system.
+- `punk-eval` provides the local smoke eval harness, including opt-in JSON output and artifact hash policy helper behavior coverage, but no `.punk/evals` report storage, baseline, waiver system, or runtime eval report writer.
 - `punk-gate` provides a side-effect-free gate decision kernel, but no `.punk/decisions` writer, CLI behavior, runtime storage, or acceptance claim writer.
-- `punk-proof` provides side-effect-free proofpack provenance, digest metadata, structural link/hash integrity checks, and proof readiness helpers, but no `.punk/proofs` writer, hash computation, hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
+- `punk-proof` provides side-effect-free proofpack provenance, digest metadata, structural link/hash integrity checks, proof readiness helpers, and proof artifact hash string-shape validation through `punk-core` artifact hash policy helpers, but no `.punk/proofs` writer, active hash computation, byte/hash normalization, runtime storage, CLI behavior, or acceptance claim writer.
 
 Future writer/storage/hash behavior must be added only through separate bounded goals.
 
@@ -91,7 +91,7 @@ Current implemented behavior remains bounded by the section above.
 
 - `punk-events`: event schema, append-only writer, replay support
 - `punk-flow`: transition and guard events
-- `punk-eval`: eval run events and reports
+- `punk-eval`: eval run events, smoke assessments, and helper-behavior coverage
 - `punk-gate`: future final decision events
 - `punk-proof`: proofpack manifest and artifact hash refs
 - `punk-project`: project identity and memory-link boundaries
@@ -110,7 +110,7 @@ The current active-core responsibility is:
 - receipt/evidence shape
 - eval report shape
 - gate decision exclusivity
-- proofpack links, digest metadata, and structural link/hash integrity
+- proofpack links, digest metadata, structural link/hash integrity, and validation-only artifact hash policy shape checks
 
 This does not mean active hash computation, hash normalization, proofpack
 writing, or gate decision writing.

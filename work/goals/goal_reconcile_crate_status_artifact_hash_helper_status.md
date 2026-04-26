@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_crate_status_artifact_hash_helper_status
 title: "Reconcile CRATE-STATUS artifact hash helper status"
-status: ready
+status: done
 owner: "vitaly"
 module: "docs"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-punk-proof-artifact-hash-policy-helper-integration.md"
   - "work/reports/2026-04-26-twentieth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-crate-status-artifact-hash-helper-status.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -61,7 +62,7 @@ doc_impact:
   required_updates:
     - "docs/product/CRATE-STATUS.md"
     - "work/reports/2026-04-26-crate-status-artifact-hash-helper-status.md"
-  rationale: "Execution will update a canonical product doc for current helper implementation honesty and record a work report."
+  rationale: "Execution updated a canonical product doc for current helper implementation honesty and recorded a work report."
 ---
 
 ## Context
@@ -82,3 +83,16 @@ Do not compute hashes.
 Do not normalize bytes or hashes.
 Do not add schema files.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Completed the CRATE-STATUS artifact hash helper status reconciliation.
+
+`docs/product/CRATE-STATUS.md` now records the current helper implementation honestly:
+
+- `punk-core` owns side-effect-free artifact digest and repo-relative artifact ref validation helpers;
+- `punk-eval` smoke coverage includes artifact hash policy helper behavior;
+- `punk-proof` validates proof artifact hash string shape through `punk-core` helpers;
+- proofpack link/hash integrity remains structural only.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
