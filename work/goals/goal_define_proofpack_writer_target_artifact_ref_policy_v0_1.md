@@ -1,7 +1,7 @@
 ---
 id: goal_define_proofpack_writer_target_artifact_ref_policy_v0_1
 title: "Define proofpack writer target artifact ref policy v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-26
 updated_at: 2026-04-26
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-26
+completed_at: 2026-04-26
 blocked_by: []
 scope:
   include:
@@ -42,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-canonical-artifact-model-v0-1.md"
   - "work/reports/2026-04-26-forty-seventh-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-26-proofpack-writer-target-artifact-ref-policy-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -94,3 +95,11 @@ Do not implement proofpack referenced-ref verification integration.
 Do not write operation evidence.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+## Outcome
+
+Defined proofpack writer target artifact ref policy v0.1 as docs/spec-only boundary.
+
+The policy selects `(proofpack_id, manifest_self_digest)` as the v0.1 target artifact identity, keeps logical target artifact refs separate from canonical bytes, storage roots, target paths, indexes, `latest` pointers, CLI output, service mirrors, and executor claims, and records `proofpack:<proofpack_id>@<manifest_self_digest>` as a recommended display ref vocabulary for future implementations.
+
+No Rust code, `.punk` runtime state, schema file, CLI command, active proofpack writer, filesystem write, referenced-ref verification integration, gate decision, acceptance claim, provider/model runner, adapter, automation, or `punk init` was added.
