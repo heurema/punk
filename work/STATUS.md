@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-27
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Run the fifty-fourth advisory Work Ledger Review"
-selected_next: "work/goals/goal_run_fifty_fourth_work_ledger_review.md"
+current_focus: "Define proofpack writer host path resolution boundary v0.1"
+selected_next: "work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md"
 last_validated_commit: null
 ---
 
@@ -17,25 +17,25 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: run the fifty-fourth advisory Work Ledger Review.
-- Selected next: `work/goals/goal_run_fifty_fourth_work_ledger_review.md`
-- Why this is next: proofpack writer active behavior model v0.1 is now in place as side-effect-free model behavior with smoke coverage. Before selecting active writer, `.punk/proofs`, schema files, CLI behavior, proofpack referenced-ref verification integration, operation-evidence persistence, gate/eval/proof orchestration, adapters, automation, provider/model runners, or `punk init`, run an advisory ledger review to keep one bounded next step.
+- Current focus: define proofpack writer host path resolution boundary v0.1.
+- Selected next: `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md`
+- Why this is next: proofpack writer active behavior model v0.1 is in place, but active writer implementation would be too early until host path resolution, path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape boundaries are explicit. This keeps Punk setup-neutral and prevents hidden filesystem authority before any writer/storage/schema/CLI work.
 - Acceptance:
-  - advisory review records the post-active-behavior-model state.
-  - review selects exactly one next ready goal.
-  - no runtime/code/schema/CLI/`.punk` changes are made by the review.
+  - docs/spec boundary defines how future storage root refs and target path refs may become host path observations.
+  - boundary keeps storage root refs, logical target artifact refs, target path refs, and host path observations distinct.
+  - no runtime/code/schema/CLI/`.punk`, active proofpack writer, filesystem read/write, operation-evidence persistence, gate decision, acceptance claim, adapter, automation, provider/model runner, or `punk init` is added.
 
 ## Next Candidates
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_run_fifty_fourth_work_ledger_review.md` | `ready` | Required advisory review after side-effect-free active behavior model before selecting active writer/storage/schema/CLI/proofpack referenced-ref integration or more guardrails. | — |
+| `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` | `ready` | Smallest safe step before active writer: make host path resolution and path encoding explicit without touching filesystem/runtime/schema/CLI. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, side-effect-free canonical artifact model, advisory review after canonical artifact model, target artifact ref policy boundary, advisory review after target artifact ref policy, side-effect-free target artifact ref policy model, advisory review after target artifact ref policy model, target-ref model alignment, the fiftieth advisory review, proofpack writer preflight integration boundary, the fifty-first advisory review, side-effect-free preflight integration model, the fifty-second advisory review, active writer behavior boundary, and the fifty-third advisory review are in place; side-effect-free active behavior model is in place; advisory review is selected before active writer, orchestration, runtime, schema files, CLI, operation-evidence persistence, or referenced-ref verification integration implementation work. |
+| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, side-effect-free canonical artifact model, advisory review after canonical artifact model, target artifact ref policy boundary, advisory review after target artifact ref policy, side-effect-free target artifact ref policy model, advisory review after target artifact ref policy model, target-ref model alignment, the fiftieth advisory review, proofpack writer preflight integration boundary, the fifty-first advisory review, side-effect-free preflight integration model, the fifty-second advisory review, active writer behavior boundary, and the fifty-third advisory review are in place; side-effect-free active behavior model and the fifty-fourth advisory review are in place; host path resolution boundary is selected before active writer, orchestration, runtime, schema files, CLI, operation-evidence persistence, or referenced-ref verification integration implementation work. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -45,6 +45,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-27 | Ran the fifty-fourth advisory Work Ledger Review | `work/goals/goal_run_fifty_fourth_work_ledger_review.md`, `work/reports/2026-04-27-fifty-fourth-work-ledger-review.md`, `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` |
 | 2026-04-27 | Added proofpack writer active behavior model v0.1 | `work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-27-proofpack-writer-active-behavior-model-v0-1.md` |
 | 2026-04-27 | Ran the fifty-third advisory Work Ledger Review | `work/goals/goal_run_fifty_third_work_ledger_review.md`, `work/reports/2026-04-27-fifty-third-work-ledger-review.md`, `work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md` |
 | 2026-04-27 | Defined proofpack writer active behavior boundary v0.1 | `work/goals/goal_define_proofpack_writer_active_behavior_boundary_v0_1.md`, `evals/specs/proofpack-writer-active-behavior-boundary.v0.1.md`, `work/reports/2026-04-27-proofpack-writer-active-behavior-boundary-v0-1.md` |
