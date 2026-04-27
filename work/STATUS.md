@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-04-27
 current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
-current_focus: "Define proofpack writer preflight integration boundary v0.1"
-selected_next: "work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md"
+current_focus: "Run fifty-first advisory Work Ledger Review"
+selected_next: "work/goals/goal_run_fifty_first_work_ledger_review.md"
 last_validated_commit: null
 ---
 
@@ -17,14 +17,13 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: define proofpack writer preflight integration boundary v0.1.
-- Selected next: `work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md`
-- Why this is next: target-ref alignment is in place, but active proofpack writer implementation is still too early without a single boundary that explains how the existing side-effect-free writer models compose during preflight. Defining that integration boundary is safer than selecting active writer, `.punk/proofs`, schema files, CLI behavior, referenced-ref verification integration, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`.
+- Current focus: run the fifty-first advisory Work Ledger Review.
+- Selected next: `work/goals/goal_run_fifty_first_work_ledger_review.md`
+- Why this is next: proofpack writer preflight integration boundary v0.1 is defined as docs/spec only. Before selecting side-effect-free preflight integration model implementation, active proofpack writer, `.punk/proofs`, schema files, CLI behavior, referenced-ref verification integration, gate decisions, acceptance claims, adapters, automation, provider/model runners, or `punk init`, run a short advisory review to choose the next bounded branch.
 - Acceptance:
-  - docs/spec boundary defines side-effect-free proofpack writer preflight integration.
-  - canonical artifact, target artifact ref policy, target path policy, storage root, file IO plan, write/idempotency/temp policy, planned side effects, missing preconditions, and operation-evidence expectations are related without activating writes.
-  - target artifact refs remain logical non-path metadata and target path refs remain separate path-policy inputs.
-  - no runtime/code/schema/CLI/`.punk`, active proofpack writer, filesystem read/write, referenced-ref verification integration, gate decision, or acceptance claim is added.
+  - advisory Work Ledger Review is completed after proofpack writer preflight integration boundary v0.1.
+  - `work/STATUS.md` selects exactly one next ready goal after the review.
+  - no runtime/code/schema/CLI/`.punk` changes are made by the review.
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
   - process-shell reuse stays setup-neutral: no required IDE, CLI ritual, model, provider, prompt, skill, or local runtime setup.
 
@@ -32,13 +31,13 @@ last_validated_commit: null
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md` | `ready` | Existing side-effect-free writer models need an explicit preflight integration boundary before active writer/storage/schema/CLI or proofpack referenced-ref integration work. | — |
+| `work/goals/goal_run_fifty_first_work_ledger_review.md` | `ready` | Preflight integration boundary is defined; review the ledger before model implementation, active writer/storage/schema/CLI, or proofpack referenced-ref integration work. | — |
 
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, side-effect-free canonical artifact model, advisory review after canonical artifact model, target artifact ref policy boundary, advisory review after target artifact ref policy, side-effect-free target artifact ref policy model, advisory review after target artifact ref policy model, and target-ref model alignment, and the fiftieth advisory review are in place; preflight integration boundary is selected before active writer, orchestration, runtime, schema files, CLI, or referenced-ref verification integration implementation work. |
+| Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, side-effect-free canonical artifact model, advisory review after canonical artifact model, target artifact ref policy boundary, advisory review after target artifact ref policy, side-effect-free target artifact ref policy model, advisory review after target artifact ref policy model, and target-ref model alignment, the fiftieth advisory review, and proofpack writer preflight integration boundary are in place; fifty-first advisory review is selected before active writer, orchestration, runtime, schema files, CLI, or referenced-ref verification integration implementation work. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
@@ -48,6 +47,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-27 | Defined proofpack writer preflight integration boundary v0.1 | `work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md`, `evals/specs/proofpack-writer-preflight-integration-boundary.v0.1.md`, `work/reports/2026-04-27-proofpack-writer-preflight-integration-boundary-v0-1.md` |
 | 2026-04-27 | Ran the fiftieth advisory Work Ledger Review | `work/goals/goal_run_fiftieth_work_ledger_review.md`, `work/reports/2026-04-27-fiftieth-work-ledger-review.md`, `work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md` |
 | 2026-04-27 | Aligned proofpack writer target-ref models with target artifact policy v0.1 | `work/goals/goal_align_proofpack_writer_target_ref_models_with_policy_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-27-proofpack-writer-target-ref-model-policy-alignment-v0-1.md` |
 | 2026-04-27 | Ran the forty-ninth advisory Work Ledger Review | `work/goals/goal_run_forty_ninth_work_ledger_review.md`, `work/reports/2026-04-27-forty-ninth-work-ledger-review.md`, `work/goals/goal_align_proofpack_writer_target_ref_models_with_policy_v0_1.md` |
@@ -169,11 +169,11 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-27
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_fiftieth_work_ledger_review.md work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md work/reports/2026-04-27-fiftieth-work-ledger-review.md --report work/reports/2026-04-27-fiftieth-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/proofpack-writer-preflight-integration-boundary.v0.1.md docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md work/goals/goal_run_fifty_first_work_ledger_review.md work/reports/2026-04-27-proofpack-writer-preflight-integration-boundary-v0-1.md --report work/reports/2026-04-27-proofpack-writer-preflight-integration-boundary-v0-1.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - fiftieth advisory Work Ledger Review completed after proofpack writer target-ref model policy alignment v0.1
-  - `selected_next` is now `work/goals/goal_define_proofpack_writer_preflight_integration_boundary_v0_1.md`
+  - proofpack writer preflight integration boundary v0.1 defined as docs/spec only
+  - `selected_next` is now `work/goals/goal_run_fifty_first_work_ledger_review.md`
   - no runtime/code/schema/CLI/`.punk` changes were made
   - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
   - proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred

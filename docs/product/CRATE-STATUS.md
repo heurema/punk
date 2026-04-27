@@ -72,6 +72,8 @@ Current implemented behavior remains narrower:
 
 Future writer, storage, referenced artifact hash computation or verification for proofpack refs, actual proofpack file IO, broader referenced artifact verification beyond the narrow explicit-file helper, hash normalization, and proofpack writer hash-integration behavior must be added only through separate bounded goals.
 
+The proofpack writer preflight integration boundary is a docs/spec artifact only. It relates existing side-effect-free writer models before future writer work, but it does not add active crate behavior, runtime storage, schema files, CLI behavior, filesystem reads/writes, gate decisions, or acceptance claims.
+
 ## Current CLI surface
 
 The implemented CLI surface is currently limited to:
@@ -110,7 +112,7 @@ The current active-core responsibility is:
 - receipt/evidence shape
 - eval report shape
 - gate decision exclusivity
-- proofpack links, manifest self-digest metadata, digest metadata, structural link/hash integrity, validation-only artifact hash policy shape checks, exact-byte artifact hash computation, narrow evidence-only file artifact digest computation, narrow evidence-only referenced artifact digest comparison for one explicit file, a side-effect-free proofpack writer operation evidence model, a side-effect-free proofpack writer preflight plan model, a side-effect-free proofpack writer file IO plan model, a side-effect-free proofpack writer file IO outcome model, a side-effect-free proofpack writer file IO error reason model, a side-effect-free proofpack writer target path policy model, a side-effect-free proofpack writer canonical artifact model, and a side-effect-free proofpack writer target artifact ref policy model/alignment helper
+- proofpack links, manifest self-digest metadata, digest metadata, structural link/hash integrity, validation-only artifact hash policy shape checks, exact-byte artifact hash computation, narrow evidence-only file artifact digest computation, narrow evidence-only referenced artifact digest comparison for one explicit file, a side-effect-free proofpack writer operation evidence model, a side-effect-free proofpack writer preflight plan model, a side-effect-free proofpack writer file IO plan model, a side-effect-free proofpack writer file IO outcome model, a side-effect-free proofpack writer file IO error reason model, a side-effect-free proofpack writer target path policy model, a side-effect-free proofpack writer canonical artifact model, a side-effect-free proofpack writer target artifact ref policy model/alignment helper, and a docs/spec proofpack writer preflight integration boundary
 
 This does not mean referenced artifact hash computation for proofpack refs,
 proofpack-referenced artifact verification integration, broad referenced
