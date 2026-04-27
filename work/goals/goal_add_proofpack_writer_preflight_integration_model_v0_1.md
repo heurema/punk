@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_writer_preflight_integration_model_v0_1
 title: "Add proofpack writer preflight integration model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-27
 updated_at: 2026-04-27
 selected_at: 2026-04-27
-started_at: null
-completed_at: null
+started_at: 2026-04-27
+completed_at: 2026-04-27
 blocked_by: []
 scope:
   include:
@@ -48,7 +48,8 @@ knowledge_refs:
   - "work/reports/2026-04-27-proofpack-writer-preflight-integration-boundary-v0-1.md"
   - "work/reports/2026-04-27-fifty-first-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-27-proofpack-writer-preflight-integration-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -105,3 +106,14 @@ Do not write operation evidence.
 Do not write indexes or `latest` pointers.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed the side-effect-free proofpack writer preflight integration model v0.1.
+
+`punk-proof` now exposes `ProofpackWriterPreflightIntegrationModel` with ready, blocked, and not-selected statuses over explicit canonical artifact, target artifact ref policy, preflight plan, file IO plan, and target path policy inputs.
+
+`punk-eval` smoke coverage now checks the model and its no-side-effect authority boundary.
+
+No runtime/storage/schema/CLI/`.punk`, active proofpack writer, filesystem write, proofpack referenced-ref verification integration, operation-evidence persistence, gate decision, acceptance claim, adapter, automation, provider/model runner, or `punk init` was added.

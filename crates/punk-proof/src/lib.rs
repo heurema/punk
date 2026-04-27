@@ -24,6 +24,8 @@ pub const PROOFPACK_WRITER_CANONICAL_ARTIFACT_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_canonical_artifact_model.v0.1";
 pub const PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_target_artifact_ref_policy_model.v0.1";
+pub const PROOFPACK_WRITER_PREFLIGHT_INTEGRATION_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_preflight_integration_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -4276,6 +4278,653 @@ pub const fn proofpack_writer_target_path_policy_model_boundary(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterPreflightIntegrationStatus {
+    Ready,
+    Blocked,
+    NotSelected,
+}
+
+impl ProofpackWriterPreflightIntegrationStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Blocked => "blocked",
+            Self::NotSelected => "not_selected",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterPreflightIntegrationBlocker {
+    MissingCanonicalArtifactModel,
+    CanonicalArtifactProofpackMismatch,
+    CanonicalArtifactDigestMismatch,
+    MissingTargetArtifactRefPolicy,
+    RejectedTargetArtifactRefPolicy,
+    MissingLogicalTargetArtifactRef,
+    TargetArtifactRefNotLogical,
+    TargetArtifactRefMismatch,
+    MissingPreflightPlan,
+    PreflightPlanMissingPreconditions,
+    MissingFileIoPlan,
+    FileIoPlanBlocked,
+    MissingTargetPathPolicy,
+    RejectedTargetPathPolicy,
+    TargetPathPolicyMismatch,
+    RefsNotSeparated,
+    MissingBoundaryNotes,
+}
+
+impl ProofpackWriterPreflightIntegrationBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingCanonicalArtifactModel => "missing_canonical_artifact_model",
+            Self::CanonicalArtifactProofpackMismatch => "canonical_artifact_proofpack_mismatch",
+            Self::CanonicalArtifactDigestMismatch => "canonical_artifact_digest_mismatch",
+            Self::MissingTargetArtifactRefPolicy => "missing_target_artifact_ref_policy",
+            Self::RejectedTargetArtifactRefPolicy => "rejected_target_artifact_ref_policy",
+            Self::MissingLogicalTargetArtifactRef => "missing_logical_target_artifact_ref",
+            Self::TargetArtifactRefNotLogical => "target_artifact_ref_not_logical",
+            Self::TargetArtifactRefMismatch => "target_artifact_ref_mismatch",
+            Self::MissingPreflightPlan => "missing_preflight_plan",
+            Self::PreflightPlanMissingPreconditions => "preflight_plan_missing_preconditions",
+            Self::MissingFileIoPlan => "missing_file_io_plan",
+            Self::FileIoPlanBlocked => "file_io_plan_blocked",
+            Self::MissingTargetPathPolicy => "missing_target_path_policy",
+            Self::RejectedTargetPathPolicy => "rejected_target_path_policy",
+            Self::TargetPathPolicyMismatch => "target_path_policy_mismatch",
+            Self::RefsNotSeparated => "refs_not_separated",
+            Self::MissingBoundaryNotes => "missing_boundary_notes",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterPreflightIntegrationModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    writer_selected: bool,
+    canonical_layout: Option<ProofpackWriterCanonicalArtifactLayout>,
+    manifest_self_digest: Option<ArtifactDigest>,
+    target_artifact_ref: Option<ProofpackWriterTargetRef>,
+    storage_root_ref: Option<ProofpackWriterStorageRootRef>,
+    target_path_ref: Option<ProofpackWriterTargetPathRef>,
+    target_path_policy_status: Option<ProofpackWriterTargetPathPolicyStatus>,
+    write_policy: Option<ProofpackWriterWritePolicy>,
+    idempotency_basis: Option<ProofpackWriterIdempotencyBasis>,
+    temp_atomic_policy: Option<ProofpackWriterTempAtomicPolicy>,
+    planned_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    failure_visibility: Vec<ProofpackWriterFileIoFailureVisibility>,
+    blockers: Vec<ProofpackWriterPreflightIntegrationBlocker>,
+    diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterPreflightIntegrationModel {
+    pub fn evaluate(
+        proofpack: &Proofpack,
+        canonical_artifact: Option<&ProofpackWriterCanonicalArtifactModel>,
+        target_artifact_ref_policy: Option<&ProofpackWriterTargetArtifactRefPolicyModel>,
+        preflight_plan: Option<&ProofpackWriterPreflightPlan>,
+        file_io_plan: Option<&ProofpackWriterFileIoPlan>,
+        target_path_policy: Option<&ProofpackWriterTargetPathPolicyModel>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let writer_selected =
+            preflight_plan.is_some() || file_io_plan.is_some() || target_path_policy.is_some();
+        let target_artifact_ref = writer_integration_target_artifact_ref(
+            target_artifact_ref_policy,
+            preflight_plan,
+            file_io_plan,
+            target_path_policy,
+        );
+        let storage_root_ref = file_io_plan
+            .map(|plan| plan.storage_root_ref().clone())
+            .or_else(|| target_path_policy.map(|policy| policy.storage_root_ref().clone()));
+        let target_path_ref = file_io_plan
+            .map(|plan| plan.target_path_ref().clone())
+            .or_else(|| target_path_policy.map(|policy| policy.target_path_ref().clone()));
+        let planned_side_effects = file_io_plan
+            .map(|plan| plan.planned_side_effects().to_vec())
+            .or_else(|| preflight_plan.map(|plan| plan.planned_side_effects().to_vec()))
+            .unwrap_or_default();
+        let failure_visibility = file_io_plan
+            .map(|plan| plan.failure_visibility().to_vec())
+            .unwrap_or_default();
+        let diagnostics = target_path_policy
+            .map(|policy| policy.diagnostics().to_vec())
+            .unwrap_or_default();
+        let manifest_self_digest = canonical_artifact
+            .map(|canonical| canonical.manifest_self_digest().clone())
+            .or_else(|| preflight_plan.map(|plan| plan.manifest_self_digest().clone()))
+            .or_else(|| file_io_plan.map(|plan| plan.manifest_self_digest().clone()));
+        let canonical_layout =
+            canonical_artifact.map(ProofpackWriterCanonicalArtifactModel::layout);
+
+        let blockers = if writer_selected {
+            writer_preflight_integration_blockers(
+                proofpack,
+                canonical_artifact,
+                target_artifact_ref_policy,
+                preflight_plan,
+                file_io_plan,
+                target_path_policy,
+                &target_artifact_ref,
+                storage_root_ref.as_ref(),
+                target_path_ref.as_ref(),
+                &boundary_notes,
+            )
+        } else {
+            Vec::new()
+        };
+
+        Self {
+            proofpack_id: proofpack.id().clone(),
+            schema_version: PROOFPACK_WRITER_PREFLIGHT_INTEGRATION_MODEL_SCHEMA_VERSION,
+            writer_selected,
+            canonical_layout,
+            manifest_self_digest,
+            target_artifact_ref,
+            storage_root_ref,
+            target_path_ref,
+            target_path_policy_status: target_path_policy
+                .map(ProofpackWriterTargetPathPolicyModel::status),
+            write_policy: file_io_plan.map(ProofpackWriterFileIoPlan::write_policy),
+            idempotency_basis: file_io_plan.map(ProofpackWriterFileIoPlan::idempotency_basis),
+            temp_atomic_policy: file_io_plan.map(ProofpackWriterFileIoPlan::temp_atomic_policy),
+            planned_side_effects,
+            failure_visibility,
+            blockers,
+            diagnostics,
+            boundary_notes: writer_preflight_integration_boundary_notes(boundary_notes),
+        }
+    }
+
+    pub fn not_selected(
+        proofpack: &Proofpack,
+        canonical_artifact: Option<&ProofpackWriterCanonicalArtifactModel>,
+        target_artifact_ref_policy: Option<&ProofpackWriterTargetArtifactRefPolicyModel>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::evaluate(
+            proofpack,
+            canonical_artifact,
+            target_artifact_ref_policy,
+            None,
+            None,
+            None,
+            boundary_notes,
+        )
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn writer_selected(&self) -> bool {
+        self.writer_selected
+    }
+
+    pub fn canonical_layout(&self) -> Option<ProofpackWriterCanonicalArtifactLayout> {
+        self.canonical_layout
+    }
+
+    pub fn manifest_self_digest(&self) -> Option<&ArtifactDigest> {
+        self.manifest_self_digest.as_ref()
+    }
+
+    pub fn target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.target_artifact_ref.as_ref()
+    }
+
+    pub fn target_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.target_artifact_ref()
+    }
+
+    pub fn storage_root_ref(&self) -> Option<&ProofpackWriterStorageRootRef> {
+        self.storage_root_ref.as_ref()
+    }
+
+    pub fn target_path_ref(&self) -> Option<&ProofpackWriterTargetPathRef> {
+        self.target_path_ref.as_ref()
+    }
+
+    pub fn target_path_policy_status(&self) -> Option<ProofpackWriterTargetPathPolicyStatus> {
+        self.target_path_policy_status
+    }
+
+    pub fn write_policy(&self) -> Option<ProofpackWriterWritePolicy> {
+        self.write_policy
+    }
+
+    pub fn idempotency_basis(&self) -> Option<ProofpackWriterIdempotencyBasis> {
+        self.idempotency_basis
+    }
+
+    pub fn temp_atomic_policy(&self) -> Option<ProofpackWriterTempAtomicPolicy> {
+        self.temp_atomic_policy
+    }
+
+    pub fn planned_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.planned_side_effects
+    }
+
+    pub fn failure_visibility(&self) -> &[ProofpackWriterFileIoFailureVisibility] {
+        &self.failure_visibility
+    }
+
+    pub fn blockers(&self) -> &[ProofpackWriterPreflightIntegrationBlocker] {
+        &self.blockers
+    }
+
+    pub fn diagnostics(&self) -> &[ProofpackWriterFileIoDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn status(&self) -> ProofpackWriterPreflightIntegrationStatus {
+        if self.is_not_selected() {
+            ProofpackWriterPreflightIntegrationStatus::NotSelected
+        } else if self.blockers.is_empty() {
+            ProofpackWriterPreflightIntegrationStatus::Ready
+        } else {
+            ProofpackWriterPreflightIntegrationStatus::Blocked
+        }
+    }
+
+    pub fn is_writer_ready(&self) -> bool {
+        self.status() == ProofpackWriterPreflightIntegrationStatus::Ready
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status() == ProofpackWriterPreflightIntegrationStatus::Blocked
+    }
+
+    pub fn is_not_selected(&self) -> bool {
+        !self.writer_selected
+    }
+
+    pub fn has_blockers(&self) -> bool {
+        !self.blockers.is_empty()
+    }
+
+    pub fn has_blocker(&self, blocker: ProofpackWriterPreflightIntegrationBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn refs_are_separated(&self) -> bool {
+        writer_preflight_integration_refs_are_separated(
+            self.storage_root_ref.as_ref(),
+            self.target_artifact_ref.as_ref(),
+            self.target_path_ref.as_ref(),
+        )
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        ProofpackWriterOperationKind::PlannedOnly
+    }
+
+    pub fn operation_outcome(&self) -> ProofpackWriterOperationOutcome {
+        if self.is_blocked() {
+            ProofpackWriterOperationOutcome::PreflightFailed
+        } else {
+            ProofpackWriterOperationOutcome::PlannedOnly
+        }
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterPreflightIntegrationModelBoundary {
+        proofpack_writer_preflight_integration_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_punk_proofs(&self) -> bool {
+        self.boundary().writes_punk_proofs
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary().persists_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn storage_root_ref_is_authority(&self) -> bool {
+        self.boundary().storage_root_ref_is_authority
+    }
+
+    pub fn executor_claims_are_proof(&self) -> bool {
+        self.boundary().executor_claims_are_proof
+    }
+}
+
+fn writer_integration_target_artifact_ref(
+    target_artifact_ref_policy: Option<&ProofpackWriterTargetArtifactRefPolicyModel>,
+    preflight_plan: Option<&ProofpackWriterPreflightPlan>,
+    file_io_plan: Option<&ProofpackWriterFileIoPlan>,
+    target_path_policy: Option<&ProofpackWriterTargetPathPolicyModel>,
+) -> Option<ProofpackWriterTargetRef> {
+    target_artifact_ref_policy
+        .and_then(ProofpackWriterTargetRef::from_target_artifact_ref_policy_model)
+        .or_else(|| preflight_plan.map(|plan| plan.target_ref().clone()))
+        .or_else(|| file_io_plan.map(|plan| plan.target_artifact_ref().clone()))
+        .or_else(|| target_path_policy.map(|policy| policy.target_artifact_ref().clone()))
+}
+
+fn writer_preflight_integration_blockers(
+    proofpack: &Proofpack,
+    canonical_artifact: Option<&ProofpackWriterCanonicalArtifactModel>,
+    target_artifact_ref_policy: Option<&ProofpackWriterTargetArtifactRefPolicyModel>,
+    preflight_plan: Option<&ProofpackWriterPreflightPlan>,
+    file_io_plan: Option<&ProofpackWriterFileIoPlan>,
+    target_path_policy: Option<&ProofpackWriterTargetPathPolicyModel>,
+    target_artifact_ref: &Option<ProofpackWriterTargetRef>,
+    storage_root_ref: Option<&ProofpackWriterStorageRootRef>,
+    target_path_ref: Option<&ProofpackWriterTargetPathRef>,
+    boundary_notes: &[ProofBoundaryNote],
+) -> Vec<ProofpackWriterPreflightIntegrationBlocker> {
+    let mut blockers = Vec::new();
+
+    match canonical_artifact {
+        Some(canonical) => {
+            if canonical.proofpack_id() != proofpack.id() {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::CanonicalArtifactProofpackMismatch,
+                );
+            }
+            if canonical.manifest_self_digest() != &compute_proofpack_manifest_digest(proofpack)
+                || !canonical.manifest_self_digest_covers_canonical_body()
+            {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::CanonicalArtifactDigestMismatch,
+                );
+            }
+        }
+        None => {
+            blockers.push(ProofpackWriterPreflightIntegrationBlocker::MissingCanonicalArtifactModel)
+        }
+    }
+
+    match target_artifact_ref_policy {
+        Some(policy) => {
+            if policy.is_rejected() {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::RejectedTargetArtifactRefPolicy,
+                );
+            }
+            if policy.logical_ref().is_none() {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::MissingLogicalTargetArtifactRef,
+                );
+            }
+        }
+        None => blockers
+            .push(ProofpackWriterPreflightIntegrationBlocker::MissingTargetArtifactRefPolicy),
+    }
+
+    match target_artifact_ref {
+        Some(target_ref) if !target_ref.is_aligned_target_artifact_ref() => {
+            blockers.push(ProofpackWriterPreflightIntegrationBlocker::TargetArtifactRefNotLogical)
+        }
+        None => blockers
+            .push(ProofpackWriterPreflightIntegrationBlocker::MissingLogicalTargetArtifactRef),
+        Some(_) => {}
+    }
+
+    if writer_preflight_integration_target_refs_mismatch(
+        target_artifact_ref_policy,
+        preflight_plan,
+        file_io_plan,
+        target_path_policy,
+    ) {
+        blockers.push(ProofpackWriterPreflightIntegrationBlocker::TargetArtifactRefMismatch);
+    }
+
+    match preflight_plan {
+        Some(plan) => {
+            if plan.has_missing_preconditions() {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::PreflightPlanMissingPreconditions,
+                );
+            }
+            if plan.proofpack_id() != proofpack.id() {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::CanonicalArtifactProofpackMismatch,
+                );
+            }
+        }
+        None => blockers.push(ProofpackWriterPreflightIntegrationBlocker::MissingPreflightPlan),
+    }
+
+    match file_io_plan {
+        Some(plan) => {
+            if plan.has_file_io_blockers() {
+                blockers.push(ProofpackWriterPreflightIntegrationBlocker::FileIoPlanBlocked);
+            }
+            if plan.proofpack_id() != proofpack.id() {
+                blockers.push(
+                    ProofpackWriterPreflightIntegrationBlocker::CanonicalArtifactProofpackMismatch,
+                );
+            }
+        }
+        None => blockers.push(ProofpackWriterPreflightIntegrationBlocker::MissingFileIoPlan),
+    }
+
+    match target_path_policy {
+        Some(policy) => {
+            if policy.is_rejected() {
+                blockers.push(ProofpackWriterPreflightIntegrationBlocker::RejectedTargetPathPolicy);
+            }
+        }
+        None => blockers.push(ProofpackWriterPreflightIntegrationBlocker::MissingTargetPathPolicy),
+    }
+
+    if writer_preflight_integration_target_path_policy_mismatch(file_io_plan, target_path_policy) {
+        blockers.push(ProofpackWriterPreflightIntegrationBlocker::TargetPathPolicyMismatch);
+    }
+
+    if !writer_preflight_integration_refs_are_separated(
+        storage_root_ref,
+        target_artifact_ref.as_ref(),
+        target_path_ref,
+    ) {
+        blockers.push(ProofpackWriterPreflightIntegrationBlocker::RefsNotSeparated);
+    }
+
+    if boundary_notes.is_empty() {
+        blockers.push(ProofpackWriterPreflightIntegrationBlocker::MissingBoundaryNotes);
+    }
+
+    blockers
+}
+
+fn writer_preflight_integration_target_refs_mismatch(
+    target_artifact_ref_policy: Option<&ProofpackWriterTargetArtifactRefPolicyModel>,
+    preflight_plan: Option<&ProofpackWriterPreflightPlan>,
+    file_io_plan: Option<&ProofpackWriterFileIoPlan>,
+    target_path_policy: Option<&ProofpackWriterTargetPathPolicyModel>,
+) -> bool {
+    let expected = target_artifact_ref_policy
+        .and_then(ProofpackWriterTargetRef::from_target_artifact_ref_policy_model);
+
+    let Some(expected) = expected else {
+        return false;
+    };
+
+    preflight_plan
+        .map(|plan| plan.target_ref() != &expected)
+        .unwrap_or(false)
+        || file_io_plan
+            .map(|plan| plan.target_artifact_ref() != &expected)
+            .unwrap_or(false)
+        || target_path_policy
+            .map(|policy| policy.target_artifact_ref() != &expected)
+            .unwrap_or(false)
+}
+
+fn writer_preflight_integration_target_path_policy_mismatch(
+    file_io_plan: Option<&ProofpackWriterFileIoPlan>,
+    target_path_policy: Option<&ProofpackWriterTargetPathPolicyModel>,
+) -> bool {
+    match (file_io_plan, target_path_policy) {
+        (Some(plan), Some(policy)) => {
+            plan.storage_root_ref() != policy.storage_root_ref()
+                || plan.target_artifact_ref() != policy.target_artifact_ref()
+                || plan.target_path_ref() != policy.target_path_ref()
+        }
+        _ => false,
+    }
+}
+
+fn writer_preflight_integration_refs_are_separated(
+    storage_root_ref: Option<&ProofpackWriterStorageRootRef>,
+    target_artifact_ref: Option<&ProofpackWriterTargetRef>,
+    target_path_ref: Option<&ProofpackWriterTargetPathRef>,
+) -> bool {
+    match (storage_root_ref, target_artifact_ref, target_path_ref) {
+        (Some(storage_root_ref), Some(target_artifact_ref), Some(target_path_ref)) => {
+            target_artifact_ref.is_aligned_target_artifact_ref()
+                && storage_root_ref.as_str() != target_artifact_ref.as_str()
+                && storage_root_ref.as_str() != target_path_ref.as_str()
+                && target_artifact_ref.as_str() != target_path_ref.as_str()
+        }
+        (None, Some(target_artifact_ref), None) => {
+            target_artifact_ref.is_aligned_target_artifact_ref()
+        }
+        _ => false,
+    }
+}
+
+fn writer_preflight_integration_boundary_notes(
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    if boundary_notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer preflight integration model is evidence-only; missing boundary notes remain visible blockers when writer behavior is selected.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterPreflightIntegrationModelBoundary {
+    pub models_preflight_integration: bool,
+    pub composes_explicit_model_inputs: bool,
+    pub keeps_storage_root_target_artifact_and_path_separate: bool,
+    pub blockers_fail_closed: bool,
+    pub statuses_are_evidence_only: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_punk_proofs: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub uses_service_mirror_as_authority: bool,
+    pub executor_claims_are_proof: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+    pub target_path_is_authority: bool,
+    pub storage_root_ref_is_authority: bool,
+}
+
+pub const fn proofpack_writer_preflight_integration_model_boundary(
+) -> ProofpackWriterPreflightIntegrationModelBoundary {
+    ProofpackWriterPreflightIntegrationModelBoundary {
+        models_preflight_integration: true,
+        composes_explicit_model_inputs: true,
+        keeps_storage_root_target_artifact_and_path_separate: true,
+        blockers_fail_closed: true,
+        statuses_are_evidence_only: true,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_punk_proofs: false,
+        writes_writer_operation_evidence: false,
+        persists_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        uses_indexes_or_latest_as_authority: false,
+        uses_service_mirror_as_authority: false,
+        executor_claims_are_proof: false,
+        evidence_only: true,
+        setup_neutral: true,
+        target_path_is_authority: false,
+        storage_root_ref_is_authority: false,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -6518,6 +7167,276 @@ mod tests {
         assert!(!model.storage_root_ref_is_authority());
         assert!(!model.derives_from_current_working_directory());
         assert!(!model.uses_indexes_or_latest_as_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_preflight_integration_model_ready_composes_explicit_inputs() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(
+            &proofpack,
+            vec![
+                ProofBoundaryNote::new("Canonical artifact model is explicit preflight input.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![ProofBoundaryNote::new(
+                    "Target artifact ref policy is explicit preflight input.",
+                )
+                .expect("boundary note should be valid")],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite],
+            vec![
+                ProofBoundaryNote::new("Preflight plan is explicit and side-effect-free.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let file_io_plan = ProofpackWriterFileIoPlan::new(
+            &preflight_plan,
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("future/.punk/proofs/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetMatching,
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ProofpackWriterFileIoFailureVisibility::AtomicMoveFailed,
+                ProofpackWriterFileIoFailureVisibility::CleanupFailed,
+            ],
+            vec![ProofBoundaryNote::new(
+                "File IO plan is explicit and does not touch the filesystem.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let target_path_policy = ProofpackWriterTargetPathPolicyModel::from_plan(
+            &file_io_plan,
+            vec![
+                ProofBoundaryNote::new("Target path policy classifies explicit refs only.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+
+        let integration = ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![
+                ProofBoundaryNote::new("Integrated preflight is evidence-only and writer-ready.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+
+        assert_eq!(
+            integration.schema_version(),
+            PROOFPACK_WRITER_PREFLIGHT_INTEGRATION_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            integration.status(),
+            ProofpackWriterPreflightIntegrationStatus::Ready
+        );
+        assert!(integration.writer_selected());
+        assert!(integration.is_writer_ready());
+        assert!(!integration.has_blockers());
+        assert_eq!(integration.proofpack_id(), proofpack.id());
+        assert_eq!(
+            integration.canonical_layout(),
+            Some(ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson)
+        );
+        assert_eq!(
+            integration.manifest_self_digest(),
+            Some(canonical.manifest_self_digest())
+        );
+        assert_eq!(
+            integration.target_artifact_ref(),
+            Some(file_io_plan.target_artifact_ref())
+        );
+        assert_eq!(
+            integration.storage_root_ref(),
+            Some(file_io_plan.storage_root_ref())
+        );
+        assert_eq!(
+            integration.target_path_ref(),
+            Some(file_io_plan.target_path_ref())
+        );
+        assert_eq!(
+            integration.target_path_policy_status(),
+            Some(ProofpackWriterTargetPathPolicyStatus::Accepted)
+        );
+        assert_eq!(
+            integration.write_policy(),
+            Some(ProofpackWriterWritePolicy::IdempotentIfMatching)
+        );
+        assert_eq!(
+            integration.idempotency_basis(),
+            Some(ProofpackWriterIdempotencyBasis::ManifestSelfDigest)
+        );
+        assert_eq!(
+            integration.temp_atomic_policy(),
+            Some(ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp)
+        );
+        assert!(integration
+            .planned_side_effects()
+            .contains(&ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite));
+        assert!(integration
+            .failure_visibility()
+            .contains(&ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent));
+        assert_eq!(integration.diagnostics().len(), 0);
+        assert!(integration.refs_are_separated());
+        assert_eq!(
+            integration.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+    }
+
+    #[test]
+    fn proofpack_writer_preflight_integration_model_blocks_missing_or_rejected_inputs() {
+        let proofpack = sample_proofpack_without_digests();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![],
+            vec![],
+        );
+        let file_io_plan = ProofpackWriterFileIoPlan::new(
+            &preflight_plan,
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("/tmp/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![],
+            vec![],
+        );
+        let target_path_policy =
+            ProofpackWriterTargetPathPolicyModel::from_plan(&file_io_plan, vec![]);
+
+        let integration = ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![],
+        );
+
+        assert_eq!(
+            integration.status(),
+            ProofpackWriterPreflightIntegrationStatus::Blocked
+        );
+        assert!(integration.writer_selected());
+        assert!(integration.is_blocked());
+        assert!(integration.has_blockers());
+        assert!(integration.has_blocker(
+            ProofpackWriterPreflightIntegrationBlocker::PreflightPlanMissingPreconditions
+        ));
+        assert!(
+            integration.has_blocker(ProofpackWriterPreflightIntegrationBlocker::FileIoPlanBlocked)
+        );
+        assert!(integration
+            .has_blocker(ProofpackWriterPreflightIntegrationBlocker::RejectedTargetPathPolicy));
+        assert!(integration
+            .has_blocker(ProofpackWriterPreflightIntegrationBlocker::MissingBoundaryNotes));
+        assert_eq!(
+            integration.operation_outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(integration.diagnostics().iter().any(|diagnostic| {
+            diagnostic.reason() == ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot
+        }));
+        assert!(!integration.target_path_is_authority());
+        assert!(!integration.executor_claims_are_proof());
+    }
+
+    #[test]
+    fn proofpack_writer_preflight_integration_model_not_selected_is_evidence_only() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let integration = ProofpackWriterPreflightIntegrationModel::not_selected(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            vec![
+                ProofBoundaryNote::new("Writer/storage behavior is intentionally not selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let boundary = integration.boundary();
+
+        assert_eq!(
+            ProofpackWriterPreflightIntegrationStatus::Ready.as_str(),
+            "ready"
+        );
+        assert_eq!(
+            ProofpackWriterPreflightIntegrationStatus::Blocked.as_str(),
+            "blocked"
+        );
+        assert_eq!(
+            ProofpackWriterPreflightIntegrationStatus::NotSelected.as_str(),
+            "not_selected"
+        );
+        assert_eq!(
+            ProofpackWriterPreflightIntegrationBlocker::MissingFileIoPlan.as_str(),
+            "missing_file_io_plan"
+        );
+        assert_eq!(
+            integration.status(),
+            ProofpackWriterPreflightIntegrationStatus::NotSelected
+        );
+        assert!(!integration.writer_selected());
+        assert!(integration.is_not_selected());
+        assert!(!integration.has_blockers());
+        assert_eq!(
+            integration.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert!(integration.is_evidence_only());
+        assert!(boundary.models_preflight_integration);
+        assert!(boundary.composes_explicit_model_inputs);
+        assert!(boundary.keeps_storage_root_target_artifact_and_path_separate);
+        assert!(boundary.blockers_fail_closed);
+        assert!(boundary.statuses_are_evidence_only);
+        assert!(boundary.setup_neutral);
+        assert!(!integration.reads_filesystem());
+        assert!(!integration.touches_filesystem());
+        assert!(!integration.writes_proofpack());
+        assert!(!integration.writes_punk_proofs());
+        assert!(!integration.writes_writer_operation_evidence());
+        assert!(!integration.persists_operation_evidence());
+        assert!(!integration.writes_indexes_or_latest());
+        assert!(!integration.requires_runtime_storage());
+        assert!(!integration.writes_cli_output());
+        assert!(!integration.writes_schema_files());
+        assert!(!integration.verifies_referenced_artifacts());
+        assert!(!integration.creates_acceptance_claim());
+        assert!(!integration.can_claim_acceptance_by_itself());
+        assert!(!integration.storage_root_ref_is_authority());
     }
 
     #[test]
