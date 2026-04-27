@@ -1,7 +1,7 @@
 ---
 id: goal_add_proofpack_writer_active_behavior_model_v0_1
 title: "Add proofpack writer active behavior model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-27
 updated_at: 2026-04-27
 selected_at: 2026-04-27
-started_at: null
-completed_at: null
+started_at: 2026-04-27
+completed_at: 2026-04-27
 blocked_by: []
 scope:
   include:
@@ -51,7 +51,8 @@ knowledge_refs:
   - "work/reports/2026-04-27-proofpack-writer-active-behavior-boundary-v0-1.md"
   - "work/reports/2026-04-27-fifty-third-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-27-proofpack-writer-active-behavior-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -109,3 +110,14 @@ Do not persist operation evidence.
 Do not write indexes or `latest` pointers.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed the side-effect-free proofpack writer active behavior model v0.1.
+
+`punk-proof` now exposes `ProofpackWriterActiveBehaviorModel` with explicit preflight status, storage root ref, logical target artifact ref, target path ref, selected/attempted/completed/failed side effects, outcome mapping, operation evidence projection, and non-authoritative boundary flags.
+
+`punk-eval` smoke coverage now checks planned-only, preflight-failed, idempotent, conflict, write-failed, partial-write, index/latest failure, operation-evidence persistence failure visibility, and no-side-effect authority boundaries.
+
+No runtime/storage/schema/CLI/`.punk`, active proofpack writer, filesystem read/write, proofpack referenced-ref verification integration, operation-evidence persistence, gate decision, acceptance claim, adapter, automation, provider/model runner, or `punk init` was added.

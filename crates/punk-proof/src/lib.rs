@@ -26,6 +26,8 @@ pub const PROOFPACK_WRITER_TARGET_ARTIFACT_REF_POLICY_MODEL_SCHEMA_VERSION: &str
     "punk.proofpack.writer_target_artifact_ref_policy_model.v0.1";
 pub const PROOFPACK_WRITER_PREFLIGHT_INTEGRATION_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_preflight_integration_model.v0.1";
+pub const PROOFPACK_WRITER_ACTIVE_BEHAVIOR_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_active_behavior_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
@@ -4925,6 +4927,600 @@ pub const fn proofpack_writer_preflight_integration_model_boundary(
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterActiveBehaviorModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    preflight_status: ProofpackWriterPreflightIntegrationStatus,
+    target_artifact_ref: Option<ProofpackWriterTargetRef>,
+    storage_root_ref: Option<ProofpackWriterStorageRootRef>,
+    target_path_ref: Option<ProofpackWriterTargetPathRef>,
+    selected_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    attempted_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    completed_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    failed_side_effects: Vec<ProofpackWriterPlannedSideEffect>,
+    operation_evidence_persistence_status: ProofpackWriterSideEffectStatus,
+    outcome: ProofpackWriterOperationOutcome,
+    operation_kind: ProofpackWriterOperationKind,
+    canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+    index_status: ProofpackWriterSideEffectStatus,
+    latest_pointer_status: ProofpackWriterSideEffectStatus,
+    cleanup_status: ProofpackWriterSideEffectStatus,
+    observation: Option<ProofpackWriterFileIoObservation>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterActiveBehaviorModel {
+    pub fn from_preflight_and_observation(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        observation: Option<ProofpackWriterFileIoObservation>,
+        operation_evidence_persistence_status: ProofpackWriterSideEffectStatus,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let outcome = writer_active_behavior_outcome(preflight, observation.as_ref());
+        let canonical_artifact_status =
+            writer_active_behavior_canonical_artifact_status(outcome, observation.as_ref());
+        let index_status = writer_active_behavior_side_effect_status(
+            preflight,
+            observation.as_ref(),
+            ProofpackWriterPlannedSideEffect::IndexUpdate,
+        );
+        let latest_pointer_status = writer_active_behavior_side_effect_status(
+            preflight,
+            observation.as_ref(),
+            ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+        );
+        let cleanup_status = observation
+            .as_ref()
+            .map(ProofpackWriterFileIoObservation::cleanup_status)
+            .unwrap_or(ProofpackWriterSideEffectStatus::NotAttempted);
+        let operation_kind = writer_file_io_operation_kind(outcome);
+        let selected_side_effects = preflight.planned_side_effects().to_vec();
+        let attempted_side_effects = writer_active_behavior_side_effects_by_status(
+            &selected_side_effects,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterSideEffectStatus::Completed,
+        );
+        let completed_side_effects = writer_active_behavior_side_effects_by_status(
+            &selected_side_effects,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            ProofpackWriterSideEffectStatus::Completed,
+            ProofpackWriterSideEffectStatus::Completed,
+        );
+        let failed_side_effects = writer_active_behavior_side_effects_by_status(
+            &selected_side_effects,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            ProofpackWriterSideEffectStatus::Failed,
+            ProofpackWriterSideEffectStatus::Failed,
+        );
+        let boundary_notes =
+            writer_active_behavior_boundary_notes(preflight, &observation, boundary_notes);
+
+        Self {
+            proofpack_id: preflight.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_ACTIVE_BEHAVIOR_MODEL_SCHEMA_VERSION,
+            preflight_status: preflight.status(),
+            target_artifact_ref: preflight.target_artifact_ref().cloned(),
+            storage_root_ref: preflight.storage_root_ref().cloned(),
+            target_path_ref: preflight.target_path_ref().cloned(),
+            selected_side_effects,
+            attempted_side_effects,
+            completed_side_effects,
+            failed_side_effects,
+            operation_evidence_persistence_status,
+            outcome,
+            operation_kind,
+            canonical_artifact_status,
+            index_status,
+            latest_pointer_status,
+            cleanup_status,
+            observation,
+            boundary_notes,
+        }
+    }
+
+    pub fn planned_only(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::from_preflight_and_observation(
+            preflight,
+            None,
+            ProofpackWriterSideEffectStatus::NotSelected,
+            boundary_notes,
+        )
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn preflight_status(&self) -> ProofpackWriterPreflightIntegrationStatus {
+        self.preflight_status
+    }
+
+    pub fn target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.target_artifact_ref.as_ref()
+    }
+
+    pub fn storage_root_ref(&self) -> Option<&ProofpackWriterStorageRootRef> {
+        self.storage_root_ref.as_ref()
+    }
+
+    pub fn target_path_ref(&self) -> Option<&ProofpackWriterTargetPathRef> {
+        self.target_path_ref.as_ref()
+    }
+
+    pub fn selected_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.selected_side_effects
+    }
+
+    pub fn attempted_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.attempted_side_effects
+    }
+
+    pub fn completed_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.completed_side_effects
+    }
+
+    pub fn failed_side_effects(&self) -> &[ProofpackWriterPlannedSideEffect] {
+        &self.failed_side_effects
+    }
+
+    pub fn operation_evidence_persistence_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.operation_evidence_persistence_status
+    }
+
+    pub fn outcome(&self) -> ProofpackWriterOperationOutcome {
+        self.outcome
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        self.operation_kind
+    }
+
+    pub fn canonical_artifact_status(&self) -> ProofpackWriterCanonicalArtifactStatus {
+        self.canonical_artifact_status
+    }
+
+    pub fn index_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.index_status
+    }
+
+    pub fn latest_pointer_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.latest_pointer_status
+    }
+
+    pub fn cleanup_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.cleanup_status
+    }
+
+    pub fn observation(&self) -> Option<&ProofpackWriterFileIoObservation> {
+        self.observation.as_ref()
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn to_operation_evidence(
+        &self,
+        operation_id: ProofpackWriterOperationId,
+        attempted_at: ProofpackWriterAttemptedAt,
+    ) -> Result<ProofpackWriterOperationEvidence, ProofpackError> {
+        let Some(target_ref) = self.target_artifact_ref.clone() else {
+            return Err(ProofpackError::EmptyWriterTargetRef);
+        };
+
+        ProofpackWriterOperationEvidence::new(
+            operation_id,
+            self.operation_kind,
+            self.proofpack_id.clone(),
+            attempted_at,
+            target_ref,
+            self.outcome,
+            self.canonical_artifact_status,
+            self.index_status,
+            self.latest_pointer_status,
+            self.boundary_notes.clone(),
+        )
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterActiveBehaviorModelBoundary {
+        proofpack_writer_active_behavior_model_boundary()
+    }
+
+    pub fn is_ready_planned(&self) -> bool {
+        self.preflight_status == ProofpackWriterPreflightIntegrationStatus::Ready
+            && self.outcome == ProofpackWriterOperationOutcome::PlannedOnly
+    }
+
+    pub fn preflight_failed(&self) -> bool {
+        self.outcome == ProofpackWriterOperationOutcome::PreflightFailed
+    }
+
+    pub fn canonical_artifact_available(&self) -> bool {
+        self.canonical_artifact_status.is_available()
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.canonical_artifact_status.is_conflict()
+    }
+
+    pub fn has_partial_or_cleanup_issue(&self) -> bool {
+        self.canonical_artifact_status.is_partial() || self.cleanup_status.is_failed()
+    }
+
+    pub fn has_index_or_latest_pointer_failure(&self) -> bool {
+        self.index_status.is_failed() || self.latest_pointer_status.is_failed()
+    }
+
+    pub fn has_operation_evidence_persistence_failure(&self) -> bool {
+        self.operation_evidence_persistence_status.is_failed()
+    }
+
+    pub fn selected_side_effect_was_attempted(
+        &self,
+        side_effect: ProofpackWriterPlannedSideEffect,
+    ) -> bool {
+        self.attempted_side_effects.contains(&side_effect)
+    }
+
+    pub fn selected_side_effect_completed(
+        &self,
+        side_effect: ProofpackWriterPlannedSideEffect,
+    ) -> bool {
+        self.completed_side_effects.contains(&side_effect)
+    }
+
+    pub fn selected_side_effect_failed(
+        &self,
+        side_effect: ProofpackWriterPlannedSideEffect,
+    ) -> bool {
+        self.failed_side_effects.contains(&side_effect)
+    }
+
+    pub fn refs_are_separated(&self) -> bool {
+        writer_preflight_integration_refs_are_separated(
+            self.storage_root_ref.as_ref(),
+            self.target_artifact_ref.as_ref(),
+            self.target_path_ref.as_ref(),
+        )
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_punk_proofs(&self) -> bool {
+        self.boundary().writes_punk_proofs
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary().persists_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn storage_root_ref_is_authority(&self) -> bool {
+        self.boundary().storage_root_ref_is_authority
+    }
+
+    pub fn index_latest_are_canonical(&self) -> bool {
+        self.boundary().index_latest_are_canonical
+    }
+
+    pub fn executor_claims_are_proof(&self) -> bool {
+        self.boundary().executor_claims_are_proof
+    }
+}
+
+fn writer_active_behavior_outcome(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    observation: Option<&ProofpackWriterFileIoObservation>,
+) -> ProofpackWriterOperationOutcome {
+    if !preflight.is_writer_ready() {
+        return ProofpackWriterOperationOutcome::PreflightFailed;
+    }
+
+    let Some(observation) = observation else {
+        return ProofpackWriterOperationOutcome::PlannedOnly;
+    };
+
+    if observation.has_partial_or_ambiguous_state() {
+        return ProofpackWriterOperationOutcome::PartialWriteDetected;
+    }
+
+    if observation.abort_state() == ProofpackWriterAbortState::AbortedBeforeWrite {
+        return ProofpackWriterOperationOutcome::Aborted;
+    }
+
+    if observation.has_conflict() {
+        return ProofpackWriterOperationOutcome::ConflictExistingDifferent;
+    }
+
+    if observation.has_idempotent_match() {
+        return ProofpackWriterOperationOutcome::AlreadyExistsMatching;
+    }
+
+    if observation.write_result().is_failed() {
+        return ProofpackWriterOperationOutcome::WriteFailed;
+    }
+
+    if observation.write_result().is_written()
+        && observation.index_status().is_failed()
+        && preflight
+            .planned_side_effects()
+            .contains(&ProofpackWriterPlannedSideEffect::IndexUpdate)
+    {
+        return ProofpackWriterOperationOutcome::IndexUpdateFailed;
+    }
+
+    if observation.write_result().is_written()
+        && observation.latest_pointer_status().is_failed()
+        && preflight
+            .planned_side_effects()
+            .contains(&ProofpackWriterPlannedSideEffect::LatestPointerUpdate)
+    {
+        return ProofpackWriterOperationOutcome::LatestPointerUpdateFailed;
+    }
+
+    if observation.write_result().is_written() {
+        return ProofpackWriterOperationOutcome::Written;
+    }
+
+    ProofpackWriterOperationOutcome::PlannedOnly
+}
+
+fn writer_active_behavior_canonical_artifact_status(
+    outcome: ProofpackWriterOperationOutcome,
+    observation: Option<&ProofpackWriterFileIoObservation>,
+) -> ProofpackWriterCanonicalArtifactStatus {
+    match observation {
+        Some(observation) => writer_file_io_canonical_artifact_status(outcome, observation),
+        None => ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+    }
+}
+
+fn writer_active_behavior_side_effect_status(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    observation: Option<&ProofpackWriterFileIoObservation>,
+    side_effect: ProofpackWriterPlannedSideEffect,
+) -> ProofpackWriterSideEffectStatus {
+    if !preflight.planned_side_effects().contains(&side_effect) {
+        return ProofpackWriterSideEffectStatus::NotSelected;
+    }
+
+    if !preflight.is_writer_ready() {
+        return ProofpackWriterSideEffectStatus::NotAttempted;
+    }
+
+    let Some(observation) = observation else {
+        return ProofpackWriterSideEffectStatus::NotAttempted;
+    };
+
+    let observed_status = match side_effect {
+        ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite => {
+            match observation.write_result() {
+                ProofpackWriterObservedWriteResult::Written => {
+                    ProofpackWriterSideEffectStatus::Completed
+                }
+                ProofpackWriterObservedWriteResult::WriteFailed
+                | ProofpackWriterObservedWriteResult::PartialWriteDetected => {
+                    ProofpackWriterSideEffectStatus::Failed
+                }
+                ProofpackWriterObservedWriteResult::NotAttempted => {
+                    ProofpackWriterSideEffectStatus::NotAttempted
+                }
+            }
+        }
+        ProofpackWriterPlannedSideEffect::IndexUpdate => observation.index_status(),
+        ProofpackWriterPlannedSideEffect::LatestPointerUpdate => {
+            observation.latest_pointer_status()
+        }
+    };
+
+    if observed_status == ProofpackWriterSideEffectStatus::NotSelected {
+        ProofpackWriterSideEffectStatus::NotAttempted
+    } else {
+        observed_status
+    }
+}
+
+fn writer_active_behavior_side_effects_by_status(
+    selected_side_effects: &[ProofpackWriterPlannedSideEffect],
+    canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+    index_status: ProofpackWriterSideEffectStatus,
+    latest_pointer_status: ProofpackWriterSideEffectStatus,
+    primary_status: ProofpackWriterSideEffectStatus,
+    secondary_status: ProofpackWriterSideEffectStatus,
+) -> Vec<ProofpackWriterPlannedSideEffect> {
+    selected_side_effects
+        .iter()
+        .copied()
+        .filter(|side_effect| match side_effect {
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite => {
+                writer_active_behavior_canonical_side_effect_status(canonical_artifact_status)
+                    == primary_status
+                    || writer_active_behavior_canonical_side_effect_status(
+                        canonical_artifact_status,
+                    ) == secondary_status
+            }
+            ProofpackWriterPlannedSideEffect::IndexUpdate => {
+                index_status == primary_status || index_status == secondary_status
+            }
+            ProofpackWriterPlannedSideEffect::LatestPointerUpdate => {
+                latest_pointer_status == primary_status || latest_pointer_status == secondary_status
+            }
+        })
+        .collect()
+}
+
+fn writer_active_behavior_canonical_side_effect_status(
+    status: ProofpackWriterCanonicalArtifactStatus,
+) -> ProofpackWriterSideEffectStatus {
+    match status {
+        ProofpackWriterCanonicalArtifactStatus::Written => {
+            ProofpackWriterSideEffectStatus::Completed
+        }
+        ProofpackWriterCanonicalArtifactStatus::WriteFailed
+        | ProofpackWriterCanonicalArtifactStatus::PartialWriteDetected => {
+            ProofpackWriterSideEffectStatus::Failed
+        }
+        ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        | ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching
+        | ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent => {
+            ProofpackWriterSideEffectStatus::NotAttempted
+        }
+    }
+}
+
+fn writer_active_behavior_boundary_notes(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    observation: &Option<ProofpackWriterFileIoObservation>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    let mut notes = preflight.boundary_notes().to_vec();
+    if let Some(observation) = observation {
+        notes.extend(observation.boundary_notes().iter().cloned());
+    }
+    notes.extend(boundary_notes);
+
+    if notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer active behavior model is evidence-only; missing boundary notes remain model data and do not authorize side effects.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterActiveBehaviorModelBoundary {
+    pub models_active_writer_behavior: bool,
+    pub requires_ready_preflight: bool,
+    pub accepts_explicit_observations: bool,
+    pub models_selected_attempted_completed_failed_side_effects: bool,
+    pub keeps_storage_root_target_artifact_and_path_separate: bool,
+    pub failures_remain_visible: bool,
+    pub operation_evidence_is_non_authoritative: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_punk_proofs: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub uses_service_mirror_as_authority: bool,
+    pub executor_claims_are_proof: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+    pub target_path_is_authority: bool,
+    pub storage_root_ref_is_authority: bool,
+    pub index_latest_are_canonical: bool,
+}
+
+pub const fn proofpack_writer_active_behavior_model_boundary(
+) -> ProofpackWriterActiveBehaviorModelBoundary {
+    ProofpackWriterActiveBehaviorModelBoundary {
+        models_active_writer_behavior: true,
+        requires_ready_preflight: true,
+        accepts_explicit_observations: true,
+        models_selected_attempted_completed_failed_side_effects: true,
+        keeps_storage_root_target_artifact_and_path_separate: true,
+        failures_remain_visible: true,
+        operation_evidence_is_non_authoritative: true,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_punk_proofs: false,
+        writes_writer_operation_evidence: false,
+        persists_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        uses_indexes_or_latest_as_authority: false,
+        uses_service_mirror_as_authority: false,
+        executor_claims_are_proof: false,
+        evidence_only: true,
+        setup_neutral: true,
+        target_path_is_authority: false,
+        storage_root_ref_is_authority: false,
+        index_latest_are_canonical: false,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -5197,6 +5793,74 @@ mod tests {
                 "File IO plan is model-only and keeps runtime writes deferred.",
             )
             .expect("boundary note should be valid")],
+        )
+    }
+
+    fn sample_writer_preflight_integration_ready_model() -> ProofpackWriterPreflightIntegrationModel
+    {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(
+            &proofpack,
+            vec![
+                ProofBoundaryNote::new("Canonical artifact input is explicit.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![
+                    ProofBoundaryNote::new("Target artifact ref policy is explicit.")
+                        .expect("boundary note should be valid"),
+                ],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![
+                ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+                ProofpackWriterPlannedSideEffect::IndexUpdate,
+                ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+            ],
+            vec![
+                ProofBoundaryNote::new("Preflight plan is writer-ready evidence.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let file_io_plan = sample_writer_file_io_plan(
+            &preflight_plan,
+            vec![
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetMatching,
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ProofpackWriterFileIoFailureVisibility::AtomicMoveFailed,
+                ProofpackWriterFileIoFailureVisibility::CleanupFailed,
+                ProofpackWriterFileIoFailureVisibility::PartialCanonicalArtifactAmbiguous,
+                ProofpackWriterFileIoFailureVisibility::IndexUpdateFailed,
+                ProofpackWriterFileIoFailureVisibility::LatestPointerUpdateFailed,
+            ],
+            vec![
+                ProofBoundaryNote::new("File IO policy is explicit and side-effect-free.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let target_path_policy = ProofpackWriterTargetPathPolicyModel::from_plan(
+            &file_io_plan,
+            vec![ProofBoundaryNote::new("Target path policy is explicit.")
+                .expect("boundary note should be valid")],
+        );
+
+        ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![
+                ProofBoundaryNote::new("Integrated preflight is ready and evidence-only.")
+                    .expect("boundary note should be valid"),
+            ],
         )
     }
 
@@ -7437,6 +8101,378 @@ mod tests {
         assert!(!integration.creates_acceptance_claim());
         assert!(!integration.can_claim_acceptance_by_itself());
         assert!(!integration.storage_root_ref_is_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_active_behavior_model_ready_planned_requires_ready_preflight() {
+        let preflight = sample_writer_preflight_integration_ready_model();
+        let model = ProofpackWriterActiveBehaviorModel::planned_only(
+            &preflight,
+            vec![ProofBoundaryNote::new(
+                "Active behavior model is side-effect-free planning evidence.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let boundary = model.boundary();
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_ACTIVE_BEHAVIOR_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            model.preflight_status(),
+            ProofpackWriterPreflightIntegrationStatus::Ready
+        );
+        assert_eq!(
+            model.outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert!(model.is_ready_planned());
+        assert!(model.refs_are_separated());
+        assert_eq!(model.proofpack_id().as_str(), "proofpack_local_001");
+        assert!(model.target_artifact_ref().is_some());
+        assert!(model.storage_root_ref().is_some());
+        assert!(model.target_path_ref().is_some());
+        assert!(model
+            .selected_side_effects()
+            .contains(&ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite));
+        assert!(model.attempted_side_effects().is_empty());
+        assert!(model.completed_side_effects().is_empty());
+        assert!(model.failed_side_effects().is_empty());
+        assert_eq!(
+            model.operation_evidence_persistence_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert_eq!(
+            model.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert!(!model.canonical_artifact_available());
+
+        assert!(model.is_evidence_only());
+        assert!(boundary.models_active_writer_behavior);
+        assert!(boundary.requires_ready_preflight);
+        assert!(boundary.accepts_explicit_observations);
+        assert!(boundary.models_selected_attempted_completed_failed_side_effects);
+        assert!(boundary.keeps_storage_root_target_artifact_and_path_separate);
+        assert!(boundary.failures_remain_visible);
+        assert!(boundary.operation_evidence_is_non_authoritative);
+        assert!(boundary.setup_neutral);
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!boundary.canonicalizes_host_paths);
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_punk_proofs());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!model.persists_operation_evidence());
+        assert!(!model.writes_indexes_or_latest());
+        assert!(!boundary.writes_final_decision);
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.writes_schema_files());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!boundary.uses_indexes_or_latest_as_authority);
+        assert!(!boundary.uses_service_mirror_as_authority);
+        assert!(!model.executor_claims_are_proof());
+        assert!(!model.target_path_is_authority());
+        assert!(!model.storage_root_ref_is_authority());
+        assert!(!model.index_latest_are_canonical());
+        assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_active_behavior_model_fails_closed_before_ready_preflight() {
+        let proofpack = sample_proofpack_without_digests();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![],
+            vec![],
+        );
+        let file_io_plan = ProofpackWriterFileIoPlan::new(
+            &preflight_plan,
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("/tmp/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![],
+            vec![],
+        );
+        let target_path_policy =
+            ProofpackWriterTargetPathPolicyModel::from_plan(&file_io_plan, vec![]);
+        let blocked_preflight = ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![],
+        );
+        let blocked_model = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &blocked_preflight,
+            Some(
+                ProofpackWriterFileIoObservation::target_missing_write_completed(
+                    ProofpackWriterSideEffectStatus::Completed,
+                    ProofpackWriterSideEffectStatus::Completed,
+                    vec![ProofBoundaryNote::new(
+                        "Caller observation must not override blocked preflight.",
+                    )
+                    .expect("boundary note should be valid")],
+                ),
+            ),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![],
+        );
+        let ready_proofpack = sample_proofpack();
+        let not_selected = ProofpackWriterPreflightIntegrationModel::not_selected(
+            &ready_proofpack,
+            None,
+            None,
+            vec![ProofBoundaryNote::new("Writer behavior was not selected.")
+                .expect("boundary note should be valid")],
+        );
+        let not_selected_model = ProofpackWriterActiveBehaviorModel::planned_only(
+            &not_selected,
+            vec![
+                ProofBoundaryNote::new("No active writer behavior selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+
+        assert_eq!(
+            blocked_model.preflight_status(),
+            ProofpackWriterPreflightIntegrationStatus::Blocked
+        );
+        assert!(blocked_model.preflight_failed());
+        assert_eq!(
+            blocked_model.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert_eq!(
+            blocked_model.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted
+        );
+        assert!(blocked_model.attempted_side_effects().is_empty());
+        assert!(blocked_model.completed_side_effects().is_empty());
+        assert!(blocked_model.failed_side_effects().is_empty());
+        assert!(!blocked_model.canonical_artifact_available());
+        assert!(!blocked_model.writes_proofpack());
+        assert!(!blocked_model.touches_filesystem());
+
+        assert_eq!(
+            not_selected_model.preflight_status(),
+            ProofpackWriterPreflightIntegrationStatus::NotSelected
+        );
+        assert!(not_selected_model.preflight_failed());
+        assert_eq!(
+            not_selected_model.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(not_selected_model.selected_side_effects().is_empty());
+        assert!(not_selected_model.attempted_side_effects().is_empty());
+        assert!(!not_selected_model.writes_proofpack());
+    }
+
+    #[test]
+    fn proofpack_writer_active_behavior_model_maps_idempotency_conflict_and_failures() {
+        let preflight = sample_writer_preflight_integration_ready_model();
+        let idempotent = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(ProofpackWriterFileIoObservation::target_exists_matching(
+                vec![ProofBoundaryNote::new(
+                    "Existing canonical artifact matched planned identity.",
+                )
+                .expect("boundary note should be valid")],
+            )),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![ProofBoundaryNote::new("Idempotent match is evidence only.")
+                .expect("boundary note should be valid")],
+        );
+        let conflict = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(ProofpackWriterFileIoObservation::target_exists_different(
+                vec![
+                    ProofBoundaryNote::new("Existing canonical artifact differed.")
+                        .expect("boundary note should be valid"),
+                ],
+            )),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![],
+        );
+        let write_failed = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(ProofpackWriterFileIoObservation::write_failed(vec![
+                ProofBoundaryNote::new("Temp write failed before artifact availability.")
+                    .expect("boundary note should be valid"),
+            ])),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![],
+        );
+        let partial = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(ProofpackWriterFileIoObservation::partial_write_detected(
+                ProofpackWriterSideEffectStatus::Failed,
+                vec![
+                    ProofBoundaryNote::new("Partial artifact and cleanup failure visible.")
+                        .expect("boundary note should be valid"),
+                ],
+            )),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![],
+        );
+
+        assert_eq!(
+            idempotent.outcome(),
+            ProofpackWriterOperationOutcome::AlreadyExistsMatching
+        );
+        assert_eq!(
+            idempotent.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching
+        );
+        assert!(idempotent.canonical_artifact_available());
+        assert!(idempotent.attempted_side_effects().is_empty());
+        assert!(!idempotent.has_conflict());
+
+        assert_eq!(
+            conflict.outcome(),
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent
+        );
+        assert!(conflict.has_conflict());
+        assert!(!conflict.canonical_artifact_available());
+        assert!(conflict.attempted_side_effects().is_empty());
+
+        assert_eq!(
+            write_failed.outcome(),
+            ProofpackWriterOperationOutcome::WriteFailed
+        );
+        assert!(write_failed.selected_side_effect_was_attempted(
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite
+        ));
+        assert!(write_failed
+            .selected_side_effect_failed(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite));
+        assert!(!write_failed.canonical_artifact_available());
+
+        assert_eq!(
+            partial.outcome(),
+            ProofpackWriterOperationOutcome::PartialWriteDetected
+        );
+        assert!(partial.has_partial_or_cleanup_issue());
+        assert!(partial
+            .selected_side_effect_failed(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite));
+        assert_eq!(
+            partial.cleanup_status(),
+            ProofpackWriterSideEffectStatus::Failed
+        );
+        assert!(!partial.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_active_behavior_model_keeps_index_latest_and_evidence_persistence_visible()
+    {
+        let preflight = sample_writer_preflight_integration_ready_model();
+        let written = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(
+                ProofpackWriterFileIoObservation::target_missing_write_completed(
+                    ProofpackWriterSideEffectStatus::Completed,
+                    ProofpackWriterSideEffectStatus::Completed,
+                    vec![
+                        ProofBoundaryNote::new("Canonical artifact write completed.")
+                            .expect("boundary note should be valid"),
+                    ],
+                ),
+            ),
+            ProofpackWriterSideEffectStatus::Failed,
+            vec![ProofBoundaryNote::new(
+                "Operation evidence persistence failure remains visible and non-authoritative.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let index_failed = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(
+                ProofpackWriterFileIoObservation::index_failed_after_available(vec![
+                    ProofBoundaryNote::new(
+                        "Index update failed after canonical artifact availability.",
+                    )
+                    .expect("boundary note should be valid"),
+                ]),
+            ),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![],
+        );
+        let latest_failed = ProofpackWriterActiveBehaviorModel::from_preflight_and_observation(
+            &preflight,
+            Some(
+                ProofpackWriterFileIoObservation::latest_failed_after_available(vec![
+                    ProofBoundaryNote::new(
+                        "Latest pointer update failed after canonical artifact availability.",
+                    )
+                    .expect("boundary note should be valid"),
+                ]),
+            ),
+            ProofpackWriterSideEffectStatus::NotSelected,
+            vec![],
+        );
+        let evidence = written
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_active_behavior_written_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-27T06:40:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("active behavior model should map to operation evidence");
+
+        assert_eq!(written.outcome(), ProofpackWriterOperationOutcome::Written);
+        assert!(written.canonical_artifact_available());
+        assert!(written.selected_side_effect_completed(
+            ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite
+        ));
+        assert!(written.has_operation_evidence_persistence_failure());
+        assert!(!written.persists_operation_evidence());
+        assert_eq!(evidence.outcome(), ProofpackWriterOperationOutcome::Written);
+        assert!(!evidence.creates_acceptance_claim());
+
+        assert_eq!(
+            index_failed.outcome(),
+            ProofpackWriterOperationOutcome::IndexUpdateFailed
+        );
+        assert_eq!(
+            index_failed.index_status(),
+            ProofpackWriterSideEffectStatus::Failed
+        );
+        assert!(
+            index_failed.selected_side_effect_failed(ProofpackWriterPlannedSideEffect::IndexUpdate)
+        );
+        assert!(index_failed.has_index_or_latest_pointer_failure());
+        assert!(index_failed.canonical_artifact_available());
+        assert!(!index_failed.index_latest_are_canonical());
+
+        assert_eq!(
+            latest_failed.outcome(),
+            ProofpackWriterOperationOutcome::LatestPointerUpdateFailed
+        );
+        assert_eq!(
+            latest_failed.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::Failed
+        );
+        assert!(latest_failed
+            .selected_side_effect_failed(ProofpackWriterPlannedSideEffect::LatestPointerUpdate));
+        assert!(latest_failed.has_index_or_latest_pointer_failure());
+        assert!(latest_failed.canonical_artifact_available());
+        assert!(!latest_failed.index_latest_are_canonical());
     }
 
     #[test]
