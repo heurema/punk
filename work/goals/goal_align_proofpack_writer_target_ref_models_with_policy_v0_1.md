@@ -1,7 +1,7 @@
 ---
 id: goal_align_proofpack_writer_target_ref_models_with_policy_v0_1
 title: "Align proofpack writer target-ref models with target artifact policy v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-04-27
 updated_at: 2026-04-27
 selected_at: 2026-04-27
-started_at: null
-completed_at: null
+started_at: 2026-04-27
+completed_at: 2026-04-27
 blocked_by: []
 scope:
   include:
@@ -44,7 +44,8 @@ knowledge_refs:
   - "work/reports/2026-04-26-proofpack-writer-target-artifact-ref-policy-model-v0-1.md"
   - "work/reports/2026-04-27-forty-ninth-work-ledger-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-27-proofpack-writer-target-ref-model-policy-alignment-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -98,3 +99,14 @@ Do not implement proofpack referenced-ref verification integration.
 Do not write operation evidence.
 Do not implement gate decisions or acceptance claims.
 Do not add adapters, automation, provider/model runners, or `punk init`.
+
+
+## Outcome
+
+Completed the side-effect-free target-ref model alignment.
+
+`ProofpackWriterTargetRef` can now be derived from an accepted `ProofpackWriterTargetArtifactRefPolicyModel` logical ref, and exposes helpers that distinguish logical proofpack artifact refs from path-like refs.
+
+Updated proof and smoke fixtures so target artifact refs use logical `proofpack:<proofpack_id>@<manifest_self_digest>` metadata while target path refs remain separate explicit path-policy inputs.
+
+No runtime/storage/schema/CLI/`.punk`, active writer, filesystem write, referenced-ref verification integration, gate decision, acceptance claim, adapter, automation, provider/model runner, or `punk init` was added.

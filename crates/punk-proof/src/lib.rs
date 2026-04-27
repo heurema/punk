@@ -1439,8 +1439,35 @@ impl ProofpackWriterTargetRef {
         )?))
     }
 
+    pub fn from_target_artifact_ref(
+        target_artifact_ref: &ProofpackWriterTargetArtifactRef,
+    ) -> Self {
+        Self(target_artifact_ref.as_str().to_string())
+    }
+
+    pub fn from_target_artifact_ref_policy_model(
+        model: &ProofpackWriterTargetArtifactRefPolicyModel,
+    ) -> Option<Self> {
+        model.logical_ref().map(Self::from_target_artifact_ref)
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    pub fn is_logical_proofpack_ref(&self) -> bool {
+        self.0.starts_with("proofpack:") && self.0.contains("@sha256:")
+    }
+
+    pub fn is_path_like_ref(&self) -> bool {
+        self.0.contains('/')
+            || self.0.contains('\\')
+            || self.0.starts_with('~')
+            || self.0.contains("://")
+    }
+
+    pub fn is_aligned_target_artifact_ref(&self) -> bool {
+        self.is_logical_proofpack_ref() && !self.is_path_like_ref()
     }
 }
 
@@ -4422,21 +4449,33 @@ mod tests {
             .expect("digest requirement should be valid")
     }
 
+    fn sample_writer_target_artifact_ref(proofpack: &Proofpack) -> ProofpackWriterTargetRef {
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(proofpack, vec![]);
+        let policy = ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+            &canonical,
+            vec![],
+        );
+
+        ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&policy)
+            .expect("target artifact ref policy should derive logical ref")
+    }
+
     fn sample_writer_operation_evidence(
         outcome: ProofpackWriterOperationOutcome,
         canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
         index_status: ProofpackWriterSideEffectStatus,
         latest_pointer_status: ProofpackWriterSideEffectStatus,
     ) -> ProofpackWriterOperationEvidence {
+        let proofpack = sample_proofpack();
+
         ProofpackWriterOperationEvidence::new(
             ProofpackWriterOperationId::new("writer_op_local_001")
                 .expect("writer operation id should be valid"),
             ProofpackWriterOperationKind::Write,
-            ProofpackId::new("proofpack_local_001").expect("proofpack id should be valid"),
+            proofpack.id().clone(),
             ProofpackWriterAttemptedAt::new("2026-04-26T13:00:00Z")
                 .expect("attempted_at should be valid"),
-            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
-                .expect("target ref should be valid"),
+            sample_writer_target_artifact_ref(&proofpack),
             outcome,
             canonical_artifact_status,
             index_status,
@@ -4456,8 +4495,7 @@ mod tests {
     ) -> ProofpackWriterPreflightPlan {
         ProofpackWriterPreflightPlan::new(
             proofpack,
-            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
-                .expect("target ref should be valid"),
+            sample_writer_target_artifact_ref(proofpack),
             planned_side_effects,
             boundary_notes,
         )
@@ -4927,6 +4965,12 @@ mod tests {
                 .as_str(),
             expected_ref
         );
+        let target_ref = ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&model)
+            .expect("accepted target artifact ref policy should derive target ref");
+        assert_eq!(target_ref.as_str(), expected_ref);
+        assert!(target_ref.is_logical_proofpack_ref());
+        assert!(!target_ref.is_path_like_ref());
+        assert!(target_ref.is_aligned_target_artifact_ref());
         assert!(!model.display_ref_is_filesystem_path());
         assert_eq!(model.boundary_notes().len(), 1);
     }
@@ -5314,10 +5358,11 @@ mod tests {
         assert_eq!(evidence.operation_kind().as_str(), "write");
         assert_eq!(evidence.proofpack_id().as_str(), "proofpack_local_001");
         assert_eq!(evidence.attempted_at().as_str(), "2026-04-26T13:00:00Z");
-        assert_eq!(
-            evidence.target_ref().as_str(),
-            "future/.punk/proofs/proofpack_local_001.json"
-        );
+        assert!(evidence.target_ref().is_aligned_target_artifact_ref());
+        assert!(evidence
+            .target_ref()
+            .as_str()
+            .starts_with("proofpack:proofpack_local_001@sha256:"));
         assert!(evidence.canonical_artifact_available());
         assert!(evidence.represents_new_canonical_artifact_write());
         assert!(evidence.is_evidence_only());
@@ -5364,10 +5409,11 @@ mod tests {
             PROOFPACK_WRITER_PREFLIGHT_PLAN_SCHEMA_VERSION
         );
         assert_eq!(plan.proofpack_id(), proofpack.id());
-        assert_eq!(
-            plan.target_ref().as_str(),
-            "future/.punk/proofs/proofpack_local_001.json"
-        );
+        assert!(plan.target_ref().is_aligned_target_artifact_ref());
+        assert!(plan
+            .target_ref()
+            .as_str()
+            .starts_with("proofpack:proofpack_local_001@sha256:"));
         assert_eq!(
             plan.manifest_self_digest(),
             &compute_proofpack_manifest_digest(&proofpack)
@@ -5532,13 +5578,15 @@ mod tests {
         );
         assert_eq!(plan.proofpack_id(), proofpack.id());
         assert_eq!(plan.storage_root_ref().as_str(), "repo_runtime_proofs_root");
-        assert_eq!(
-            plan.target_artifact_ref().as_str(),
-            "future/.punk/proofs/proofpack_local_001.json"
-        );
+        assert!(plan.target_artifact_ref().is_aligned_target_artifact_ref());
+        assert!(!plan.target_artifact_ref().is_path_like_ref());
         assert_eq!(
             plan.target_path_ref().as_str(),
             "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert_ne!(
+            plan.target_artifact_ref().as_str(),
+            plan.target_path_ref().as_str()
         );
         assert_eq!(
             plan.manifest_self_digest(),
@@ -6351,13 +6399,15 @@ mod tests {
             model.storage_root_ref().as_str(),
             model.target_path_ref().as_str()
         );
-        assert_eq!(
-            model.target_artifact_ref().as_str(),
-            "future/.punk/proofs/proofpack_local_001.json"
-        );
+        assert!(model.target_artifact_ref().is_aligned_target_artifact_ref());
+        assert!(!model.target_artifact_ref().is_path_like_ref());
         assert_eq!(
             model.target_path_ref().as_str(),
             "future/.punk/proofs/proofpack_local_001.json"
+        );
+        assert_ne!(
+            model.target_artifact_ref().as_str(),
+            model.target_path_ref().as_str()
         );
 
         assert!(model.is_evidence_only());
@@ -6378,9 +6428,8 @@ mod tests {
     fn proofpack_writer_target_path_policy_rejects_path_injection_and_escape_cases() {
         let storage_root_ref = ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
             .expect("storage root ref should be valid");
-        let target_ref =
-            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
-                .expect("target ref should be valid");
+        let proofpack = sample_proofpack();
+        let target_ref = sample_writer_target_artifact_ref(&proofpack);
         let model_for = |target_path: &str| {
             ProofpackWriterTargetPathPolicyModel::evaluate(
                 storage_root_ref.clone(),
@@ -6434,11 +6483,11 @@ mod tests {
 
     #[test]
     fn proofpack_writer_target_path_policy_is_setup_neutral_and_side_effect_free() {
+        let proofpack = sample_proofpack();
         let model = ProofpackWriterTargetPathPolicyModel::evaluate(
             ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
                 .expect("storage root ref should be valid"),
-            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_001.json")
-                .expect("target ref should be valid"),
+            sample_writer_target_artifact_ref(&proofpack),
             ProofpackWriterTargetPathRef::new("future/./proofpack_local_001.json")
                 .expect("target path ref should be valid"),
             vec![],
@@ -6561,15 +6610,24 @@ mod tests {
 
     #[test]
     fn writer_operation_evidence_rejects_inconsistent_status() {
+        let proofpack_id =
+            ProofpackId::new("proofpack_local_002").expect("proofpack id should be valid");
+        let target_ref_policy = ProofpackWriterTargetArtifactRefPolicyModel::evaluate(
+            Some(proofpack_id.clone()),
+            Some(ArtifactDigest::new(PROOF_HASH_GATE_DECISION).expect("digest should be valid")),
+            ProofpackWriterCanonicalArtifactLayout::ManifestOnlyJson,
+            vec![],
+        );
+
         let inconsistent = ProofpackWriterOperationEvidence::new(
             ProofpackWriterOperationId::new("writer_op_local_002")
                 .expect("operation id should be valid"),
             ProofpackWriterOperationKind::Write,
-            ProofpackId::new("proofpack_local_002").expect("proofpack id should be valid"),
+            proofpack_id,
             ProofpackWriterAttemptedAt::new("2026-04-26T13:01:00Z")
                 .expect("attempted_at should be valid"),
-            ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_local_002.json")
-                .expect("target ref should be valid"),
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
             ProofpackWriterOperationOutcome::Written,
             ProofpackWriterCanonicalArtifactStatus::NotAttempted,
             ProofpackWriterSideEffectStatus::NotSelected,

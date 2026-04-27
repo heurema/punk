@@ -1089,6 +1089,17 @@ fn sample_proofpack_with_partial_integrity(decision_ref: &str) -> Proofpack {
     ))
 }
 
+fn sample_writer_target_artifact_ref(proofpack: &Proofpack) -> ProofpackWriterTargetRef {
+    let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(proofpack, vec![]);
+    let policy = ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+        &canonical,
+        vec![],
+    );
+
+    ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&policy)
+        .expect("target artifact ref policy should derive logical ref")
+}
+
 fn eval_gate_authority_requires_proof_before_acceptance() -> SmokeEvalCaseResult {
     let decision = sample_gate_decision();
     let boundary = decision.boundary();
@@ -1667,15 +1678,15 @@ fn eval_proofpack_writer_target_artifact_ref_policy_model_is_side_effect_free(
 }
 
 fn eval_proofpack_writer_operation_evidence_model_is_side_effect_free() -> SmokeEvalCaseResult {
+    let proofpack = sample_proofpack("decision_eval_001");
     let evidence = ProofpackWriterOperationEvidence::new(
         ProofpackWriterOperationId::new("writer_op_smoke_001")
             .expect("operation id should be valid"),
         ProofpackWriterOperationKind::Write,
-        ProofpackId::new("proofpack_eval_001").expect("proofpack id should be valid"),
+        proofpack.id().clone(),
         ProofpackWriterAttemptedAt::new("2026-04-26T13:10:00Z")
             .expect("attempted_at should be valid"),
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         ProofpackWriterOperationOutcome::IndexUpdateFailed,
         ProofpackWriterCanonicalArtifactStatus::Written,
         ProofpackWriterSideEffectStatus::Failed,
@@ -1732,8 +1743,7 @@ fn eval_proofpack_writer_preflight_plan_model_is_side_effect_free() -> SmokeEval
     let proofpack = sample_proofpack("decision_eval_001");
     let plan = ProofpackWriterPreflightPlan::new(
         &proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         vec![
             ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
             ProofpackWriterPlannedSideEffect::IndexUpdate,
@@ -1756,8 +1766,7 @@ fn eval_proofpack_writer_preflight_plan_model_is_side_effect_free() -> SmokeEval
     let partial_proofpack = sample_proofpack_with_partial_integrity("decision_eval_001");
     let missing_plan = ProofpackWriterPreflightPlan::new(
         &partial_proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_002.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&partial_proofpack),
         vec![],
         vec![],
     );
@@ -1772,7 +1781,11 @@ fn eval_proofpack_writer_preflight_plan_model_is_side_effect_free() -> SmokeEval
     let ready_plan_ok = plan.is_writer_ready()
         && plan.status().as_str() == "ready"
         && plan.schema_version() == "punk.proofpack.writer_preflight_plan.v0.1"
-        && plan.target_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && plan.target_ref().is_aligned_target_artifact_ref()
+        && plan
+            .target_ref()
+            .as_str()
+            .starts_with("proofpack:proofpack_eval_001@sha256:")
         && plan.manifest_self_digest() == &compute_proofpack_manifest_digest(&proofpack)
         && plan.plans_side_effect(ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite)
         && plan.plans_side_effect(ProofpackWriterPlannedSideEffect::IndexUpdate)
@@ -1831,8 +1844,7 @@ fn eval_proofpack_writer_file_io_plan_model_is_side_effect_free() -> SmokeEvalCa
     let proofpack = sample_proofpack("decision_eval_001");
     let preflight_plan = ProofpackWriterPreflightPlan::new(
         &proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         vec![
             ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
             ProofpackWriterPlannedSideEffect::IndexUpdate,
@@ -1879,8 +1891,7 @@ fn eval_proofpack_writer_file_io_plan_model_is_side_effect_free() -> SmokeEvalCa
     let partial_proofpack = sample_proofpack_with_partial_integrity("decision_eval_001");
     let blocked_preflight_plan = ProofpackWriterPreflightPlan::new(
         &partial_proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_002.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&partial_proofpack),
         vec![],
         vec![],
     );
@@ -1901,8 +1912,10 @@ fn eval_proofpack_writer_file_io_plan_model_is_side_effect_free() -> SmokeEvalCa
         && plan.status().as_str() == "ready"
         && plan.schema_version() == "punk.proofpack.writer_file_io_plan.v0.1"
         && plan.storage_root_ref().as_str() == "repo_runtime_proofs_root"
-        && plan.target_artifact_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && plan.target_artifact_ref().is_aligned_target_artifact_ref()
+        && !plan.target_artifact_ref().is_path_like_ref()
         && plan.target_path_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && plan.target_artifact_ref().as_str() != plan.target_path_ref().as_str()
         && plan.manifest_self_digest() == preflight_plan.manifest_self_digest()
         && plan.write_policy() == ProofpackWriterWritePolicy::IdempotentIfMatching
         && plan.write_policy().supports_idempotency()
@@ -1986,8 +1999,7 @@ fn eval_proofpack_writer_file_io_outcome_model_is_side_effect_free() -> SmokeEva
     let proofpack = sample_proofpack("decision_eval_001");
     let preflight_plan = ProofpackWriterPreflightPlan::new(
         &proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         vec![
             ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
             ProofpackWriterPlannedSideEffect::IndexUpdate,
@@ -2164,8 +2176,7 @@ fn eval_proofpack_writer_file_io_error_reason_model_is_side_effect_free() -> Smo
     let proofpack = sample_proofpack("decision_eval_001");
     let preflight_plan = ProofpackWriterPreflightPlan::new(
         &proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         vec![
             ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
             ProofpackWriterPlannedSideEffect::IndexUpdate,
@@ -2331,8 +2342,7 @@ fn eval_proofpack_writer_target_path_policy_model_is_side_effect_free() -> Smoke
     let proofpack = sample_proofpack("decision_eval_001");
     let preflight_plan = ProofpackWriterPreflightPlan::new(
         &proofpack,
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         vec![
             ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
             ProofpackWriterPlannedSideEffect::IndexUpdate,
@@ -2371,8 +2381,7 @@ fn eval_proofpack_writer_target_path_policy_model_is_side_effect_free() -> Smoke
     let traversal = ProofpackWriterTargetPathPolicyModel::evaluate(
         ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
             .expect("storage root ref should be valid"),
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         ProofpackWriterTargetPathRef::new("future/.punk/../proofs/proofpack_eval_001.json")
             .expect("target path ref should be valid"),
         vec![],
@@ -2380,8 +2389,7 @@ fn eval_proofpack_writer_target_path_policy_model_is_side_effect_free() -> Smoke
     let absolute = ProofpackWriterTargetPathPolicyModel::evaluate(
         ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
             .expect("storage root ref should be valid"),
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         ProofpackWriterTargetPathRef::new("/tmp/proofpack_eval_001.json")
             .expect("target path ref should be valid"),
         vec![],
@@ -2389,8 +2397,7 @@ fn eval_proofpack_writer_target_path_policy_model_is_side_effect_free() -> Smoke
     let backslash = ProofpackWriterTargetPathPolicyModel::evaluate(
         ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
             .expect("storage root ref should be valid"),
-        ProofpackWriterTargetRef::new("future/.punk/proofs/proofpack_eval_001.json")
-            .expect("target ref should be valid"),
+        sample_writer_target_artifact_ref(&proofpack),
         ProofpackWriterTargetPathRef::new("future\\.punk\\proofpack_eval_001.json")
             .expect("target path ref should be valid"),
         vec![],
@@ -2411,8 +2418,10 @@ fn eval_proofpack_writer_target_path_policy_model_is_side_effect_free() -> Smoke
         && accepted.reasons().is_empty()
         && accepted.diagnostics().is_empty()
         && accepted.storage_root_ref().as_str() == "repo_runtime_proofs_root"
-        && accepted.target_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && accepted.target_ref().is_aligned_target_artifact_ref()
+        && !accepted.target_ref().is_path_like_ref()
         && accepted.target_path_ref().as_str() == "future/.punk/proofs/proofpack_eval_001.json"
+        && accepted.target_ref().as_str() != accepted.target_path_ref().as_str()
         && !accepted.target_path_is_authority()
         && !accepted.storage_root_ref_is_authority()
         && !accepted.derives_from_current_working_directory()
