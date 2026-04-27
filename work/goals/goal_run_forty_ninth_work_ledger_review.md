@@ -1,16 +1,16 @@
 ---
 id: goal_run_forty_ninth_work_ledger_review
 title: "Run the forty-ninth advisory Work Ledger Review"
-status: ready
+status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
 authority: canonical
 created_at: 2026-04-26
-updated_at: 2026-04-26
+updated_at: 2026-04-27
 selected_at: 2026-04-26
-started_at: null
-completed_at: null
+started_at: 2026-04-27
+completed_at: 2026-04-27
 blocked_by: []
 scope:
   include:
@@ -40,7 +40,8 @@ knowledge_refs:
   - "evals/specs/proofpack-writer-target-artifact-ref-policy.v0.1.md"
   - "work/reports/2026-04-26-proofpack-writer-target-artifact-ref-policy-model-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-04-27-forty-ninth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -69,7 +70,7 @@ research_gate:
 doc_impact:
   classification: docs-only
   required_updates:
-    - "work/reports/2026-04-26-forty-ninth-work-ledger-review.md"
+    - "work/reports/2026-04-27-forty-ninth-work-ledger-review.md"
   rationale: "Execution should produce an advisory work report and update the work ledger without runtime/code/schema/CLI changes."
 ---
 
@@ -86,3 +87,12 @@ Before selecting writer implementation, runtime storage/schema/CLI work, or gate
 ## Notes
 
 This is advisory only. It does not decide acceptance, implement runtime storage, write `.punk` state, write proofpacks, or change CLI/schema/code.
+
+
+## Outcome
+
+Completed the forty-ninth advisory Work Ledger Review.
+
+Selected `work/goals/goal_align_proofpack_writer_target_ref_models_with_policy_v0_1.md` as the next bounded side-effect-free implementation goal.
+
+No runtime/code/schema/CLI/`.punk` changes were made.
