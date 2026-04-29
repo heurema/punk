@@ -20,6 +20,7 @@ last_validated_commit: null
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: run the fifty-fifth advisory Work Ledger Review after defining proofpack writer host path resolution boundary v0.1.
 - Selected next: `work/goals/goal_run_fifty_fifth_work_ledger_review.md`
+- Scope override note: `work/goals/goal_add_pr_intake_gate_v0_1.md` added a maintainer-requested deterministic PR Intake Gate v0.1 as repo-governance work before returning to the proofpack writer advisory review. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_truth_baseline_docs_v0_1.md` intentionally paused the previous selected next so the repo entry, changelog, lineage, and live work ledger could clearly separate current implemented behavior from target architecture, parked scope, and future surfaces. That override is now recorded as done, and the paused proofpack writer boundary work is restored as selected next.
 - Scope override note: `work/goals/goal_record_project_knowledge_vault_direction_v0_1.md` recorded the maintainer-approved Project Knowledge Vault direction as a docs/research-only interruption before returning to proofpack writer boundary work. That override is now recorded as done, and the paused proofpack writer boundary work remains restored as selected next.
 - Scope override note: `work/goals/goal_add_knowledge_impact_report_v0_1.md` recorded the maintainer-approved Knowledge Impact Report v0.1 convention as a docs/process-only memory-safety step before returning to proofpack writer boundary work. That override is now recorded as done, and the paused proofpack writer boundary work remains restored as selected next.
@@ -56,6 +57,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-29 | Added deterministic PR Intake Gate v0.1 | `work/goals/goal_add_pr_intake_gate_v0_1.md`, `work/reports/2026-04-29-pr-intake-gate-v0-1.md`, `.github/workflows/pr-intake-gate.yml`, `scripts/pr_intake_gate.py` |
 | 2026-04-29 | Defined proofpack writer host path resolution boundary v0.1 | `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md`, `evals/specs/proofpack-writer-host-path-resolution-boundary.v0.1.md`, `work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md`, `docs/product/CRATE-STATUS.md` |
 | 2026-04-29 | Added Knowledge Impact Report v0.1 convention | `work/goals/goal_add_knowledge_impact_report_v0_1.md`, `work/reports/2026-04-29-knowledge-impact-report-v0-1.md`, `docs/product/DOGFOODING.md`, `docs/product/PROJECT-MEMORY.md`, `docs/product/DOC-GOVERNANCE.md` |
 | 2026-04-29 | Recorded Project Knowledge Vault direction v0.1 | `work/goals/goal_record_project_knowledge_vault_direction_v0_1.md`, `work/reports/2026-04-29-project-knowledge-vault-direction-v0-1.md`, `knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md`, `knowledge/ideas/2026-04-29-compiled-project-wiki-and-claim-graph.md` |
@@ -191,10 +193,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-29
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files evals/specs/proofpack-writer-host-path-resolution-boundary.v0.1.md docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md work/goals/goal_run_fifty_fifth_work_ledger_review.md work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md --report work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && python3 -m py_compile scripts/pr_intake_gate.py scripts/test_pr_intake_gate.py && scripts/check.sh pr-intake-gate && scripts/check.sh docs-governance --files .github/PULL_REQUEST_TEMPLATE.md .github/pr-intake-gate.yml .github/workflows/pr-intake-gate.yml .gitignore CHANGELOG.md CONTRIBUTING.md knowledge/research/2026-04-29-pr-intake-gate-review.md scripts/check.sh scripts/pr_intake_gate.py scripts/test_pr_intake_gate.py work/STATUS.md work/goals/goal_add_pr_intake_gate_v0_1.md work/reports/2026-04-29-pr-intake-gate-v0-1.md --report work/reports/2026-04-29-pr-intake-gate-v0-1.md && grep -R "$PWD" -n work docs scripts .github AGENTS.md knowledge evals README.md CONTRIBUTING.md CHANGELOG.md || true`
 - Result: `PASS`
 - Notes:
-  - Proofpack writer host path resolution boundary v0.1 is recorded in `work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md`.
-  - docs-governance passed with 0 failures and 2 warnings for the file set; warnings are existing duplicate-definition candidates in `docs/product/CRATE-STATUS.md`.
-  - `selected_next` is `work/goals/goal_run_fifty_fifth_work_ledger_review.md` after completing the host path resolution boundary.
-  - no runtime/code/schema/CLI/`.punk`, active proofpack writer, filesystem read/write/canonicalization, operation-evidence persistence, gate decision, acceptance claim, adapter, automation, provider/model runner, context compiler, Knowledge Vault implementation, or `punk init` was added.
+  - PR Intake Gate v0.1 is recorded in `work/reports/2026-04-29-pr-intake-gate-v0-1.md`.
+  - docs-governance passed with 0 failures and 0 warnings for the file set.
+  - `selected_next` remains `work/goals/goal_run_fifty_fifth_work_ledger_review.md` after this maintainer-requested scope override.
+  - no Rust code, `.punk` runtime state, active CLI behavior, product runtime behavior, gate decision, proofpack behavior, provider/model runner, branch-protection mutation, or GitHub PR head-code execution was added.
