@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-21
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - documentation-reading-order
@@ -55,11 +55,12 @@ For product and architecture work, read in this order:
 13. `docs/product/PROJECT-MEMORY.md`
 14. `docs/product/DOC-GOVERNANCE.md`
 15. `docs/product/PUBLIC-NARRATIVE.md`
-16. `docs/adr/`
-17. `knowledge/research/`
-18. `knowledge/ideas/`
-19. `work/goals/` and `work/reports/`
-20. `publishing/`
+16. `docs/product/LINEAGE.md`
+17. `docs/adr/`
+18. `knowledge/research/`
+19. `knowledge/ideas/`
+20. `work/goals/` and `work/reports/`
+21. `publishing/`
 
 ## Canonical owners
 
@@ -80,6 +81,7 @@ For product and architecture work, read in this order:
 | Research intake classification | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | `adopt / defer / park / avoid` intake discipline. |
 | Telemetry/privacy and audit evidence | `docs/product/TELEMETRY.md` | `docs/adr/ADR-0011-local-first-trust-telemetry.md` | Event/redaction/no-network truth. |
 | Public narrative/public memory | `docs/product/PUBLIC-NARRATIVE.md` | `publishing/`, `docs/adr/ADR-0007-public-narrative-plane.md` | Public receipts and publication boundaries. |
+| Project lineage and adjacent repo boundary | `docs/product/LINEAGE.md` | `docs/product/START-HERE.md`, `docs/product/RESEARCH-INTAKE.md` | Keeps adjacent-repo inspiration from being read as current `punk` behavior. |
 | Journal surface and artifact model | `docs/product/JOURNAL.md` | `publishing/`, `docs/product/PUBLIC-NARRATIVE.md` | Public origin chronicle and journal storage shape. |
 | Module boundaries | `docs/product/MODULES.md` | `docs/product/MODULE-HOST.md`, `docs/modules/` | Product-level module status and non-goals. |
 | Documentation governance | `docs/product/DOC-GOVERNANCE.md` | `evals/specs/docs-consistency.v0.1.md` | Lifecycle, ownership, supersession, `DocImpact`. |

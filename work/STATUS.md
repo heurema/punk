@@ -6,8 +6,8 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-04-27
-current_phase: "Dogfooding Level 0 / Phase 3 contract-loop bootstrap"
+updated_at: 2026-04-29
+current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
 current_focus: "Define proofpack writer host path resolution boundary v0.1"
 selected_next: "work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md"
 last_validated_commit: null
@@ -17,8 +17,10 @@ last_validated_commit: null
 
 ## Now
 
-- Current focus: define proofpack writer host path resolution boundary v0.1.
+- Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
+- Current focus: define proofpack writer host path resolution boundary v0.1 after completing the truth-baseline docs override.
 - Selected next: `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md`
+- Scope override note: `work/goals/goal_truth_baseline_docs_v0_1.md` intentionally paused the previous selected next so the repo entry, changelog, lineage, and live work ledger could clearly separate current implemented behavior from target architecture, parked scope, and future surfaces. That override is now recorded as done, and the paused proofpack writer boundary work is restored as selected next.
 - Why this is next: proofpack writer active behavior model v0.1 is in place, but active writer implementation would be too early until host path resolution, path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape boundaries are explicit. This keeps Punk setup-neutral and prevents hidden filesystem authority before any writer/storage/schema/CLI work.
 - Acceptance:
   - docs/spec boundary defines how future storage root refs and target path refs may become host path observations.
@@ -45,6 +47,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-29 | Aligned current repository truth baseline v0.1 | `work/goals/goal_truth_baseline_docs_v0_1.md`, `work/reports/2026-04-29-truth-baseline-docs-v0-1.md`, `README.md`, `docs/product/LINEAGE.md`, `CHANGELOG.md` |
 | 2026-04-27 | Ran the fifty-fourth advisory Work Ledger Review | `work/goals/goal_run_fifty_fourth_work_ledger_review.md`, `work/reports/2026-04-27-fifty-fourth-work-ledger-review.md`, `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` |
 | 2026-04-27 | Added proofpack writer active behavior model v0.1 | `work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-27-proofpack-writer-active-behavior-model-v0-1.md` |
 | 2026-04-27 | Ran the fifty-third advisory Work Ledger Review | `work/goals/goal_run_fifty_third_work_ledger_review.md`, `work/reports/2026-04-27-fifty-third-work-ledger-review.md`, `work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md` |
@@ -173,12 +176,12 @@ last_validated_commit: null
 
 ## Validation
 
-- Last checked: 2026-04-27
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_run_fifty_third_work_ledger_review.md work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md work/reports/2026-04-27-fifty-third-work-ledger-review.md --report work/reports/2026-04-27-fifty-third-work-ledger-review.md && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Last checked: 2026-04-29
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files README.md CHANGELOG.md docs/product/LINEAGE.md docs/product/DOCUMENTATION-MAP.md work/STATUS.md work/goals/goal_truth_baseline_docs_v0_1.md work/reports/2026-04-29-truth-baseline-docs-v0-1.md --report work/reports/2026-04-29-truth-baseline-docs-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - fifty-third advisory Work Ledger Review completed
-  - `selected_next` is now `work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md`
-  - no runtime/code/schema/CLI/`.punk` changes were made
-  - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`
-  - active proofpack writer, runtime storage, schemas, adapters, automation, service-backed storage, and `punk init` remain deferred
+  - truth-baseline docs/work-ledger alignment is recorded in `work/reports/2026-04-29-truth-baseline-docs-v0-1.md`.
+  - docs-governance passed with 0 failures and 1 warning for the pre-existing `Research notes` heading in `docs/product/DOCUMENTATION-MAP.md`.
+  - `selected_next` is restored to `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` after the maintainer/user-approved override.
+  - no runtime/code/schema/CLI/`.punk`, active proofpack writer, filesystem write, operation-evidence persistence, gate decision, acceptance claim, adapter, automation, provider/model runner, PubPunk automation, or `punk init` was added by the truth-baseline docs pass.
+  - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
