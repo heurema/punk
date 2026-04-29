@@ -6,11 +6,59 @@
 
 `punk` is an experimental, early-stage, local-first bounded work kernel and sandbox for developers, researchers, and experimenters.
 
-It exists to explore bounded AI work, project memory, contracts, evals, and proof-bearing workflows.
+It explores bounded AI work, project memory, contracts, evals, gates, and proof-bearing workflows.
 
 It is not a finished product, not production-ready, and not guaranteed to work end-to-end out of the box.
 
+The current executable CLI surface is intentionally small. Treat broader architecture docs as target architecture, phase-gated design, parked scope, or future scope unless a document explicitly marks a capability active.
+
 Live landing: [punks.run](https://punks.run)
+
+## What punk is
+
+`punk` exists to make bounded work inspectable:
+
+```text
+contract -> evidence -> gate decision -> proof
+```
+
+Only `gate` writes final decisions.
+
+Proof makes decisions inspectable before acceptance is claimed.
+
+Modules may assess, not decide. Adapters may invoke, not own truth. Project memory is explicit and authority-tagged.
+
+## Current implemented surface
+
+Today, the executable CLI surface is intentionally limited to:
+
+- `punk flow inspect`
+- `punk eval run smoke`
+- `punk eval run smoke --format json`
+
+Everything else in product docs should be read as target architecture, phase-gated design, parked scope, or future scope unless explicitly marked active.
+
+`punk init` is a future setup target, not current behavior.
+
+`.punk/` runtime storage is not active for this purpose.
+
+Active proofpack writing is not active.
+
+Provider/model/agent execution is not active.
+
+PubPunk publishing automation is not active.
+
+## Current project stage
+
+The current stage is v0.1-prep: Current Truth Baseline.
+
+The goal of this stage is not to add product features.
+The goal is to align README, product docs, work ledger, changelog, and lineage notes so the repository clearly separates:
+
+- current implemented behavior;
+- active-core target;
+- incubating or side-effect-free models;
+- parked/future surfaces.
 
 ## Current direction
 
@@ -44,31 +92,34 @@ The current active target is the stable core:
 - inspectable state
 - project memory links
 
-Implemented CLI today:
-
-- `punk flow inspect`
-- `punk eval run smoke`
-- `punk eval run smoke --format json`
-
-`punk init` is documented only as a future setup target, not as current behavior.
+This target is broader than the implemented CLI surface above. Do not treat target architecture as current behavior until it is explicitly promoted.
 
 See:
 
 - `docs/product/START-HERE.md`
 - `docs/product/ROADMAP.md`
 - `docs/product/CRATE-STATUS.md`
+- `docs/product/LINEAGE.md`
+- `work/STATUS.md`
+- `CHANGELOG.md`
 
-## Not active yet
+## Not implemented / not active yet
 
 The following may be documented or parked, but they are not current operator surfaces:
 
+- `punk init`
 - LLM contract drafting
 - coding agent execution
+- active proofpack writing
+- `.punk/` runtime storage for work, runs, evals, decisions, or proofs
+- gate decision writer
+- acceptance claim writer
 - PubPunk publishing automation
 - provider adapters
 - MCP integration
-- knowledge embeddings
+- knowledge embeddings as project truth
 - plugin marketplace
+- module/plugin runtime
 - council
 - skill auto-promotion
 - cloud sync or SaaS control plane
@@ -87,6 +138,7 @@ Start with:
 - `docs/product/PUNK-LAWS.md`
 - `docs/product/ARCHITECTURE.md`
 - `docs/product/DOC-GOVERNANCE.md`
+- `docs/product/LINEAGE.md`
 
 Research and ideas are stored separately:
 
