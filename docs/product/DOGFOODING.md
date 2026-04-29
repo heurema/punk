@@ -13,6 +13,7 @@ canonical_for:
   - self-tracking-boundary
   - trust-surface-classes
   - development-drift-loop
+  - knowledge-impact-report-convention
 related_docs:
   - docs/product/PROJECT-MEMORY.md
   - docs/product/CONTRACT-TRACKER.md
@@ -280,6 +281,43 @@ Every dogfooded work item must leave:
 
 Executor briefs may be used as advisory handoff aids during dogfooding, but they do not replace the dogfood trail. The trail should still record goal, contract when available, executor attempt, receipt/evidence, validators, gate decision when available, proof when available, and project-memory links.
 
+
+## Knowledge Impact Report v0.1
+
+Meaningful dogfooded work should record its project-memory impact in the work report.
+
+Use this convention to answer what changed beyond the immediate diff: which canonical artifacts changed, which claims or docs may now be stale or suspect, which active/parked/future scope labels were affected, which public claims may need review, and which derived views should eventually be rebuilt.
+
+Adoption rule:
+
+- R0 trivial fixes: optional.
+- R1 docs/process/code changes: recommended when project memory may be affected.
+- R2/R3 architecture/product/core-memory changes: required.
+- Any change touching core laws, architecture, project memory, contract semantics, evals, roadmap, public narrative, or active/parked scope: required.
+
+The report block is:
+
+```md
+## Knowledge impact
+
+- Canonical artifacts changed:
+- Project-memory claims affected:
+- Docs / ADRs / evals possibly stale:
+- Active / parked / future scope affected:
+- Public narrative impact:
+- Derived views to rebuild later:
+- Follow-up goals or drift findings:
+- Unknowns / contradictions:
+- Out of scope:
+```
+
+If nothing changed, write `None`. If impact is unknown, write `Unknown` and route the uncertainty through the Development Drift Loop. Do not silently omit relevant stale, suspect, or contradictory artifacts.
+
+Knowledge impact complements `DocImpact`: `DocImpact` asks which documentation surfaces must be updated; Knowledge impact asks what wider project memory changed, became stale, became suspect, or needs follow-up.
+
+Contract Context Packs may provide advisory source/context evidence for a task, but they do not replace the Knowledge impact section in the closing report. The Knowledge impact section can cite context-pack findings, exclusions, stale flags, contradictions, or unknowns when relevant.
+
+This is manual Dogfooding Level 0 discipline. It does not write final decisions, replace `gate` or proof, automatically rewrite canonical truth, implement Knowledge Vault, or create runtime behavior.
 
 ## Work report drift convention
 

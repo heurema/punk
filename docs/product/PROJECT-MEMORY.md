@@ -18,6 +18,7 @@ canonical_for:
   - task-work-storage-direction
   - prompt-and-skill-memory-boundary
   - contract-context-pack-memory-boundary
+  - knowledge-impact-report-boundary
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/DOC-GOVERNANCE.md
@@ -192,6 +193,14 @@ Documentation should carry explicit owner, status, authority, and supersession/a
 `DocImpact` links meaningful changes to the docs surfaces they must update.
 
 See `docs/product/DOC-GOVERNANCE.md`.
+
+## Knowledge Impact Report boundary
+
+At Dogfooding Level 0, a Knowledge Impact section in `work/reports/` is the manual way to record project-memory effects before runtime derived views exist.
+
+It complements `DocImpact`: `DocImpact` identifies documentation surfaces that must be updated; Knowledge impact records wider project-memory effects such as stale or suspect docs, affected ADRs/evals/goals/contracts, scope label changes, public narrative impact, derived views to rebuild later, follow-up goals, unknowns, and contradictions.
+
+The section is advisory evidence. It does not write final decisions, replace gate/proof, automatically rewrite canonical truth, or implement Knowledge Vault.
 
 ## Runtime/derived memory
 

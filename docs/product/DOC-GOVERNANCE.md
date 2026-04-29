@@ -5,11 +5,12 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-20
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - documentation-governance
   - doc-impact-policy
+  - doc-impact-knowledge-impact-boundary
   - docs-lifecycle
 related_docs:
   - docs/product/PROJECT-MEMORY.md
@@ -105,6 +106,16 @@ Meaningful changes include:
 - public claims or status changes;
 - research promoted into roadmap, ADR, contract, or canonical docs;
 - docs-only changes that alter current truth ownership.
+
+## DocImpact and Knowledge impact
+
+`DocImpact` and Knowledge impact are related but separate report conventions.
+
+`DocImpact` asks which documentation surfaces must be updated, superseded, archived, or checked. It remains the documentation-governance field for meaningful changes.
+
+Knowledge impact asks what wider project memory changed, became stale, became suspect, or needs follow-up: claims, docs, ADRs, evals, goals, contracts, public narrative, active/parked/future scope labels, unknowns, contradictions, and derived views to rebuild later.
+
+A change can have `DocImpact` with no wider Knowledge impact, or Knowledge impact that routes follow-up without immediately changing a doc. Both are advisory at Dogfooding Level 0 and do not replace gate/proof.
 
 ## Canonical owner and term authority
 
