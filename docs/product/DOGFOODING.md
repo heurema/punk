@@ -5,13 +5,14 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-04-29
 review_after: 2026-07-21
 canonical_for:
   - dogfooding-levels
   - manual-work-ledger-discipline
   - self-tracking-boundary
   - trust-surface-classes
+  - development-drift-loop
 related_docs:
   - docs/product/PROJECT-MEMORY.md
   - docs/product/CONTRACT-TRACKER.md
@@ -77,6 +78,53 @@ Exit criteria:
 - all new meaningful work has a goal or explicit maintenance reason
 - current focus and selected next work are inspectable from `work/STATUS.md`
 - accepted decisions have ADRs or knowledge updates when needed
+
+### Development Drift Loop v0.1
+
+Punk develops itself with Punk only at the trust level it has earned.
+
+At Dogfooding Level 0, self-improvement means manual drift capture and bounded correction, not autonomous self-execution.
+
+A drift finding is an observed mismatch between any of:
+
+- current implementation and README/docs;
+- work ledger and selected work;
+- roadmap and active scope;
+- `CRATE-STATUS.md` and workspace behavior;
+- checks and committed artifacts;
+- public narrative and actual readiness;
+- Codex/agent output and Punk Laws;
+- active-core, incubating, parked, and future scope labels.
+
+The loop is:
+
+```text
+observe drift
+  -> classify severity
+  -> route to the smallest bounded artifact
+  -> fix or defer explicitly
+  -> close with a report
+```
+
+Drift findings are not final decisions. They are project-memory signals.
+
+Only routed work artifacts, accepted docs changes, evals, ADRs, checks, and future gate/proof artifacts can promote a finding into durable project truth.
+
+The loop is manual at Dogfooding Level 0. It does not allow Punk, Codex, an LLM, a module, or an adapter to write final decisions.
+
+The loop must not create a second tracker beside `work/STATUS.md`. Open findings live in the compact `Open Drift Findings` section in `work/STATUS.md` until routed or closed.
+
+Repeated drift should be promoted into a better artifact: contract clause, validator, check, eval case, docs-governance rule, report convention, ADR, or bounded runner aid.
+
+| Drift type | Route |
+|---|---|
+| typo/link/small wording issue | R0 docs fix or report note |
+| unclear active vs parked scope | bounded docs/work-ledger goal |
+| repeated Codex/executor mistake | checklist, validator, eval, or contract clause |
+| docs/code mismatch | bounded reconciliation goal |
+| architecture/storage/module/adapter question | Research Gate |
+| public claim mismatch | public narrative/docs fix |
+| check warning | bounded cleanup goal or explicit accepted warning |
 
 ### Level 1 — Flow-tracked work
 
@@ -231,6 +279,21 @@ Every dogfooded work item must leave:
 - proof when available
 
 Executor briefs may be used as advisory handoff aids during dogfooding, but they do not replace the dogfood trail. The trail should still record goal, contract when available, executor attempt, receipt/evidence, validators, gate decision when available, proof when available, and project-memory links.
+
+
+## Work report drift convention
+
+Meaningful dogfooded work should include a short drift section in its report:
+
+```md
+## Drift observed
+
+- None
+```
+
+If drift was observed, list each finding with the route chosen or the explicit defer reason.
+
+This convention is advisory for meaningful work. It should not create paperwork for every tiny file edit, and it does not replace `DocImpact`, checks, reports, ADRs, or future gate/proof artifacts.
 
 ## Research intake dogfooding checks
 
