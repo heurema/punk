@@ -15,6 +15,7 @@ canonical_for:
   - not-active-now-boundary
 related_docs:
   - docs/product/DOCUMENTATION-MAP.md
+  - docs/product/NORTH-STAR.md
   - docs/product/GLOSSARY.md
   - docs/product/PUNK-LAWS.md
 related_adrs:
@@ -47,6 +48,14 @@ plot -> cut -> gate
 - proof/proofpack makes the decision inspectable before acceptance.
 
 Only `gate` writes final decisions.
+
+## North star
+
+Punk's high-level direction is defined in `docs/product/NORTH-STAR.md`.
+
+Punk starts from today's code-first and spec-first practices because they are real and useful, but its long-term direction is to research, test, and gradually promote better primary artifacts for bounded software work: intent, contracts, specs, examples, invariants, evidence, decisions, and proof.
+
+This direction does not activate future capabilities. Current active behavior remains governed by the build posture, active surface, roadmap, crate status, evals, and gate/proof boundaries below.
 
 ## Current build posture
 
