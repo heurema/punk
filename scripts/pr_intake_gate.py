@@ -3,7 +3,7 @@
 
 Security model:
 - Read this script and config from the trusted base checkout.
-- Fetch PR metadata and changed-file metadata through GitHub REST API.
+- Fetch PR metadata, author permission, and changed-file metadata through GitHub REST API.
 - Never checkout, import, install, or execute PR head code.
 - Never interpolate PR title/body into shell commands.
 """
@@ -17,7 +17,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
 from typing import Any, Iterable
@@ -30,7 +30,7 @@ NEEDS_INTENT_COMMENT = """<!-- punk-pr-intake-gate -->
 
 ## PR Intake Gate: linked intent needed
 
-Thanks for the contribution. Before code review, this PR needs a linked intent source because it appears to be non-trivial.
+Thanks for the contribution. Before code review, this external non-trivial PR needs a linked intent source.
 
 Please link one of:
 
@@ -41,14 +41,14 @@ Please link one of:
 5. `knowledge/research/...` research note.
 6. `evals/specs/...` eval spec.
 
-A maintainer can bypass this gate by adding `maintainer/override-intake`.
+A maintainer can bypass this gate by adding `maintainer/override-intake`, or accept non-high-risk PR intent with `intake/accepted-for-pr`.
 """
 
 HIGH_RISK_COMMENT = """<!-- punk-pr-intake-gate -->
 
 ## PR Intake Gate: maintainer review needed
 
-Thanks for the contribution. This PR touches high-risk punk surfaces, so it needs explicit maintainer attention before ordinary code review proceeds.
+Thanks for the contribution. This external PR touches high-risk Punk surfaces, so it needs explicit maintainer attention before ordinary code review proceeds.
 
 High-risk areas include workflows, scripts, core crates, product truth, work ledger, research, eval specs, public narrative, and site/brand surfaces.
 
@@ -73,6 +73,7 @@ class PullRequestContext:
     number: int
     title: str
     body: str
+    author_login: str
     author_association: str
     labels: set[str]
     base_sha: str
@@ -95,6 +96,13 @@ class Verdict:
     should_comment: bool
     comment_body: str | None
     exit_code: int
+    extra_labels: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class AuthorPermission:
+    permission: str | None
+    error: str | None = None
 
 
 def parse_scalar(raw: str) -> Any:
@@ -181,6 +189,10 @@ def env_flag(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def dry_run() -> bool:
+    return env_flag("PR_INTAKE_GATE_DRY_RUN")
+
+
 def load_event() -> dict[str, Any]:
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if not event_path:
@@ -203,12 +215,15 @@ def get_pr_context(event: dict[str, Any]) -> PullRequestContext:
         for label in pr.get("labels", [])
         if isinstance(label, dict) and label.get("name")
     }
+    user = pr.get("user") or {}
+    author_login = user.get("login") if isinstance(user, dict) else ""
 
     return PullRequestContext(
         repository=str(repository),
         number=int(pr["number"]),
         title=str(pr.get("title") or ""),
         body=str(pr.get("body") or ""),
+        author_login=str(author_login or ""),
         author_association=str(pr.get("author_association") or ""),
         labels=labels,
         base_sha=str(pr.get("base", {}).get("sha") or ""),
@@ -246,6 +261,30 @@ def get_token() -> str:
     if not token:
         raise GateError("GITHUB_TOKEN is required for GitHub API reads and writes")
     return token
+
+
+def resolve_author_permission(ctx: PullRequestContext) -> AuthorPermission:
+    fixture = os.environ.get("PR_INTAKE_GATE_AUTHOR_PERMISSION")
+    if fixture is not None:
+        normalized = fixture.strip().lower()
+        return AuthorPermission(None if normalized in {"", "none", "null"} else normalized)
+    if dry_run():
+        return AuthorPermission(None)
+    if not ctx.author_login:
+        return AuthorPermission(None, "missing author login")
+
+    try:
+        token = get_token()
+        repo = urllib.parse.quote(ctx.repository, safe="/")
+        login = urllib.parse.quote(ctx.author_login, safe="")
+        payload = api_request("GET", f"/repos/{repo}/collaborators/{login}/permission", token, allow_404=True)
+    except GateError as exc:
+        return AuthorPermission(None, str(exc))
+
+    if not isinstance(payload, dict):
+        return AuthorPermission(None)
+    permission = payload.get("permission")
+    return AuthorPermission(str(permission).lower() if permission else None)
 
 
 def load_changed_files(ctx: PullRequestContext) -> list[ChangedFile]:
@@ -314,16 +353,42 @@ def has_linked_intent(text: str, patterns: Iterable[str]) -> bool:
     return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in patterns)
 
 
-def managed_intake_labels(config: dict[str, Any]) -> set[str]:
+def normalize_heading(value: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
+
+
+def markdown_sections(text: str) -> dict[str, str]:
+    matches = list(re.finditer(r"^#{2,6}\s+(.+?)\s*$", text, flags=re.MULTILINE))
+    sections: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        sections[normalize_heading(match.group(1))] = text[start:end].strip()
+    return sections
+
+
+def is_meaningful_section_value(value: str) -> bool:
+    stripped_lines = [line.strip() for line in value.splitlines()]
+    content_lines = [line for line in stripped_lines if line and line not in {"-", "- ", "N/A", "n/a"}]
+    return bool(content_lines)
+
+
+def missing_required_sections(body: str, required_sections: Iterable[str]) -> list[str]:
+    sections = markdown_sections(body)
+    missing: list[str] = []
+    for section in required_sections:
+        normalized = normalize_heading(section)
+        if not is_meaningful_section_value(sections.get(normalized, "")):
+            missing.append(section)
+    return missing
+
+
+def managed_verdict_labels(config: dict[str, Any]) -> set[str]:
     labels = config.get("labels", {})
     if not isinstance(labels, dict):
         return set()
-    override = labels.get("override")
-    return {str(value) for value in labels.values() if value and value != override and str(value).startswith("intake/")}
-
-
-def dry_run() -> bool:
-    return env_flag("PR_INTAKE_GATE_DRY_RUN")
+    verdict_keys = {"pass", "needs_intent", "needs_more_context", "no_code_alternative", "high_risk"}
+    return {str(labels[key]) for key in verdict_keys if labels.get(key) and str(labels[key]).startswith("intake/")}
 
 
 def get_label_details(config: dict[str, Any], label: str) -> dict[str, str]:
@@ -388,9 +453,11 @@ def remove_labels(ctx: PullRequestContext, labels: Iterable[str]) -> None:
         api_request("DELETE", f"/repos/{repo}/issues/{ctx.number}/labels/{encoded_label}", token, allow_404=True)
 
 
-def sync_labels(ctx: PullRequestContext, config: dict[str, Any], target_label: str) -> None:
-    stale = sorted((managed_intake_labels(config) - {target_label}) & ctx.labels)
+def sync_labels(ctx: PullRequestContext, config: dict[str, Any], target_label: str, extra_labels: Iterable[str]) -> None:
+    stale = sorted((managed_verdict_labels(config) - {target_label}) & ctx.labels)
     apply_label(ctx, config, target_label)
+    for label in extra_labels:
+        apply_label(ctx, config, label)
     remove_labels(ctx, stale)
 
 
@@ -467,13 +534,20 @@ def write_step_summary(summary: dict[str, Any]) -> None:
         return
     high_risk_paths = summary.get("high_risk_paths") or []
     high_risk_text = "\n".join(f"  - `{item}`" for item in high_risk_paths) if high_risk_paths else "  - none"
+    missing_sections = summary.get("missing_external_context_sections") or []
+    missing_text = ", ".join(f"`{item}`" for item in missing_sections) if missing_sections else "none"
 
     lines = [
         "## PR Intake Gate",
         "",
         f"- Verdict: `{summary['verdict']}`",
+        f"- Author: `{summary['author_login'] or 'unknown'}`",
+        f"- Author association: `{summary['author_association'] or 'unknown'}`",
+        f"- Author permission: `{summary['author_permission'] or 'unknown'}`",
+        f"- Trusted author: `{'yes' if summary['trusted_author'] else 'no'}`",
         f"- Changed lines: `{summary['changed_lines']}`",
         f"- Linked intent: `{'yes' if summary['linked_intent'] else 'no'}`",
+        f"- Missing external context sections: {missing_text}",
         "- High-risk paths:",
         high_risk_text,
         f"- Reason: {summary['reason']}",
@@ -484,10 +558,67 @@ def write_step_summary(summary: dict[str, Any]) -> None:
         handle.write("\n".join(lines))
 
 
+def list_config(config: dict[str, Any], path: tuple[str, ...], default: list[str]) -> list[str]:
+    raw: Any = config
+    for key in path:
+        if not isinstance(raw, dict):
+            return default
+        raw = raw.get(key)
+    if not isinstance(raw, list):
+        return default
+    return [str(item) for item in raw]
+
+
+def scalar_config(config: dict[str, Any], path: tuple[str, ...], default: str) -> str:
+    raw: Any = config
+    for key in path:
+        if not isinstance(raw, dict):
+            return default
+        raw = raw.get(key)
+    return str(raw) if raw is not None else default
+
+
+def trust_author(ctx: PullRequestContext, config: dict[str, Any], author_permission: AuthorPermission) -> tuple[bool, str]:
+    trusted_permissions = {item.lower() for item in list_config(config, ("trusted_authors", "permissions"), ["admin", "maintain", "write"])}
+    trusted_associations = {
+        item.upper()
+        for item in list_config(config, ("trusted_authors", "fallback_author_associations"), ["OWNER", "MEMBER", "COLLABORATOR"])
+    }
+
+    if author_permission.permission and author_permission.permission.lower() in trusted_permissions:
+        return True, f"permission:{author_permission.permission.lower()}"
+    if author_permission.permission is None and ctx.author_association.upper() in trusted_associations:
+        return True, f"author_association:{ctx.author_association.upper()}"
+    return False, "external"
+
+
+def build_missing_context_comment(missing: list[str], no_code_only: bool) -> str:
+    heading = "no-code alternative needed" if no_code_only else "more context needed"
+    lines = [
+        "<!-- punk-pr-intake-gate -->",
+        "",
+        f"## PR Intake Gate: {heading}",
+        "",
+        "Thanks for the contribution. External non-trivial PRs need enough context before ordinary code review.",
+        "",
+        "Please fill these PR body sections:",
+        "",
+    ]
+    lines.extend(f"- `{item}`" for item in missing)
+    lines.extend(
+        [
+            "",
+            "A maintainer can bypass this gate by adding `maintainer/override-intake`, or accept non-high-risk PR intent with `intake/accepted-for-pr`.",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def determine_verdict(
     ctx: PullRequestContext,
     config: dict[str, Any],
     files: list[ChangedFile],
+    author_permission: AuthorPermission,
 ) -> tuple[Verdict, dict[str, Any]]:
     labels = config.get("labels", {})
     if not isinstance(labels, dict):
@@ -496,13 +627,23 @@ def determine_verdict(
     override_label = str(labels.get("override") or "maintainer/override-intake")
     pass_label = str(labels.get("pass") or "intake/pass")
     needs_intent_label = str(labels.get("needs_intent") or "intake/needs-linked-intent")
+    needs_more_context_label = str(labels.get("needs_more_context") or "intake/needs-more-context")
+    no_code_alternative_label = str(labels.get("no_code_alternative") or "intake/no-code-alternative")
     high_risk_label = str(labels.get("high_risk") or "intake/high-risk")
+    accepted_for_pr_label = str(labels.get("accepted_for_pr") or "intake/accepted-for-pr")
+    first_time_label = str(labels.get("first_time") or "intake/first-time-contributor")
 
     trivial_config = config.get("trivial", {})
     max_changed_lines = int(trivial_config.get("max_changed_lines", 30))
     allowed_path_globs = [str(item) for item in trivial_config.get("allowed_path_globs", [])]
     high_risk_globs = [str(item) for item in config.get("high_risk_path_globs", [])]
     accept_patterns = [str(item) for item in config.get("linked_intent", {}).get("accept_patterns", [])]
+    required_sections = list_config(config, ("external_context", "required_sections"), [])
+    no_code_section = scalar_config(config, ("external_context", "no_code_section"), "No-code alternative")
+    first_time_associations = {
+        item.upper()
+        for item in list_config(config, ("external_context", "first_time_author_associations"), ["FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR"])
+    }
 
     changed_lines = sum(item.additions + item.deletions for item in files)
     changed_paths = [item.filename for item in files]
@@ -510,19 +651,33 @@ def determine_verdict(
     all_paths_allowed = all(any(path_matches(path, pattern) for pattern in allowed_path_globs) for path in changed_paths)
     is_trivial = bool(changed_paths) and changed_lines <= max_changed_lines and all_paths_allowed and not high_risk_paths
     linked = has_linked_intent(ctx.body, accept_patterns)
+    trusted_author, trust_source = trust_author(ctx, config, author_permission)
+    first_time_external = (not trusted_author) and ctx.author_association.upper() in first_time_associations
+    external_extra_labels = (first_time_label,) if first_time_external else ()
+    accepted_for_pr = accepted_for_pr_label in ctx.labels
+    missing_sections = missing_required_sections(ctx.body, required_sections) if required_sections else []
+    missing_no_code = no_code_section in missing_sections
 
     marker = str(config.get("bot_comment", {}).get("marker") or "<!-- punk-pr-intake-gate -->")
     details = {
         "repository": ctx.repository,
         "pull_request": ctx.number,
+        "author_login": ctx.author_login,
         "author_association": ctx.author_association,
+        "author_permission": author_permission.permission,
+        "author_permission_error": author_permission.error,
+        "trusted_author": trusted_author,
+        "trust_source": trust_source,
+        "first_time_external": first_time_external,
         "base_sha": ctx.base_sha,
         "head_sha": ctx.head_sha,
         "changed_lines": changed_lines,
         "changed_paths": changed_paths,
         "high_risk_paths": high_risk_paths,
         "linked_intent": linked,
+        "accepted_for_pr": accepted_for_pr,
         "is_trivial": is_trivial,
+        "missing_external_context_sections": missing_sections,
         "marker": marker,
     }
 
@@ -536,30 +691,17 @@ def determine_verdict(
                 should_comment=False,
                 comment_body=None,
                 exit_code=0,
+                extra_labels=external_extra_labels,
             ),
             details,
         )
 
-    if high_risk_paths:
-        return (
-            Verdict(
-                name="high-risk",
-                reason="PR touches configured high-risk punk paths.",
-                next_step="Maintainer should review intent/risk or add maintainer override.",
-                label=high_risk_label,
-                should_comment=True,
-                comment_body=HIGH_RISK_COMMENT,
-                exit_code=1,
-            ),
-            details,
-        )
-
-    if is_trivial:
+    if trusted_author:
         return (
             Verdict(
                 name="pass",
-                reason="PR is within trivial direct-PR limits.",
-                next_step="Code review can proceed.",
+                reason=f"Trusted repository author ({trust_source}).",
+                next_step="Code review can proceed; external-contributor intake checks are skipped.",
                 label=pass_label,
                 should_comment=False,
                 comment_body=None,
@@ -568,16 +710,92 @@ def determine_verdict(
             details,
         )
 
+    if high_risk_paths:
+        return (
+            Verdict(
+                name="high-risk",
+                reason="External PR touches configured high-risk Punk paths.",
+                next_step="Maintainer should review intent/risk or add maintainer override.",
+                label=high_risk_label,
+                should_comment=True,
+                comment_body=HIGH_RISK_COMMENT,
+                exit_code=1,
+                extra_labels=external_extra_labels,
+            ),
+            details,
+        )
+
+    if is_trivial:
+        return (
+            Verdict(
+                name="pass",
+                reason="External PR is within trivial direct-PR limits.",
+                next_step="Code review can proceed.",
+                label=pass_label,
+                should_comment=False,
+                comment_body=None,
+                exit_code=0,
+                extra_labels=external_extra_labels,
+            ),
+            details,
+        )
+
+    if accepted_for_pr:
+        return (
+            Verdict(
+                name="pass",
+                reason="Maintainer accepted this non-high-risk external PR for review.",
+                next_step="Code review can proceed.",
+                label=pass_label,
+                should_comment=False,
+                comment_body=None,
+                exit_code=0,
+                extra_labels=external_extra_labels,
+            ),
+            details,
+        )
+
+    if missing_no_code:
+        return (
+            Verdict(
+                name="no-code-alternative",
+                reason="External non-trivial PR is missing no-code alternative analysis.",
+                next_step="Fill the no-code alternative section or ask a maintainer to accept the PR intent.",
+                label=no_code_alternative_label,
+                should_comment=True,
+                comment_body=build_missing_context_comment(missing_sections, no_code_only=True),
+                exit_code=1,
+                extra_labels=external_extra_labels,
+            ),
+            details,
+        )
+
+    if missing_sections:
+        return (
+            Verdict(
+                name="needs-more-context",
+                reason="External non-trivial PR is missing required intake context sections.",
+                next_step="Fill the required context sections or ask a maintainer to accept the PR intent.",
+                label=needs_more_context_label,
+                should_comment=True,
+                comment_body=build_missing_context_comment(missing_sections, no_code_only=False),
+                exit_code=1,
+                extra_labels=external_extra_labels,
+            ),
+            details,
+        )
+
     if not linked:
         return (
             Verdict(
                 name="needs-linked-intent",
-                reason="Non-trivial PR does not include linked Issue, Discussion, or repo-tracked intent artifact.",
-                next_step="Add linked intent or ask a maintainer for override.",
+                reason="External non-trivial PR does not include linked Issue, Discussion, or repo-tracked intent artifact.",
+                next_step="Add linked intent or ask a maintainer to accept the PR intent.",
                 label=needs_intent_label,
                 should_comment=True,
                 comment_body=NEEDS_INTENT_COMMENT,
                 exit_code=1,
+                extra_labels=external_extra_labels,
             ),
             details,
         )
@@ -585,12 +803,13 @@ def determine_verdict(
     return (
         Verdict(
             name="pass",
-            reason="Non-trivial PR includes linked intent and avoids configured high-risk paths.",
+            reason="External non-trivial PR includes required context, linked intent, and avoids configured high-risk paths.",
             next_step="Code review can proceed.",
             label=pass_label,
             should_comment=False,
             comment_body=None,
             exit_code=0,
+            extra_labels=external_extra_labels,
         ),
         details,
     )
@@ -601,10 +820,11 @@ def main() -> int:
         config = load_minimal_yaml(CONFIG_PATH)
         event = load_event()
         ctx = get_pr_context(event)
+        author_permission = resolve_author_permission(ctx)
         files = load_changed_files(ctx)
-        verdict, details = determine_verdict(ctx, config, files)
+        verdict, details = determine_verdict(ctx, config, files, author_permission)
 
-        sync_labels(ctx, config, verdict.label)
+        sync_labels(ctx, config, verdict.label, verdict.extra_labels)
         marker = str(details["marker"])
         if verdict.should_comment and verdict.comment_body:
             upsert_comment(ctx, marker, verdict.comment_body)

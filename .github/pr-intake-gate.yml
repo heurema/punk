@@ -29,10 +29,37 @@ high_risk_path_globs:
   - 'brand/**'
   - 'work/**'
 
+trusted_authors:
+  permissions:
+    - 'admin'
+    - 'maintain'
+    - 'write'
+  fallback_author_associations:
+    - 'OWNER'
+    - 'MEMBER'
+    - 'COLLABORATOR'
+
+external_context:
+  required_sections:
+    - 'Problem'
+    - 'Why now'
+    - 'Existing options checked'
+    - 'Alternatives considered'
+    - 'No-code alternative'
+    - 'Why code is needed'
+  no_code_section: 'No-code alternative'
+  first_time_author_associations:
+    - 'FIRST_TIMER'
+    - 'FIRST_TIME_CONTRIBUTOR'
+
 labels:
   pass: 'intake/pass'
   needs_intent: 'intake/needs-linked-intent'
+  needs_more_context: 'intake/needs-more-context'
+  no_code_alternative: 'intake/no-code-alternative'
   high_risk: 'intake/high-risk'
+  accepted_for_pr: 'intake/accepted-for-pr'
+  first_time: 'intake/first-time-contributor'
   override: 'maintainer/override-intake'
 
 linked_intent:
@@ -55,9 +82,21 @@ label_details:
   intake/needs-linked-intent:
     color: 'd29922'
     description: 'PR needs linked Issue, Discussion, or Punk intent artifact'
+  intake/needs-more-context:
+    color: 'd29922'
+    description: 'External PR needs required problem, timing, option, and alternative context'
+  intake/no-code-alternative:
+    color: 'd29922'
+    description: 'External PR needs no-code alternative analysis'
   intake/high-risk:
     color: 'cf222e'
     description: 'PR touches high-risk Punk surfaces and needs maintainer attention'
+  intake/accepted-for-pr:
+    color: '0969da'
+    description: 'Maintainer accepted external PR intent for ordinary review'
+  intake/first-time-contributor:
+    color: 'bf8700'
+    description: 'External PR author appears to be a first-time contributor'
 
 bot_comment:
   marker: '<!-- punk-pr-intake-gate -->'

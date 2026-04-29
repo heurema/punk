@@ -153,3 +153,33 @@ No ADR required because this does not change core architecture, module interface
 1. Should GitHub branch protection require `pr-intake-gate` before merge?
 2. Should DCO sign-off become a separate required check later?
 3. Should small changes to `README.md` remain low-risk, or should README be promoted into high-risk once public positioning stabilizes?
+
+## Follow-up: trusted author split
+
+Checked on: 2026-04-29.
+
+After the initial gate landed, Punk adopted a maintainer-author fast path so the required gate does not slow down trusted repository work while still protecting external intake.
+
+The chosen mechanism is:
+
+1. Query GitHub repository permission for the PR author.
+2. Treat `admin`, `maintain`, and `write` as trusted.
+3. If permission lookup is unavailable or inconclusive, fallback to `author_association` and trust `OWNER`, `MEMBER`, and `COLLABORATOR`.
+4. Apply strict external intake only when the author is not trusted.
+
+Why this fits Punk:
+
+- it keeps the required status check uniform for every PR;
+- it avoids hidden UI parsing;
+- it keeps maintainer work low-friction;
+- it uses structured GitHub metadata before fallback heuristics;
+- it keeps external high-risk and non-trivial PRs bounded by linked intent and explicit context.
+
+Additional adoption map:
+
+| Classification | Items |
+|---|---|
+| adopt | Permission-first trusted author detection; `author_association` fallback; external-only context checks; first-time external contributor advisory label; maintainer `intake/accepted-for-pr` label for non-high-risk external intent acceptance. |
+| defer | Organization/team-specific allowlists and DCO automation. |
+| park | Contributor reputation scoring or model-based trust decisions. |
+| avoid | Applying heavyweight external contributor intake to maintainers by default. |
