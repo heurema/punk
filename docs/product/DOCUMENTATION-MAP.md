@@ -42,31 +42,33 @@ For product and architecture work, read in this order:
 
 1. `README.md`
 2. `docs/product/START-HERE.md`
-3. `docs/product/DOCUMENTATION-MAP.md`
-4. `docs/product/GLOSSARY.md`
-5. `docs/product/PUNK-LAWS.md`
-6. `docs/product/ARCHITECTURE.md`
-7. `docs/product/ROADMAP.md`
-8. `docs/product/CRATE-STATUS.md`
-9. `docs/product/RESEARCH-GATE.md`
-10. `docs/product/RESEARCH-INTAKE.md`
-11. `docs/product/TELEMETRY.md`
-12. `docs/product/EVAL-PLANE.md`
-13. `docs/product/PROJECT-MEMORY.md`
-14. `docs/product/DOC-GOVERNANCE.md`
-15. `docs/product/PUBLIC-NARRATIVE.md`
-16. `docs/product/LINEAGE.md`
-17. `docs/adr/`
-18. `knowledge/research/`
-19. `knowledge/ideas/`
-20. `work/goals/` and `work/reports/`
-21. `publishing/`
+3. `docs/product/NORTH-STAR.md`
+4. `docs/product/DOCUMENTATION-MAP.md`
+5. `docs/product/GLOSSARY.md`
+6. `docs/product/PUNK-LAWS.md`
+7. `docs/product/ARCHITECTURE.md`
+8. `docs/product/ROADMAP.md`
+9. `docs/product/CRATE-STATUS.md`
+10. `docs/product/RESEARCH-GATE.md`
+11. `docs/product/RESEARCH-INTAKE.md`
+12. `docs/product/TELEMETRY.md`
+13. `docs/product/EVAL-PLANE.md`
+14. `docs/product/PROJECT-MEMORY.md`
+15. `docs/product/DOC-GOVERNANCE.md`
+16. `docs/product/PUBLIC-NARRATIVE.md`
+17. `docs/product/LINEAGE.md`
+18. `docs/adr/`
+19. `knowledge/research/`
+20. `knowledge/ideas/`
+21. `work/goals/` and `work/reports/`
+22. `publishing/`
 
 ## Canonical owners
 
 | Truth surface | Canonical owner | Supporting/history refs | Notes |
 |---|---|---|---|
 | Product entry path | `docs/product/START-HERE.md` | `README.md` | `README.md` is the repo entry, not the deep canonical owner for every surface. |
+| Project north star and frontier direction | `docs/product/NORTH-STAR.md` | `docs/product/RESEARCH-GATE.md`, `docs/product/RESEARCH-INTAKE.md`, `knowledge/research/` | Defines high-level direction; does not activate future capabilities. |
 | Core laws | `docs/product/PUNK-LAWS.md` | `docs/adr/` | Law statements outrank lower-level docs. |
 | Architecture boundaries | `docs/product/ARCHITECTURE.md` | `docs/adr/`, `docs/modules/`, `docs/adapters/` | Defines planes, boundaries, and truth ownership. |
 | Contract Context Pack boundary | `docs/product/ARCHITECTURE.md` | `docs/product/CONTRACT-TRACKER.md`, `docs/product/PROJECT-MEMORY.md`, `docs/adr/ADR-0016-contract-context-pack-boundary.md`, `evals/specs/context-pack-boundary.v0.1.md` | Defines context selection as advisory contract-linked evidence, not project truth or a lifecycle phase. |
