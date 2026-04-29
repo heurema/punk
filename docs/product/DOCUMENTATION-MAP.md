@@ -69,6 +69,7 @@ For product and architecture work, read in this order:
 | Product entry path | `docs/product/START-HERE.md` | `README.md` | `README.md` is the repo entry, not the deep canonical owner for every surface. |
 | Core laws | `docs/product/PUNK-LAWS.md` | `docs/adr/` | Law statements outrank lower-level docs. |
 | Architecture boundaries | `docs/product/ARCHITECTURE.md` | `docs/adr/`, `docs/modules/`, `docs/adapters/` | Defines planes, boundaries, and truth ownership. |
+| Contract Context Pack boundary | `docs/product/ARCHITECTURE.md` | `docs/product/CONTRACT-TRACKER.md`, `docs/product/PROJECT-MEMORY.md`, `docs/adr/ADR-0016-contract-context-pack-boundary.md`, `evals/specs/context-pack-boundary.v0.1.md` | Defines context selection as advisory contract-linked evidence, not project truth or a lifecycle phase. |
 | Flow semantics | `docs/product/FLOW.md` | `docs/adr/ADR-0002-flow-and-eval-before-features.md` | `plot / cut / gate` lifecycle source. |
 | Eval operator contract | `docs/product/EVAL.md` | `docs/product/EVAL-PLANE.md`, `evals/` | Product direction for eval behavior. |
 | Eval runtime/report shape | `docs/product/EVAL-PLANE.md` | `evals/specs/`, `evals/cases/` | Architecture and report expectations. |

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-21
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - contract-work-ledger-direction
@@ -14,6 +14,7 @@ canonical_for:
   - contract-truth-model
   - doc-impact-carrier-direction
   - manual-work-ledger-semantics
+  - contract-context-pack-ledger-direction
 related_docs:
   - docs/product/FLOW.md
   - docs/product/PROJECT-MEMORY.md
@@ -78,10 +79,13 @@ The minimal object model is:
 Plot -> Contract -> Cut -> Run -> Receipt -> Proofpack -> GateDecision -> EventLog
 ```
 
+`Plot` may also prepare a linked `ContractContextPack` as advisory evidence for the contract. This does not add a lifecycle phase and does not make context selection a final decision.
+
 Definitions:
 
 - `Plot` shapes work and leads to a contract.
 - `Contract` defines bounded scope and approval state.
+- `ContractContextPack` records selected context refs, clause mappings, exclusions, contradictions, unknowns, and retrieval receipt refs that support the contract.
 - `Cut` is the bounded executable slice inside approved scope.
 - `Run` is one execution attempt.
 - `Receipt` records what the run actually did.
@@ -104,6 +108,20 @@ The Contract Tracker must preserve current Punk invariants:
 - adapters may invoke but may not own truth.
 
 This means the tracker is a ledger view over core artifacts, not an independent workflow system.
+
+## Context Pack link in Contract Tracker
+
+The Contract Tracker may show a Context Pack link when a contract needs curated
+context.
+
+The context pack must remain below the contract in authority:
+
+- it supports clauses; it does not create clauses;
+- its support and coverage mappings must resolve both ways;
+- it records unknowns; it does not hide them;
+- it may link retrieval receipts; it does not make retrieval truth;
+- it may feed an executor brief; it does not make the brief authoritative;
+- it may be cited by `gate`; it does not write the gate decision.
 
 ## Relationship to project memory
 

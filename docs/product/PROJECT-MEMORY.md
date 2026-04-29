@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -17,6 +17,7 @@ canonical_for:
   - manual-work-ledger-boundary
   - task-work-storage-direction
   - prompt-and-skill-memory-boundary
+  - contract-context-pack-memory-boundary
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/DOC-GOVERNANCE.md
@@ -26,8 +27,10 @@ related_adrs:
   - docs/adr/ADR-0008-knowledge-vault-boundaries.md
   - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
   - docs/adr/ADR-0015-project-memory-storage-direction.md
+  - docs/adr/ADR-0016-contract-context-pack-boundary.md
 related_evals:
   - evals/specs/project-memory-storage-boundary.v0.1.md
+  - evals/specs/context-pack-boundary.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -84,6 +87,44 @@ goal -> contract -> receipt -> eval/assessment -> gate decision -> proofpack -> 
 ```
 
 Project memory is built from linked artifacts, not accumulated prompt text or executor-local state.
+
+## Contract Context Pack memory boundary
+
+A Contract Context Pack is a contract-linked evidence-selection artifact
+prepared during `plot`.
+
+It is project-memory-relevant because it explains why specific context was
+selected, excluded, marked stale, or treated as unknown for a contract.
+
+It is not project truth by itself.
+
+A context pack may become part of the project-memory link graph only through
+explicit artifact refs, for example:
+
+```text
+goal -> contract -> context pack -> run/report -> eval -> gate decision -> proof
+```
+
+The pack should preserve:
+
+- selected source refs;
+- short rationales;
+- bidirectional clause/support mappings;
+- authority and status metadata;
+- explicit exclusions;
+- stale or superseded flags;
+- contradiction sets;
+- unknowns and assumptions;
+- retrieval receipt refs when retrieval was used.
+
+The pack must not preserve hidden prompt state as truth. If a prompt, runner
+aid, or executor-local memory should become durable project memory, it must be
+captured through the normal artifact path with scope, source, date, authority,
+review, and proof/gate links where relevant.
+
+Current scope is side-effect-free model/validation and documentation only.
+Runtime context-pack storage, derived views, retrieval integration, compression,
+and executor brief generation remain deferred or parked.
 
 ## Repo-tracked memory
 

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-27
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - crate-status
@@ -64,7 +64,7 @@ Current implemented behavior remains narrower:
 - `punk-rules` and `punk-project` are still minimal skeleton crates.
 - `punk-events` provides an append-only event-log kernel and deterministic JSONL behavior, but `.punk/events` runtime storage is not active.
 - `punk-flow` provides state-machine and guard evidence kernels, but no persisted runtime flow state.
-- `punk-contract` provides a side-effect-free contract lifecycle kernel, but no `.punk/contracts` storage.
+- `punk-contract` provides a side-effect-free contract lifecycle kernel and side-effect-free Contract Context Pack boundary model/validation helpers, but no `.punk/contracts` storage, context-pack writer, retrieval integration, executor brief generator, CLI behavior, or gate/proof authority.
 - `punk-domain` provides run receipt and validation evidence data models, but no `.punk/runs` writer.
 - `punk-eval` provides the local smoke eval harness, including opt-in JSON output, artifact hash policy helper behavior coverage, exact-byte artifact hash computation helper coverage, file IO artifact hashing helper coverage, referenced artifact verification helper coverage, proofpack manifest digest helper coverage, proofpack writer operation evidence model coverage, proofpack writer preflight plan model coverage, proofpack writer file IO plan model coverage, proofpack writer file IO outcome model coverage, proofpack writer file IO error reason model coverage, proofpack writer target path policy model coverage, proofpack writer canonical artifact model coverage, proofpack writer target artifact ref policy model coverage, proofpack writer preflight integration model coverage, proofpack writer active behavior model coverage, and target-ref alignment coverage for logical artifact refs versus path-policy refs, but no `.punk/evals` report storage, baseline, waiver system, or runtime eval report writer.
 - `punk-gate` provides a side-effect-free gate decision kernel, but no `.punk/decisions` writer, CLI behavior, runtime storage, or acceptance claim writer.
@@ -108,6 +108,7 @@ The current active-core responsibility is:
 
 - contract shape
 - scope validation
+- Contract Context Pack boundary shape and deterministic validation of no orphan context, material clause coverage, bidirectional support/coverage mapping, speculative-source exclusion, and advisory-only authority
 - validator plan and deterministic helpers
 - receipt/evidence shape
 - eval report shape

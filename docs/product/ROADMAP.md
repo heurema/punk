@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - roadmap-phase-gates
@@ -186,12 +186,16 @@ Required eval additions:
 - decision schema conformance
 - proofpack schema conformance
 - proof link/hash integrity
+- contract context pack boundary conformance: no orphan context, no unsupported material clause, advisory-only context refs
 
 ### Research intake additions
 
 - gate decisions link contract, run receipt, eval report, and proofpack
 - proofpack manifest records artifact hashes and event range/root
 - only `gate` can write final decision artifacts
+- `plot` may prepare a Contract Context Pack as linked advisory evidence for a
+  contract; it is not a fourth phase, not a retrieval engine, not project truth
+  by itself, and not an executor brief authority surface
 
 ## Phase 4 — Project Memory minimal
 
@@ -216,6 +220,7 @@ Required eval additions:
 - knowledge authority tags validated
 - speculative knowledge excluded from implementation truth
 - reports link goal/contract/eval/proof refs when relevant
+- context packs flag stale/superseded sources and surface contradictions instead of flattening them
 
 ### Research intake additions
 
@@ -381,6 +386,8 @@ Repo-search adapter promotion requires:
 - conformance evals for correctness, bounded search, latency,
   reproducibility, and stale-index behavior
 - proof that retrieval state remains non-canonical
+- proof that any retrieval result entering a Contract Context Pack remains
+  advisory, receipt-bearing evidence and does not become project truth
 - read-only retrieval before any editing/refactoring capability
 
 Out of scope for first adapter promotion:

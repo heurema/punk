@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - architecture-boundaries
@@ -19,6 +19,7 @@ canonical_for:
   - proofpack-provenance-boundary
   - eval-plane-boundary
   - executor-agnostic-validation-boundary
+  - contract-context-pack-boundary
 related_docs:
   - docs/product/PUNK-LAWS.md
   - docs/product/PROJECT-MEMORY.md
@@ -28,6 +29,7 @@ related_adrs:
   - docs/adr/ADR-0012-minimal-proofpack-provenance.md
   - docs/adr/ADR-0013-policy-assessment-gate-decision-boundary.md
   - docs/adr/ADR-0014-executor-agnostic-validation-boundary.md
+  - docs/adr/ADR-0016-contract-context-pack-boundary.md
 supersedes: []
 superseded_by: null
 ---
@@ -91,6 +93,38 @@ Use task-scoped briefs, examples, checklists, prompts, skills, playbooks, or loc
 These handoff artifacts should be derived from the current contract. They must not define acceptance criteria, override contracts, replace validators, write gate decisions, supersede proofpacks, or become project memory without explicit refs and review.
 
 Keep them progressively disclosed and task-scoped. Useful handoffs prefer assumptions before edits, simple solutions, surgical changes, and verifiable goals.
+
+### Contract Context Pack boundary
+
+`plot` may prepare a **Contract Context Pack** as a linked evidence-selection
+artifact for the current contract.
+
+A Contract Context Pack is not a new lifecycle phase. It is not a prompt
+manager, executor memory store, retrieval engine, decision object, proofpack,
+or project-truth owner.
+
+The pack exists to keep executor context bounded and inspectable:
+
+- every included context item should support a contract clause, scope boundary,
+  risk, non-goal, validator, or proof requirement, and that support should be
+  represented in clause coverage;
+- every material contract clause should have a source ref, user clarification,
+  explicit assumption, or explicit unknown linked through the pack's
+  support/coverage mapping;
+- canonical active sources outrank advisory sources;
+- speculative sources are excluded from implementation truth by default;
+- stale, superseded, archived, retired, or contradictory sources are surfaced
+  explicitly rather than flattened into prompt text;
+- retrieval receipts may be linked as advisory evidence, but retrieval state
+  must not own truth or write decisions;
+- task-scoped executor briefs may be derived from the contract and context pack,
+  but cannot define acceptance criteria, override validators, write gate
+  decisions, or become project memory without explicit refs and review.
+
+Current active-core scope is limited to side-effect-free model and validation
+helpers plus docs/eval specs. Runtime storage, context-pack writers, retrieval
+adapters, rerankers, compression systems, vector indexes, executor brief
+generation, and CLI behavior remain deferred or parked until later phase gates.
 
 The core owns the validation protocol:
 
@@ -213,6 +247,8 @@ Project memory should keep explicit links across:
 ```text
 goal -> contract -> report -> eval -> decision -> proof -> docs/public narrative
 ```
+
+A contract may also link a Contract Context Pack as advisory evidence selected during `plot`.
 
 The link graph is bounded project memory, not a giant prompt. It should stay repo-tracked where possible and derive inspectable views from canonical artifacts when needed.
 
