@@ -127,6 +127,18 @@ A conforming repo-search adapter must guarantee:
 6. It exposes enough provenance to diagnose stale or surprising results.
 7. It can be disabled without corrupting project state.
 
+## Relationship to Contract Context Packs
+
+A future repo-search adapter may provide candidate refs for a Contract Context
+Pack, but only through advisory retrieval receipts.
+
+The adapter must not decide which context is authoritative, must not promote
+retrieved content into project truth, and must not write gate decisions.
+
+If retrieved content is included in a context pack, the pack must still record
+clause support, source authority/status, exclusions, contradictions, unknowns,
+and retrieval receipt refs.
+
 ## Agent usage discipline
 
 Future agent-facing instructions should prefer bounded retrieval:

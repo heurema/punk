@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-20
+updated_at: 2026-04-29
 review_after: 2026-07-20
 canonical_for:
   - shared-terms
@@ -90,6 +90,23 @@ A meaningful contract will eventually carry `DocImpact` when docs truth may chan
 
 The explicit boundary of what a contract allows. Scope limits what `cut` may do and what `gate` may evaluate.
 
+### contract context pack
+
+A linked, contract-scoped evidence-selection artifact prepared during `plot`.
+
+It records selected context refs, clause/support mappings, exclusions,
+contradictions, unknowns, authority/status metadata, and retrieval receipt refs
+when relevant.
+
+It is advisory evidence. It is not a contract, not project truth by itself, not
+a prompt manager, not a retrieval engine, not a proofpack, and not a gate
+decision.
+
+### context pack boundary
+
+The policy that keeps contract context bounded, authority-aware, clause-linked,
+inspectable, and below contract/gate/proof authority.
+
 ### transition
 
 A state change in a flow. Every valid transition is checked by runtime state and writes an event.
@@ -145,6 +162,12 @@ The repo-tracked knowledge surface under `knowledge/`. It is not hidden runtime 
 ### retrieval memory
 
 Runtime or derived retrieval state such as indexes, frecency databases, caches, query history, symbol indexes, or vector indexes. Retrieval memory can help find evidence but is not project truth.
+
+### orphan context
+
+An included context item that supports no contract clause, scope boundary, risk,
+non-goal, validator, or proof requirement. Orphan context should be rejected or
+excluded because it bloats executor context without contract relevance.
 
 ### memory link graph
 
