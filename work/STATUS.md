@@ -33,6 +33,12 @@ last_validated_commit: null
 |---|---|---|---|
 | `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` | `ready` | Smallest safe step before active writer: make host path resolution and path encoding explicit without touching filesystem/runtime/schema/CLI. | — |
 
+## Open Drift Findings
+
+| Finding | Severity | Route | Owner | Next artifact |
+|---|---|---|---|---|
+| Existing docs-governance warning: `Research notes` heading in `docs/product/DOCUMENTATION-MAP.md` looks like an undeclared glossary term. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
+
 ## Blocked
 
 | Item | Blocked by | Needed to unblock |
@@ -47,6 +53,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-29 | Added Development Drift Loop v0.1 | `work/goals/goal_add_development_drift_loop_v0_1.md`, `work/reports/2026-04-29-development-drift-loop-v0-1.md`, `docs/product/DOGFOODING.md`, `work/STATUS.md` |
 | 2026-04-29 | Aligned current repository truth baseline v0.1 | `work/goals/goal_truth_baseline_docs_v0_1.md`, `work/reports/2026-04-29-truth-baseline-docs-v0-1.md`, `README.md`, `docs/product/LINEAGE.md`, `CHANGELOG.md` |
 | 2026-04-27 | Ran the fifty-fourth advisory Work Ledger Review | `work/goals/goal_run_fifty_fourth_work_ledger_review.md`, `work/reports/2026-04-27-fifty-fourth-work-ledger-review.md`, `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` |
 | 2026-04-27 | Added proofpack writer active behavior model v0.1 | `work/goals/goal_add_proofpack_writer_active_behavior_model_v0_1.md`, `crates/punk-proof/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `work/reports/2026-04-27-proofpack-writer-active-behavior-model-v0-1.md` |
@@ -177,11 +184,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-29
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files README.md CHANGELOG.md docs/product/LINEAGE.md docs/product/DOCUMENTATION-MAP.md work/STATUS.md work/goals/goal_truth_baseline_docs_v0_1.md work/reports/2026-04-29-truth-baseline-docs-v0-1.md --report work/reports/2026-04-29-truth-baseline-docs-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts .agents AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/DOGFOODING.md work/STATUS.md work/goals/goal_add_development_drift_loop_v0_1.md work/reports/2026-04-29-development-drift-loop-v0-1.md --report work/reports/2026-04-29-development-drift-loop-v0-1.md && cargo check --workspace && cargo test --workspace --quiet && grep -R "$PWD" -n work docs scripts AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - truth-baseline docs/work-ledger alignment is recorded in `work/reports/2026-04-29-truth-baseline-docs-v0-1.md`.
-  - docs-governance passed with 0 failures and 1 warning for the pre-existing `Research notes` heading in `docs/product/DOCUMENTATION-MAP.md`.
-  - `selected_next` is restored to `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` after the maintainer/user-approved override.
-  - no runtime/code/schema/CLI/`.punk`, active proofpack writer, filesystem write, operation-evidence persistence, gate decision, acceptance claim, adapter, automation, provider/model runner, PubPunk automation, or `punk init` was added by the truth-baseline docs pass.
-  - current implemented CLI truth remains limited to `punk flow inspect`, `punk eval run smoke`, and `punk eval run smoke --format json`.
+  - Development Drift Loop v0.1 is recorded in `work/reports/2026-04-29-development-drift-loop-v0-1.md`.
+  - docs-governance passed with 0 failures and 0 warnings for the drift-loop file set.
+  - `selected_next` remains restored to `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` after the short process override.
+  - no runtime/code/schema/CLI/`.punk`, drift detector, self-repair automation, autonomous agent, module, adapter, plugin runtime, provider/model runner, PubPunk automation, cloud/SaaS behavior, background job, separate drift database, or `punk init` was added.
