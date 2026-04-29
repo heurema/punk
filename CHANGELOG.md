@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Added a deterministic PR Intake Gate for linked-intent and high-risk surface screening before ordinary code review.
+
 - Added current-truth baseline documentation stage.
 - Added project lineage documentation.
 - Added changelog surface for pre-1.0 repository milestones.

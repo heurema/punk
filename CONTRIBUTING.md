@@ -107,6 +107,29 @@ In repo-tracked artifacts:
 - do not write `.punk/` runtime state unless explicitly scoped;
 - do not leave absolute local paths behind in committed files.
 
+
+## PR Intake Gate
+
+This repository uses a deterministic PR Intake Gate before ordinary code review.
+
+The gate is intentionally conservative:
+
+- it runs from trusted base-branch code through `pull_request_target`;
+- it reads PR metadata and changed-file metadata through the GitHub API;
+- it does not checkout, import, install, or execute PR head code;
+- it labels PRs with `intake/pass`, `intake/needs-linked-intent`, or `intake/high-risk`;
+- maintainers can bypass intake with `maintainer/override-intake` when they explicitly accept responsibility.
+
+Direct PRs are intended only for small low-risk edits. Non-trivial PRs should link an Issue, Discussion, or repo-tracked intent artifact such as `work/goals/...`, `work/reports/...`, `docs/adr/...`, `knowledge/research/...`, or `evals/specs/...`.
+
+PRs touching high-risk surfaces such as `.github/**`, `scripts/**`, `crates/**`, `docs/product/**`, `work/**`, `knowledge/**`, `evals/**`, public narrative, site, or brand assets require maintainer attention before ordinary code review.
+
+Local deterministic check:
+
+```bash
+scripts/check.sh pr-intake-gate
+```
+
 ## Commit sign-off (DCO)
 
 This repository uses the **Developer Certificate of Origin (DCO)** instead of a CLA.

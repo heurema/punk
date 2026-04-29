@@ -1,3 +1,12 @@
+## Linked intent
+
+Link the Issue, Discussion, goal, report, ADR, research note, or eval spec this PR implements.
+
+- Issue / Discussion:
+- Goal / report / ADR / research / eval ref:
+
+For non-trivial changes, open or link intent before ordinary code review. Direct PRs are intended only for small low-risk edits or maintainer-approved work.
+
 ## Summary
 
 Describe the change in 2-5 bullets.

@@ -4,3 +4,5 @@
 .playwright-cli/
 output/playwright/
 target/
+__pycache__/
+*.py[cod]
