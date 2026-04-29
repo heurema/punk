@@ -256,7 +256,11 @@ The link graph is bounded project memory, not a giant prompt. It should stay rep
 
 Knowledge Vault owns the repo-tracked knowledge artifact contract under `knowledge/`.
 
+Knowledge Vault is not RAG. Its direction is repo-first artifact ledger plus rebuildable derived claims, graphs, compiled views, context packs, and stale/conflict/unknown surfacing. RAG/vector search may later help discover candidate evidence, but it cannot become the vault or project truth.
+
 Retrieval is an inspectable advisory view over project memory. It can provide evidence to `plot`, `cut`, and `gate`, but it cannot approve work, execute work, or write final decisions.
+
+A future Context Compiler may compile task-specific context packs from authoritative sources, code graph neighbors, decisions, contracts, evals, stale/conflict/unknown signals, and budget constraints. It is a future advisory boundary only: it cannot write decisions, approve work, execute work, or own truth, and it is not active runtime.
 
 Future storage and retrieval must preserve these boundaries:
 

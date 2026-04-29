@@ -300,6 +300,18 @@ It checks:
 - unresolved cleanup obligations
 - blocked/escalated work
 
+## Knowledge Vault direction
+
+Knowledge Vault is not RAG.
+
+Repo artifacts remain the source inputs for project memory. Derived claims, graphs, compiled wiki pages, indexes, embeddings, and views are rebuildable and non-authoritative unless a later promoted artifact explicitly changes their status.
+
+Context packs are advisory task-specific selections. They can explain which sources support a contract, which sources were excluded, and which stale/conflict/unknown signals matter for that task. They are not project truth by themselves.
+
+Canonical truth changes only through reviewed/promoted artifacts such as laws, product docs, ADRs, roadmap decisions, contracts, evals, reports, gate decisions, proofs, or public narrative receipts.
+
+Direction note: `knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md`.
+
 ## Knowledge Vault operating boundary
 
 Knowledge Vault is the repo-tracked knowledge surface of the Project Memory Plane.

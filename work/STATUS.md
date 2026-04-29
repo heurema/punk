@@ -21,6 +21,7 @@ last_validated_commit: null
 - Current focus: define proofpack writer host path resolution boundary v0.1 after completing the truth-baseline docs override.
 - Selected next: `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md`
 - Scope override note: `work/goals/goal_truth_baseline_docs_v0_1.md` intentionally paused the previous selected next so the repo entry, changelog, lineage, and live work ledger could clearly separate current implemented behavior from target architecture, parked scope, and future surfaces. That override is now recorded as done, and the paused proofpack writer boundary work is restored as selected next.
+- Scope override note: `work/goals/goal_record_project_knowledge_vault_direction_v0_1.md` recorded the maintainer-approved Project Knowledge Vault direction as a docs/research-only interruption before returning to proofpack writer boundary work. That override is now recorded as done, and the paused proofpack writer boundary work remains restored as selected next.
 - Why this is next: proofpack writer active behavior model v0.1 is in place, but active writer implementation would be too early until host path resolution, path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape boundaries are explicit. This keeps Punk setup-neutral and prevents hidden filesystem authority before any writer/storage/schema/CLI work.
 - Acceptance:
   - docs/spec boundary defines how future storage root refs and target path refs may become host path observations.
@@ -53,6 +54,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-29 | Recorded Project Knowledge Vault direction v0.1 | `work/goals/goal_record_project_knowledge_vault_direction_v0_1.md`, `work/reports/2026-04-29-project-knowledge-vault-direction-v0-1.md`, `knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md`, `knowledge/ideas/2026-04-29-compiled-project-wiki-and-claim-graph.md` |
 | 2026-04-29 | Added Development Drift Loop v0.1 | `work/goals/goal_add_development_drift_loop_v0_1.md`, `work/reports/2026-04-29-development-drift-loop-v0-1.md`, `docs/product/DOGFOODING.md`, `work/STATUS.md` |
 | 2026-04-29 | Aligned current repository truth baseline v0.1 | `work/goals/goal_truth_baseline_docs_v0_1.md`, `work/reports/2026-04-29-truth-baseline-docs-v0-1.md`, `README.md`, `docs/product/LINEAGE.md`, `CHANGELOG.md` |
 | 2026-04-29 | Applied and revised Contract Context Pack boundary patch v0.1 | `work/goals/goal_apply_contract_context_pack_boundary_patch_v0_1.md`, `work/reports/2026-04-29-contract-context-pack-boundary-patch-v0-1.md`, `docs/adr/ADR-0016-contract-context-pack-boundary.md`, `crates/punk-contract/src/lib.rs` |
@@ -185,10 +187,10 @@ last_validated_commit: null
 ## Validation
 
 - Last checked: 2026-04-29
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files docs/product/DOGFOODING.md work/STATUS.md work/goals/goal_add_development_drift_loop_v0_1.md work/reports/2026-04-29-development-drift-loop-v0-1.md --report work/reports/2026-04-29-development-drift-loop-v0-1.md && cargo check --workspace && cargo test --workspace --quiet && grep -R "$PWD" -n work docs scripts AGENTS.md knowledge evals site/src || true`
+- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && scripts/check.sh docs-governance --files knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md knowledge/ideas/2026-04-29-compiled-project-wiki-and-claim-graph.md docs/product/PROJECT-MEMORY.md docs/product/ARCHITECTURE.md docs/product/DOCUMENTATION-MAP.md work/STATUS.md work/goals/goal_record_project_knowledge_vault_direction_v0_1.md work/reports/2026-04-29-project-knowledge-vault-direction-v0-1.md --report work/reports/2026-04-29-project-knowledge-vault-direction-v0-1.md && cargo check --workspace && cargo test --workspace && grep -R "$PWD" -n work docs scripts AGENTS.md knowledge evals site/src || true`
 - Result: `PASS`
 - Notes:
-  - Development Drift Loop v0.1 is recorded in `work/reports/2026-04-29-development-drift-loop-v0-1.md`.
-  - docs-governance passed with 0 failures and 0 warnings for the drift-loop file set.
-  - `selected_next` remains restored to `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` after the short process override.
-  - no runtime/code/schema/CLI/`.punk`, drift detector, self-repair automation, autonomous agent, module, adapter, plugin runtime, provider/model runner, PubPunk automation, cloud/SaaS behavior, background job, separate drift database, or `punk init` was added.
+  - Project Knowledge Vault Direction v0.1 is recorded in `work/reports/2026-04-29-project-knowledge-vault-direction-v0-1.md`.
+  - docs-governance passed with 0 failures and 6 warnings for the direction file set; warnings are existing duplicate-definition candidates plus the known `Research notes` undeclared glossary heading candidate.
+  - `selected_next` remains restored to `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md` after the docs/research-only Knowledge Vault direction override.
+  - no runtime/code/schema/CLI/`.punk`, Knowledge Vault implementation, graph DB, embeddings, vector DB, RAG pipeline, compiled wiki generator, context compiler, daemon, MCP runtime, retrieval adapter, Knowledge Impact Report convention, or proofpack writer work was added.
