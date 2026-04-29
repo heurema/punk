@@ -13,6 +13,7 @@ canonical_for:
   - research-idea-artifact-flow
   - research-intake-storage
 related_docs:
+  - docs/product/NORTH-STAR.md
   - docs/product/RESEARCH-GATE.md
   - docs/product/ROADMAP.md
   - docs/product/TELEMETRY.md
@@ -43,6 +44,14 @@ Research Intake defines how external project research becomes Punk work without 
 
 `punk` uses research to extract mechanisms, not to copy whole products. Every idea must be classified before it touches architecture, roadmap, evals, or implementation.
 
+## North Star lens
+
+Research Intake should classify external ideas through the project north star in `docs/product/NORTH-STAR.md`.
+
+Punk should extract mechanisms that preserve a path from code-first work toward spec-and-intent-native, evidence-backed, proof-bearing workflows.
+
+This lens does not override active-core scope. An idea that matches the north star can still be deferred, parked, or avoided if it outruns current trust surfaces, creates a second source of truth, bypasses `gate`, weakens proof/eval discipline, or implies future capabilities are active today.
+
 ## Intake rule
 
 Every non-trivial external idea must be placed into exactly one of these outcomes:
@@ -66,6 +75,7 @@ Each idea should record:
 - recommendation: adopt, defer, park, avoid
 - required docs
 - required evals
+- north star fit: whether the idea preserves the path from code-first work toward spec-and-intent-native, evidence-backed, proof-bearing workflows
 - score: core fit, trust impact, local-first compatibility, implementation cost, prematurity risk, differentiation
 
 ## Adopt criteria
@@ -81,6 +91,8 @@ An idea can be adopted into active-core only if it strengthens at least one of t
 - proofpack
 - inspectable state
 - project memory
+
+Adoption should also preserve the North Star trajectory, but North Star fit alone is not enough for active-core adoption.
 
 Adopted ideas must not introduce hidden network behavior, hidden analytics, unbounded agents, or a second source of truth.
 
