@@ -20,7 +20,7 @@ import urllib.request
 from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 ROOT = os.environ.get("GITHUB_WORKSPACE") or os.getcwd()
 CONFIG_PATH = os.path.join(ROOT, ".github", "pr-intake-gate.yml")
@@ -528,6 +528,15 @@ def update_existing_gate_comment(ctx: PullRequestContext, marker: str, body: str
             return
 
 
+def run_optional_side_effect(name: str, action: Callable[[], None]) -> bool:
+    try:
+        action()
+        return True
+    except GateError as exc:
+        print(f"pr-intake-gate warning: {name} skipped: {exc}", file=sys.stderr)
+        return False
+
+
 def write_step_summary(summary: dict[str, Any]) -> None:
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not path:
@@ -824,12 +833,12 @@ def main() -> int:
         files = load_changed_files(ctx)
         verdict, details = determine_verdict(ctx, config, files, author_permission)
 
-        sync_labels(ctx, config, verdict.label, verdict.extra_labels)
+        run_optional_side_effect("label sync", lambda: sync_labels(ctx, config, verdict.label, verdict.extra_labels))
         marker = str(details["marker"])
         if verdict.should_comment and verdict.comment_body:
-            upsert_comment(ctx, marker, verdict.comment_body)
+            run_optional_side_effect("comment upsert", lambda: upsert_comment(ctx, marker, verdict.comment_body))
         elif verdict.exit_code == 0:
-            update_existing_gate_comment(ctx, marker, PASS_COMMENT)
+            run_optional_side_effect("comment update", lambda: update_existing_gate_comment(ctx, marker, PASS_COMMENT))
 
         summary = {
             **details,

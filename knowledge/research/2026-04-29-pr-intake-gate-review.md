@@ -183,3 +183,20 @@ Additional adoption map:
 | defer | Organization/team-specific allowlists and DCO automation. |
 | park | Contributor reputation scoring or model-based trust decisions. |
 | avoid | Applying heavyweight external contributor intake to maintainers by default. |
+
+## Follow-up: label/comment writes as side effects
+
+Checked on: 2026-04-29.
+
+Opening the trusted-author follow-up PR showed that GitHub token write operations can fail independently of the deterministic intake verdict:
+
+```text
+GitHub API POST /repos/heurema/punk/issues/4/labels failed: HTTP 403: Resource not accessible by integration
+```
+
+Forward policy:
+
+- request both `issues: write` and `pull-requests: write` for the intake workflow;
+- treat label and bot-comment writes as best-effort visibility side effects;
+- keep the required status-check verdict based on PR metadata, changed-file metadata, author trust, linked intent, and configured policy;
+- do not let a label/comment write denial turn a valid pass/fail verdict into an infrastructure error.

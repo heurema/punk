@@ -14,11 +14,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from scripts.pr_intake_gate import (  # noqa: E402
+    GateError,
     get_label_details,
     is_gate_comment,
     load_minimal_yaml,
     missing_required_sections,
     path_matches,
+    run_optional_side_effect,
 )
 
 FULL_EXTERNAL_BODY = """## External contributor context
@@ -161,6 +163,10 @@ def run_case(
         return payload
 
 
+def raise_gate_error() -> None:
+    raise GateError("synthetic write failure")
+
+
 def main() -> int:
     marker = "<!-- punk-pr-intake-gate -->"
     assert path_matches("README.md", "README.md")
@@ -175,6 +181,8 @@ def main() -> int:
     assert get_label_details(config, "intake/high-risk")["description"]
     assert not missing_required_sections(FULL_EXTERNAL_BODY, config["external_context"]["required_sections"])
     assert "No-code alternative" in missing_required_sections(MISSING_NO_CODE_BODY, config["external_context"]["required_sections"])
+    assert run_optional_side_effect("test no-op", lambda: None) is True
+    assert run_optional_side_effect("test failure", raise_gate_error) is False
     print("ok - helper semantics")
 
     trusted_permission = run_case(

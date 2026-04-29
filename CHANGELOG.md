@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Split PR Intake Gate behavior between trusted repository authors and external contributors, with permission-first trusted author detection and stricter external context checks.
+- Split PR Intake Gate behavior between trusted repository authors and external contributors, with permission-first trusted author detection, stricter external context checks, and best-effort label/comment side effects.
 - Clarified the current implemented CLI surface in `README.md`.
 - Clarified that broader architecture docs describe target, phase-gated, parked, or future scope unless explicitly marked active.
 - Updated work-ledger status for the maintainer-approved truth-baseline documentation pass.

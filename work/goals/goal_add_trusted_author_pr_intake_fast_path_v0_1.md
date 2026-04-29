@@ -14,6 +14,7 @@ completed_at: 2026-04-29
 blocked_by: []
 scope:
   include:
+    - ".github/workflows/pr-intake-gate.yml"
     - ".github/pr-intake-gate.yml"
     - ".github/PULL_REQUEST_TEMPLATE.md"
     - "scripts/pr_intake_gate.py"
@@ -35,6 +36,7 @@ acceptance:
   - "External non-trivial PRs require linked intent and required context sections unless `intake/accepted-for-pr` or `maintainer/override-intake` is present."
   - "External high-risk PRs remain blocked until `maintainer/override-intake`."
   - "First-time external contributors receive an advisory `intake/first-time-contributor` label."
+  - "Workflow permissions and script side-effect handling keep label/comment write failures from becoming infrastructure failures."
   - "Local fixture tests cover permission trust, association fallback, external context failures, accepted-for-pr, first-time signal, and override behavior."
   - "No Rust code, `.punk` runtime state, active CLI behavior, product runtime behavior, gate decision, or proofpack behavior changes are made."
 knowledge_refs:
@@ -92,6 +94,7 @@ The implementation is intentionally repo-governance only:
 - external-only context checks;
 - first-time external advisory signal;
 - maintainer `intake/accepted-for-pr` and `maintainer/override-intake` controls;
+- best-effort label/comment writes so the check verdict remains based on PR metadata when GitHub denies write-side effects;
 - no Rust code, `.punk`, product docs, runtime gate/proof behavior, provider, model, agent, marketplace, SaaS, or active CLI changes.
 
 After this scope override, `work/STATUS.md:selected_next` remains `work/goals/goal_run_fifty_fifth_work_ledger_review.md`.

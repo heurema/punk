@@ -121,6 +121,7 @@ The gate is intentionally conservative for external contributors and intentional
 - if permission lookup is unavailable, `OWNER`, `MEMBER`, and `COLLABORATOR` author associations pass as a fallback;
 - external PRs are labeled with `intake/pass`, `intake/needs-linked-intent`, `intake/needs-more-context`, `intake/no-code-alternative`, or `intake/high-risk`;
 - first-time external contributors also receive `intake/first-time-contributor`;
+- label and bot-comment updates are best-effort visibility aids; the check verdict comes from the deterministic PR metadata evaluation;
 - maintainers can accept a non-high-risk external PR with `intake/accepted-for-pr`;
 - maintainers can bypass intake with `maintainer/override-intake` when they explicitly accept responsibility.
 
