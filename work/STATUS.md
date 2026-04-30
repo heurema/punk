@@ -20,6 +20,7 @@ last_validated_commit: null
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: run the fifty-fifth advisory Work Ledger Review after defining proofpack writer host path resolution boundary v0.1.
 - Selected next: `work/goals/goal_run_fifty_fifth_work_ledger_review.md`
+- Scope override note: `work/goals/goal_remove_legacy_pr_intake_gate_local_engine_v0_1.md` removed the now-unused local PR Intake Gate script/test harness after shared-action migration while preserving Punk-local policy and leaving runtime/product scope unchanged. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_migrate_pr_intake_gate_to_repo_governance_v0_1.md` migrated the PR Intake Gate workflow to the shared `heurema/repo-governance` action while preserving Punk-local policy and leaving runtime/product scope unchanged. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_add_trusted_author_pr_intake_fast_path_v0_1.md` refined PR Intake Gate trust policy so trusted repository authors pass by GitHub permission with `author_association` fallback, while strict context checks apply only to external contributors and label/comment writes remain best-effort. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_add_pr_intake_gate_v0_1.md` added a maintainer-requested deterministic PR Intake Gate v0.1 as repo-governance work before returning to the proofpack writer advisory review. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
@@ -59,6 +60,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-30 | Removed legacy local PR Intake Gate engine | `work/goals/goal_remove_legacy_pr_intake_gate_local_engine_v0_1.md`, `work/reports/2026-04-30-pr-intake-gate-local-engine-cleanup-v0-1.md`, `scripts/check.sh`, `CONTRIBUTING.md` |
 | 2026-04-30 | Migrated PR Intake Gate workflow to shared repo-governance action | `work/goals/goal_migrate_pr_intake_gate_to_repo_governance_v0_1.md`, `work/reports/2026-04-30-pr-intake-gate-repo-governance-migration-v0-1.md`, `.github/pr-intake-gate.yml`, `.github/workflows/pr-intake-gate.yml` |
 | 2026-04-29 | Added trusted-author PR Intake Gate fast path v0.1 | `work/goals/goal_add_trusted_author_pr_intake_fast_path_v0_1.md`, `work/reports/2026-04-29-trusted-author-pr-intake-fast-path-v0-1.md`, `.github/pr-intake-gate.yml`, `.github/workflows/pr-intake-gate.yml`, `scripts/pr_intake_gate.py` |
 | 2026-04-29 | Added deterministic PR Intake Gate v0.1 | `work/goals/goal_add_pr_intake_gate_v0_1.md`, `work/reports/2026-04-29-pr-intake-gate-v0-1.md`, `.github/workflows/pr-intake-gate.yml`, `scripts/pr_intake_gate.py` |
@@ -196,11 +198,11 @@ last_validated_commit: null
 
 ## Validation
 
-- Last checked: 2026-04-29
-- Command: `git diff --check && python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && python3 -m py_compile scripts/pr_intake_gate.py scripts/test_pr_intake_gate.py && PYTHONDONTWRITEBYTECODE=1 scripts/check.sh pr-intake-gate && scripts/check.sh docs-governance --files .github/PULL_REQUEST_TEMPLATE.md .github/pr-intake-gate.yml .github/workflows/pr-intake-gate.yml CHANGELOG.md CONTRIBUTING.md knowledge/research/2026-04-29-pr-intake-gate-review.md scripts/pr_intake_gate.py scripts/test_pr_intake_gate.py work/STATUS.md work/goals/goal_add_trusted_author_pr_intake_fast_path_v0_1.md work/reports/2026-04-29-trusted-author-pr-intake-fast-path-v0-1.md --report work/reports/2026-04-29-trusted-author-pr-intake-fast-path-v0-1.md && grep -R "$PWD" -n work docs scripts .github AGENTS.md knowledge evals README.md CONTRIBUTING.md CHANGELOG.md || true`
+- Last checked: 2026-04-30
+- Command: `python3 scripts/check_research_gate.py && python3 scripts/check_work_ledger.py && git diff --check && scripts/check.sh docs-governance --files scripts/check.sh CONTRIBUTING.md CHANGELOG.md work/STATUS.md work/goals/goal_remove_legacy_pr_intake_gate_local_engine_v0_1.md work/reports/2026-04-30-pr-intake-gate-local-engine-cleanup-v0-1.md --report work/reports/2026-04-30-pr-intake-gate-local-engine-cleanup-v0-1.md && grep -R "$PWD" -n work docs scripts .github AGENTS.md knowledge evals README.md CONTRIBUTING.md CHANGELOG.md || true`
 - Result: `PASS`
 - Notes:
-  - Trusted-author PR Intake Gate fast path v0.1 is recorded in `work/reports/2026-04-29-trusted-author-pr-intake-fast-path-v0-1.md`.
+  - Legacy local PR Intake Gate engine cleanup is recorded in `work/reports/2026-04-30-pr-intake-gate-local-engine-cleanup-v0-1.md`.
   - docs-governance passed with 0 failures and 0 warnings for the file set.
   - `selected_next` remains `work/goals/goal_run_fifty_fifth_work_ledger_review.md` after this maintainer-requested scope override.
   - no Rust code, `.punk` runtime state, active CLI behavior, product runtime behavior, gate decision, proofpack behavior, provider/model runner, branch-protection mutation, or GitHub PR head-code execution was added.
