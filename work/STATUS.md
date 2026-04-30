@@ -6,7 +6,7 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-04-29
+updated_at: 2026-04-30
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
 current_focus: "Run the fifty-fifth advisory Work Ledger Review"
 selected_next: "work/goals/goal_run_fifty_fifth_work_ledger_review.md"
@@ -20,6 +20,7 @@ last_validated_commit: null
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: run the fifty-fifth advisory Work Ledger Review after defining proofpack writer host path resolution boundary v0.1.
 - Selected next: `work/goals/goal_run_fifty_fifth_work_ledger_review.md`
+- Scope override note: `work/goals/goal_migrate_pr_intake_gate_to_repo_governance_v0_1.md` migrated the PR Intake Gate workflow to the shared `heurema/repo-governance` action while preserving Punk-local policy and leaving runtime/product scope unchanged. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_add_trusted_author_pr_intake_fast_path_v0_1.md` refined PR Intake Gate trust policy so trusted repository authors pass by GitHub permission with `author_association` fallback, while strict context checks apply only to external contributors and label/comment writes remain best-effort. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_add_pr_intake_gate_v0_1.md` added a maintainer-requested deterministic PR Intake Gate v0.1 as repo-governance work before returning to the proofpack writer advisory review. The override is now recorded as done, and `work/goals/goal_run_fifty_fifth_work_ledger_review.md` remains selected next.
 - Scope override note: `work/goals/goal_truth_baseline_docs_v0_1.md` intentionally paused the previous selected next so the repo entry, changelog, lineage, and live work ledger could clearly separate current implemented behavior from target architecture, parked scope, and future surfaces. That override is now recorded as done, and the paused proofpack writer boundary work is restored as selected next.
@@ -58,6 +59,7 @@ last_validated_commit: null
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-04-30 | Migrated PR Intake Gate workflow to shared repo-governance action | `work/goals/goal_migrate_pr_intake_gate_to_repo_governance_v0_1.md`, `work/reports/2026-04-30-pr-intake-gate-repo-governance-migration-v0-1.md`, `.github/pr-intake-gate.yml`, `.github/workflows/pr-intake-gate.yml` |
 | 2026-04-29 | Added trusted-author PR Intake Gate fast path v0.1 | `work/goals/goal_add_trusted_author_pr_intake_fast_path_v0_1.md`, `work/reports/2026-04-29-trusted-author-pr-intake-fast-path-v0-1.md`, `.github/pr-intake-gate.yml`, `.github/workflows/pr-intake-gate.yml`, `scripts/pr_intake_gate.py` |
 | 2026-04-29 | Added deterministic PR Intake Gate v0.1 | `work/goals/goal_add_pr_intake_gate_v0_1.md`, `work/reports/2026-04-29-pr-intake-gate-v0-1.md`, `.github/workflows/pr-intake-gate.yml`, `scripts/pr_intake_gate.py` |
 | 2026-04-29 | Defined proofpack writer host path resolution boundary v0.1 | `work/goals/goal_define_proofpack_writer_host_path_resolution_boundary_v0_1.md`, `evals/specs/proofpack-writer-host-path-resolution-boundary.v0.1.md`, `work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md`, `docs/product/CRATE-STATUS.md` |

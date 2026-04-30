@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Moved PR Intake Gate workflow execution to the shared `heurema/repo-governance` action while keeping Punk policy local.
 - Split PR Intake Gate behavior between trusted repository authors and external contributors, with permission-first trusted author detection, stricter external context checks, and best-effort label/comment side effects.
 - Clarified the current implemented CLI surface in `README.md`.
 - Clarified that broader architecture docs describe target, phase-gated, parked, or future scope unless explicitly marked active.
