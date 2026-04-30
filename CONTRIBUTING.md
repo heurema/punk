@@ -129,11 +129,13 @@ Direct external PRs are intended only for small low-risk edits. Non-trivial exte
 
 External PRs touching high-risk surfaces such as `.github/**`, `scripts/**`, `crates/**`, `docs/product/**`, `work/**`, `knowledge/**`, `evals/**`, public narrative, site, or brand assets require maintainer attention before ordinary code review.
 
-Local deterministic check:
+Shared gate engine:
 
-```bash
-scripts/check.sh pr-intake-gate
-```
+- runtime action: `heurema/repo-governance/actions/pr-intake-gate@v0.1.0` in `.github/workflows/pr-intake-gate.yml`;
+- local policy: `.github/pr-intake-gate.yml`;
+- reusable engine tests live in the shared `heurema/repo-governance` repository.
+
+For policy changes, open a PR and verify the `pr-intake-gate` check.
 
 ## Commit sign-off (DCO)
 
