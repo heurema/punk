@@ -32,6 +32,35 @@ Mark all that apply.
 
 What problem does this PR solve? Why now?
 
+
+## External contributor context
+
+Required for non-trivial external PRs unless a maintainer adds `intake/accepted-for-pr` or `maintainer/override-intake`. Trusted repository authors may leave this as N/A.
+
+### Problem
+
+What concrete problem does this solve?
+
+### Why now
+
+Why is this needed now?
+
+### Existing options checked
+
+What docs, issues, discussions, goals, reports, ADRs, or current behavior did you already check?
+
+### Alternatives considered
+
+What alternatives did you consider?
+
+### No-code alternative
+
+Can this be solved with docs, process, configuration, or existing behavior instead of code? Why is that insufficient?
+
+### Why code is needed
+
+Why is a code or repository change the right next step?
+
 ## Research Gate preflight
 
 - Classification: `R0 | R1 | R2 | R3`

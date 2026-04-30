@@ -13,17 +13,93 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts.pr_intake_gate import get_label_details, is_gate_comment, load_minimal_yaml, path_matches  # noqa: E402
+from scripts.pr_intake_gate import (  # noqa: E402
+    GateError,
+    get_label_details,
+    is_gate_comment,
+    load_minimal_yaml,
+    missing_required_sections,
+    path_matches,
+    run_optional_side_effect,
+)
+
+FULL_EXTERNAL_BODY = """## External contributor context
+
+### Problem
+
+A concrete problem.
+
+### Why now
+
+This blocks current contributor work.
+
+### Existing options checked
+
+The current docs and issues do not cover this.
+
+### Alternatives considered
+
+Docs-only and process-only options were considered.
+
+### No-code alternative
+
+No-code alternative is insufficient because the behavior needs a repository check.
+
+### Why code is needed
+
+A deterministic check is required.
+
+Closes #42
+"""
+
+FULL_CONTEXT_NO_LINK_BODY = FULL_EXTERNAL_BODY.replace("\nCloses #42\n", "\n")
+MISSING_NO_CODE_BODY = """## External contributor context
+
+### Problem
+
+A concrete problem.
+
+### Why now
+
+This blocks current contributor work.
+
+### Existing options checked
+
+The current docs and issues do not cover this.
+
+### Alternatives considered
+
+Docs-only and process-only options were considered.
+
+### Why code is needed
+
+A deterministic check is required.
+
+Closes #42
+"""
+MISSING_CONTEXT_BODY = """## External contributor context
+
+### Problem
+
+A concrete problem.
+
+### No-code alternative
+
+No-code alternative is insufficient.
+
+Closes #42
+"""
 
 
-def write_event(path: Path, body: str, labels: list[str]) -> None:
+def write_event(path: Path, body: str, labels: list[str], association: str, author_login: str = "contributor") -> None:
     event = {
         "repository": {"full_name": "heurema/punk"},
         "pull_request": {
             "number": 123,
             "title": "Test PR",
             "body": body,
-            "author_association": "CONTRIBUTOR",
+            "author_association": association,
+            "user": {"login": author_login},
             "labels": [{"name": label} for label in labels],
             "base": {"sha": "base-sha"},
             "head": {"sha": "head-sha"},
@@ -39,14 +115,16 @@ def run_case(
     files: list[dict[str, object]],
     body: str = "",
     labels: list[str] | None = None,
-) -> None:
+    association: str = "CONTRIBUTOR",
+    author_permission: str | None = None,
+) -> dict[str, object]:
     labels = labels or []
     with tempfile.TemporaryDirectory(prefix=f"punk-pr-intake-{name}-") as tmp_raw:
         tmp = Path(tmp_raw)
         event_path = tmp / "event.json"
         stdout_path = tmp / "stdout.json"
         summary_path = tmp / "summary.md"
-        write_event(event_path, body, labels)
+        write_event(event_path, body, labels, association)
 
         env = os.environ.copy()
         env.update(
@@ -57,6 +135,8 @@ def run_case(
                 "PR_INTAKE_GATE_DRY_RUN": "1",
             }
         )
+        if author_permission is not None:
+            env["PR_INTAKE_GATE_AUTHOR_PERMISSION"] = author_permission
         result = subprocess.run(
             [sys.executable, "scripts/pr_intake_gate.py"],
             cwd=ROOT,
@@ -80,6 +160,11 @@ def run_case(
         if "PR Intake Gate" not in summary:
             raise AssertionError(f"{name}: missing step summary")
         print(f"ok - {name}")
+        return payload
+
+
+def raise_gate_error() -> None:
+    raise GateError("synthetic write failure")
 
 
 def main() -> int:
@@ -94,41 +179,91 @@ def main() -> int:
     config = load_minimal_yaml(str(ROOT / ".github" / "pr-intake-gate.yml"))
     assert get_label_details(config, "intake/pass")["color"] == "2ea44f"
     assert get_label_details(config, "intake/high-risk")["description"]
+    assert not missing_required_sections(FULL_EXTERNAL_BODY, config["external_context"]["required_sections"])
+    assert "No-code alternative" in missing_required_sections(MISSING_NO_CODE_BODY, config["external_context"]["required_sections"])
+    assert run_optional_side_effect("test no-op", lambda: None) is True
+    assert run_optional_side_effect("test failure", raise_gate_error) is False
     print("ok - helper semantics")
 
+    trusted_permission = run_case(
+        "trusted_permission_passes_high_risk",
+        0,
+        "pass",
+        [{"filename": ".github/workflows/docs-governance.yml", "additions": 1, "deletions": 0}],
+        association="CONTRIBUTOR",
+        author_permission="admin",
+    )
+    assert trusted_permission["trusted_author"] is True
+    assert trusted_permission["trust_source"] == "permission:admin"
+
+    trusted_fallback = run_case(
+        "trusted_association_fallback_passes_high_risk",
+        0,
+        "pass",
+        [{"filename": ".github/workflows/docs-governance.yml", "additions": 1, "deletions": 0}],
+        association="OWNER",
+        author_permission="none",
+    )
+    assert trusted_fallback["trusted_author"] is True
+    assert trusted_fallback["trust_source"] == "author_association:OWNER"
+
     run_case(
-        "docs_only_passes",
+        "external_docs_only_passes",
         0,
         "pass",
         [{"filename": "docs/usage.md", "additions": 2, "deletions": 1}],
     )
     run_case(
-        "non_trivial_without_intent_fails",
-        1,
-        "needs-linked-intent",
-        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
-    )
-    run_case(
-        "linked_non_trivial_passes_with_work_goal",
-        0,
-        "pass",
-        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
-        body="Linked goal: work/goals/goal_example.md",
-    )
-    run_case(
-        "product_doc_is_high_risk",
-        1,
-        "high-risk",
-        [{"filename": "docs/product/START-HERE.md", "additions": 1, "deletions": 0}],
-    )
-    run_case(
-        "workflow_is_high_risk",
+        "external_high_risk_fails",
         1,
         "high-risk",
         [{"filename": ".github/workflows/docs-governance.yml", "additions": 1, "deletions": 0}],
     )
+    first_time = run_case(
+        "first_time_external_high_risk_fails_with_signal",
+        1,
+        "high-risk",
+        [{"filename": ".github/workflows/docs-governance.yml", "additions": 1, "deletions": 0}],
+        association="FIRST_TIMER",
+    )
+    assert first_time["first_time_external"] is True
     run_case(
-        "override_passes_high_risk",
+        "external_non_trivial_missing_no_code_fails",
+        1,
+        "no-code-alternative",
+        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
+        body=MISSING_NO_CODE_BODY,
+    )
+    run_case(
+        "external_non_trivial_missing_context_fails",
+        1,
+        "needs-more-context",
+        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
+        body=MISSING_CONTEXT_BODY,
+    )
+    run_case(
+        "external_full_context_without_link_fails",
+        1,
+        "needs-linked-intent",
+        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
+        body=FULL_CONTEXT_NO_LINK_BODY,
+    )
+    run_case(
+        "external_full_context_with_link_passes",
+        0,
+        "pass",
+        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
+        body=FULL_EXTERNAL_BODY,
+    )
+    run_case(
+        "accepted_external_non_high_risk_passes",
+        0,
+        "pass",
+        [{"filename": "docs/usage.md", "additions": 31, "deletions": 0}],
+        labels=["intake/accepted-for-pr"],
+    )
+    run_case(
+        "override_passes_external_high_risk",
         0,
         "pass",
         [{"filename": ".github/workflows/docs-governance.yml", "additions": 1, "deletions": 0}],

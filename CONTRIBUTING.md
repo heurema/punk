@@ -112,17 +112,22 @@ In repo-tracked artifacts:
 
 This repository uses a deterministic PR Intake Gate before ordinary code review.
 
-The gate is intentionally conservative:
+The gate is intentionally conservative for external contributors and intentionally low-friction for trusted repository authors:
 
 - it runs from trusted base-branch code through `pull_request_target`;
-- it reads PR metadata and changed-file metadata through the GitHub API;
+- it reads PR metadata, changed-file metadata, and author repository permission through the GitHub API;
 - it does not checkout, import, install, or execute PR head code;
-- it labels PRs with `intake/pass`, `intake/needs-linked-intent`, or `intake/high-risk`;
+- trusted authors with `admin`, `maintain`, or `write` repository permission pass intake automatically;
+- if permission lookup is unavailable, `OWNER`, `MEMBER`, and `COLLABORATOR` author associations pass as a fallback;
+- external PRs are labeled with `intake/pass`, `intake/needs-linked-intent`, `intake/needs-more-context`, `intake/no-code-alternative`, or `intake/high-risk`;
+- first-time external contributors also receive `intake/first-time-contributor`;
+- label and bot-comment updates are best-effort visibility aids; the check verdict comes from the deterministic PR metadata evaluation;
+- maintainers can accept a non-high-risk external PR with `intake/accepted-for-pr`;
 - maintainers can bypass intake with `maintainer/override-intake` when they explicitly accept responsibility.
 
-Direct PRs are intended only for small low-risk edits. Non-trivial PRs should link an Issue, Discussion, or repo-tracked intent artifact such as `work/goals/...`, `work/reports/...`, `docs/adr/...`, `knowledge/research/...`, or `evals/specs/...`.
+Direct external PRs are intended only for small low-risk edits. Non-trivial external PRs should link an Issue, Discussion, or repo-tracked intent artifact such as `work/goals/...`, `work/reports/...`, `docs/adr/...`, `knowledge/research/...`, or `evals/specs/...`, and fill the external contributor context sections in the PR template.
 
-PRs touching high-risk surfaces such as `.github/**`, `scripts/**`, `crates/**`, `docs/product/**`, `work/**`, `knowledge/**`, `evals/**`, public narrative, site, or brand assets require maintainer attention before ordinary code review.
+External PRs touching high-risk surfaces such as `.github/**`, `scripts/**`, `crates/**`, `docs/product/**`, `work/**`, `knowledge/**`, `evals/**`, public narrative, site, or brand assets require maintainer attention before ordinary code review.
 
 Local deterministic check:
 
