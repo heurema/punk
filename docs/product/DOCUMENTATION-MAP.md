@@ -177,7 +177,7 @@ Do not use ADRs as the only place where the current operator path is documented.
 
 ### Research notes
 
-Research notes are advisory by default. They should include adoption maps and eval implications, but they are not implementation truth until promoted.
+Use research notes as advisory inputs by default. They should include adoption maps and eval implications, but they are not implementation truth until promoted.
 
 ### Idea backlog
 

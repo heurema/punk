@@ -1,8 +1,10 @@
 use std::env;
+use std::path::Path;
 use std::process::ExitCode;
 
 use punk_eval::run_smoke_suite;
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
+use punk_project::{init_level0_project, ProjectId, PROJECT_ID_FORMAT_NOTE};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct CommandOutput {
@@ -50,10 +52,24 @@ where
     I: IntoIterator<Item = S>,
     S: Into<String>,
 {
+    let project_root =
+        env::current_dir().map_err(|error| format!("could not read cwd: {error}"))?;
+    run_at(args, &project_root)
+}
+
+fn run_at<I, S>(args: I, project_root: &Path) -> Result<CommandOutput, String>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
+{
     let args: Vec<String> = args.into_iter().map(Into::into).collect();
 
     match args.as_slice() {
         [_bin] => Ok(CommandOutput::success(render_root_help())),
+        [_bin, init, project_id] if init == "init" => {
+            let project_id = parse_project_id(project_id)?;
+            Ok(render_project_init(project_root, project_id))
+        }
         [_bin, flow, inspect] if flow == "flow" && inspect == "inspect" => {
             Ok(CommandOutput::success(render_flow_inspect()))
         }
@@ -69,6 +85,7 @@ where
         {
             Ok(render_smoke_eval(SmokeEvalFormat::Json))
         }
+        [_bin, init, ..] if init == "init" => Err(init_usage()),
         [_bin, flow, ..] if flow == "flow" => Err(flow_usage()),
         [_bin, eval, ..] if eval == "eval" => Err(eval_usage()),
         [_bin, ..] => Err(root_usage()),
@@ -79,10 +96,12 @@ where
 fn render_root_help() -> String {
     format!(concat!(
         "punk: early-stage local-first bounded work kernel\n",
+        "active setup surface: `punk init`\n",
         "active inspect surface: `punk flow inspect`\n",
         "active eval surface: `punk eval run smoke`\n",
-        "runtime persistence is not active yet; inspect and eval stay limited and honest\n\n",
+        "runtime persistence is not active yet; init, inspect, and eval stay limited and honest\n\n",
         "Usage:\n",
+        "  punk init <project-id>\n",
         "  punk flow inspect\n",
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n"
@@ -93,13 +112,31 @@ fn root_usage() -> String {
     format!(concat!(
         "unknown command\n\n",
         "Usage:\n",
+        "  punk init <project-id>\n",
         "  punk flow inspect\n",
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n\n",
         "Notes:\n",
-        "  - only bounded inspect and smoke-eval surfaces are active\n",
+        "  - init writes only a compact Level 0 repo-tracked .punk/memory scaffold\n",
+        "  - only bounded init, inspect, and smoke-eval surfaces are active\n",
         "  - .punk runtime persistence is not active yet\n"
     ))
+}
+
+fn init_usage() -> String {
+    format!(
+        concat!(
+        "unknown init command\n\n",
+        "Usage:\n",
+        "  punk init <project-id>\n\n",
+        "Notes:\n",
+        "  - run from the project root to create the compact greenfield Level 0 memory scaffold\n",
+        "  - {}\n",
+        "  - existing files are never overwritten\n",
+        "  - .punk runtime persistence is not active yet\n"
+    ),
+        PROJECT_ID_FORMAT_NOTE
+    )
 }
 
 fn flow_usage() -> String {
@@ -181,6 +218,21 @@ fn render_smoke_eval(format: SmokeEvalFormat) -> CommandOutput {
     CommandOutput::with_exit(text, report.exit_code())
 }
 
+fn render_project_init(project_root: &Path, project_id: ProjectId) -> CommandOutput {
+    let report = init_level0_project(project_root, project_id);
+    CommandOutput::with_exit(report.render_human(), report.exit_code())
+}
+
+fn parse_project_id(value: &str) -> Result<ProjectId, String> {
+    ProjectId::parse(value.to_owned()).map_err(|error| {
+        format!(
+            "invalid project id: {}\n\n{}",
+            error.message(),
+            init_usage()
+        )
+    })
+}
+
 fn format_commands(commands: &[FlowCommand]) -> String {
     commands
         .iter()
@@ -192,13 +244,21 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        eval_usage, render_flow_inspect, render_root_help, render_smoke_eval, run, SmokeEvalFormat,
+        eval_usage, init_usage, render_flow_inspect, render_root_help, render_smoke_eval, run,
+        run_at, SmokeEvalFormat,
     };
+    use std::fs;
+    use std::process;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     #[test]
     fn root_help_points_to_active_surfaces() {
         let output = render_root_help();
 
+        assert!(output.contains("punk init"));
         assert!(output.contains("punk flow inspect"));
         assert!(output.contains("punk eval run smoke"));
         assert!(output.contains("runtime persistence is not active yet"));
@@ -260,8 +320,8 @@ mod tests {
         assert!(output
             .text
             .contains("baseline, waiver, and stored eval reports are not active"));
-        assert!(!output.text.contains("accepted"));
-        assert!(!output.text.contains("approved"));
+        assert!(!output.text.contains("acceptance: accepted"));
+        assert!(!output.text.contains("acceptance: approved"));
         assert!(!output.text.contains("proof complete"));
     }
 
@@ -299,6 +359,108 @@ mod tests {
     }
 
     #[test]
+    fn init_command_creates_level0_project_memory_scaffold() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+
+        let output =
+            run_at(["punk", "init", "weekend-project"], &root).expect("init command should run");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("punk init"));
+        assert!(output.text.contains("mode: manual-project-memory-level0"));
+        assert!(output.text.contains("entry_mode: greenfield"));
+        assert!(output.text.contains("project_id: weekend-project"));
+        assert!(output.text.contains("runtime_persistence: inactive"));
+        assert!(output.text.contains("result: initialized"));
+        assert!(output.text.contains("path: .punk/memory/STATUS.md"));
+        assert!(output
+            .text
+            .contains("path: .punk/memory/goals/goal_initial_project_setup.md"));
+        assert!(output
+            .text
+            .contains("does not implement brownfield reconstruction or grayfield reconciliation"));
+        assert!(output.text.contains(
+            "does not create root-level work, knowledge, docs/adr, or publishing directories"
+        ));
+        assert!(output.text.contains(
+            "creates .punk as a project root marker and .punk/memory as tracked durable memory"
+        ));
+        assert!(root.join(".punk/memory/STATUS.md").is_file());
+        assert!(root
+            .join(".punk/memory/goals/goal_initial_project_setup.md")
+            .is_file());
+        assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join("work").exists());
+        assert!(!root.join("knowledge").exists());
+        assert!(!root.join("docs").exists());
+        assert!(!root.join("docs/adr").exists());
+        assert!(!root.join("publishing").exists());
+        assert!(!root.join(".punk/runtime").exists());
+        assert!(!root.join(".punk/cache").exists());
+        assert!(!root.join(".punk/events").exists());
+        assert!(!root.join(".punk/contracts").exists());
+        assert!(!root.join(".punk/runs").exists());
+        assert!(!root.join(".punk/decisions").exists());
+        assert!(!root.join(".punk/proofs").exists());
+        assert!(!root.join(".punk/indexes").exists());
+        assert!(!root.join(".punk/views").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_command_reports_conflict_without_overwrite() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory")).expect("memory dir should be created");
+        fs::write(root.join(".punk/memory/STATUS.md"), "custom status\n")
+            .expect("custom status should be written");
+
+        let output = run_at(["punk", "init", "weekend-project"], &root)
+            .expect("init command should report conflict");
+
+        assert_eq!(output.exit_code, 1);
+        assert!(output.text.contains("result: blocked"));
+        assert!(output.text.contains("status: conflict"));
+        assert!(output.text.contains("not overwritten"));
+        assert_eq!(
+            fs::read_to_string(root.join(".punk/memory/STATUS.md"))
+                .expect("status should be readable"),
+            "custom status\n"
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_command_requires_project_id() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+
+        let error = run_at(["punk", "init"], &root).expect_err("missing project id must fail");
+
+        assert_eq!(error, init_usage());
+        assert!(error.contains("punk init <project-id>"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_command_rejects_invalid_project_id() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+
+        let error = run_at(["punk", "init", "Weekend Project"], &root)
+            .expect_err("invalid project id must fail");
+
+        assert!(error.contains("invalid project id"));
+        assert!(error.contains("lowercase ASCII slug"));
+        assert!(!root.join(".punk/memory/STATUS.md").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn unknown_eval_command_returns_usage_error() {
         let error = run(["punk", "eval", "unknown"]).expect_err("unknown eval command must fail");
 
@@ -320,7 +482,22 @@ mod tests {
         let error = run(["punk", "unknown"]).expect_err("unknown command must fail");
 
         assert!(error.contains("unknown command"));
+        assert!(error.contains("punk init"));
         assert!(error.contains("punk flow inspect"));
         assert!(error.contains("punk eval run smoke"));
+    }
+
+    fn unique_temp_path() -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!(
+            "punk-cli-init-test-{}-{}-{}",
+            process::id(),
+            unique,
+            counter
+        ))
     }
 }

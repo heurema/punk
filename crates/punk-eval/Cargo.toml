@@ -13,4 +13,5 @@ punk-domain = { path = "../punk-domain" }
 punk-events = { path = "../punk-events" }
 punk-flow = { path = "../punk-flow" }
 punk-gate = { path = "../punk-gate" }
+punk-project = { path = "../punk-project" }
 punk-proof = { path = "../punk-proof" }

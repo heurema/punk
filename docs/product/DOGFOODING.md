@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-29
+updated_at: 2026-05-01
 review_after: 2026-07-21
 canonical_for:
   - dogfooding-levels
@@ -42,9 +42,9 @@ Use `punk` as soon as a capability exists, but only at the trust level it has ea
 
 ### Level 0 — Manual project memory
 
-Use repo-tracked `work/` and `knowledge/` manually.
+For the Punk repository itself, use repo-tracked `work/` and `knowledge/` manually.
 
-The canonical live state is:
+The canonical live state for the Punk repository dogfooding layout is:
 
 ```text
 work/STATUS.md
@@ -72,12 +72,19 @@ Level 0 operating rules:
 - set `in_progress` only when work has actually started;
 - every meaningful change updates status and/or the selected goal/report;
 - `done` means manually closed with evidence, not final acceptance;
-- `.punk/` runtime state is not written yet for this purpose.
+- `.punk/` runtime stores are not written yet for this purpose.
+
+Currently implemented CLI subset:
+
+- `punk init <project-id>`
+
+`punk init <project-id>` creates only the greenfield Level 0 compact manual project-memory scaffold for user projects.
+It records `project_id` and `entry_mode = greenfield`, writes repo-tracked durable memory under `.punk/memory/` plus `.punk` marker/setup files, and does not create root-level `work/`, `knowledge/`, `docs/adr/`, `publishing/`, brownfield reconstruction, grayfield reconciliation, `.punk/runtime`, runtime evidence stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Exit criteria:
 
 - all new meaningful work has a goal or explicit maintenance reason
-- current focus and selected next work are inspectable from `work/STATUS.md`
+- current focus and selected next work are inspectable from `work/STATUS.md` for the Punk repository dogfooding layout or `.punk/memory/STATUS.md` for compact user-project init
 - accepted decisions have ADRs or knowledge updates when needed
 
 ### Development Drift Loop v0.1
@@ -137,7 +144,6 @@ Currently implemented subset:
 
 Target surfaces after implementation:
 
-- `punk init`
 - `punk inspect project`
 - flow state tracking
 

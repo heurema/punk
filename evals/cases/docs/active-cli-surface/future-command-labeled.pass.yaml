@@ -32,7 +32,7 @@ input:
 
       Future target commands include:
 
-      - `punk init`
+      - `punk start --from work/goals/goal_demo.md`
       - `punk gate run <run-id>`
 
       Future target commands are not current behavior until implemented.

@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - flow-semantics
@@ -78,11 +78,14 @@ If supported, an override must:
 
 Current implemented CLI subset:
 
+- `punk init <project-id>`
 - `punk flow inspect`
+
+`punk init <project-id>` is a greenfield Level 0 setup command for repo-tracked compact manual project memory under `.punk/memory/`.
+It records `project_id`, `entry_mode = greenfield`, compact memory metadata, and inactive runtime metadata; it is not flow persistence and does not write flow events, root-level dogfooding memory directories, brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores.
 
 Future target commands include:
 
-- `punk init`
 - `punk start --from work/goals/<id>.md`
 - `punk plot approve <contract-id>`
 - `punk cut run <contract-id>`

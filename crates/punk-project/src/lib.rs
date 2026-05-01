@@ -1,3 +1,875 @@
-//! Minimal compile-only skeleton for the Punk project identity crate.
+//! Project identity and Level 0 manual project-memory initialization.
+
+use std::fmt::Write as _;
+use std::fs::{self, OpenOptions};
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
+pub const PROJECT_INIT_SCHEMA_VERSION: &str = "project-init-greenfield.v0.1";
+pub const PROJECT_INIT_MODE: &str = "manual-project-memory-level0";
+pub const PROJECT_INIT_ENTRY_MODE: &str = "greenfield";
+pub const PROJECT_INIT_RUNTIME_PERSISTENCE: &str = "inactive";
+pub const PROJECT_ID_FORMAT_NOTE: &str =
+    "project id must be a lowercase ASCII slug: a-z, 0-9, and hyphen, starting and ending with a letter or digit";
+
+const MEMORY_ROOT: &str = ".punk/memory";
+const STATUS_PATH: &str = ".punk/memory/STATUS.md";
+const INITIAL_GOAL_PATH: &str = ".punk/memory/goals/goal_initial_project_setup.md";
+
+fn work_status_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"---
+id: work_status
+kind: manual-work-ledger
+status: active
+authority: canonical
+owner: TODO
+ledger_version: work-ledger.v0.1
+dogfooding_level: 0
+project_id: "{project_id}"
+entry_mode: greenfield
+updated_at: TODO
+current_phase: "Dogfooding Level 0 / compact project memory"
+current_focus: "Initial project setup"
+selected_next: "{INITIAL_GOAL_PATH}"
+last_validated_commit: null
+---
+
+# Work Status
+
+## Now
+
+- Current stage: greenfield project initialized with Punk Level 0 compact manual memory.
+- Current focus: complete initial project setup.
+- Selected next: `{INITIAL_GOAL_PATH}`
+
+## Blockers
+
+- Fill owner/date TODOs before treating this ledger as current.
+
+## Recent Evidence
+
+- `punk init {project_id}` created the greenfield Level 0 scaffold.
+
+## Open Drift Findings
+
+None.
+"#,
+        project_id = project_id.as_str()
+    )
+}
+
+fn initial_goal_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"---
+id: goal_initial_project_setup
+title: "Initial project setup"
+status: ready
+owner: TODO
+module: "project"
+priority: P1
+authority: canonical
+project_id: "{project_id}"
+entry_mode: greenfield
+created_at: TODO
+updated_at: TODO
+selected_at: TODO
+started_at: null
+completed_at: null
+blocked_by: []
+scope:
+  include:
+    - "docs/**"
+    - "design/**"
+    - ".punk/README.md"
+    - ".punk/project.toml"
+    - ".punk/memory/**"
+  exclude:
+    - "work/**"
+    - "knowledge/**"
+    - "docs/adr/**"
+    - ".punk/events/**"
+    - ".punk/contracts/**"
+    - ".punk/runs/**"
+    - ".punk/evals/**"
+    - ".punk/decisions/**"
+    - ".punk/proofs/**"
+    - ".punk/indexes/**"
+    - ".punk/views/**"
+acceptance:
+  - "The canonical product/design/source documents are listed with repo-relative refs."
+  - "Known constraints, non-goals, and acceptance criteria for the first implementation slice are recorded."
+  - "Project id and greenfield entry mode remain visible in .punk/memory/STATUS.md."
+  - "The next bounded implementation goal is created and selected in .punk/memory/STATUS.md."
+knowledge_refs: []
+contract_refs: []
+report_refs: []
+decision_refs: []
+proof_refs: []
+latest_proof_ref: null
+research_gate:
+  classification: R0
+  required: false
+  rationale: "Initial project setup only inventories user-provided/repo-tracked project inputs and does not change architecture."
+  research_refs: []
+  external_research_refs: []
+  blocked_reason: null
+doc_impact:
+  classification: initial-project-memory
+  required_updates:
+    - ".punk/memory/STATUS.md"
+    - ".punk/memory/reports/**"
+  rationale: "Initial project truth capture establishes the manual Level 0 memory baseline."
+---
+
+## Context
+
+The project has been initialized as a Punk greenfield project with Level 0 manual project memory.
+
+Project id: `{project_id}`
+
+## Intent
+
+Capture the current product, design, technical constraints, non-goals, and first implementation boundary before coding starts.
+
+## Non-scope
+
+Do not implement product behavior in this goal.
+
+Do not write `.punk/` runtime stores.
+
+Do not claim gate acceptance or proofpack coverage.
+"#,
+        project_id = project_id.as_str()
+    )
+}
+
+const REPORTS_README_TEMPLATE: &str = r#"# Work Reports
+
+Manual Level 0 outcome, evidence, and handoff reports live here.
+
+Use repo-relative artifact refs. Do not treat reports as final gate decisions.
+"#;
+
+const ADR_README_TEMPLATE: &str = r#"# Architecture Decisions
+
+Accepted architecture decisions live here.
+
+Use ADRs for durable decisions that should outlive a single work report.
+"#;
+
+const RESEARCH_README_TEMPLATE: &str = r#"# Research Notes
+
+Curated research notes live here.
+
+Keep external source notes advisory until promoted through a goal, decision, contract, eval, or report.
+"#;
+
+const IDEAS_README_TEMPLATE: &str = r#"# Ideas
+
+Raw or parked ideas live here.
+
+Ideas are not implementation truth until promoted through the project workflow.
+"#;
+
+const PUNK_README_TEMPLATE: &str = r#"# .punk
+
+This directory is the Punk project root marker.
+
+Current active behavior is Dogfooding Level 0 compact manual project memory.
+
+Tracked durable project memory lives under `.punk/memory/`.
+
+Authoritative live work state for this project is `.punk/memory/STATUS.md`.
+
+Runtime and derived stores such as runtime, cache, events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
+"#;
+
+fn punk_project_toml_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"# Punk project marker.
+# This file is setup metadata, not runtime authority.
+
+schema_version = "punk.project.v0.1"
+project_id = "{project_id}"
+entry_mode = "greenfield"
+dogfooding_level = 0
+runtime_persistence = "inactive"
+live_work_state = ".punk/memory/STATUS.md"
+
+[memory]
+layout = "compact"
+root = ".punk/memory"
+
+[runtime]
+active = false
+root = ".punk/runtime"
+
+[authority]
+live_state = ".punk/memory/STATUS.md"
+final_decisions = "not_active"
+proofpacks = "not_active"
+"#,
+        project_id = project_id.as_str()
+    )
+}
+
+const PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
+    "writes only greenfield Level 0 compact project-memory scaffold files under .punk/memory",
+    "records project_id and entry_mode = greenfield in the scaffold",
+    "creates .punk as a project root marker and .punk/memory as tracked durable memory",
+    "does not create root-level work, knowledge, docs/adr, or publishing directories",
+    "does not implement brownfield reconstruction or grayfield reconciliation",
+    "does not create contracts, run receipts, gate artifacts, proofpacks, or acceptance claims",
+    "does not perform repo scanning, AI summaries, generated truth, or network behavior",
+    "uses create-new/no-overwrite behavior and reports conflicts fail-closed",
+];
+
+const PROJECT_INIT_DEFERRED_NOTES: &[&str] = &[
+    "brownfield reconstruction and grayfield reconciliation remain deferred",
+    ".punk/runtime project storage remains inactive",
+    "flow persistence and event writing remain inactive",
+    "contract writer, receipt writer, gate writer, proof writer, and proofpack writer remain inactive",
+    "project-specific source/design refs must be filled manually after init",
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectId(String);
+
+impl ProjectId {
+    pub fn parse(value: impl Into<String>) -> Result<Self, ProjectIdError> {
+        let value = value.into();
+        validate_project_id(&value)?;
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectIdError {
+    Empty,
+    InvalidFormat,
+}
+
+impl ProjectIdError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::Empty => "project id must not be empty",
+            Self::InvalidFormat => PROJECT_ID_FORMAT_NOTE,
+        }
+    }
+}
+
+fn validate_project_id(value: &str) -> Result<(), ProjectIdError> {
+    if value.is_empty() {
+        return Err(ProjectIdError::Empty);
+    }
+
+    let mut previous_was_hyphen = false;
+    for (index, character) in value.chars().enumerate() {
+        let valid =
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-';
+        if !valid {
+            return Err(ProjectIdError::InvalidFormat);
+        }
+        if character == '-' {
+            if index == 0 || previous_was_hyphen {
+                return Err(ProjectIdError::InvalidFormat);
+            }
+            previous_was_hyphen = true;
+        } else {
+            previous_was_hyphen = false;
+        }
+    }
+
+    if previous_was_hyphen {
+        return Err(ProjectIdError::InvalidFormat);
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectInitArtifactKind {
+    Directory,
+    File,
+}
+
+impl ProjectInitArtifactKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Directory => "directory",
+            Self::File => "file",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectInitArtifactStatus {
+    Created,
+    AlreadyExists,
+    Conflict,
+    Failed,
+}
+
+impl ProjectInitArtifactStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Created => "created",
+            Self::AlreadyExists => "already_exists",
+            Self::Conflict => "conflict",
+            Self::Failed => "failed",
+        }
+    }
+
+    pub fn is_blocking(self) -> bool {
+        matches!(self, Self::Conflict | Self::Failed)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectInitArtifactReport {
+    repo_relative_path: String,
+    kind: ProjectInitArtifactKind,
+    status: ProjectInitArtifactStatus,
+    detail: Option<String>,
+}
+
+impl ProjectInitArtifactReport {
+    fn new(
+        repo_relative_path: impl Into<String>,
+        kind: ProjectInitArtifactKind,
+        status: ProjectInitArtifactStatus,
+        detail: Option<String>,
+    ) -> Self {
+        Self {
+            repo_relative_path: repo_relative_path.into(),
+            kind,
+            status,
+            detail,
+        }
+    }
+
+    pub fn repo_relative_path(&self) -> &str {
+        &self.repo_relative_path
+    }
+
+    pub fn kind(&self) -> ProjectInitArtifactKind {
+        self.kind
+    }
+
+    pub fn status(&self) -> ProjectInitArtifactStatus {
+        self.status
+    }
+
+    pub fn detail(&self) -> Option<&str> {
+        self.detail.as_deref()
+    }
+
+    pub fn is_blocking(&self) -> bool {
+        self.status.is_blocking()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectInitReport {
+    project_root: PathBuf,
+    project_id: ProjectId,
+    artifacts: Vec<ProjectInitArtifactReport>,
+}
+
+impl ProjectInitReport {
+    pub fn project_root(&self) -> &Path {
+        &self.project_root
+    }
+
+    pub fn project_id(&self) -> &ProjectId {
+        &self.project_id
+    }
+
+    pub fn entry_mode(&self) -> &'static str {
+        PROJECT_INIT_ENTRY_MODE
+    }
+
+    pub fn artifacts(&self) -> &[ProjectInitArtifactReport] {
+        &self.artifacts
+    }
+
+    pub fn boundary_notes(&self) -> &'static [&'static str] {
+        PROJECT_INIT_BOUNDARY_NOTES
+    }
+
+    pub fn deferred_notes(&self) -> &'static [&'static str] {
+        PROJECT_INIT_DEFERRED_NOTES
+    }
+
+    pub fn blocked(&self) -> bool {
+        self.artifacts
+            .iter()
+            .any(ProjectInitArtifactReport::is_blocking)
+    }
+
+    pub fn exit_code(&self) -> u8 {
+        if self.blocked() {
+            1
+        } else {
+            0
+        }
+    }
+
+    pub fn result_label(&self) -> &'static str {
+        if self.blocked() {
+            "blocked"
+        } else if self
+            .artifacts
+            .iter()
+            .all(|artifact| artifact.status() == ProjectInitArtifactStatus::AlreadyExists)
+        {
+            "already_initialized"
+        } else {
+            "initialized"
+        }
+    }
+
+    pub fn render_human(&self) -> String {
+        let mut output = String::new();
+        writeln!(&mut output, "punk init").expect("writing to String should succeed");
+        writeln!(&mut output, "schema_version: {PROJECT_INIT_SCHEMA_VERSION}")
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "mode: {PROJECT_INIT_MODE}")
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "entry_mode: {}", self.entry_mode())
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "project_id: {}", self.project_id().as_str())
+            .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "runtime_persistence: {PROJECT_INIT_RUNTIME_PERSISTENCE}"
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "target_root: {}",
+            self.project_root().display()
+        )
+        .expect("writing to String should succeed");
+        writeln!(&mut output, "result: {}", self.result_label())
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "artifacts:").expect("writing to String should succeed");
+
+        for artifact in self.artifacts() {
+            writeln!(&mut output, "  - path: {}", artifact.repo_relative_path())
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "    kind: {}", artifact.kind().as_str())
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "    status: {}", artifact.status().as_str())
+                .expect("writing to String should succeed");
+            if let Some(detail) = artifact.detail() {
+                writeln!(&mut output, "    detail: {detail}")
+                    .expect("writing to String should succeed");
+            }
+        }
+
+        writeln!(&mut output, "notes:").expect("writing to String should succeed");
+        for note in self.boundary_notes() {
+            writeln!(&mut output, "  - {note}").expect("writing to String should succeed");
+        }
+
+        writeln!(&mut output, "deferred:").expect("writing to String should succeed");
+        for note in self.deferred_notes() {
+            writeln!(&mut output, "  - {note}").expect("writing to String should succeed");
+        }
+
+        output.trim_end().to_owned()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProjectInitEntry {
+    Directory(&'static str),
+    File(&'static str, &'static str),
+    GeneratedFile(&'static str, ProjectInitTemplate),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProjectInitTemplate {
+    WorkStatus,
+    InitialGoal,
+    PunkProjectToml,
+}
+
+const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
+    ProjectInitEntry::Directory(".punk"),
+    ProjectInitEntry::Directory(MEMORY_ROOT),
+    ProjectInitEntry::Directory(".punk/memory/goals"),
+    ProjectInitEntry::Directory(".punk/memory/reports"),
+    ProjectInitEntry::Directory(".punk/memory/knowledge"),
+    ProjectInitEntry::Directory(".punk/memory/knowledge/research"),
+    ProjectInitEntry::Directory(".punk/memory/knowledge/ideas"),
+    ProjectInitEntry::Directory(".punk/memory/adr"),
+    ProjectInitEntry::GeneratedFile(STATUS_PATH, ProjectInitTemplate::WorkStatus),
+    ProjectInitEntry::GeneratedFile(INITIAL_GOAL_PATH, ProjectInitTemplate::InitialGoal),
+    ProjectInitEntry::File(".punk/memory/reports/README.md", REPORTS_README_TEMPLATE),
+    ProjectInitEntry::File(".punk/memory/adr/README.md", ADR_README_TEMPLATE),
+    ProjectInitEntry::File(
+        ".punk/memory/knowledge/research/README.md",
+        RESEARCH_README_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/memory/knowledge/ideas/README.md",
+        IDEAS_README_TEMPLATE,
+    ),
+    ProjectInitEntry::File(".punk/README.md", PUNK_README_TEMPLATE),
+    ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
+];
+
+pub fn init_level0_project(
+    project_root: impl AsRef<Path>,
+    project_id: ProjectId,
+) -> ProjectInitReport {
+    let project_root = project_root.as_ref().to_path_buf();
+    let mut artifacts = Vec::new();
+
+    match fs::metadata(&project_root) {
+        Ok(metadata) if metadata.is_dir() => {}
+        Ok(_) => {
+            artifacts.push(ProjectInitArtifactReport::new(
+                ".",
+                ProjectInitArtifactKind::Directory,
+                ProjectInitArtifactStatus::Failed,
+                Some("project root exists but is not a directory".to_owned()),
+            ));
+            return ProjectInitReport {
+                project_root,
+                project_id,
+                artifacts,
+            };
+        }
+        Err(error) => {
+            artifacts.push(ProjectInitArtifactReport::new(
+                ".",
+                ProjectInitArtifactKind::Directory,
+                ProjectInitArtifactStatus::Failed,
+                Some(format!("project root must already exist: {error}")),
+            ));
+            return ProjectInitReport {
+                project_root,
+                project_id,
+                artifacts,
+            };
+        }
+    }
+
+    for entry in PROJECT_INIT_ENTRIES {
+        let report = match *entry {
+            ProjectInitEntry::Directory(path) => create_init_directory(&project_root, path),
+            ProjectInitEntry::File(path, contents) => {
+                create_init_file(&project_root, path, contents.as_bytes())
+            }
+            ProjectInitEntry::GeneratedFile(path, template) => {
+                let contents = render_init_template(template, &project_id);
+                create_init_file(&project_root, path, contents.as_bytes())
+            }
+        };
+        artifacts.push(report);
+    }
+
+    ProjectInitReport {
+        project_root,
+        project_id,
+        artifacts,
+    }
+}
+
+fn render_init_template(template: ProjectInitTemplate, project_id: &ProjectId) -> String {
+    match template {
+        ProjectInitTemplate::WorkStatus => work_status_template(project_id),
+        ProjectInitTemplate::InitialGoal => initial_goal_template(project_id),
+        ProjectInitTemplate::PunkProjectToml => punk_project_toml_template(project_id),
+    }
+}
+
+fn create_init_directory(
+    project_root: &Path,
+    repo_relative_path: &'static str,
+) -> ProjectInitArtifactReport {
+    let path = project_root.join(repo_relative_path);
+    match fs::symlink_metadata(&path) {
+        Ok(metadata) if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() => {
+            ProjectInitArtifactReport::new(
+                repo_relative_path,
+                ProjectInitArtifactKind::Directory,
+                ProjectInitArtifactStatus::AlreadyExists,
+                None,
+            )
+        }
+        Ok(_) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::Directory,
+            ProjectInitArtifactStatus::Conflict,
+            Some("path already exists and is not a plain directory".to_owned()),
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => match fs::create_dir(&path) {
+            Ok(()) => ProjectInitArtifactReport::new(
+                repo_relative_path,
+                ProjectInitArtifactKind::Directory,
+                ProjectInitArtifactStatus::Created,
+                None,
+            ),
+            Err(create_error) => ProjectInitArtifactReport::new(
+                repo_relative_path,
+                ProjectInitArtifactKind::Directory,
+                ProjectInitArtifactStatus::Failed,
+                Some(format!("could not create directory: {create_error}")),
+            ),
+        },
+        Err(error) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::Directory,
+            ProjectInitArtifactStatus::Failed,
+            Some(format!("could not inspect path: {error}")),
+        ),
+    }
+}
+
+fn create_init_file(
+    project_root: &Path,
+    repo_relative_path: &'static str,
+    contents: &[u8],
+) -> ProjectInitArtifactReport {
+    let path = project_root.join(repo_relative_path);
+    match fs::symlink_metadata(&path) {
+        Ok(metadata) if metadata.file_type().is_file() && !metadata.file_type().is_symlink() => {
+            match fs::read(&path) {
+                Ok(existing) if existing == contents => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::AlreadyExists,
+                    None,
+                ),
+                Ok(_) => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::Conflict,
+                    Some("file already exists with different contents; not overwritten".to_owned()),
+                ),
+                Err(error) => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::Failed,
+                    Some(format!("could not read existing file: {error}")),
+                ),
+            }
+        }
+        Ok(_) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::File,
+            ProjectInitArtifactStatus::Conflict,
+            Some("path already exists and is not a plain file".to_owned()),
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            let write_result = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+                .and_then(|mut file| file.write_all(contents));
+
+            match write_result {
+                Ok(()) => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::Created,
+                    None,
+                ),
+                Err(write_error) => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::Failed,
+                    Some(format!("could not create file: {write_error}")),
+                ),
+            }
+        }
+        Err(error) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::File,
+            ProjectInitArtifactStatus::Failed,
+            Some(format!("could not inspect path: {error}")),
+        ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        init_level0_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
+        ProjectInitArtifactStatus, INITIAL_GOAL_PATH, PROJECT_INIT_ENTRY_MODE, STATUS_PATH,
+    };
+    use std::fs;
+    use std::process;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    #[test]
+    fn init_creates_level0_manual_memory_scaffold() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+
+        assert!(!report.blocked());
+        assert_eq!(report.exit_code(), 0);
+        assert_eq!(report.result_label(), "initialized");
+        assert_eq!(report.project_id().as_str(), "weekend-project");
+        assert_eq!(report.entry_mode(), PROJECT_INIT_ENTRY_MODE);
+        assert!(root.join(STATUS_PATH).is_file());
+        assert!(root.join(INITIAL_GOAL_PATH).is_file());
+        assert!(root.join(".punk/memory/reports/README.md").is_file());
+        assert!(root.join(".punk/memory/adr/README.md").is_file());
+        assert!(root
+            .join(".punk/memory/knowledge/research/README.md")
+            .is_file());
+        assert!(root
+            .join(".punk/memory/knowledge/ideas/README.md")
+            .is_file());
+        assert!(root.join(".punk/README.md").is_file());
+        assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join("work").exists());
+        assert!(!root.join("knowledge").exists());
+        assert!(!root.join("docs").exists());
+        assert!(!root.join("docs/adr").exists());
+        assert!(!root.join("publishing").exists());
+        assert!(!root.join(".punk/runtime").exists());
+        assert!(!root.join(".punk/cache").exists());
+        assert!(!root.join(".punk/events").exists());
+        assert!(!root.join(".punk/contracts").exists());
+        assert!(!root.join(".punk/runs").exists());
+        assert!(!root.join(".punk/evals").exists());
+        assert!(!root.join(".punk/decisions").exists());
+        assert!(!root.join(".punk/proofs").exists());
+        assert!(!root.join(".punk/indexes").exists());
+        assert!(!root.join(".punk/views").exists());
+
+        let status =
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status template should be readable");
+        assert!(status.contains("dogfooding_level: 0"));
+        assert!(status.contains("project_id: \"weekend-project\""));
+        assert!(status.contains("entry_mode: greenfield"));
+        assert!(status.contains(&format!("selected_next: \"{INITIAL_GOAL_PATH}\"")));
+        let goal = fs::read_to_string(root.join(INITIAL_GOAL_PATH))
+            .expect("initial goal template should be readable");
+        assert!(goal.contains("id: goal_initial_project_setup"));
+        assert!(goal.contains("project_id: \"weekend-project\""));
+        assert!(goal.contains("entry_mode: greenfield"));
+        let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
+            .expect("project marker should be readable");
+        assert!(project_marker.contains("schema_version = \"punk.project.v0.1\""));
+        assert!(project_marker.contains("project_id = \"weekend-project\""));
+        assert!(project_marker.contains("entry_mode = \"greenfield\""));
+        assert!(project_marker.contains("runtime_persistence = \"inactive\""));
+        assert!(project_marker.contains("live_work_state = \".punk/memory/STATUS.md\""));
+        assert!(project_marker.contains("[memory]"));
+        assert!(project_marker.contains("layout = \"compact\""));
+        assert!(project_marker.contains("root = \".punk/memory\""));
+        assert!(project_marker.contains("[runtime]"));
+        assert!(project_marker.contains("active = false"));
+        assert!(project_marker.contains("root = \".punk/runtime\""));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_is_idempotent_when_existing_files_match() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let first = init_level0_project(&root, project_id.clone());
+        let second = init_level0_project(&root, project_id);
+
+        assert!(!first.blocked());
+        assert!(!second.blocked());
+        assert_eq!(second.result_label(), "already_initialized");
+        assert!(second
+            .artifacts()
+            .iter()
+            .all(|artifact| { artifact.status() == ProjectInitArtifactStatus::AlreadyExists }));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_reports_conflict_without_overwriting_existing_status() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory")).expect("memory dir should be created");
+        fs::write(root.join(STATUS_PATH), "custom status\n")
+            .expect("custom status should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+
+        assert!(report.blocked());
+        assert_eq!(report.exit_code(), 1);
+        assert_eq!(report.result_label(), "blocked");
+        assert_eq!(
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status should remain readable"),
+            "custom status\n"
+        );
+        assert!(report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == STATUS_PATH
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Conflict
+        }));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn project_id_requires_lowercase_slug() {
+        assert_eq!(
+            ProjectId::parse("").expect_err("empty project id should fail"),
+            ProjectIdError::Empty
+        );
+        for invalid in [
+            "Weekend",
+            "weekend project",
+            "-weekend",
+            "weekend-",
+            "weekend--project",
+            "weekend_project",
+            "weekend.project",
+        ] {
+            assert_eq!(
+                ProjectId::parse(invalid).expect_err("invalid project id should fail"),
+                ProjectIdError::InvalidFormat
+            );
+        }
+
+        assert_eq!(
+            ProjectId::parse("weekend-project-01")
+                .expect("valid project id should parse")
+                .as_str(),
+            "weekend-project-01"
+        );
+    }
+
+    fn unique_temp_path() -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!(
+            "punk-project-init-test-{}-{}-{}",
+            process::id(),
+            unique,
+            counter
+        ))
+    }
+}

@@ -80,6 +80,7 @@ NEGATING_PHRASES = (
     "parked",
 )
 IMPLEMENTED_PUNK_CLI_COMMANDS = {
+    "punk init <project-id>",
     "punk flow inspect",
     "punk eval run smoke",
     "punk eval run smoke --format json",
@@ -163,6 +164,7 @@ STRUCTURAL_HEADING_SLUGS = {
     "examples",
     "example",
     "allowed",
+    "active-now",
     "avoid",
     "storage",
     "storage-model",

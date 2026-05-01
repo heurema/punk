@@ -29,14 +29,14 @@ input:
       The implemented CLI surface today is intentionally small:
 
       - `punk flow inspect`
-      - `punk init`
+      - `punk start --from work/goals/goal_demo.md`
 
 expected:
   result: fail
   hard_failures:
     - code: DOC_ACTIVE_CLI_UNIMPLEMENTED_COMMAND
       path: docs/product/START-HERE.md
-      command: punk init
+      command: punk start --from work/goals/goal_demo.md
   warnings: []
 
 checks:

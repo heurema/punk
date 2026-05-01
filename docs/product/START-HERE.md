@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - product-entry-path
@@ -84,11 +84,16 @@ See `docs/product/DOCUMENTATION-MAP.md` and `docs/product/GLOSSARY.md`.
 
 The implemented CLI surface today is intentionally small:
 
+- `punk init <project-id>`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
-`punk init` is a future setup target. It is not implemented or required today.
+`punk init <project-id>` is active only as a greenfield Dogfooding Level 0 compact manual project-memory scaffold.
+It records `project_id` and `entry_mode = greenfield`, then writes repo-tracked `.punk/memory/` durable memory plus `.punk` marker/setup files with create-new/no-overwrite behavior.
+For user projects, the default layout is compact `.punk/memory/`; root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are Punk repository dogfooding layout, not the default init layout.
+The `.punk/runtime/` tree and runtime evidence directories remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
+Brownfield reconstruction and grayfield reconciliation remain future modes.
 
 The active target remains the stable core:
 
@@ -179,7 +184,7 @@ See:
 
 ## Dogfooding from day zero
 
-Before `punk` can execute work, it can still track work:
+Before `punk` can execute work, the Punk repository can still track its own work in the root dogfooding layout:
 
 - create goals under `work/goals/`
 - write reports under `work/reports/`

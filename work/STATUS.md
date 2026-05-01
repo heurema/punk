@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-01
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Cleanup docs-governance warnings v0.1"
-selected_next: "work/goals/goal_cleanup_docs_governance_warnings_v0_1.md"
+current_focus: "Pause after greenfield init checkpoint v0.1"
+selected_next: "work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md"
 last_validated_commit: "2f64f0f"
 ---
 
@@ -18,8 +18,20 @@ last_validated_commit: "2f64f0f"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: cleanup docs-governance warnings v0.1.
-- Selected next: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`
+- Current focus: pause after greenfield init checkpoint v0.1.
+- Selected next: `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`
+- Completion note: `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md` is now recorded as done with docs/status reconciliation evidence. It updated `docs/product/NORTH-STAR.md` so the current executable CLI list includes `punk init <project-id>` with a narrow greenfield compact `.punk/memory/` scope caveat. It made no code changes and did not activate brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
+- Completion note: `work/goals/goal_publish_greenfield_init_checkpoint_status_v0_1.md` is now recorded as done with checkpoint-status evidence. It recognizes minimal greenfield `punk init <project-id>` as active, preserves compact `.punk/memory/` tracked durable memory as the user-project default, keeps `.punk/runtime` inactive, keeps brownfield/grayfield deferred, keeps Replayable Project Memory advisory, and adds no code or product behavior. It found one remaining docs drift in `docs/product/NORTH-STAR.md`, which still omits `punk init <project-id>` from the current executable CLI list; that drift is selected next for docs/status reconciliation.
+- Completion note: `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md` is now recorded as done with manual temp-init, git visibility, project-id validation, overwrite/conflict, smoke eval, no-network/no-scan, and docs/status inspection evidence. It verified compact `.punk/memory/` greenfield init without code changes and selected checkpoint status summary next. Brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, and spec-as-source behavior remain inactive.
+- Completion note: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` is now recorded as done with docs-governance cleanup evidence. It fixed the four known warning-shape findings in `docs/product/CRATE-STATUS.md`, `docs/product/DOCUMENTATION-MAP.md`, and `docs/product/PROJECT-MEMORY.md` without changing product behavior, `punk init` behavior, runtime storage, Writer, gate writer, proof writer, proofpack writer, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
+- Scope override note: maintainer explicitly selected a compact user-project init layout correction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice changes greenfield init output from root-level Punk memory dirs to `.punk/memory/`.
+- Completion note: `work/goals/goal_change_greenfield_init_to_compact_punk_memory_layout_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs, docs-governance, and work-ledger evidence. It keeps the Punk repository root dogfooding layout in place while changing user-project `punk init <project-id>` to tracked `.punk/memory/` durable memory, with no root-level `work/`, `knowledge/`, `docs/adr/`, or `publishing/` output and no brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents, adapters, or replayability runtime.
+- Scope override note: maintainer explicitly selected the greenfield init scaffold direction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice tightens `punk init` to `punk init <project-id>` for greenfield Level 0 project-memory only.
+- Completion note: `work/goals/goal_add_greenfield_init_scaffold_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs, docs-governance fixture, and work-ledger evidence. It records `project_id` and `entry_mode = greenfield`, creates `work/goals/goal_initial_project_setup.md`, keeps `.punk` marker/setup files marker-only, and adds no brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, runtime stores, contracts, gate/proof artifacts, proofpacks, Writer behavior, adapters, automation, or acceptance claims.
+- Scope override note: maintainer explicitly selected a minimal `.punk` bootstrap after Level 0 `punk init`. The docs-governance cleanup goal remains ready, but this bounded slice adds only `.punk` marker/setup files and no runtime stores.
+- Completion note: `work/goals/goal_add_punk_root_marker_init_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-governance, and work-ledger evidence. It adds `.punk/README.md` and `.punk/project.toml` to `punk init` only as marker/setup files, with no `.punk` runtime stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, acceptance claims, adapters, automation, or provider/model execution.
+- Scope override note: maintainer explicitly selected a real-project dogfooding path before continuing docs-governance cleanup. The cleanup goal remains ready, but this bounded `punk init` slice now promotes only a manual Level 0 scaffold so a greenfield project can start using Punk discipline without runtime authority claims.
+- Completion note: `work/goals/goal_add_level0_project_init_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-governance, and work-ledger evidence. It adds `punk init` only as a Dogfooding Level 0 manual project-memory scaffold with create-new/no-overwrite behavior and no `.punk` runtime state, flow persistence, contracts, receipts, gate/proof artifacts, proofpacks, acceptance claims, adapters, automation, or provider/model execution.
 - Scope override note: `work/goals/goal_capture_contract_schema_blueprint_v0_1.md` temporarily paused the previously selected sixty-fourth advisory review to preserve the full high-level Contract shape before continuing smaller implementation slices. The override is now recorded as done, and the sixty-fourth advisory review has selected the contract draft confirmation boundary next.
 - Scope override note: `work/goals/goal_pause_proofpack_writer_track_for_user_intent_alignment_v0_1.md` paused the proofpack writer track at a completed checkpoint after the first active write slice, hash/reference integration model, and sixty-second advisory review. The upstream user request -> intent -> contract UX boundary, side-effect-free intent/contract draft model, and Contract Schema Blueprint are now in place, and parked Writer work should wait until the contract draft confirmation boundary and a later review select it again.
 - Scope override note: `work/goals/goal_remove_legacy_pr_intake_gate_local_engine_v0_1.md` removed the now-unused local PR Intake Gate script/test harness after shared-action migration while preserving Punk-local policy and leaving runtime/product scope unchanged. The override is now recorded as done, and the later fifty-sixth advisory review is now recorded done.
@@ -80,16 +92,13 @@ last_validated_commit: "2f64f0f"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` | `ready` | Reviews accepted/deferred docs-governance warnings after closing the contract-core checkpoint series. | — |
+| `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Pauses after compact greenfield init implementation, verification, checkpointing, and docs/status reconciliation. | — |
 
 ## Open Drift Findings
 
 | Finding | Severity | Route | Owner | Next artifact |
 |---|---|---|---|---|
-| Existing docs-governance warning: `Research notes` heading in `docs/product/DOCUMENTATION-MAP.md` looks like an undeclared glossary term. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
-| Existing docs-governance warning: `Current implemented subset boundary` heading in `docs/product/CRATE-STATUS.md` looks like a duplicate definition candidate. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
-| Existing docs-governance warning: `Current CLI surface` heading in `docs/product/CRATE-STATUS.md` looks like a duplicate definition candidate. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
-| Existing docs-governance warning: `Project coherence` heading in `docs/product/PROJECT-MEMORY.md` looks like a duplicate definition candidate. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
+| None currently recorded after roadmap/status reconciliation after greenfield init v0.1. | — | — | — | — |
 
 ## Blocked
 
@@ -100,12 +109,19 @@ last_validated_commit: "2f64f0f"
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
-| `punk init` implementation | future bounded runtime setup goal | Docs now treat `punk init` as future/deferred; implementation remains a separate runtime setup goal. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Reconciled roadmap/status after greenfield init v0.1 | `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md`, `work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md`, `docs/product/NORTH-STAR.md`, `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` |
+| 2026-05-01 | Published greenfield init checkpoint status v0.1 | `work/goals/goal_publish_greenfield_init_checkpoint_status_v0_1.md`, `work/reports/2026-05-01-greenfield-init-checkpoint-status-v0-1.md`, `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md` |
+| 2026-05-01 | Verified greenfield init compact layout v0.1 | `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md`, `work/reports/2026-05-01-greenfield-init-compact-layout-verification-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
+| 2026-05-01 | Cleaned docs-governance warnings v0.1 | `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`, `work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md`, `docs/product/CRATE-STATUS.md`, `docs/product/DOCUMENTATION-MAP.md`, `docs/product/PROJECT-MEMORY.md` |
+| 2026-05-01 | Changed greenfield init to compact Punk memory layout v0.1 | `work/goals/goal_change_greenfield_init_to_compact_punk_memory_layout_v0_1.md`, `work/reports/2026-05-01-greenfield-init-compact-memory-layout-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
+| 2026-05-01 | Added greenfield init scaffold v0.1 | `work/goals/goal_add_greenfield_init_scaffold_v0_1.md`, `work/reports/2026-05-01-greenfield-init-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
+| 2026-05-01 | Added Punk root marker init v0.1 | `work/goals/goal_add_punk_root_marker_init_v0_1.md`, `work/reports/2026-05-01-punk-root-marker-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
+| 2026-05-01 | Added Level 0 project init v0.1 | `work/goals/goal_add_level0_project_init_v0_1.md`, `work/reports/2026-05-01-level0-project-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Closed contract-core checkpoint series v0.1 | `work/goals/goal_close_contract_core_checkpoint_series_v0_1.md`, `work/reports/2026-05-01-close-contract-core-checkpoint-series-v0-1.md`, `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` |
 | 2026-05-01 | Reviewed acceptance claim boundary v0.1 | `work/goals/goal_review_acceptance_claim_boundary_v0_1.md`, `work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md`, `work/goals/goal_close_contract_core_checkpoint_series_v0_1.md` |
 | 2026-05-01 | Reviewed Writer readiness after contract-core v0.1 | `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md`, `work/reports/2026-05-01-writer-readiness-after-contract-core-review.md`, `work/goals/goal_review_acceptance_claim_boundary_v0_1.md` |
@@ -287,9 +303,17 @@ last_validated_commit: "2f64f0f"
 - Last checked: 2026-05-01
 - Command: `python3 scripts/check_research_gate.py`
 - Command: `python3 scripts/check_work_ledger.py`
+- Command: `cargo fmt --check`
+- Command: `cargo check --workspace`
+- Command: `cargo test --workspace`
+- Command: `~/.local/bin/punk-dev eval run smoke`
 - Command: `git diff --check`
+- Command: `scripts/check.sh docs-governance --files docs/product/NORTH-STAR.md work/STATUS.md work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md --report work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md`
 - Result: `PASS`
 - Notes:
-  - Ledger consistency check verified hard-clause mapping is complete before receipt requirements.
-  - Selected next remains `work/goals/goal_integrate_contract_receipt_requirements_v0_1.md`.
-  - Docs governance passed with 0 failures and 0 warnings for this check.
+  - `docs/product/NORTH-STAR.md` now includes `punk init <project-id>` in its current executable CLI list and keeps the command scoped to minimal greenfield compact `.punk/memory/` init.
+  - `README.md`, `docs/product/START-HERE.md`, `docs/product/ROADMAP.md`, `docs/product/CRATE-STATUS.md`, and `docs/product/PROJECT-MEMORY.md` were inspected and left unchanged because they already state that minimal greenfield `punk init <project-id>` is active and compact `.punk/memory/` is the user-project default.
+  - No open docs/status drift remains in this reconciliation scope.
+  - No product behavior, init behavior, runtime storage, Writer, gate writer, proof writer, proofpack writer, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior was activated.
+  - Selected next is `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`.
+  - Docs governance passed with 0 failures and 0 warnings for the changed work-ledger/report set.

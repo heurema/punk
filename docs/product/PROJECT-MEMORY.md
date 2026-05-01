@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-30
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -138,7 +138,13 @@ Current scope is side-effect-free model/validation and documentation only.
 Runtime context-pack storage, derived views, retrieval integration, compression,
 and executor brief generation remain deferred or parked.
 
-## Repo-tracked memory
+## Repo-tracked Memory Layouts
+
+Punk separates durable project memory from runtime or derived state.
+
+Durable project memory must be repo-tracked, but it does not always need to live in top-level project directories.
+
+### Punk Dogfooding Layout
 
 ```text
 work/
@@ -165,11 +171,35 @@ docs/
 publishing/
 ```
 
+This root layout is allowed for the Punk repository itself because this repository dogfoods Punk as its own work ledger and product memory surface.
+
+### User Project Default Layout
+
+```text
+.punk/
+  README.md
+  project.toml
+  memory/
+    STATUS.md
+    goals/
+    reports/
+    knowledge/
+      ideas/
+      research/
+    adr/
+```
+
+For user projects, `punk init <project-id>` uses the compact `.punk/memory/` layout by default.
+
+`.punk/memory/` is repo-tracked durable project memory.
+
+`.punk/runtime/`, `.punk/cache/`, `.punk/events/`, `.punk/runs/`, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
+
 ## Level 0 manual Work Ledger
 
-Before runtime contract tracking exists, Punk uses a repo-tracked manual Work Ledger under `work/`.
+Before runtime contract tracking exists, the Punk repository uses a repo-tracked manual Work Ledger under `work/`, while user projects initialized by `punk init <project-id>` use `.punk/memory/`.
 
-The canonical live state is:
+The canonical live state for the Punk repository dogfooding layout is:
 
 ```text
 work/STATUS.md
@@ -177,15 +207,28 @@ work/STATUS.md
 
 This file is the Dogfooding Level 0 live-status surface.
 
+For user projects initialized with the compact layout, the equivalent live-status surface is:
+
+```text
+.punk/memory/STATUS.md
+```
+
 It must make the current focus, selected next goal, blockers, recent completed items, and validation state inspectable without hidden chat context.
 
 At this stage:
 
-- `work/STATUS.md` is human-maintained;
-- `work/goals/` hold durable work intent;
-- `work/reports/` hold durable outcome and handoff artifacts;
-- `.punk/` runtime state is not written yet for this purpose;
+- the live status file is human-maintained;
+- goals hold durable work intent;
+- reports hold durable outcome and handoff artifacts;
+- `punk init <project-id>` creates the initial greenfield Level 0 compact scaffold under `.punk/memory/`;
+- the scaffold records `project_id` and `entry_mode = greenfield`;
+- `.punk/README.md` and `.punk/project.toml` may mark the project root and setup metadata;
+- `.punk/` runtime stores are not written yet for this purpose;
+- root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are not created by default for user projects;
 - this surface must not become a second tracker product or a hidden backend.
+
+The current `punk init <project-id>` command is limited to this manual greenfield scaffold.
+It does not create brownfield reconstruction, grayfield reconciliation, runtime project storage, flow events, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Level 0 `done` means manual closure with evidence.
 
@@ -195,7 +238,9 @@ It does not mean future `gate` acceptance.
 
 Canonical product and process docs live under `docs/product/`.
 
-Decision history lives under `docs/adr/`.
+In the Punk repository dogfooding layout, decision history lives under `docs/adr/`.
+
+In the compact user-project layout, starter ADR notes live under `.punk/memory/adr/`.
 
 Historical-only docs live under `docs/archive/` when a current surface is replaced.
 
@@ -306,7 +351,7 @@ When retrieval grows beyond manual repo inspection, the artifact contract should
 
 ## Project coherence
 
-The project-level gate asks:
+At review time, the project-level gate asks:
 
 Are all accepted contracts still moving the project in the intended direction?
 
