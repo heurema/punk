@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - product-entry-path
@@ -84,11 +84,14 @@ See `docs/product/DOCUMENTATION-MAP.md` and `docs/product/GLOSSARY.md`.
 
 The implemented CLI surface today is intentionally small:
 
+- `punk init`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
-`punk init` is a future setup target. It is not implemented or required today.
+`punk init` is active only as a Dogfooding Level 0 manual project-memory scaffold.
+It writes repo-tracked `work/`, `docs/adr/`, and `knowledge/` starter files with create-new/no-overwrite behavior.
+It does not create `.punk/` runtime state, flow persistence, contracts, run receipts, gate decisions, proofpacks, or acceptance claims.
 
 The active target remains the stable core:
 

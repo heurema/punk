@@ -20,6 +20,8 @@ last_validated_commit: "2f64f0f"
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: cleanup docs-governance warnings v0.1.
 - Selected next: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`
+- Scope override note: maintainer explicitly selected a real-project dogfooding path before continuing docs-governance cleanup. The cleanup goal remains ready, but this bounded `punk init` slice now promotes only a manual Level 0 scaffold so a greenfield project can start using Punk discipline without runtime authority claims.
+- Completion note: `work/goals/goal_add_level0_project_init_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-governance, and work-ledger evidence. It adds `punk init` only as a Dogfooding Level 0 manual project-memory scaffold with create-new/no-overwrite behavior and no `.punk` runtime state, flow persistence, contracts, receipts, gate/proof artifacts, proofpacks, acceptance claims, adapters, automation, or provider/model execution.
 - Scope override note: `work/goals/goal_capture_contract_schema_blueprint_v0_1.md` temporarily paused the previously selected sixty-fourth advisory review to preserve the full high-level Contract shape before continuing smaller implementation slices. The override is now recorded as done, and the sixty-fourth advisory review has selected the contract draft confirmation boundary next.
 - Scope override note: `work/goals/goal_pause_proofpack_writer_track_for_user_intent_alignment_v0_1.md` paused the proofpack writer track at a completed checkpoint after the first active write slice, hash/reference integration model, and sixty-second advisory review. The upstream user request -> intent -> contract UX boundary, side-effect-free intent/contract draft model, and Contract Schema Blueprint are now in place, and parked Writer work should wait until the contract draft confirmation boundary and a later review select it again.
 - Scope override note: `work/goals/goal_remove_legacy_pr_intake_gate_local_engine_v0_1.md` removed the now-unused local PR Intake Gate script/test harness after shared-action migration while preserving Punk-local policy and leaving runtime/product scope unchanged. The override is now recorded as done, and the later fifty-sixth advisory review is now recorded done.
@@ -100,12 +102,12 @@ last_validated_commit: "2f64f0f"
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
 | GoalRail runtime pilot | future gate/proof/storage closure and GoalRail-specific selected goal | Keep GoalRail limited to process-shell reuse until runtime authority surfaces exist. |
-| `punk init` implementation | future bounded runtime setup goal | Docs now treat `punk init` as future/deferred; implementation remains a separate runtime setup goal. |
 
 ## Done Recently
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Added Level 0 project init v0.1 | `work/goals/goal_add_level0_project_init_v0_1.md`, `work/reports/2026-05-01-level0-project-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Closed contract-core checkpoint series v0.1 | `work/goals/goal_close_contract_core_checkpoint_series_v0_1.md`, `work/reports/2026-05-01-close-contract-core-checkpoint-series-v0-1.md`, `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` |
 | 2026-05-01 | Reviewed acceptance claim boundary v0.1 | `work/goals/goal_review_acceptance_claim_boundary_v0_1.md`, `work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md`, `work/goals/goal_close_contract_core_checkpoint_series_v0_1.md` |
 | 2026-05-01 | Reviewed Writer readiness after contract-core v0.1 | `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md`, `work/reports/2026-05-01-writer-readiness-after-contract-core-review.md`, `work/goals/goal_review_acceptance_claim_boundary_v0_1.md` |
@@ -287,9 +289,14 @@ last_validated_commit: "2f64f0f"
 - Last checked: 2026-05-01
 - Command: `python3 scripts/check_research_gate.py`
 - Command: `python3 scripts/check_work_ledger.py`
+- Command: `cargo check --workspace`
+- Command: `cargo test --workspace`
+- Command: `cargo run -q -p punk-cli -- eval run smoke`
+- Command: `cargo run -q --manifest-path /Users/vi/personal/heurema/punk/Cargo.toml -p punk-cli -- init` from a temporary empty project root
+- Command: `scripts/check.sh docs-governance --files ... --report work/reports/2026-05-01-level0-project-init-v0-1.md`
 - Command: `git diff --check`
 - Result: `PASS`
 - Notes:
-  - Ledger consistency check verified hard-clause mapping is complete before receipt requirements.
-  - Selected next remains `work/goals/goal_integrate_contract_receipt_requirements_v0_1.md`.
-  - Docs governance passed with 0 failures and 0 warnings for this check.
+  - `punk init` is now active only as a Dogfooding Level 0 manual project-memory scaffold.
+  - Selected next is restored to `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`.
+  - Docs governance passed with 0 failures and 3 existing duplicate-definition warnings for this check.

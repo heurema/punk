@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-29
+updated_at: 2026-05-01
 review_after: 2026-07-21
 canonical_for:
   - dogfooding-levels
@@ -74,6 +74,13 @@ Level 0 operating rules:
 - `done` means manually closed with evidence, not final acceptance;
 - `.punk/` runtime state is not written yet for this purpose.
 
+Currently implemented CLI subset:
+
+- `punk init`
+
+`punk init` creates only the Level 0 manual project-memory scaffold.
+It writes repo-tracked starter files and does not create `.punk/` runtime state, flow persistence, contracts, receipts, gate decisions, proofpacks, or acceptance claims.
+
 Exit criteria:
 
 - all new meaningful work has a goal or explicit maintenance reason
@@ -137,7 +144,6 @@ Currently implemented subset:
 
 Target surfaces after implementation:
 
-- `punk init`
 - `punk inspect project`
 - flow state tracking
 

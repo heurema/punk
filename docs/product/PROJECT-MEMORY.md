@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-30
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -184,8 +184,12 @@ At this stage:
 - `work/STATUS.md` is human-maintained;
 - `work/goals/` hold durable work intent;
 - `work/reports/` hold durable outcome and handoff artifacts;
+- `punk init` can create the initial Level 0 scaffold for these repo-tracked files;
 - `.punk/` runtime state is not written yet for this purpose;
 - this surface must not become a second tracker product or a hidden backend.
+
+The current `punk init` command is limited to this manual scaffold.
+It does not create runtime project storage, flow events, contracts, receipts, gate decisions, proofpacks, or acceptance claims.
 
 Level 0 `done` means manual closure with evidence.
 

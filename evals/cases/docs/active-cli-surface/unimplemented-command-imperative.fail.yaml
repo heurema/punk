@@ -13,14 +13,14 @@ input:
     README.md: |
       # Punk
 
-      Run `punk init` to initialize the project before using Punk.
+      Run `punk start --from work/goals/goal_demo.md` before using Punk.
 
 expected:
   result: fail
   hard_failures:
     - code: DOC_ACTIVE_CLI_UNIMPLEMENTED_COMMAND
       path: README.md
-      command: punk init
+      command: punk start --from work/goals/goal_demo.md
   warnings: []
 
 checks:

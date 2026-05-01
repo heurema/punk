@@ -69,6 +69,7 @@ dependencies = [
  "punk-eval",
  "punk-events",
  "punk-flow",
+ "punk-project",
 ]
 
 [[package]]
@@ -96,6 +97,7 @@ dependencies = [
  "punk-events",
  "punk-flow",
  "punk-gate",
+ "punk-project",
  "punk-proof",
 ]
 

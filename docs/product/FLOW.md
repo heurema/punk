@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-25
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - flow-semantics
@@ -78,11 +78,14 @@ If supported, an override must:
 
 Current implemented CLI subset:
 
+- `punk init`
 - `punk flow inspect`
+
+`punk init` is a Level 0 setup command for repo-tracked manual project memory.
+It is not flow persistence and does not write flow events or `.punk/` runtime state.
 
 Future target commands include:
 
-- `punk init`
 - `punk start --from work/goals/<id>.md`
 - `punk plot approve <contract-id>`
 - `punk cut run <contract-id>`

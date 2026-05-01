@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-29
+updated_at: 2026-05-01
 review_after: 2026-07-20
 canonical_for:
   - roadmap-phase-gates
@@ -58,11 +58,13 @@ Active target:
 
 - workspace compiles
 - docs define core boundaries
+- `punk init` creates a Level 0 manual project-memory scaffold only
 - parked crates/folders do not expose public behavior
 
 Exit criteria:
 
 - `cargo check --workspace` passes
+- `punk init` creates repo-tracked starter memory without `.punk/` runtime state
 - status vocabulary is documented
 - no parked capability appears in the public CLI
 
