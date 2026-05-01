@@ -8,9 +8,9 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-01
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Review Writer readiness after contract-core v0.1"
-selected_next: "work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md"
-last_validated_commit: "960c9de"
+current_focus: "Review acceptance claim boundary v0.1"
+selected_next: "work/goals/goal_review_acceptance_claim_boundary_v0_1.md"
+last_validated_commit: "dff9bd5"
 ---
 
 # Work Status
@@ -18,8 +18,8 @@ last_validated_commit: "960c9de"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: review Writer readiness after contract-core v0.1.
-- Selected next: `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md`
+- Current focus: review acceptance claim boundary v0.1.
+- Selected next: `work/goals/goal_review_acceptance_claim_boundary_v0_1.md`
 - Scope override note: `work/goals/goal_capture_contract_schema_blueprint_v0_1.md` temporarily paused the previously selected sixty-fourth advisory review to preserve the full high-level Contract shape before continuing smaller implementation slices. The override is now recorded as done, and the sixty-fourth advisory review has selected the contract draft confirmation boundary next.
 - Scope override note: `work/goals/goal_pause_proofpack_writer_track_for_user_intent_alignment_v0_1.md` paused the proofpack writer track at a completed checkpoint after the first active write slice, hash/reference integration model, and sixty-second advisory review. The upstream user request -> intent -> contract UX boundary, side-effect-free intent/contract draft model, and Contract Schema Blueprint are now in place, and parked Writer work should wait until the contract draft confirmation boundary and a later review select it again.
 - Scope override note: `work/goals/goal_remove_legacy_pr_intake_gate_local_engine_v0_1.md` removed the now-unused local PR Intake Gate script/test harness after shared-action migration while preserving Punk-local policy and leaving runtime/product scope unchanged. The override is now recorded as done, and the later fifty-sixth advisory review is now recorded done.
@@ -66,11 +66,13 @@ last_validated_commit: "960c9de"
 - Completion note: `work/goals/goal_review_next_contract_core_phase_after_checkpoint_v0_1.md` is now recorded as done with review evidence. It found the contract-core model coherent enough for another review-only step, kept docs-governance warnings accepted/deferred, found Writer readiness premature, confirmed Replayable Project Memory remains advisory, and selected gate/proof model alignment review before any Writer/runtime work.
 - Completion note: `work/goals/goal_review_gate_proof_model_alignment_v0_1.md` is now recorded as done with review evidence. It found `gate decision -> proofpack -> acceptance claim` coherent, confirmed proofpack is not a gate input or acceptance authority, confirmed contract proof requirements remain declarations, and selected proofpack-writer track review before any Writer readiness decision.
 - Completion note: `work/goals/goal_review_proofpack_writer_track_after_checkpoint_v0_1.md` is now recorded as done with review evidence. It classified the proofpack-writer track, confirmed the first active exact-byte write slice is bounded, confirmed `.punk/proofs`, runtime storage, gate decisions, acceptance claims, and broader proofpack writer orchestration remain inactive, and selected Writer readiness review as a review-only next step.
-- Why this is next: contract-core, gate/proof, and proofpack-writer track reviews are complete enough to ask whether a future bounded Writer boundary/spec/research goal can be considered. This is a review-only readiness checkpoint, not Writer implementation.
+- Completion note: `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md` is now recorded as done with review evidence. It found Writer boundary design should wait for an explicit acceptance claim boundary review, confirmed Writer remains downstream, confirmed the already-reviewed bounded proofpack writer exact-byte slice remains isolated, and selected acceptance claim boundary review before any Writer implementation.
+- Why this is next: Writer readiness review found that future Writer boundary design depends on an explicit acceptance claim boundary. This is a review-only checkpoint to classify acceptance claim semantics before any Writer implementation or boundary design.
 - Acceptance:
-  - decide whether Punk is ready to consider a future bounded Writer boundary/spec/research goal after contract-core, gate/proof, and proofpack-writer track reviews.
-  - confirm Writer remains downstream and does not become planner, authority, gate substitute, proof substitute, acceptance claim writer, runtime storage, or CLI behavior.
-  - choose exactly one next direction: Writer boundary/spec/research, docs-governance cleanup, status publication, another review, or stop.
+  - decide whether existing proof-before-acceptance semantics are explicit enough for future Writer boundary design.
+  - classify acceptance claim as lifecycle concept, future record, future writer output, project-memory link input, or deferred/parked surface.
+  - confirm acceptance claim remains downstream of accepting gate decision plus matching proof and does not become gate, proofpack, Writer, or project truth authority.
+  - choose exactly one next direction: Writer boundary docs/model, acceptance claim docs/eval cleanup, docs-governance cleanup, status publication, another review, or stop.
   - keep Replayable Project Memory advisory and do not activate Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, code generation, or spec-as-source behavior.
   - add no implementation, runtime behavior, CLI, storage, Writer, gate writer, proofpack writer expansion, artifact hash runtime expansion, acceptance claim writer, adapter, policy engine, or `punk init` behavior.
 
@@ -78,7 +80,7 @@ last_validated_commit: "960c9de"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md` | `ready` | Reviews whether a future bounded Writer boundary/spec/research goal can be considered after contract-core, gate/proof, and proofpack-writer reviews. | — |
+| `work/goals/goal_review_acceptance_claim_boundary_v0_1.md` | `ready` | Reviews whether acceptance claim semantics are explicit enough before any future Writer boundary design. | — |
 
 ## Open Drift Findings
 
@@ -93,7 +95,7 @@ last_validated_commit: "960c9de"
 
 | Item | Blocked by | Needed to unblock |
 |---|---|---|
-| `work/goals/goal_define_proofpack_writer_referenced_artifact_verification_active_slice_boundary_v0_1.md` | `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md` and later explicit Writer/runtime selection | Keep Writer parked until receipt, gate, and proof seams are defined and a later review explicitly selects Writer again. |
+| `work/goals/goal_define_proofpack_writer_referenced_artifact_verification_active_slice_boundary_v0_1.md` | `work/goals/goal_review_acceptance_claim_boundary_v0_1.md` and later explicit Writer/runtime selection | Keep Writer parked until acceptance claim semantics are reviewed and a later review explicitly selects Writer or proofpack-writer expansion again. |
 | Proofpack writer, gate/eval orchestration, proofpack referenced-ref verification integration implementation, or runtime gate/proof implementation | future bounded proof/eval/gate/hash goals | Minimal receipt fields, semantic assessment boundaries, gate decision kernel, proofpack kernel, proof-before-acceptance semantics, acceptance-chain smoke coverage, structural proofpack link/hash integrity checks, proofpack integrity smoke eval coverage, CRATE-STATUS current-vs-target wording, artifact hash policy v0.1, side-effect-free `punk-core` helper validation, smoke eval coverage for artifact hash policy helper behavior, `punk-proof` helper validation, CRATE-STATUS helper-status reconciliation, proofpack manifest renderer, artifact hash computation helper boundary, exact-byte hash computation, CRATE-STATUS exact-byte hash currentness reconciliation, proofpack manifest digest boundary, proofpack manifest digest helper, file IO artifact hashing boundary, file IO artifact hashing helper implementation, CRATE-STATUS file IO helper currentness reconciliation, referenced artifact verification boundary, referenced artifact verification helper implementation, CRATE-STATUS referenced artifact verification helper currentness reconciliation, proofpack writer preparation boundary, proofpack writer hash-policy integration boundary, proofpack writer storage/schema boundary, proofpack writer operation evidence boundary, side-effect-free proofpack writer operation evidence model, side-effect-free proofpack writer preflight/plan model, proofpack writer file IO boundary, side-effect-free file IO plan/model, side-effect-free file IO outcome mapping, advisory review, side-effect-free file IO error/reason diagnostics, advisory review after diagnostics, target path policy model, advisory review after target path policy, canonical artifact layout boundary, advisory review after canonical artifact layout, side-effect-free canonical artifact model, advisory review after canonical artifact model, target artifact ref policy boundary, advisory review after target artifact ref policy, side-effect-free target artifact ref policy model, advisory review after target artifact ref policy model, target-ref model alignment, the fiftieth advisory review, proofpack writer preflight integration boundary, the fifty-first advisory review, side-effect-free preflight integration model, the fifty-second advisory review, active writer behavior boundary, and the fifty-third advisory review are in place; side-effect-free active behavior model and the fifty-fourth advisory review are in place; host path resolution boundary and the fifty-fifth advisory review are in place; side-effect-free host path resolution model is in place; the fifty-sixth advisory review is in place; storage/schema boundary reconciliation with the host path model is in place; the fifty-seventh advisory review is in place; concrete path/storage policy boundary and the fifty-eighth advisory review are in place; side-effect-free concrete path/storage policy model and the fifty-ninth advisory Work Ledger Review are in place; the first active write slice boundary and the sixtieth advisory Work Ledger Review are in place; the first active writer implementation slice and the sixty-first advisory Work Ledger Review are in place; the proofpack writer hash/reference verification integration model is in place; the sixty-second advisory review is in place; the upstream user request -> intent -> contract UX boundary, side-effect-free intent/contract draft model, and Contract Schema Blueprint v0.1 are in place; the Writer referenced artifact verification active-slice boundary remains parked until hard-clause, receipt, gate, and proof seams are defined and a later review explicitly selects Writer again. |
 | `.punk/contracts`, `.punk/evals`, `.punk/runs`, `.punk/decisions`, or `.punk/proofs` storage | future bounded runtime storage goals | Project Memory storage boundary v0.1 is defined; still select and scope any runtime storage implementation through a separate goal after review. |
 | Process capture inbox or Event Ledger research | repeated evidence of capture or inspectability failure | Revisit only if the process shell or a later review shows a repeated gap. |
@@ -104,6 +106,7 @@ last_validated_commit: "960c9de"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Reviewed Writer readiness after contract-core v0.1 | `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md`, `work/reports/2026-05-01-writer-readiness-after-contract-core-review.md`, `work/goals/goal_review_acceptance_claim_boundary_v0_1.md` |
 | 2026-05-01 | Reviewed proofpack-writer track after checkpoint v0.1 | `work/goals/goal_review_proofpack_writer_track_after_checkpoint_v0_1.md`, `work/reports/2026-05-01-proofpack-writer-track-after-checkpoint-review.md`, `work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md` |
 | 2026-05-01 | Reviewed gate/proof model alignment v0.1 | `work/goals/goal_review_gate_proof_model_alignment_v0_1.md`, `work/reports/2026-05-01-gate-proof-model-alignment-review-v0-1.md`, `work/goals/goal_review_proofpack_writer_track_after_checkpoint_v0_1.md` |
 | 2026-05-01 | Reviewed next contract-core phase after checkpoint | `work/goals/goal_review_next_contract_core_phase_after_checkpoint_v0_1.md`, `work/reports/2026-05-01-next-contract-core-phase-after-checkpoint-review.md`, `work/goals/goal_review_gate_proof_model_alignment_v0_1.md` |

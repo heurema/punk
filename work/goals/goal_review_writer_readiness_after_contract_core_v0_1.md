@@ -1,7 +1,7 @@
 ---
 id: goal_review_writer_readiness_after_contract_core_v0_1
 title: "Review Writer readiness after contract-core v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "process"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "work/reports/2026-05-01-gate-proof-model-alignment-review-v0-1.md"
   - "work/reports/2026-05-01-contract-core-model-after-proof-requirements-review.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-writer-readiness-after-contract-core-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -78,3 +79,17 @@ Do not implement Writer.
 Do not add CLI behavior, `.punk/contracts` storage, `.punk/runs` storage, `.punk/decisions` storage, `.punk/proofs` storage, runtime writers, gate writer, proofpack writer expansion, artifact hash runtime expansion, acceptance claim writer, agent execution, provider adapters, policy engine integration, runtime side effects, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or `punk init`.
 
 Do not add new Writer capabilities unless a later bounded goal explicitly selects them.
+
+
+## Completion
+
+Completed on 2026-05-01.
+
+Outcome:
+
+- Reviewed Writer readiness after contract-core, gate/proof, and proofpack-writer track reviews.
+- Confirmed Writer must remain downstream and must not become planner, authority, gate substitute, proof substitute, acceptance claim writer by default, runtime storage, or CLI behavior.
+- Confirmed the already-reviewed bounded exact-byte proofpack writer slice remains isolated; no new proofpack writer behavior was added.
+- Found acceptance claim semantics are high-level and should receive a dedicated boundary review before any Writer boundary design.
+- Selected `work/goals/goal_review_acceptance_claim_boundary_v0_1.md` as the next review-only goal.
+- Added no implementation, runtime behavior, CLI, storage, Writer, gate writer, proofpack writer expansion, artifact hash runtime expansion, acceptance claim writer, adapter, policy engine, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or `punk init` behavior.
