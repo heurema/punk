@@ -35,6 +35,50 @@ high_risk_path_globs:
   - 'brand/**'
   - 'work/**'
 
+instruction_surface:
+  description: 'Punk files that AI agents may read as instructions, product truth, contracts, eval specs, or work context'
+  path_globs:
+    - 'README.md'
+    - 'AGENTS.md'
+    - '**/AGENTS.md'
+    - 'CLAUDE.md'
+    - '**/CLAUDE.md'
+    - 'GEMINI.md'
+    - '**/GEMINI.md'
+    - 'SKILL.md'
+    - '**/SKILL.md'
+    - '.github/PULL_REQUEST_TEMPLATE.md'
+    - '.github/pull_request_template.md'
+    - '.github/pull_request_template/**'
+    - '.github/ISSUE_TEMPLATE/**'
+    - '.github/copilot-instructions.md'
+    - '.github/pr-intake-gate.yml'
+    - 'docs/product/**'
+    - 'docs/adr/**'
+    - 'evals/**'
+    - 'flows/**'
+    - 'knowledge/**'
+    - 'work/**'
+    - 'examples/**'
+
+prompt_injection:
+  enabled: true
+  description: 'detect obvious prompt-injection-like additions in external PRs before ordinary review'
+  text_path_globs:
+    - '*.md'
+    - '**/*.md'
+    - '*.mdx'
+    - '**/*.mdx'
+    - '*.txt'
+    - '**/*.txt'
+    - '.github/**'
+    - 'docs/**'
+    - 'evals/**'
+    - 'flows/**'
+    - 'knowledge/**'
+    - 'work/**'
+    - 'examples/**'
+
 trusted_authors:
   permissions:
     - 'admin'
