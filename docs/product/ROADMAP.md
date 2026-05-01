@@ -64,7 +64,7 @@ Active target:
 Exit criteria:
 
 - `cargo check --workspace` passes
-- `punk init` creates repo-tracked starter memory without `.punk/` runtime state
+- `punk init` creates repo-tracked starter memory and `.punk` marker files without `.punk/` runtime stores
 - status vocabulary is documented
 - no parked capability appears in the public CLI
 

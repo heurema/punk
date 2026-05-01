@@ -359,12 +359,17 @@ mod tests {
             .contains("path: work/goals/goal_capture_initial_project_truth.md"));
         assert!(output
             .text
-            .contains("does not create or read .punk runtime state"));
+            .contains("creates .punk as a project root marker without runtime stores"));
         assert!(root.join("work/STATUS.md").is_file());
         assert!(root
             .join("work/goals/goal_capture_initial_project_truth.md")
             .is_file());
-        assert!(!root.join(".punk").exists());
+        assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join(".punk/events").exists());
+        assert!(!root.join(".punk/contracts").exists());
+        assert!(!root.join(".punk/runs").exists());
+        assert!(!root.join(".punk/decisions").exists());
+        assert!(!root.join(".punk/proofs").exists());
 
         let _ = fs::remove_dir_all(root);
     }

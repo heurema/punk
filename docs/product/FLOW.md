@@ -82,7 +82,7 @@ Current implemented CLI subset:
 - `punk flow inspect`
 
 `punk init` is a Level 0 setup command for repo-tracked manual project memory.
-It is not flow persistence and does not write flow events or `.punk/` runtime state.
+It is not flow persistence and does not write flow events or `.punk/` runtime stores.
 
 Future target commands include:
 

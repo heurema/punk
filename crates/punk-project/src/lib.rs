@@ -64,9 +64,18 @@ scope:
   include:
     - "docs/**"
     - "design/**"
+    - ".punk/README.md"
+    - ".punk/project.toml"
     - "work/STATUS.md"
   exclude:
-    - ".punk/**"
+    - ".punk/events/**"
+    - ".punk/contracts/**"
+    - ".punk/runs/**"
+    - ".punk/evals/**"
+    - ".punk/decisions/**"
+    - ".punk/proofs/**"
+    - ".punk/indexes/**"
+    - ".punk/views/**"
 acceptance:
   - "The canonical product/design/source documents are listed with repo-relative refs."
   - "Known constraints, non-goals, and acceptance criteria for the first implementation slice are recorded."
@@ -104,7 +113,7 @@ Capture the current product, design, technical constraints, non-goals, and first
 
 Do not implement product behavior in this goal.
 
-Do not write `.punk/` runtime state.
+Do not write `.punk/` runtime stores.
 
 Do not claim gate acceptance or proofpack coverage.
 "#;
@@ -137,10 +146,37 @@ Raw or parked ideas live here.
 Ideas are not implementation truth until promoted through the project workflow.
 "#;
 
+const PUNK_README_TEMPLATE: &str = r#"# .punk
+
+This directory is the Punk project root marker.
+
+Current active behavior is Dogfooding Level 0 manual project memory.
+
+Authoritative live work state remains `work/STATUS.md`.
+
+Runtime stores such as events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
+"#;
+
+const PUNK_PROJECT_TOML_TEMPLATE: &str = r#"# Punk project marker.
+# This file is setup metadata, not runtime authority.
+
+schema_version = "punk.project.v0.1"
+project_id = "TODO"
+project_name = "TODO"
+dogfooding_level = 0
+runtime_persistence = "inactive"
+live_work_state = "work/STATUS.md"
+
+[authority]
+live_state = "work/STATUS.md"
+final_decisions = "not_active"
+proofpacks = "not_active"
+"#;
+
 const PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
-    "writes only repo-tracked Level 0 project-memory scaffold files",
-    "does not create or read .punk runtime state",
-    "does not create contracts, run receipts, gate decisions, proofpacks, or acceptance claims",
+    "writes only Level 0 project-memory scaffold files and .punk marker files",
+    "creates .punk as a project root marker without runtime stores",
+    "does not create contracts, run receipts, gate artifacts, proofpacks, or acceptance claims",
     "uses create-new/no-overwrite behavior and reports conflicts fail-closed",
 ];
 
@@ -348,6 +384,7 @@ const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::Directory("knowledge"),
     ProjectInitEntry::Directory("knowledge/research"),
     ProjectInitEntry::Directory("knowledge/ideas"),
+    ProjectInitEntry::Directory(".punk"),
     ProjectInitEntry::File("work/STATUS.md", WORK_STATUS_TEMPLATE),
     ProjectInitEntry::File(
         "work/goals/goal_capture_initial_project_truth.md",
@@ -357,6 +394,8 @@ const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::File("docs/adr/README.md", ADR_README_TEMPLATE),
     ProjectInitEntry::File("knowledge/research/README.md", RESEARCH_README_TEMPLATE),
     ProjectInitEntry::File("knowledge/ideas/README.md", IDEAS_README_TEMPLATE),
+    ProjectInitEntry::File(".punk/README.md", PUNK_README_TEMPLATE),
+    ProjectInitEntry::File(".punk/project.toml", PUNK_PROJECT_TOML_TEMPLATE),
 ];
 
 pub fn init_level0_project(project_root: impl AsRef<Path>) -> ProjectInitReport {
@@ -544,7 +583,14 @@ mod tests {
         assert!(root.join("docs/adr/README.md").is_file());
         assert!(root.join("knowledge/research/README.md").is_file());
         assert!(root.join("knowledge/ideas/README.md").is_file());
-        assert!(!root.join(".punk").exists());
+        assert!(root.join(".punk/README.md").is_file());
+        assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join(".punk/events").exists());
+        assert!(!root.join(".punk/contracts").exists());
+        assert!(!root.join(".punk/runs").exists());
+        assert!(!root.join(".punk/evals").exists());
+        assert!(!root.join(".punk/decisions").exists());
+        assert!(!root.join(".punk/proofs").exists());
 
         let status = fs::read_to_string(root.join("work/STATUS.md"))
             .expect("status template should be readable");
@@ -552,6 +598,11 @@ mod tests {
         assert!(
             status.contains("selected_next: \"work/goals/goal_capture_initial_project_truth.md\"")
         );
+        let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
+            .expect("project marker should be readable");
+        assert!(project_marker.contains("schema_version = \"punk.project.v0.1\""));
+        assert!(project_marker.contains("runtime_persistence = \"inactive\""));
+        assert!(project_marker.contains("live_work_state = \"work/STATUS.md\""));
 
         let _ = fs::remove_dir_all(root);
     }

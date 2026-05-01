@@ -90,8 +90,8 @@ The implemented CLI surface today is intentionally small:
 - `punk eval run smoke --format json`
 
 `punk init` is active only as a Dogfooding Level 0 manual project-memory scaffold.
-It writes repo-tracked `work/`, `docs/adr/`, and `knowledge/` starter files with create-new/no-overwrite behavior.
-It does not create `.punk/` runtime state, flow persistence, contracts, run receipts, gate decisions, proofpacks, or acceptance claims.
+It writes repo-tracked `work/`, `docs/adr/`, `knowledge/`, and `.punk` marker files with create-new/no-overwrite behavior.
+The `.punk` files are only a project root marker and setup metadata; they do not activate runtime stores, flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
 
 The active target remains the stable core:
 

@@ -72,14 +72,14 @@ Level 0 operating rules:
 - set `in_progress` only when work has actually started;
 - every meaningful change updates status and/or the selected goal/report;
 - `done` means manually closed with evidence, not final acceptance;
-- `.punk/` runtime state is not written yet for this purpose.
+- `.punk/` runtime stores are not written yet for this purpose.
 
 Currently implemented CLI subset:
 
 - `punk init`
 
 `punk init` creates only the Level 0 manual project-memory scaffold.
-It writes repo-tracked starter files and does not create `.punk/` runtime state, flow persistence, contracts, receipts, gate decisions, proofpacks, or acceptance claims.
+It writes repo-tracked starter files plus `.punk` marker/setup files, and does not create `.punk` runtime stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Exit criteria:
 
