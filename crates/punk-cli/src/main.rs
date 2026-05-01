@@ -117,7 +117,7 @@ fn root_usage() -> String {
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n\n",
         "Notes:\n",
-        "  - init writes only a Level 0 repo-tracked project-memory scaffold\n",
+        "  - init writes only a compact Level 0 repo-tracked .punk/memory scaffold\n",
         "  - only bounded init, inspect, and smoke-eval surfaces are active\n",
         "  - .punk runtime persistence is not active yet\n"
     ))
@@ -130,7 +130,7 @@ fn init_usage() -> String {
         "Usage:\n",
         "  punk init <project-id>\n\n",
         "Notes:\n",
-        "  - run from the project root to create the greenfield Level 0 manual memory scaffold\n",
+        "  - run from the project root to create the compact greenfield Level 0 memory scaffold\n",
         "  - {}\n",
         "  - existing files are never overwritten\n",
         "  - .punk runtime persistence is not active yet\n"
@@ -373,26 +373,38 @@ mod tests {
         assert!(output.text.contains("project_id: weekend-project"));
         assert!(output.text.contains("runtime_persistence: inactive"));
         assert!(output.text.contains("result: initialized"));
-        assert!(output.text.contains("path: work/STATUS.md"));
+        assert!(output.text.contains("path: .punk/memory/STATUS.md"));
         assert!(output
             .text
-            .contains("path: work/goals/goal_initial_project_setup.md"));
+            .contains("path: .punk/memory/goals/goal_initial_project_setup.md"));
         assert!(output
             .text
             .contains("does not implement brownfield reconstruction or grayfield reconciliation"));
-        assert!(output
-            .text
-            .contains("creates .punk as a project root marker without runtime stores"));
-        assert!(root.join("work/STATUS.md").is_file());
+        assert!(output.text.contains(
+            "does not create root-level work, knowledge, docs/adr, or publishing directories"
+        ));
+        assert!(output.text.contains(
+            "creates .punk as a project root marker and .punk/memory as tracked durable memory"
+        ));
+        assert!(root.join(".punk/memory/STATUS.md").is_file());
         assert!(root
-            .join("work/goals/goal_initial_project_setup.md")
+            .join(".punk/memory/goals/goal_initial_project_setup.md")
             .is_file());
         assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join("work").exists());
+        assert!(!root.join("knowledge").exists());
+        assert!(!root.join("docs").exists());
+        assert!(!root.join("docs/adr").exists());
+        assert!(!root.join("publishing").exists());
+        assert!(!root.join(".punk/runtime").exists());
+        assert!(!root.join(".punk/cache").exists());
         assert!(!root.join(".punk/events").exists());
         assert!(!root.join(".punk/contracts").exists());
         assert!(!root.join(".punk/runs").exists());
         assert!(!root.join(".punk/decisions").exists());
         assert!(!root.join(".punk/proofs").exists());
+        assert!(!root.join(".punk/indexes").exists());
+        assert!(!root.join(".punk/views").exists());
 
         let _ = fs::remove_dir_all(root);
     }
@@ -400,8 +412,8 @@ mod tests {
     #[test]
     fn init_command_reports_conflict_without_overwrite() {
         let root = unique_temp_path();
-        fs::create_dir_all(root.join("work")).expect("work dir should be created");
-        fs::write(root.join("work/STATUS.md"), "custom status\n")
+        fs::create_dir_all(root.join(".punk/memory")).expect("memory dir should be created");
+        fs::write(root.join(".punk/memory/STATUS.md"), "custom status\n")
             .expect("custom status should be written");
 
         let output = run_at(["punk", "init", "weekend-project"], &root)
@@ -412,7 +424,8 @@ mod tests {
         assert!(output.text.contains("status: conflict"));
         assert!(output.text.contains("not overwritten"));
         assert_eq!(
-            fs::read_to_string(root.join("work/STATUS.md")).expect("status should be readable"),
+            fs::read_to_string(root.join(".punk/memory/STATUS.md"))
+                .expect("status should be readable"),
             "custom status\n"
         );
 
@@ -442,7 +455,7 @@ mod tests {
 
         assert!(error.contains("invalid project id"));
         assert!(error.contains("lowercase ASCII slug"));
-        assert!(!root.join("work/STATUS.md").exists());
+        assert!(!root.join(".punk/memory/STATUS.md").exists());
 
         let _ = fs::remove_dir_all(root);
     }

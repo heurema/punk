@@ -6,3 +6,13 @@ output/playwright/
 target/
 __pycache__/
 *.py[cod]
+.punk/runtime/
+.punk/cache/
+.punk/indexes/
+.punk/views/
+.punk/events/
+.punk/runs/
+.punk/evals/
+.punk/contracts/
+.punk/decisions/
+.punk/proofs/

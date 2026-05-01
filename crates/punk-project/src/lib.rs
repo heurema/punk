@@ -13,7 +13,9 @@ pub const PROJECT_INIT_RUNTIME_PERSISTENCE: &str = "inactive";
 pub const PROJECT_ID_FORMAT_NOTE: &str =
     "project id must be a lowercase ASCII slug: a-z, 0-9, and hyphen, starting and ending with a letter or digit";
 
-const INITIAL_GOAL_PATH: &str = "work/goals/goal_initial_project_setup.md";
+const MEMORY_ROOT: &str = ".punk/memory";
+const STATUS_PATH: &str = ".punk/memory/STATUS.md";
+const INITIAL_GOAL_PATH: &str = ".punk/memory/goals/goal_initial_project_setup.md";
 
 fn work_status_template(project_id: &ProjectId) -> String {
     format!(
@@ -28,7 +30,7 @@ dogfooding_level: 0
 project_id: "{project_id}"
 entry_mode: greenfield
 updated_at: TODO
-current_phase: "Dogfooding Level 0 / manual project memory"
+current_phase: "Dogfooding Level 0 / compact project memory"
 current_focus: "Initial project setup"
 selected_next: "{INITIAL_GOAL_PATH}"
 last_validated_commit: null
@@ -38,7 +40,7 @@ last_validated_commit: null
 
 ## Now
 
-- Current stage: greenfield project initialized with Punk Level 0 manual memory.
+- Current stage: greenfield project initialized with Punk Level 0 compact manual memory.
 - Current focus: complete initial project setup.
 - Selected next: `{INITIAL_GOAL_PATH}`
 
@@ -82,8 +84,11 @@ scope:
     - "design/**"
     - ".punk/README.md"
     - ".punk/project.toml"
-    - "work/STATUS.md"
+    - ".punk/memory/**"
   exclude:
+    - "work/**"
+    - "knowledge/**"
+    - "docs/adr/**"
     - ".punk/events/**"
     - ".punk/contracts/**"
     - ".punk/runs/**"
@@ -95,8 +100,8 @@ scope:
 acceptance:
   - "The canonical product/design/source documents are listed with repo-relative refs."
   - "Known constraints, non-goals, and acceptance criteria for the first implementation slice are recorded."
-  - "Project id and greenfield entry mode remain visible in work/STATUS.md."
-  - "The next bounded implementation goal is created and selected in work/STATUS.md."
+  - "Project id and greenfield entry mode remain visible in .punk/memory/STATUS.md."
+  - "The next bounded implementation goal is created and selected in .punk/memory/STATUS.md."
 knowledge_refs: []
 contract_refs: []
 report_refs: []
@@ -113,8 +118,8 @@ research_gate:
 doc_impact:
   classification: initial-project-memory
   required_updates:
-    - "work/STATUS.md"
-    - "work/reports/**"
+    - ".punk/memory/STATUS.md"
+    - ".punk/memory/reports/**"
   rationale: "Initial project truth capture establishes the manual Level 0 memory baseline."
 ---
 
@@ -172,11 +177,13 @@ const PUNK_README_TEMPLATE: &str = r#"# .punk
 
 This directory is the Punk project root marker.
 
-Current active behavior is Dogfooding Level 0 manual project memory.
+Current active behavior is Dogfooding Level 0 compact manual project memory.
 
-Authoritative live work state remains `work/STATUS.md`.
+Tracked durable project memory lives under `.punk/memory/`.
 
-Runtime stores such as events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
+Authoritative live work state for this project is `.punk/memory/STATUS.md`.
+
+Runtime and derived stores such as runtime, cache, events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
 "#;
 
 fn punk_project_toml_template(project_id: &ProjectId) -> String {
@@ -189,10 +196,18 @@ project_id = "{project_id}"
 entry_mode = "greenfield"
 dogfooding_level = 0
 runtime_persistence = "inactive"
-live_work_state = "work/STATUS.md"
+live_work_state = ".punk/memory/STATUS.md"
+
+[memory]
+layout = "compact"
+root = ".punk/memory"
+
+[runtime]
+active = false
+root = ".punk/runtime"
 
 [authority]
-live_state = "work/STATUS.md"
+live_state = ".punk/memory/STATUS.md"
 final_decisions = "not_active"
 proofpacks = "not_active"
 "#,
@@ -201,9 +216,10 @@ proofpacks = "not_active"
 }
 
 const PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
-    "writes only greenfield Level 0 project-memory scaffold files and .punk marker/setup files",
+    "writes only greenfield Level 0 compact project-memory scaffold files under .punk/memory",
     "records project_id and entry_mode = greenfield in the scaffold",
-    "creates .punk as a project root marker without runtime stores",
+    "creates .punk as a project root marker and .punk/memory as tracked durable memory",
+    "does not create root-level work, knowledge, docs/adr, or publishing directories",
     "does not implement brownfield reconstruction or grayfield reconciliation",
     "does not create contracts, run receipts, gate artifacts, proofpacks, or acceptance claims",
     "does not perform repo scanning, AI summaries, generated truth, or network behavior",
@@ -212,7 +228,7 @@ const PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
 
 const PROJECT_INIT_DEFERRED_NOTES: &[&str] = &[
     "brownfield reconstruction and grayfield reconciliation remain deferred",
-    "runtime project storage remains inactive",
+    ".punk/runtime project storage remains inactive",
     "flow persistence and event writing remain inactive",
     "contract writer, receipt writer, gate writer, proof writer, and proofpack writer remain inactive",
     "project-specific source/design refs must be filled manually after init",
@@ -487,21 +503,26 @@ enum ProjectInitTemplate {
 }
 
 const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
-    ProjectInitEntry::Directory("work"),
-    ProjectInitEntry::Directory("work/goals"),
-    ProjectInitEntry::Directory("work/reports"),
-    ProjectInitEntry::Directory("docs"),
-    ProjectInitEntry::Directory("docs/adr"),
-    ProjectInitEntry::Directory("knowledge"),
-    ProjectInitEntry::Directory("knowledge/research"),
-    ProjectInitEntry::Directory("knowledge/ideas"),
     ProjectInitEntry::Directory(".punk"),
-    ProjectInitEntry::GeneratedFile("work/STATUS.md", ProjectInitTemplate::WorkStatus),
+    ProjectInitEntry::Directory(MEMORY_ROOT),
+    ProjectInitEntry::Directory(".punk/memory/goals"),
+    ProjectInitEntry::Directory(".punk/memory/reports"),
+    ProjectInitEntry::Directory(".punk/memory/knowledge"),
+    ProjectInitEntry::Directory(".punk/memory/knowledge/research"),
+    ProjectInitEntry::Directory(".punk/memory/knowledge/ideas"),
+    ProjectInitEntry::Directory(".punk/memory/adr"),
+    ProjectInitEntry::GeneratedFile(STATUS_PATH, ProjectInitTemplate::WorkStatus),
     ProjectInitEntry::GeneratedFile(INITIAL_GOAL_PATH, ProjectInitTemplate::InitialGoal),
-    ProjectInitEntry::File("work/reports/README.md", REPORTS_README_TEMPLATE),
-    ProjectInitEntry::File("docs/adr/README.md", ADR_README_TEMPLATE),
-    ProjectInitEntry::File("knowledge/research/README.md", RESEARCH_README_TEMPLATE),
-    ProjectInitEntry::File("knowledge/ideas/README.md", IDEAS_README_TEMPLATE),
+    ProjectInitEntry::File(".punk/memory/reports/README.md", REPORTS_README_TEMPLATE),
+    ProjectInitEntry::File(".punk/memory/adr/README.md", ADR_README_TEMPLATE),
+    ProjectInitEntry::File(
+        ".punk/memory/knowledge/research/README.md",
+        RESEARCH_README_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/memory/knowledge/ideas/README.md",
+        IDEAS_README_TEMPLATE,
+    ),
     ProjectInitEntry::File(".punk/README.md", PUNK_README_TEMPLATE),
     ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
 ];
@@ -685,7 +706,7 @@ fn create_init_file(
 mod tests {
     use super::{
         init_level0_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
-        ProjectInitArtifactStatus, INITIAL_GOAL_PATH, PROJECT_INIT_ENTRY_MODE,
+        ProjectInitArtifactStatus, INITIAL_GOAL_PATH, PROJECT_INIT_ENTRY_MODE, STATUS_PATH,
     };
     use std::fs;
     use std::process;
@@ -707,23 +728,36 @@ mod tests {
         assert_eq!(report.result_label(), "initialized");
         assert_eq!(report.project_id().as_str(), "weekend-project");
         assert_eq!(report.entry_mode(), PROJECT_INIT_ENTRY_MODE);
-        assert!(root.join("work/STATUS.md").is_file());
+        assert!(root.join(STATUS_PATH).is_file());
         assert!(root.join(INITIAL_GOAL_PATH).is_file());
-        assert!(root.join("work/reports/README.md").is_file());
-        assert!(root.join("docs/adr/README.md").is_file());
-        assert!(root.join("knowledge/research/README.md").is_file());
-        assert!(root.join("knowledge/ideas/README.md").is_file());
+        assert!(root.join(".punk/memory/reports/README.md").is_file());
+        assert!(root.join(".punk/memory/adr/README.md").is_file());
+        assert!(root
+            .join(".punk/memory/knowledge/research/README.md")
+            .is_file());
+        assert!(root
+            .join(".punk/memory/knowledge/ideas/README.md")
+            .is_file());
         assert!(root.join(".punk/README.md").is_file());
         assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join("work").exists());
+        assert!(!root.join("knowledge").exists());
+        assert!(!root.join("docs").exists());
+        assert!(!root.join("docs/adr").exists());
+        assert!(!root.join("publishing").exists());
+        assert!(!root.join(".punk/runtime").exists());
+        assert!(!root.join(".punk/cache").exists());
         assert!(!root.join(".punk/events").exists());
         assert!(!root.join(".punk/contracts").exists());
         assert!(!root.join(".punk/runs").exists());
         assert!(!root.join(".punk/evals").exists());
         assert!(!root.join(".punk/decisions").exists());
         assert!(!root.join(".punk/proofs").exists());
+        assert!(!root.join(".punk/indexes").exists());
+        assert!(!root.join(".punk/views").exists());
 
-        let status = fs::read_to_string(root.join("work/STATUS.md"))
-            .expect("status template should be readable");
+        let status =
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status template should be readable");
         assert!(status.contains("dogfooding_level: 0"));
         assert!(status.contains("project_id: \"weekend-project\""));
         assert!(status.contains("entry_mode: greenfield"));
@@ -739,7 +773,13 @@ mod tests {
         assert!(project_marker.contains("project_id = \"weekend-project\""));
         assert!(project_marker.contains("entry_mode = \"greenfield\""));
         assert!(project_marker.contains("runtime_persistence = \"inactive\""));
-        assert!(project_marker.contains("live_work_state = \"work/STATUS.md\""));
+        assert!(project_marker.contains("live_work_state = \".punk/memory/STATUS.md\""));
+        assert!(project_marker.contains("[memory]"));
+        assert!(project_marker.contains("layout = \"compact\""));
+        assert!(project_marker.contains("root = \".punk/memory\""));
+        assert!(project_marker.contains("[runtime]"));
+        assert!(project_marker.contains("active = false"));
+        assert!(project_marker.contains("root = \".punk/runtime\""));
 
         let _ = fs::remove_dir_all(root);
     }
@@ -767,8 +807,8 @@ mod tests {
     #[test]
     fn init_reports_conflict_without_overwriting_existing_status() {
         let root = unique_temp_path();
-        fs::create_dir_all(root.join("work")).expect("work dir should be created");
-        fs::write(root.join("work/STATUS.md"), "custom status\n")
+        fs::create_dir_all(root.join(".punk/memory")).expect("memory dir should be created");
+        fs::write(root.join(STATUS_PATH), "custom status\n")
             .expect("custom status should be written");
         let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
 
@@ -778,11 +818,11 @@ mod tests {
         assert_eq!(report.exit_code(), 1);
         assert_eq!(report.result_label(), "blocked");
         assert_eq!(
-            fs::read_to_string(root.join("work/STATUS.md")).expect("status should remain readable"),
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status should remain readable"),
             "custom status\n"
         );
         assert!(report.artifacts().iter().any(|artifact| {
-            artifact.repo_relative_path() == "work/STATUS.md"
+            artifact.repo_relative_path() == STATUS_PATH
                 && artifact.kind() == ProjectInitArtifactKind::File
                 && artifact.status() == ProjectInitArtifactStatus::Conflict
         }));

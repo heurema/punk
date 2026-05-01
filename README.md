@@ -39,9 +39,9 @@ Today, the executable CLI surface is intentionally limited to:
 
 Everything else in product docs should be read as target architecture, phase-gated design, parked scope, or future scope unless explicitly marked active.
 
-`punk init <project-id>` is current behavior only for a greenfield Dogfooding Level 0 project-memory scaffold.
+`punk init <project-id>` is current behavior only for a greenfield Dogfooding Level 0 compact project-memory scaffold.
 
-It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory plus `.punk` marker/setup files, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
+It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory under `.punk/memory/`, writes `.punk` marker/setup files, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
 
 `.punk/` runtime storage is not active for this purpose.
 
@@ -143,7 +143,7 @@ Start with:
 - `docs/product/DOC-GOVERNANCE.md`
 - `docs/product/LINEAGE.md`
 
-Research and ideas are stored separately:
+In this repository's dogfooding layout, research and ideas are stored separately:
 
 - research notes: `knowledge/research/`
 - idea backlog: `knowledge/ideas/`
@@ -154,7 +154,7 @@ Research and ideas do not become product truth until promoted through ADR, roadm
 
 `punk` is developed with `punk`, but only at the trust level it has earned.
 
-At first this means self-tracking:
+At first this means self-tracking in Punk's own dogfooding layout:
 
 - goals in `work/goals/`
 - reports in `work/reports/`

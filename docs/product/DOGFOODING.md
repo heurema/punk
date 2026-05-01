@@ -42,9 +42,9 @@ Use `punk` as soon as a capability exists, but only at the trust level it has ea
 
 ### Level 0 — Manual project memory
 
-Use repo-tracked `work/` and `knowledge/` manually.
+For the Punk repository itself, use repo-tracked `work/` and `knowledge/` manually.
 
-The canonical live state is:
+The canonical live state for the Punk repository dogfooding layout is:
 
 ```text
 work/STATUS.md
@@ -78,13 +78,13 @@ Currently implemented CLI subset:
 
 - `punk init <project-id>`
 
-`punk init <project-id>` creates only the greenfield Level 0 manual project-memory scaffold.
-It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter files plus `.punk` marker/setup files, and does not create brownfield reconstruction, grayfield reconciliation, `.punk` runtime stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
+`punk init <project-id>` creates only the greenfield Level 0 compact manual project-memory scaffold for user projects.
+It records `project_id` and `entry_mode = greenfield`, writes repo-tracked durable memory under `.punk/memory/` plus `.punk` marker/setup files, and does not create root-level `work/`, `knowledge/`, `docs/adr/`, `publishing/`, brownfield reconstruction, grayfield reconciliation, `.punk/runtime`, runtime evidence stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Exit criteria:
 
 - all new meaningful work has a goal or explicit maintenance reason
-- current focus and selected next work are inspectable from `work/STATUS.md`
+- current focus and selected next work are inspectable from `work/STATUS.md` for the Punk repository dogfooding layout or `.punk/memory/STATUS.md` for compact user-project init
 - accepted decisions have ADRs or knowledge updates when needed
 
 ### Development Drift Loop v0.1

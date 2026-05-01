@@ -20,6 +20,8 @@ last_validated_commit: "2f64f0f"
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: cleanup docs-governance warnings v0.1.
 - Selected next: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`
+- Scope override note: maintainer explicitly selected a compact user-project init layout correction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice changes greenfield init output from root-level Punk memory dirs to `.punk/memory/`.
+- Completion note: `work/goals/goal_change_greenfield_init_to_compact_punk_memory_layout_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs, docs-governance, and work-ledger evidence. It keeps the Punk repository root dogfooding layout in place while changing user-project `punk init <project-id>` to tracked `.punk/memory/` durable memory, with no root-level `work/`, `knowledge/`, `docs/adr/`, or `publishing/` output and no brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents, adapters, or replayability runtime.
 - Scope override note: maintainer explicitly selected the greenfield init scaffold direction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice tightens `punk init` to `punk init <project-id>` for greenfield Level 0 project-memory only.
 - Completion note: `work/goals/goal_add_greenfield_init_scaffold_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs, docs-governance fixture, and work-ledger evidence. It records `project_id` and `entry_mode = greenfield`, creates `work/goals/goal_initial_project_setup.md`, keeps `.punk` marker/setup files marker-only, and adds no brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, runtime stores, contracts, gate/proof artifacts, proofpacks, Writer behavior, adapters, automation, or acceptance claims.
 - Scope override note: maintainer explicitly selected a minimal `.punk` bootstrap after Level 0 `punk init`. The docs-governance cleanup goal remains ready, but this bounded slice adds only `.punk` marker/setup files and no runtime stores.
@@ -111,6 +113,7 @@ last_validated_commit: "2f64f0f"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Changed greenfield init to compact Punk memory layout v0.1 | `work/goals/goal_change_greenfield_init_to_compact_punk_memory_layout_v0_1.md`, `work/reports/2026-05-01-greenfield-init-compact-memory-layout-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added greenfield init scaffold v0.1 | `work/goals/goal_add_greenfield_init_scaffold_v0_1.md`, `work/reports/2026-05-01-greenfield-init-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added Punk root marker init v0.1 | `work/goals/goal_add_punk_root_marker_init_v0_1.md`, `work/reports/2026-05-01-punk-root-marker-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added Level 0 project init v0.1 | `work/goals/goal_add_level0_project_init_v0_1.md`, `work/reports/2026-05-01-level0-project-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
@@ -297,16 +300,16 @@ last_validated_commit: "2f64f0f"
 - Command: `python3 scripts/check_work_ledger.py`
 - Command: `cargo check --workspace`
 - Command: `cargo test --workspace`
-- Command: `cargo run -q -p punk-cli -- eval run smoke`
-- Command: manual temp-root init through the repo `punk-cli` binary with `weekend-project`
+- Command: `cargo fmt --check`
 - Command: `cargo build -p punk-cli`
-- Command: `~/.local/bin/punk-dev init weekend-project` from a temporary empty project root
-- Command: `~/.local/bin/punk-dev flow inspect`
-- Command: `scripts/check.sh docs-governance --files ... --report work/reports/2026-05-01-greenfield-init-scaffold-v0-1.md`
+- Command: `~/.local/bin/punk-dev eval run smoke`
+- Command: manual temp-root `~/.local/bin/punk-dev init demo-project` with `git status --short --untracked-files=all`
+- Command: `scripts/check.sh docs-governance --files ... --report work/reports/2026-05-01-greenfield-init-compact-memory-layout-v0-1.md`
 - Command: `git diff --check`
 - Result: `PASS`
 - Notes:
-  - `punk init <project-id>` is now active only as a greenfield Dogfooding Level 0 manual project-memory scaffold with project identity, `entry_mode = greenfield`, and `.punk` marker/setup files.
-  - Brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, contracts, gate/proof runtime, Writer behavior, and `.punk` runtime stores remain inactive.
+  - `punk init <project-id>` is now active only as a greenfield Dogfooding Level 0 compact project-memory scaffold under tracked `.punk/memory/`, with `.punk/project.toml` recording `project_id`, `entry_mode = greenfield`, `[memory] layout = "compact"`, and inactive `[runtime]`.
+  - Manual temp-root init created `.punk/README.md`, `.punk/project.toml`, and `.punk/memory/**` files visible to git, created 0 runtime dirs, and did not create root-level `work/`, `knowledge/`, `docs/adr/`, or `publishing/`.
+  - Brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, contracts, gate/proof runtime, Writer behavior, agents, adapters, replayability runtime, and `.punk` runtime stores remain inactive.
   - Selected next is restored to `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`.
   - Docs governance passed with 0 failures and 3 existing duplicate-definition warnings for this check.
