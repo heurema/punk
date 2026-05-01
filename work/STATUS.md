@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-01
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Pause after greenfield init checkpoint v0.1"
-selected_next: "work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md"
+current_focus: "Polish greenfield init docs and flow inspect preview v0.1"
+selected_next: "work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md"
 last_validated_commit: "2f64f0f"
 ---
 
@@ -18,8 +18,9 @@ last_validated_commit: "2f64f0f"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: pause after greenfield init checkpoint v0.1.
-- Selected next: `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`
+- Current focus: polish greenfield init docs and flow inspect preview v0.1.
+- Selected next: `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md`
+- Completion note: `work/goals/goal_harden_greenfield_init_atomic_and_privacy_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-status, manual temp-init, and work-ledger evidence. It changed active greenfield `punk init <project-id>` to preflight the full scaffold before writes, return blocked without creating missing planned artifacts on conflict, preserve modified scaffold files, and render normal human output with `target_root: .` instead of an absolute local path. It added no brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
 - Completion note: `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md` is now recorded as done with docs/status reconciliation evidence. It updated `docs/product/NORTH-STAR.md` so the current executable CLI list includes `punk init <project-id>` with a narrow greenfield compact `.punk/memory/` scope caveat. It made no code changes and did not activate brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
 - Completion note: `work/goals/goal_publish_greenfield_init_checkpoint_status_v0_1.md` is now recorded as done with checkpoint-status evidence. It recognizes minimal greenfield `punk init <project-id>` as active, preserves compact `.punk/memory/` tracked durable memory as the user-project default, keeps `.punk/runtime` inactive, keeps brownfield/grayfield deferred, keeps Replayable Project Memory advisory, and adds no code or product behavior. It found one remaining docs drift in `docs/product/NORTH-STAR.md`, which still omits `punk init <project-id>` from the current executable CLI list; that drift is selected next for docs/status reconciliation.
 - Completion note: `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md` is now recorded as done with manual temp-init, git visibility, project-id validation, overwrite/conflict, smoke eval, no-network/no-scan, and docs/status inspection evidence. It verified compact `.punk/memory/` greenfield init without code changes and selected checkpoint status summary next. Brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, and spec-as-source behavior remain inactive.
@@ -92,13 +93,13 @@ last_validated_commit: "2f64f0f"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Pauses after compact greenfield init implementation, verification, checkpointing, and docs/status reconciliation. | — |
+| `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md` | `ready` | Clarifies current-directory init docs/help wording and removes misleading repo-internal preview refs from `punk flow inspect` without expanding product behavior. | - |
 
 ## Open Drift Findings
 
 | Finding | Severity | Route | Owner | Next artifact |
 |---|---|---|---|---|
-| None currently recorded after roadmap/status reconciliation after greenfield init v0.1. | — | — | — | — |
+| Init current-directory docs/help wording and `flow inspect` preview goal-ref wording need polish after init hardening. | P2 | Selected next bounded docs/UX cleanup. | vitaly | `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md` |
 
 ## Blocked
 
@@ -114,6 +115,7 @@ last_validated_commit: "2f64f0f"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Hardened greenfield init atomicity and privacy v0.1 | `work/goals/goal_harden_greenfield_init_atomic_and_privacy_v0_1.md`, `work/reports/2026-05-01-greenfield-init-atomic-privacy-hardening-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs`, `docs/product/CRATE-STATUS.md` |
 | 2026-05-01 | Reconciled roadmap/status after greenfield init v0.1 | `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md`, `work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md`, `docs/product/NORTH-STAR.md`, `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` |
 | 2026-05-01 | Published greenfield init checkpoint status v0.1 | `work/goals/goal_publish_greenfield_init_checkpoint_status_v0_1.md`, `work/reports/2026-05-01-greenfield-init-checkpoint-status-v0-1.md`, `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md` |
 | 2026-05-01 | Verified greenfield init compact layout v0.1 | `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md`, `work/reports/2026-05-01-greenfield-init-compact-layout-verification-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
@@ -306,14 +308,14 @@ last_validated_commit: "2f64f0f"
 - Command: `cargo fmt --check`
 - Command: `cargo check --workspace`
 - Command: `cargo test --workspace`
+- Command: `cargo build -p punk-cli`
 - Command: `~/.local/bin/punk-dev eval run smoke`
 - Command: `git diff --check`
-- Command: `scripts/check.sh docs-governance --files docs/product/NORTH-STAR.md work/STATUS.md work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md --report work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files crates/punk-project/src/lib.rs crates/punk-cli/src/main.rs crates/punk-eval/src/lib.rs docs/product/CRATE-STATUS.md work/STATUS.md work/goals/goal_harden_greenfield_init_atomic_and_privacy_v0_1.md work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md work/reports/2026-05-01-greenfield-init-atomic-privacy-hardening-v0-1.md --report work/reports/2026-05-01-greenfield-init-atomic-privacy-hardening-v0-1.md`
 - Result: `PASS`
 - Notes:
-  - `docs/product/NORTH-STAR.md` now includes `punk init <project-id>` in its current executable CLI list and keeps the command scoped to minimal greenfield compact `.punk/memory/` init.
-  - `README.md`, `docs/product/START-HERE.md`, `docs/product/ROADMAP.md`, `docs/product/CRATE-STATUS.md`, and `docs/product/PROJECT-MEMORY.md` were inspected and left unchanged because they already state that minimal greenfield `punk init <project-id>` is active and compact `.punk/memory/` is the user-project default.
-  - No open docs/status drift remains in this reconciliation scope.
-  - No product behavior, init behavior, runtime storage, Writer, gate writer, proof writer, proofpack writer, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior was activated.
-  - Selected next is `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`.
-  - Docs governance passed with 0 failures and 0 warnings for the changed work-ledger/report set.
+  - `punk init <project-id>` now preflights the full scaffold before writes and returns blocked without creating missing planned artifacts when any conflict exists.
+  - Normal human init output renders `target_root: .` and does not print the absolute local project root.
+  - Manual temp conflict verification preserved the custom `.punk/memory/STATUS.md`, created no other scaffold files, and printed no absolute target root.
+  - No brownfield, grayfield, runtime storage, Writer, gate writer, proof writer, proofpack writer expansion, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior was activated.
+  - Selected next is `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md`.

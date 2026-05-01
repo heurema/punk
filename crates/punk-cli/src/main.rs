@@ -372,6 +372,8 @@ mod tests {
         assert!(output.text.contains("entry_mode: greenfield"));
         assert!(output.text.contains("project_id: weekend-project"));
         assert!(output.text.contains("runtime_persistence: inactive"));
+        assert!(output.text.contains("target_root: ."));
+        assert!(!output.text.contains(&root.display().to_string()));
         assert!(output.text.contains("result: initialized"));
         assert!(output.text.contains("path: .punk/memory/STATUS.md"));
         assert!(output
@@ -422,12 +424,19 @@ mod tests {
         assert_eq!(output.exit_code, 1);
         assert!(output.text.contains("result: blocked"));
         assert!(output.text.contains("status: conflict"));
+        assert!(output.text.contains("status: planned"));
         assert!(output.text.contains("not overwritten"));
         assert_eq!(
             fs::read_to_string(root.join(".punk/memory/STATUS.md"))
                 .expect("status should be readable"),
             "custom status\n"
         );
+        assert!(!root
+            .join(".punk/memory/goals/goal_initial_project_setup.md")
+            .exists());
+        assert!(!root.join(".punk/memory/reports/README.md").exists());
+        assert!(!root.join(".punk/README.md").exists());
+        assert!(!root.join(".punk/project.toml").exists());
 
         let _ = fs::remove_dir_all(root);
     }
