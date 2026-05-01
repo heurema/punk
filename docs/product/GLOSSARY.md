@@ -5,13 +5,14 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-29
+updated_at: 2026-04-30
 review_after: 2026-07-20
 canonical_for:
   - shared-terms
 related_docs:
   - docs/product/DOCUMENTATION-MAP.md
   - docs/product/DOC-GOVERNANCE.md
+  - docs/product/CONTRACT-SCHEMA.md
 supersedes: []
 superseded_by: null
 ---
@@ -86,6 +87,26 @@ A scoped executable agreement for work. Every executable goal resolves to a cont
 
 A meaningful contract will eventually carry `DocImpact` when docs truth may change.
 
+### contract schema blueprint
+
+The canonical target shape for Punk Contracts, including identity, authority,
+lifecycle, work, boundaries, clauses, validation, evidence, receipt
+requirements, gate policy, proof requirements, change control, and memory links.
+
+The blueprint separates `required_now`, `deferred`, `parked`, and `future`
+fields. It is not runtime storage, CLI behavior, Writer activation, gate writing,
+or proof writing by itself.
+
+Canonical owner: `docs/product/CONTRACT-SCHEMA.md`.
+
+### contract clause
+
+A typed requirement inside a contract.
+
+Clauses can be human, machine, or hybrid; hard, soft, or advisory; and must keep
+hard-clause coverage explicit through validators, receipt fields, proof
+requirements, human review, or unsupported-clause findings.
+
 ### scope
 
 The explicit boundary of what a contract allows. Scope limits what `cut` may do and what `gate` may evaluate.
@@ -141,6 +162,20 @@ The final decision artifact written by `gate`. A decision can accept, reject, re
 
 A local provenance manifest that links contract, run receipt, eval report, decision, output artifacts, hashes, and event range/root where applicable.
 
+### gate policy
+
+The part of a contract blueprint that declares required inputs and hard-fail
+conditions for later gate review.
+
+It is input policy only. It does not write gate outcomes.
+
+### proof requirements
+
+The part of a contract blueprint that declares which artifacts must be linked
+and hashed for proof.
+
+It does not create proofpacks and does not make proofpack an authority surface.
+
 ### artifact ref
 
 A reference to a repo-tracked or runtime artifact, usually using a relative path, id, and hash.
@@ -154,6 +189,32 @@ A digest used to make artifacts verifiable. Hash stability and path normalizatio
 ### project memory
 
 Repo-tracked continuity across goals, contracts, reports, evals, decisions, proofs, knowledge, ADRs, and public narrative. Project memory is explicit and authority-tagged.
+
+### Replayable Project Memory
+
+Directional concept: project memory preserving linked intent, evidence, decisions, examples, invariants, contracts, and proof refs so future migration or reimplementation can be contracted and verified.
+
+Canonical direction: `docs/product/NORTH-STAR.md` and `docs/product/PROJECT-MEMORY.md`.
+
+Advisory research note: `knowledge/research/2026-04-30-replayable-project-memory.md`.
+
+Advisory idea artifact: `knowledge/ideas/2026-04-30-replayable-project-memory.md`.
+
+### Contract Transposition
+
+Using prior accepted contracts and evidence as input to a new bounded migration/reimplementation contract. It does not copy acceptance from the old contract, does not approve new work, and does not write gate outcomes.
+
+### Conformance Pack
+
+Future/parked artifact idea: source-linked examples, tests, invariants, fixtures, schemas, and accepted-difference notes used to check compatibility of a new implementation. It is an input to a future migration/reimplementation contract and equivalence/conformance gate. It does not write gate outcomes, act as a proofpack, accept work, become canonical truth automatically, generate code by default, or replace contracts.
+
+### Migration Contract Pack
+
+Future/parked artifact idea: source-linked bundle that helps draft a bounded migration/reimplementation contract from prior project memory, accepted contracts, decisions, behavior baselines, Conformance Pack refs, unknowns, and accepted-difference candidates. It does not approve migration work.
+
+### Regenerative Spec Pack
+
+Future/parked artifact idea: reviewed artifact set strong enough to help generate or regenerate implementation for a bounded subsystem. It is not active behavior, not spec-as-source authority, and not a promise of deterministic full-project replay.
 
 ### knowledge vault
 

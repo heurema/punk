@@ -1,14 +1,14 @@
 ---
-id: goal_run_fifty_fifth_work_ledger_review
-title: "Run the fifty-fifth advisory Work Ledger Review"
+id: goal_run_fifty_sixth_work_ledger_review
+title: "Run the fifty-sixth advisory Work Ledger Review"
 status: done
 owner: "vitaly"
 module: "proof"
 priority: P1
 authority: canonical
-created_at: 2026-04-29
+created_at: 2026-04-30
 updated_at: 2026-04-30
-selected_at: 2026-04-29
+selected_at: 2026-04-30
 started_at: 2026-04-30
 completed_at: 2026-04-30
 blocked_by: []
@@ -22,8 +22,8 @@ scope:
     - ".punk/**"
     - "schemas/**"
 acceptance:
-  - "Advisory Work Ledger Review is completed after proofpack writer host path resolution boundary v0.1 is defined."
-  - "Review identifies the next safest bounded proofpack writer step without jumping to active writer implementation prematurely."
+  - "Advisory Work Ledger Review is completed after proofpack writer host path resolution model v0.1 is added."
+  - "Review identifies whether the next safest branch is active proofpack writer implementation, operation-evidence persistence, storage/schema reconciliation, proofpack writer hash/reference verification integration, additional smoke eval/docs guardrails, or bounded drift cleanup."
   - "`work/STATUS.md` selects exactly one next ready goal after the review."
   - "No runtime/code/schema/CLI/`.punk` changes are made."
 knowledge_refs:
@@ -32,10 +32,10 @@ knowledge_refs:
   - "docs/product/CRATE-STATUS.md"
   - "evals/specs/proofpack-writer-host-path-resolution-boundary.v0.1.md"
   - "evals/specs/proofpack-writer-active-behavior-boundary.v0.1.md"
-  - "work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md"
+  - "work/reports/2026-04-30-proofpack-writer-host-path-resolution-model-v0-1.md"
 contract_refs: []
 report_refs:
-  - "work/reports/2026-04-30-fifty-fifth-work-ledger-review.md"
+  - "work/reports/2026-04-30-fifty-sixth-work-ledger-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -51,7 +51,7 @@ research_gate:
     - "docs/product/CRATE-STATUS.md"
     - "evals/specs/proofpack-writer-host-path-resolution-boundary.v0.1.md"
     - "work/STATUS.md"
-    - "work/reports/2026-04-29-proofpack-writer-host-path-resolution-boundary-v0-1.md"
+    - "work/reports/2026-04-30-proofpack-writer-host-path-resolution-model-v0-1.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
@@ -64,11 +64,11 @@ doc_impact:
 
 ## Context
 
-Proofpack writer host path resolution boundary v0.1 is now defined as docs/spec only.
+Proofpack writer host path resolution model v0.1 is now implemented as side-effect-free `punk-proof` behavior with smoke eval coverage.
 
-The proofpack writer track now has boundaries for file IO, target artifact refs, storage/schema, preflight integration, active behavior, and host path observations, but still no active writer, runtime storage, schema files, CLI behavior, operation-evidence persistence, or filesystem side effects.
+The model makes future host path observations inspectable, explicit, and fail-closed, but it still does not write proofpacks, inspect or canonicalize host filesystem paths, persist operation evidence, activate `.punk/proofs`, expose CLI behavior, add schema files, verify referenced proofpack artifacts, make gate decisions, or create acceptance claims.
 
-Before selecting another model/implementation step, run a short advisory review of the work ledger and open blockers.
+Before selecting active proofpack writer implementation, storage/schema/CLI work, proofpack referenced-ref verification integration, operation-evidence persistence, or gate/eval/proof orchestration, run a short advisory review of the work ledger and open blockers.
 
 ## Notes
 
@@ -77,8 +77,8 @@ This is advisory only. It does not decide acceptance, implement runtime storage,
 
 ## Outcome
 
-Completed the fifty-fifth advisory Work Ledger Review.
+Completed the fifty-sixth advisory Work Ledger Review.
 
-Selected `work/goals/goal_add_proofpack_writer_host_path_resolution_model_v0_1.md` as the next bounded side-effect-free proofpack writer goal.
+Selected `work/goals/goal_reconcile_proofpack_writer_storage_schema_with_host_path_model_v0_1.md` as the next bounded docs/spec proofpack writer goal.
 
 No runtime/code/schema/CLI/`.punk` changes were made.
