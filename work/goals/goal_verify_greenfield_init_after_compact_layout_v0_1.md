@@ -1,7 +1,7 @@
 ---
 id: goal_verify_greenfield_init_after_compact_layout_v0_1
 title: "Verify greenfield init after compact layout v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "process"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "work/reports/2026-05-01-greenfield-init-compact-memory-layout-v0-1.md"
   - "work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-greenfield-init-compact-layout-verification-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -64,6 +65,18 @@ Greenfield init now creates compact tracked `.punk/memory/` durable memory for u
 ## Intent
 
 Verify the compact init milestone as a product surface before selecting new architecture or runtime work.
+
+## Outcome
+
+Verification passed without implementation changes.
+
+Fresh temp init created only compact tracked `.punk/memory/` durable memory plus `.punk/README.md` and `.punk/project.toml`, left root-level Punk directories and runtime directories absent, and kept `.punk/memory/**` visible to git.
+
+Project id validation rejected uppercase, underscore, and empty ids. Re-running init on matching generated files is safe idempotent and reports `already_initialized`; modified existing memory is treated as conflict and preserved.
+
+No network, repo scanning, generated contracts, gate/proof runtime, Writer, agents, adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior was activated.
+
+The next selected goal is `work/goals/goal_publish_greenfield_init_checkpoint_status_v0_1.md`.
 
 ## Non-scope
 
