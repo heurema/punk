@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-29
-updated_at: 2026-04-30
+updated_at: 2026-05-01
 review_after: 2026-06-15
 canonical_for:
   - project-north-star
@@ -76,9 +76,13 @@ This north star does not change the active CLI surface, roadmap phase order, cra
 
 Current executable CLI remains limited to:
 
+- `punk init <project-id>`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
+
+`punk init <project-id>` is active only as a minimal greenfield compact `.punk/memory/` project-memory scaffold.
+It does not activate brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, generated docs, contract generation, gate/proof runtime, Writer, runtime `.punk/` storage, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
 
 Active `.punk/` runtime storage for work, contracts, runs, evals, decisions, and proofs remains inactive.
 

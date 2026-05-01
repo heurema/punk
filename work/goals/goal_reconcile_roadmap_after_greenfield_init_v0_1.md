@@ -1,7 +1,7 @@
 ---
 id: goal_reconcile_roadmap_after_greenfield_init_v0_1
 title: "Reconcile roadmap/status after greenfield init v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "docs"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "work/reports/2026-05-01-greenfield-init-compact-layout-verification-v0-1.md"
   - "work/reports/2026-05-01-greenfield-init-checkpoint-status-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-roadmap-status-reconciliation-after-greenfield-init-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -75,3 +76,11 @@ Reconcile status wording so canonical docs consistently reflect the active green
 ## Non-scope
 
 Do not implement brownfield init, grayfield reconcile, runtime storage, Writer, gate writer, proof writer, proofpack writer expansion, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, CLI expansion, or code changes.
+
+## Outcome
+
+Reconciled the remaining canonical-doc drift by adding `punk init <project-id>` to the current executable CLI list in `docs/product/NORTH-STAR.md` with a narrow greenfield-only scope caveat.
+
+No code or product behavior changed. Brownfield, grayfield, runtime `.punk` storage, contract generation, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, and spec-as-source behavior remain inactive or deferred.
+
+Selected `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` next because the greenfield init docs/status boundary is now honest and no immediate product work is required.
