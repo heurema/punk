@@ -144,6 +144,6 @@ Reason: reconcile the remaining canonical-doc status drift before selecting new 
 ## Doc impact
 
 ```yaml
-classification: docs-only
-reason: "Records the verified greenfield init checkpoint and routes a remaining CLI-surface docs drift without changing product behavior."
+  classification: docs-only
+  reason: "Records the verified greenfield init checkpoint and routes a remaining CLI-surface docs drift without changing product behavior."
 ```
