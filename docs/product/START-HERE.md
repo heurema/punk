@@ -91,6 +91,7 @@ The implemented CLI surface today is intentionally small:
 
 `punk init <project-id>` is active only as a greenfield Dogfooding Level 0 compact manual project-memory scaffold.
 It records `project_id` and `entry_mode = greenfield`, then writes repo-tracked `.punk/memory/` durable memory plus `.punk` marker/setup files with create-new/no-overwrite behavior.
+Run it from the target project root; it initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 For user projects, the default layout is compact `.punk/memory/`; root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are Punk repository dogfooding layout, not the default init layout.
 The `.punk/runtime/` tree and runtime evidence directories remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
 Brownfield reconstruction and grayfield reconciliation remain future modes.

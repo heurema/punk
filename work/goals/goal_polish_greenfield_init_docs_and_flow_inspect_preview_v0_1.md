@@ -1,7 +1,7 @@
 ---
 id: goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1
 title: "Polish greenfield init docs and flow inspect preview v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -38,7 +38,8 @@ knowledge_refs:
   - "docs/product/START-HERE.md"
   - "docs/product/CRATE-STATUS.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-greenfield-init-docs-flow-inspect-polish-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -55,13 +56,14 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: docs-only
+  classification: code-doc
   required_updates:
     - "README.md"
     - "docs/product/START-HERE.md"
+    - "docs/product/CRATE-STATUS.md"
     - "work/STATUS.md"
     - "work/reports/**"
-  rationale: "The next slice should clarify active CLI wording without expanding product behavior."
+  rationale: "The slice clarifies active CLI help/docs and removes a misleading preview-only repo goal ref from CLI output."
 ---
 
 ## Context
@@ -77,3 +79,11 @@ Clarify current-directory init behavior and remove misleading preview/internal r
 ## Non-scope
 
 Do not implement brownfield init, grayfield reconciliation, repo scan, AI summaries, generated docs, contract generation, gate/proof runtime, Writer, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, runtime `.punk` storage, or new CLI surfaces.
+
+## Outcome
+
+CLI help and product docs now state that `punk init <project-id>` initializes the current directory in place and does not create a subdirectory named `<project-id>`.
+
+`punk flow inspect` no longer emits `preview_goal_ref` or a repo-internal `work/goals/...` reference in its preview output.
+
+`.gitignore` was inspected and left unchanged because `.punk/project.toml` is trackable marker/setup metadata, runtime/derived `.punk` dirs are ignored explicitly, and no active `.punk/project/` path mismatch was found.
