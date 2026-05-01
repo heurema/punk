@@ -41,6 +41,8 @@ Everything else in product docs should be read as target architecture, phase-gat
 
 `punk init <project-id>` is current behavior only for a greenfield Dogfooding Level 0 compact project-memory scaffold.
 
+Run it from the target project root. It initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
+
 It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory under `.punk/memory/`, writes `.punk` marker/setup files, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
 
 `.punk/` runtime storage is not active for this purpose.

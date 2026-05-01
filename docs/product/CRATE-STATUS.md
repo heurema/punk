@@ -86,6 +86,7 @@ Currently implemented CLI commands:
 - `punk eval run smoke --format json`
 
 `punk init <project-id>` is current CLI behavior only for greenfield Dogfooding Level 0 compact manual project-memory scaffolding.
+It initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 It records `project_id`, `entry_mode = greenfield`, `[memory] layout = "compact"`, and inactive `[runtime]` metadata, and creates `.punk/README.md`, `.punk/project.toml`, and `.punk/memory/` as tracked durable memory. It does not activate root-level dogfooding layout, brownfield reconstruction, grayfield reconciliation, `.punk/` runtime storage, flow/event persistence, contract writing, receipt writing, gate writing, proof writing, or proofpack writing.
 
 ## Research intake crate stance

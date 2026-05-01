@@ -118,6 +118,7 @@ fn root_usage() -> String {
         "  punk eval run smoke --format json\n\n",
         "Notes:\n",
         "  - init writes only a compact Level 0 repo-tracked .punk/memory scaffold\n",
+        "  - init operates in the current directory and does not create a <project-id> subdirectory\n",
         "  - only bounded init, inspect, and smoke-eval surfaces are active\n",
         "  - .punk runtime persistence is not active yet\n"
     ))
@@ -130,7 +131,9 @@ fn init_usage() -> String {
         "Usage:\n",
         "  punk init <project-id>\n\n",
         "Notes:\n",
-        "  - run from the project root to create the compact greenfield Level 0 memory scaffold\n",
+        "  - run from the target project root; init writes into the current directory in place\n",
+        "  - init does not create a new subdirectory named <project-id>\n",
+        "  - greenfield-only: creates compact .punk/memory tracked memory plus .punk marker/setup files\n",
         "  - {}\n",
         "  - existing files are never overwritten\n",
         "  - .punk runtime persistence is not active yet\n"
@@ -160,11 +163,8 @@ fn render_flow_inspect() -> String {
     let preview_instance = FlowInstance::new(FlowState::AwaitingApproval);
     let denied_attempt = preview_instance.attempt_transition(FlowCommand::StartRun);
     let allowed_attempt = preview_instance.attempt_transition(FlowCommand::Approve);
-    let denied_event = transition_attempt_event_draft(
-        &denied_attempt,
-        "flow_inspect_preview",
-        Some("work/goals/goal_add_flow_inspect_command.md"),
-    );
+    let denied_event =
+        transition_attempt_event_draft(&denied_attempt, "flow_inspect_preview", None);
 
     let allowed_next_state = allowed_attempt
         .next_state()
@@ -186,7 +186,6 @@ fn render_flow_inspect() -> String {
             "preview_event_kind: {event_kind}\n",
             "preview_event_status: {event_status}\n",
             "preview_flow_id: {flow_id}\n",
-            "preview_goal_ref: {goal_ref}\n",
             "notes:\n",
             "  - no .punk runtime state is read or written\n",
             "  - inspect is derived from existing flow and event kernels only\n",
@@ -201,11 +200,6 @@ fn render_flow_inspect() -> String {
         event_kind = denied_event.kind.as_str(),
         event_status = denied_event.result.status.as_str(),
         flow_id = denied_event.correlation.flow_id,
-        goal_ref = denied_event
-            .correlation
-            .goal_ref
-            .as_deref()
-            .unwrap_or("<none>"),
     )
 }
 
@@ -286,6 +280,8 @@ mod tests {
         assert!(output.contains("preview_guard_code: CUT_REQUIRES_APPROVED_CONTRACT"));
         assert!(output.contains("preview_event_kind: transition_denied"));
         assert!(output.contains("preview_event_status: denied"));
+        assert!(!output.contains("preview_goal_ref:"));
+        assert!(!output.contains("work/goals/"));
     }
 
     #[test]
