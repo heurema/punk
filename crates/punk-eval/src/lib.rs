@@ -412,6 +412,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_event_log_is_append_only(),
         eval_project_init_creates_level0_manual_memory_scaffold(),
         eval_project_init_refuses_to_overwrite_existing_memory(),
+        eval_project_init_conflict_is_atomic_noop(),
         eval_contract_ready_for_bounded_work_allows_start_run(),
         eval_contract_draft_denies_start_run(),
         eval_contract_invalid_scope_denies_start_run(),
@@ -992,6 +993,74 @@ fn eval_project_init_refuses_to_overwrite_existing_memory() -> SmokeEvalCaseResu
                 "init overwrite guard drifted; conflict_ok={} preserved_ok={} cleanup_ok={} blocked={} exit_code={} status_read={:?}",
                 conflict_ok,
                 preserved_ok,
+                cleanup_ok,
+                report.blocked(),
+                report.exit_code(),
+                status_text
+            ),
+        )
+    }
+}
+
+fn eval_project_init_conflict_is_atomic_noop() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let status_path = temp_path.join(".punk/memory/STATUS.md");
+    let setup_result = fs::create_dir_all(temp_path.join(".punk/memory"))
+        .and_then(|_| fs::write(&status_path, b"custom status\n"));
+
+    if let Err(error) = setup_result {
+        let _ = fs::remove_dir_all(&temp_path);
+        return SmokeEvalCaseResult::fail(
+            "eval_project_init_conflict_is_atomic_noop",
+            "project init conflict leaves no partial scaffold",
+            format!("temporary conflict setup failed with {error:?}"),
+        );
+    }
+
+    let project_id = ProjectId::parse("weekend-project").expect("smoke project id should parse");
+    let report = init_level0_project(&temp_path, project_id);
+    let status_text = fs::read_to_string(&status_path);
+    let no_partial_ok = !temp_path
+        .join(".punk/memory/goals/goal_initial_project_setup.md")
+        .exists()
+        && !temp_path.join(".punk/memory/reports/README.md").exists()
+        && !temp_path.join(".punk/memory/adr/README.md").exists()
+        && !temp_path.join(".punk/memory/knowledge").exists()
+        && !temp_path.join(".punk/README.md").exists()
+        && !temp_path.join(".punk/project.toml").exists();
+    let cleanup_ok = fs::remove_dir_all(&temp_path).is_ok();
+
+    let conflict_ok = report.blocked()
+        && report.exit_code() == 1
+        && report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == ".punk/memory/STATUS.md"
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Conflict
+        })
+        && report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == ".punk/memory/goals/goal_initial_project_setup.md"
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Planned
+        });
+    let preserved_ok = status_text
+        .as_ref()
+        .is_ok_and(|text| text == "custom status\n");
+
+    if conflict_ok && preserved_ok && no_partial_ok && cleanup_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_project_init_conflict_is_atomic_noop",
+            "project init conflict leaves no partial scaffold",
+            "init preflight reported the existing status conflict, preserved it, and created no other scaffold artifacts",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_project_init_conflict_is_atomic_noop",
+            "project init conflict leaves no partial scaffold",
+            format!(
+                "init atomicity drifted; conflict_ok={} preserved_ok={} no_partial_ok={} cleanup_ok={} blocked={} exit_code={} status_read={:?}",
+                conflict_ok,
+                preserved_ok,
+                no_partial_ok,
                 cleanup_ok,
                 report.blocked(),
                 report.exit_code(),
@@ -7859,7 +7928,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 143);
+        assert_eq!(report.cases().len(), 144);
     }
 
     #[test]
@@ -7892,6 +7961,7 @@ mod tests {
             rendered.contains("  - id: eval_project_init_creates_level0_manual_memory_scaffold")
         );
         assert!(rendered.contains("  - id: eval_project_init_refuses_to_overwrite_existing_memory"));
+        assert!(rendered.contains("  - id: eval_project_init_conflict_is_atomic_noop"));
         assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
         assert!(rendered.contains("  - id: eval_contract_receipt_allowed_path_produces_evidence"));
         assert!(rendered

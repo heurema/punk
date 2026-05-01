@@ -310,6 +310,7 @@ impl ProjectInitArtifactKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProjectInitArtifactStatus {
+    Planned,
     Created,
     AlreadyExists,
     Conflict,
@@ -319,6 +320,7 @@ pub enum ProjectInitArtifactStatus {
 impl ProjectInitArtifactStatus {
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::Planned => "planned",
             Self::Created => "created",
             Self::AlreadyExists => "already_exists",
             Self::Conflict => "conflict",
@@ -451,12 +453,7 @@ impl ProjectInitReport {
             "runtime_persistence: {PROJECT_INIT_RUNTIME_PERSISTENCE}"
         )
         .expect("writing to String should succeed");
-        writeln!(
-            &mut output,
-            "target_root: {}",
-            self.project_root().display()
-        )
-        .expect("writing to String should succeed");
+        writeln!(&mut output, "target_root: .").expect("writing to String should succeed");
         writeln!(&mut output, "result: {}", self.result_label())
             .expect("writing to String should succeed");
         writeln!(&mut output, "artifacts:").expect("writing to String should succeed");
@@ -532,17 +529,16 @@ pub fn init_level0_project(
     project_id: ProjectId,
 ) -> ProjectInitReport {
     let project_root = project_root.as_ref().to_path_buf();
-    let mut artifacts = Vec::new();
 
     match fs::metadata(&project_root) {
         Ok(metadata) if metadata.is_dir() => {}
         Ok(_) => {
-            artifacts.push(ProjectInitArtifactReport::new(
+            let artifacts = vec![ProjectInitArtifactReport::new(
                 ".",
                 ProjectInitArtifactKind::Directory,
                 ProjectInitArtifactStatus::Failed,
                 Some("project root exists but is not a directory".to_owned()),
-            ));
+            )];
             return ProjectInitReport {
                 project_root,
                 project_id,
@@ -550,12 +546,12 @@ pub fn init_level0_project(
             };
         }
         Err(error) => {
-            artifacts.push(ProjectInitArtifactReport::new(
+            let artifacts = vec![ProjectInitArtifactReport::new(
                 ".",
                 ProjectInitArtifactKind::Directory,
                 ProjectInitArtifactStatus::Failed,
                 Some(format!("project root must already exist: {error}")),
-            ));
+            )];
             return ProjectInitReport {
                 project_root,
                 project_id,
@@ -564,19 +560,16 @@ pub fn init_level0_project(
         }
     }
 
-    for entry in PROJECT_INIT_ENTRIES {
-        let report = match *entry {
-            ProjectInitEntry::Directory(path) => create_init_directory(&project_root, path),
-            ProjectInitEntry::File(path, contents) => {
-                create_init_file(&project_root, path, contents.as_bytes())
-            }
-            ProjectInitEntry::GeneratedFile(path, template) => {
-                let contents = render_init_template(template, &project_id);
-                create_init_file(&project_root, path, contents.as_bytes())
-            }
+    let preflight = preflight_init_entries(&project_root, &project_id);
+    if preflight.iter().any(ProjectInitArtifactReport::is_blocking) {
+        return ProjectInitReport {
+            project_root,
+            project_id,
+            artifacts: preflight,
         };
-        artifacts.push(report);
     }
+
+    let artifacts = apply_init_entries(&project_root, &project_id, &preflight);
 
     ProjectInitReport {
         project_root,
@@ -590,6 +583,137 @@ fn render_init_template(template: ProjectInitTemplate, project_id: &ProjectId) -
         ProjectInitTemplate::WorkStatus => work_status_template(project_id),
         ProjectInitTemplate::InitialGoal => initial_goal_template(project_id),
         ProjectInitTemplate::PunkProjectToml => punk_project_toml_template(project_id),
+    }
+}
+
+fn preflight_init_entries(
+    project_root: &Path,
+    project_id: &ProjectId,
+) -> Vec<ProjectInitArtifactReport> {
+    PROJECT_INIT_ENTRIES
+        .iter()
+        .map(|entry| match *entry {
+            ProjectInitEntry::Directory(path) => preflight_init_directory(project_root, path),
+            ProjectInitEntry::File(path, contents) => {
+                preflight_init_file(project_root, path, contents.as_bytes())
+            }
+            ProjectInitEntry::GeneratedFile(path, template) => {
+                let contents = render_init_template(template, project_id);
+                preflight_init_file(project_root, path, contents.as_bytes())
+            }
+        })
+        .collect()
+}
+
+fn apply_init_entries(
+    project_root: &Path,
+    project_id: &ProjectId,
+    preflight: &[ProjectInitArtifactReport],
+) -> Vec<ProjectInitArtifactReport> {
+    PROJECT_INIT_ENTRIES
+        .iter()
+        .zip(preflight)
+        .map(|(entry, preflight_report)| {
+            if preflight_report.status() == ProjectInitArtifactStatus::AlreadyExists {
+                return preflight_report.clone();
+            }
+
+            match *entry {
+                ProjectInitEntry::Directory(path) => create_init_directory(project_root, path),
+                ProjectInitEntry::File(path, contents) => {
+                    create_init_file(project_root, path, contents.as_bytes())
+                }
+                ProjectInitEntry::GeneratedFile(path, template) => {
+                    let contents = render_init_template(template, project_id);
+                    create_init_file(project_root, path, contents.as_bytes())
+                }
+            }
+        })
+        .collect()
+}
+
+fn preflight_init_directory(
+    project_root: &Path,
+    repo_relative_path: &'static str,
+) -> ProjectInitArtifactReport {
+    let path = project_root.join(repo_relative_path);
+    match fs::symlink_metadata(&path) {
+        Ok(metadata) if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() => {
+            ProjectInitArtifactReport::new(
+                repo_relative_path,
+                ProjectInitArtifactKind::Directory,
+                ProjectInitArtifactStatus::AlreadyExists,
+                None,
+            )
+        }
+        Ok(_) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::Directory,
+            ProjectInitArtifactStatus::Conflict,
+            Some("path already exists and is not a plain directory".to_owned()),
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::Directory,
+            ProjectInitArtifactStatus::Planned,
+            None,
+        ),
+        Err(error) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::Directory,
+            ProjectInitArtifactStatus::Failed,
+            Some(format!("could not inspect path: {error}")),
+        ),
+    }
+}
+
+fn preflight_init_file(
+    project_root: &Path,
+    repo_relative_path: &'static str,
+    contents: &[u8],
+) -> ProjectInitArtifactReport {
+    let path = project_root.join(repo_relative_path);
+    match fs::symlink_metadata(&path) {
+        Ok(metadata) if metadata.file_type().is_file() && !metadata.file_type().is_symlink() => {
+            match fs::read(&path) {
+                Ok(existing) if existing == contents => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::AlreadyExists,
+                    None,
+                ),
+                Ok(_) => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::Conflict,
+                    Some("file already exists with different contents; not overwritten".to_owned()),
+                ),
+                Err(error) => ProjectInitArtifactReport::new(
+                    repo_relative_path,
+                    ProjectInitArtifactKind::File,
+                    ProjectInitArtifactStatus::Failed,
+                    Some(format!("could not read existing file: {error}")),
+                ),
+            }
+        }
+        Ok(_) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::File,
+            ProjectInitArtifactStatus::Conflict,
+            Some("path already exists and is not a plain file".to_owned()),
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::File,
+            ProjectInitArtifactStatus::Planned,
+            None,
+        ),
+        Err(error) => ProjectInitArtifactReport::new(
+            repo_relative_path,
+            ProjectInitArtifactKind::File,
+            ProjectInitArtifactStatus::Failed,
+            Some(format!("could not inspect path: {error}")),
+        ),
     }
 }
 
@@ -826,6 +950,95 @@ mod tests {
                 && artifact.kind() == ProjectInitArtifactKind::File
                 && artifact.status() == ProjectInitArtifactStatus::Conflict
         }));
+        assert!(!root.join(INITIAL_GOAL_PATH).exists());
+        assert!(!root.join(".punk/memory/reports/README.md").exists());
+        assert!(!root.join(".punk/memory/adr/README.md").exists());
+        assert!(!root
+            .join(".punk/memory/knowledge/research/README.md")
+            .exists());
+        assert!(!root.join(".punk/memory/knowledge/ideas/README.md").exists());
+        assert!(!root.join(".punk/README.md").exists());
+        assert!(!root.join(".punk/project.toml").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_conflict_is_noop_for_all_other_artifacts() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory")).expect("memory dir should be created");
+        fs::write(root.join(STATUS_PATH), "custom status\n")
+            .expect("custom status should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+
+        assert!(report.blocked());
+        assert!(report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == INITIAL_GOAL_PATH
+                && artifact.status() == ProjectInitArtifactStatus::Planned
+        }));
+        assert_eq!(
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status should remain readable"),
+            "custom status\n"
+        );
+        assert!(!root.join(INITIAL_GOAL_PATH).exists());
+        assert!(!root.join(".punk/memory/reports/README.md").exists());
+        assert!(!root.join(".punk/memory/adr/README.md").exists());
+        assert!(!root.join(".punk/memory/knowledge").exists());
+        assert!(!root.join(".punk/README.md").exists());
+        assert!(!root.join(".punk/project.toml").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_failed_preflight_does_not_leave_partial_scaffold() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory/reports"))
+            .expect("reports dir should be created");
+        fs::write(
+            root.join(".punk/memory/reports/README.md"),
+            "custom report notes\n",
+        )
+        .expect("custom report readme should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+
+        assert!(report.blocked());
+        assert_eq!(report.result_label(), "blocked");
+        assert!(report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == ".punk/memory/reports/README.md"
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Conflict
+        }));
+        assert_eq!(
+            fs::read_to_string(root.join(".punk/memory/reports/README.md"))
+                .expect("report readme should remain readable"),
+            "custom report notes\n"
+        );
+        assert!(!root.join(STATUS_PATH).exists());
+        assert!(!root.join(INITIAL_GOAL_PATH).exists());
+        assert!(!root.join(".punk/memory/knowledge").exists());
+        assert!(!root.join(".punk/memory/adr").exists());
+        assert!(!root.join(".punk/README.md").exists());
+        assert!(!root.join(".punk/project.toml").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn render_human_redacts_absolute_target_root() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+        let rendered = report.render_human();
+
+        assert!(rendered.contains("target_root: ."));
+        assert!(!rendered.contains(&root.display().to_string()));
 
         let _ = fs::remove_dir_all(root);
     }
