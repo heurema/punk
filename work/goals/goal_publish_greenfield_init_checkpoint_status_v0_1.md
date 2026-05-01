@@ -1,7 +1,7 @@
 ---
 id: goal_publish_greenfield_init_checkpoint_status_v0_1
 title: "Publish greenfield init checkpoint status v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "process"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -33,7 +33,8 @@ knowledge_refs:
   - "work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md"
   - "work/reports/2026-05-01-greenfield-init-compact-layout-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-greenfield-init-checkpoint-status-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -69,3 +70,11 @@ Summarize the milestone and preserve the current active/non-active boundary befo
 ## Non-scope
 
 Do not implement brownfield init, grayfield reconcile, runtime storage, Writer, gate writer, proof writer, proofpack writer expansion, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or CLI expansion.
+
+## Outcome
+
+Published the greenfield init checkpoint status without code or product behavior changes.
+
+The checkpoint confirms minimal greenfield `punk init <project-id>` as active, compact `.punk/memory/` as tracked durable user-project memory, and `.punk/runtime` plus brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, and spec-as-source behavior as inactive or deferred.
+
+The checkpoint found one remaining canonical-doc drift: `docs/product/NORTH-STAR.md` still omits `punk init <project-id>` from its current executable CLI list. That drift is routed to `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md`.
