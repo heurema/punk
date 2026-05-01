@@ -1,7 +1,7 @@
 ---
 id: goal_review_acceptance_claim_boundary_v0_1
 title: "Review acceptance claim boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "process"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -42,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-05-01-proofpack-writer-track-after-checkpoint-review.md"
   - "evals/specs/proof-before-acceptance-semantics.v0.1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -87,3 +88,17 @@ Do not implement acceptance claim writer.
 Do not add CLI behavior, `.punk/contracts` storage, `.punk/runs` storage, `.punk/decisions` storage, `.punk/proofs` storage, runtime writers, gate writer, proofpack writer expansion, artifact hash runtime expansion, agent execution, provider adapters, policy engine integration, runtime side effects, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or `punk init`.
 
 Do not add new Writer or acceptance claim capabilities unless a later bounded goal explicitly selects them.
+
+
+## Completion
+
+Completed on 2026-05-01.
+
+Outcome:
+
+- Reviewed acceptance claim as a distinct downstream trust surface.
+- Defined acceptance claim in review terms as a downstream project-memory claim that bounded work may be described as accepted because it references an accepting gate decision and a matching proofpack.
+- Confirmed acceptance claim is not gate decision, proofpack, executor claim, Writer decision, module assessment, adapter output, or generated documentation truth.
+- Found current proof-before-acceptance semantics are high-level and should be captured as a dedicated acceptance claim boundary before Writer boundary design.
+- Selected `work/goals/goal_define_acceptance_claim_boundary_v0_1.md` as the next docs/model/eval-spec goal.
+- Added no implementation, runtime behavior, CLI, storage, Writer, gate writer, proofpack writer expansion, artifact hash runtime expansion, acceptance claim writer, adapter, policy engine, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or `punk init` behavior.
