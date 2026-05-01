@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-29
+updated_at: 2026-04-30
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -19,6 +19,7 @@ canonical_for:
   - prompt-and-skill-memory-boundary
   - contract-context-pack-memory-boundary
   - knowledge-impact-report-boundary
+  - replayable-project-memory-direction
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/DOC-GOVERNANCE.md
@@ -61,6 +62,16 @@ goal -> contract -> report -> eval -> decision -> proof -> docs/public narrative
 ```
 
 This keeps memory bounded and inspectable. The graph should be built from canonical artifacts, not from one giant prompt or hidden runtime state.
+
+## Replayable project memory direction
+
+Project memory should not only preserve what happened. It should preserve enough linked intent, contracts, evidence, decisions, examples, invariants, and proof refs to help future work replay intent and draft migration/reimplementation contracts.
+
+This is a directional memory quality, not a new runtime feature.
+
+Greenfield Punk projects record replay memory from day zero. Brownfield projects reconstruct replay candidates from existing artifacts. Grayfield projects reconcile partial recorded memory with partial reconstruction.
+
+Project memory remains repo-tracked and authority-tagged. Derived summaries, future conformance packs, migration packs, or regenerative spec packs must not become truth without review, gate decisions, and proof.
 
 ## Prompt and skill memory boundary
 

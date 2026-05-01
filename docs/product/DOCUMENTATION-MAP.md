@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-29
+updated_at: 2026-04-30
 review_after: 2026-07-20
 canonical_for:
   - documentation-reading-order
@@ -47,30 +47,32 @@ For product and architecture work, read in this order:
 5. `docs/product/GLOSSARY.md`
 6. `docs/product/PUNK-LAWS.md`
 7. `docs/product/ARCHITECTURE.md`
-8. `docs/product/ROADMAP.md`
-9. `docs/product/CRATE-STATUS.md`
-10. `docs/product/RESEARCH-GATE.md`
-11. `docs/product/RESEARCH-INTAKE.md`
-12. `docs/product/TELEMETRY.md`
-13. `docs/product/EVAL-PLANE.md`
-14. `docs/product/PROJECT-MEMORY.md`
-15. `docs/product/DOC-GOVERNANCE.md`
-16. `docs/product/PUBLIC-NARRATIVE.md`
-17. `docs/product/LINEAGE.md`
-18. `docs/adr/`
-19. `knowledge/research/`
-20. `knowledge/ideas/`
-21. `work/goals/` and `work/reports/`
-22. `publishing/`
+8. `docs/product/CONTRACT-SCHEMA.md`
+9. `docs/product/ROADMAP.md`
+10. `docs/product/CRATE-STATUS.md`
+11. `docs/product/RESEARCH-GATE.md`
+12. `docs/product/RESEARCH-INTAKE.md`
+13. `docs/product/TELEMETRY.md`
+14. `docs/product/EVAL-PLANE.md`
+15. `docs/product/PROJECT-MEMORY.md`
+16. `docs/product/DOC-GOVERNANCE.md`
+17. `docs/product/PUBLIC-NARRATIVE.md`
+18. `docs/product/LINEAGE.md`
+19. `docs/adr/`
+20. `knowledge/research/`
+21. `knowledge/ideas/`
+22. `work/goals/` and `work/reports/`
+23. `publishing/`
 
 ## Canonical owners
 
 | Truth surface | Canonical owner | Supporting/history refs | Notes |
 |---|---|---|---|
 | Product entry path | `docs/product/START-HERE.md` | `README.md` | `README.md` is the repo entry, not the deep canonical owner for every surface. |
-| Project north star and frontier direction | `docs/product/NORTH-STAR.md` | `docs/product/RESEARCH-GATE.md`, `docs/product/RESEARCH-INTAKE.md`, `knowledge/research/` | Defines high-level direction; does not activate future capabilities. |
+| Project north star and frontier direction | `docs/product/NORTH-STAR.md` | `docs/product/RESEARCH-GATE.md`, `docs/product/RESEARCH-INTAKE.md`, `knowledge/research/`, `knowledge/research/2026-04-30-replayable-project-memory.md`, `knowledge/ideas/2026-04-30-replayable-project-memory.md` | Defines high-level direction, including replayability direction; does not activate future capabilities. |
 | Core laws | `docs/product/PUNK-LAWS.md` | `docs/adr/` | Law statements outrank lower-level docs. |
 | Architecture boundaries | `docs/product/ARCHITECTURE.md` | `docs/adr/`, `docs/modules/`, `docs/adapters/` | Defines planes, boundaries, and truth ownership. |
+| Contract Schema Blueprint | `docs/product/CONTRACT-SCHEMA.md` | `docs/product/ARCHITECTURE.md`, `docs/product/ROADMAP.md`, `docs/product/CRATE-STATUS.md` | Defines the full target Contract shape and active/deferred/parked/future split; does not activate runtime storage, CLI, Writer, gate writers, or proof writers. |
 | Contract Context Pack boundary | `docs/product/ARCHITECTURE.md` | `docs/product/CONTRACT-TRACKER.md`, `docs/product/PROJECT-MEMORY.md`, `docs/adr/ADR-0016-contract-context-pack-boundary.md`, `evals/specs/context-pack-boundary.v0.1.md` | Defines context selection as advisory contract-linked evidence, not project truth or a lifecycle phase. |
 | Flow semantics | `docs/product/FLOW.md` | `docs/adr/ADR-0002-flow-and-eval-before-features.md` | `plot / cut / gate` lifecycle source. |
 | Eval operator contract | `docs/product/EVAL.md` | `docs/product/EVAL-PLANE.md`, `evals/` | Product direction for eval behavior. |
@@ -78,7 +80,7 @@ For product and architecture work, read in this order:
 | Contract/work ledger direction | `docs/product/CONTRACT-TRACKER.md` | `docs/adr/ADR-0009-contract-tracker-core-primitives.md` | Phase-gated contract loop and ledger view. |
 | Roadmap and phase gates | `docs/product/ROADMAP.md` | `work/goals/`, `docs/adr/` | Current phase order and exit criteria. |
 | Crate maturity/status | `docs/product/CRATE-STATUS.md` | `docs/product/ROADMAP.md` | Current crate boundary vocabulary. |
-| Project memory model | `docs/product/PROJECT-MEMORY.md` | `docs/adr/ADR-0003-project-memory-plane.md`, `docs/adr/ADR-0008-knowledge-vault-boundaries.md`, `knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md`, `knowledge/ideas/2026-04-29-compiled-project-wiki-and-claim-graph.md` | Repo-tracked memory surfaces, Knowledge Vault direction, and authority rules. |
+| Project memory model | `docs/product/PROJECT-MEMORY.md` | `docs/adr/ADR-0003-project-memory-plane.md`, `docs/adr/ADR-0008-knowledge-vault-boundaries.md`, `knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md`, `knowledge/research/2026-04-30-replayable-project-memory.md`, `knowledge/ideas/2026-04-29-compiled-project-wiki-and-claim-graph.md`, `knowledge/ideas/2026-04-30-replayable-project-memory.md`, `knowledge/ideas/2026-04-30-replayability-backlog.md` | Repo-tracked memory surfaces, Knowledge Vault direction, replayability direction, replayability backlog, and authority rules. |
 | Dogfooding levels and manual ledger discipline | `docs/product/DOGFOODING.md` | `work/`, `docs/product/PROJECT-MEMORY.md` | Manual-to-runtime adoption levels and Level 0 work rules. |
 | Research gate policy | `docs/product/RESEARCH-GATE.md` | `knowledge/research/` | When research is required before implementation. |
 | Research intake classification | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | `adopt / defer / park / avoid` intake discipline. |

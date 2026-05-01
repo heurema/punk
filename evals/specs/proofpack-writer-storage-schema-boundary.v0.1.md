@@ -1,6 +1,7 @@
 # Proofpack writer storage/schema boundary v0.1
 
 Date: 2026-04-26
+Updated: 2026-04-30
 Status: proposed boundary
 Authority: advisory/design
 
@@ -57,15 +58,18 @@ It can define:
 - which artifacts are wrappers, indexes, or derived views;
 - where manifest self-digest metadata may live without recursive self-reference;
 - how mutable `latest` pointers must stay non-canonical;
+- how future host path observations, path policy refs, redaction state, and fail-closed blockers remain operational evidence only;
 - what future side effects need explicit selection.
 
 It cannot establish:
 
 - that `.punk/proofs` exists;
 - that a proofpack was written;
+- that host filesystem paths were resolved or canonicalized;
 - that schema validation exists;
 - that an index was updated;
 - that a `latest` pointer is canonical truth;
+- that a host path observation is proof truth;
 - that referenced artifact bytes were verified;
 - that a gate accepted the work;
 - that positive acceptance may be claimed.
@@ -118,6 +122,36 @@ append-only canonical proof artifacts -> rebuildable indexes/views -> optional s
 
 A missing or stale index must degrade inspect UX, not change proof truth.
 
+### Host path resolution model
+
+`evals/specs/proofpack-writer-host-path-resolution-boundary.v0.1.md` defines host path observations as operational evidence over explicit storage root refs, target path refs, logical target artifact refs, and selected path policies.
+
+Current `punk-proof` has side-effect-free host path resolution model coverage.
+
+Future storage/schema semantics must preserve this separation:
+
+```text
+storage root ref != logical target artifact ref
+target artifact ref != target path ref
+target path ref != host path observation
+host path observation != canonical proofpack artifact
+host path observation != proof authority
+```
+
+A future storage/schema layout may reference or wrap host path observation evidence only as operational metadata.
+It must not make host path observations, selected path policy refs, redaction state, blockers, absolute local paths, or canonicalized local paths part of canonical proof truth.
+
+Host path observations must not imply:
+
+- proofpack availability;
+- referenced artifact verification;
+- schema validation;
+- operation-evidence persistence;
+- gate acceptance;
+- positive acceptance claims.
+
+If a future storage/schema goal records host path observations, it must define explicit redaction, retention, and privacy behavior first.
+
 ## Future artifact classes
 
 A future proofpack writer may eventually produce or update several artifact classes.
@@ -161,9 +195,33 @@ A future wrapper may record:
 - created timestamp;
 - privacy/redaction flags;
 - boundary notes;
-- operation evidence refs.
+- operation evidence refs;
+- host path observation evidence refs or summaries, if a later selected policy allows them.
 
 Wrapper metadata must not become a second proofpack manifest unless a later schema explicitly defines it.
+Host path observation metadata inside a wrapper remains operational evidence and must not become canonical proof truth.
+
+### Host path observation evidence
+
+Host path observation evidence is a future operational evidence class, not a canonical proofpack artifact class.
+
+It may record or reference:
+
+- observation status: `observed`, `blocked`, or `not_selected`;
+- explicit storage root ref;
+- explicit target path ref;
+- logical target artifact ref;
+- selected path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape policy refs;
+- host path kind;
+- redaction status;
+- fail-closed blockers;
+- boundary notes.
+
+It must not own proof truth, gate truth, receipt truth, schema truth, project truth, or acceptance truth.
+
+It must not be the only place where proofpack identity, manifest bytes, manifest self-digest, gate decision refs, or linked evidence refs can be inspected.
+
+It must prefer storage-root-relative or redacted evidence. Unredacted absolute local paths remain disallowed unless a later privacy/redaction policy explicitly permits them.
 
 ### Indexes and views
 
@@ -195,6 +253,9 @@ If `.punk/proofs` is later selected, the writer must define:
 
 - the storage root;
 - the artifact naming policy;
+- target path ref policy;
+- host path observation policy;
+- selected path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape policies;
 - overwrite behavior;
 - temporary-file and atomic-write behavior;
 - index/update behavior;
@@ -206,6 +267,15 @@ If `.punk/proofs` is later selected, the writer must define:
 The writer must not use the process current working directory, global config, editor state, chat state, or executor-local memory as hidden storage authority.
 
 A caller may resolve a project root or storage root explicitly, but that resolution must be inspectable.
+
+Storage target semantics must not collapse these refs:
+
+```text
+storage root ref -> selected storage area
+target path ref -> operational path ref under selected storage root
+logical target artifact ref -> proofpack identity
+host path observation -> operational evidence only
+```
 
 ## Future schema/file-layout boundary
 
@@ -229,6 +299,8 @@ A future schema/file-layout must define:
 - unknown-field policy;
 - migration and supersession behavior;
 - how privacy/redaction flags are represented;
+- how host path observation evidence refs or summaries are represented, if selected;
+- how host path observation fields are kept outside canonical proofpack manifest bytes unless a later schema explicitly selects otherwise;
 - how partial proofpacks are represented if ever allowed.
 
 Until then, the current Rust renderer is the only deterministic manifest byte surface.
@@ -245,6 +317,7 @@ Recommended future behavior:
 
 - if the target canonical proofpack artifact already exists with matching bytes, return idempotent evidence;
 - if the target exists with different bytes, fail closed and report conflict;
+- if host path resolution is unavailable, ambiguous, unredacted when redaction is required, or blocked by selected policy, fail before canonical artifact writes;
 - if a temp/write operation fails, do not leave a canonical partial artifact;
 - if an index update fails after canonical artifact write, preserve the canonical artifact and report index failure separately;
 - if a `latest` pointer update fails, preserve the canonical artifact and report pointer failure separately.
@@ -266,7 +339,9 @@ Not allowed as canonical proof truth:
 - mutable `latest` pointers;
 - service mirrors;
 - dashboards;
-- unlinked filesystem artifacts.
+- unlinked filesystem artifacts;
+- host path observations;
+- unredacted or canonicalized local filesystem paths.
 
 Project truth must remain in explicit artifacts linked through goal, contract, receipt, eval/assessment, gate decision, and proofpack refs.
 
@@ -283,11 +358,14 @@ Recommended future preconditions:
 5. structural link/hash integrity report is available;
 6. manifest bytes are rendered deterministically in memory;
 7. manifest self-digest is computed from exact renderer bytes;
-8. storage root and target artifact ref are explicit and policy-allowed;
-9. overwrite/idempotency policy is explicit;
-10. privacy/redaction policy has been applied upstream or marked unresolved;
-11. schema/file-layout version is explicit;
-12. index/latest pointer behavior is explicit and non-authoritative.
+8. storage root ref, logical target artifact ref, and target path ref are explicit and policy-allowed;
+9. selected path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape policy refs are explicit if file IO is selected;
+10. host path observation is either `observed` with required redaction or `not_selected` for non-file-IO behavior;
+11. host path blockers are absent before canonical artifact writes;
+12. overwrite/idempotency policy is explicit;
+13. privacy/redaction policy has been applied upstream or marked unresolved;
+14. schema/file-layout version is explicit;
+15. index/latest pointer behavior is explicit and non-authoritative.
 
 These are preparation constraints, not active checks today.
 
@@ -299,6 +377,7 @@ A future writer may eventually produce:
 - manifest bytes or manifest artifact ref;
 - manifest self-digest;
 - storage wrapper ref, if any;
+- host path observation evidence ref or summary, if selected and redacted as required;
 - structural link/hash integrity status;
 - referenced artifact verification status summary, if supplied;
 - writer operation evidence or receipt, if a later boundary defines it;
@@ -319,6 +398,10 @@ It must not silently invent:
 - proofpack ids;
 - storage roots;
 - artifact paths;
+- target path refs;
+- host path observations;
+- path policy refs;
+- redaction policy results;
 - schema versions;
 - manifest bytes;
 - manifest self-digests;
@@ -337,7 +420,7 @@ If partial proofpack artifacts are later allowed, partial state must be explicit
 
 ## Privacy and retention boundary
 
-Proofpack storage can expose sensitive refs, hashes, timestamps, event ranges, and boundary notes.
+Proofpack storage can expose sensitive refs, hashes, timestamps, event ranges, host path observation summaries, storage-root refs, target path refs, and boundary notes.
 
 A future storage/schema implementation must not include by default:
 
@@ -349,7 +432,9 @@ A future storage/schema implementation must not include by default:
 - private user text;
 - large generated artifact bodies;
 - unredacted logs;
-- hidden absolute local paths.
+- hidden absolute local paths;
+- unredacted host path observations;
+- canonicalized local filesystem paths unless a later redaction/privacy policy explicitly permits them.
 
 Retention, redaction, deletion, and publication policies remain future explicit boundaries.
 
@@ -387,6 +472,8 @@ It must not turn executor claims into proof.
 
 It must not make a mutable `latest` pointer canonical truth.
 
+It must not make a host path observation, path policy ref, redaction flag, or storage-root-relative path canonical proof truth.
+
 It must not create positive acceptance claims by itself.
 
 Positive acceptance still requires an accepting gate decision and matching proof under `evals/specs/proof-before-acceptance-semantics.v0.1.md`.
@@ -402,6 +489,8 @@ This v0.1 boundary does not define or implement:
 - CLI commands;
 - runtime proof storage;
 - proofpack referenced-ref verification integration implementation;
+- host filesystem path resolution, inspection, or canonicalization;
+- concrete path encoding, symlink, parent directory, canonicalization, traversal, or storage-root escape policy implementation;
 - hash normalization;
 - broader file IO hashing;
 - directory, archive, recursive, or semantic hashing;
@@ -446,6 +535,12 @@ Writing proof storage must not write gate decisions, create acceptance claims, r
 
 Future storage/schema behavior must not require `punk init`, global config, background services, network access, providers, models, agents, skills, or IDE setup.
 
+### PWSS-008: host path observations remain operational evidence
+
+Future storage/schema behavior must keep host path observations, selected path policy refs, redaction state, and host path blockers outside canonical proof truth.
+
+Host path observation success must not imply proofpack availability, referenced artifact verification, schema validation, operation-evidence persistence, gate acceptance, or positive acceptance claims.
+
 ## Open follow-ups
 
 - proofpack writer implementation;
@@ -454,6 +549,8 @@ Future storage/schema behavior must not require `punk init`, global config, back
 - proofpack writer CLI surface, if any;
 - atomic write and rollback policy;
 - proofpack index and latest-pointer policy;
+- host path observation storage/reference policy;
+- concrete path encoding, parent directory, symlink, canonicalization, traversal, and storage-root escape policies;
 - proofpack referenced-ref verification integration implementation;
 - privacy/redaction and retention policy for proof artifacts;
 - partial proofpack policy;
@@ -464,4 +561,4 @@ Future storage/schema behavior must not require `punk init`, global config, back
 
 ## Next bounded step
 
-After this proofpack writer storage/schema boundary, run another advisory Work Ledger Review before selecting proofpack writer implementation, `.punk/proofs` activation, schema files, CLI, gate/eval/proof orchestration, adapters, automation, provider/model runners, or `punk init` work.
+After this storage/schema boundary is reconciled with host path observation modeling, run another advisory Work Ledger Review before selecting proofpack writer implementation, `.punk/proofs` activation, schema files, CLI, host filesystem path resolution/canonicalization, operation-evidence persistence, referenced-ref verification integration, gate/eval/proof orchestration, adapters, automation, provider/model runners, or `punk init` work.

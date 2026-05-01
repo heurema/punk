@@ -1,8 +1,10 @@
-//! Minimal side-effect-free proofpack kernel for Punk Phase 3.
+//! Minimal proofpack kernel for Punk Phase 3.
 //!
-//! This crate models post-gate provenance and writer-operation evidence as data
-//! only. It does not write `.punk/proofs`, expose CLI behavior, write gate
-//! decisions, claim acceptance, run validators, or require runtime storage.
+//! This crate models post-gate provenance and writer-operation evidence, and
+//! exposes the first narrowly bounded active writer slice for exact-byte writes
+//! to an explicit caller-provided target. It does not write `.punk/proofs`,
+//! expose CLI behavior, write gate decisions, claim acceptance, run validators,
+//! persist writer-operation evidence, or require runtime storage.
 
 use std::fmt::Write as _;
 
@@ -28,9 +30,18 @@ pub const PROOFPACK_WRITER_PREFLIGHT_INTEGRATION_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_preflight_integration_model.v0.1";
 pub const PROOFPACK_WRITER_ACTIVE_BEHAVIOR_MODEL_SCHEMA_VERSION: &str =
     "punk.proofpack.writer_active_behavior_model.v0.1";
+pub const PROOFPACK_WRITER_HOST_PATH_RESOLUTION_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_host_path_resolution_model.v0.1";
+pub const PROOFPACK_WRITER_CONCRETE_PATH_STORAGE_POLICY_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_concrete_path_storage_policy_model.v0.1";
+pub const PROOFPACK_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_first_active_write_slice.v0.1";
+pub const PROOFPACK_WRITER_HASH_REFERENCE_INTEGRATION_MODEL_SCHEMA_VERSION: &str =
+    "punk.proofpack.writer_hash_reference_integration_model.v0.1";
 
 use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
+    ReferencedArtifactVerificationOutcome,
 };
 
 fn non_empty(value: impl Into<String>, error: ProofpackError) -> Result<String, ProofpackError> {
@@ -1515,6 +1526,22 @@ impl ProofpackWriterDiagnosticPathRef {
         Ok(Self(non_empty(
             value,
             ProofpackError::EmptyWriterDiagnosticPathRef,
+        )?))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofpackWriterHostPathPolicyRef(String);
+
+impl ProofpackWriterHostPathPolicyRef {
+    pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
+        Ok(Self(non_empty(
+            value,
+            ProofpackError::EmptyWriterHostPathPolicyRef,
         )?))
     }
 
@@ -5521,6 +5548,3763 @@ pub const fn proofpack_writer_active_behavior_model_boundary(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterHostPathObservationStatus {
+    Observed,
+    Blocked,
+    NotSelected,
+}
+
+impl ProofpackWriterHostPathObservationStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Observed => "observed",
+            Self::Blocked => "blocked",
+            Self::NotSelected => "not_selected",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterHostPathKind {
+    Absolute,
+    StorageRootRelative,
+    Unavailable,
+}
+
+impl ProofpackWriterHostPathKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Absolute => "absolute",
+            Self::StorageRootRelative => "storage_root_relative",
+            Self::Unavailable => "unavailable",
+        }
+    }
+
+    pub fn is_available(self) -> bool {
+        self != Self::Unavailable
+    }
+
+    pub fn is_sensitive(self) -> bool {
+        self == Self::Absolute
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterHostPathBlocker {
+    StorageRootRefMissing,
+    StorageRootRefDisallowed,
+    TargetPathRefMissing,
+    TargetPathRefInvalid,
+    LogicalTargetArtifactRefMissing,
+    PathEncodingMissing,
+    PathEncodingRejected,
+    ParentDirectoryMissing,
+    ParentDirectoryNotDirectory,
+    SymlinkDisallowed,
+    CanonicalizationUnavailable,
+    TraversalDetected,
+    StorageRootEscapeDetected,
+    HostPathAmbiguous,
+    HostPathRedactionRequired,
+    PolicyNotSelected,
+}
+
+impl ProofpackWriterHostPathBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::StorageRootRefMissing => "storage_root_ref_missing",
+            Self::StorageRootRefDisallowed => "storage_root_ref_disallowed",
+            Self::TargetPathRefMissing => "target_path_ref_missing",
+            Self::TargetPathRefInvalid => "target_path_ref_invalid",
+            Self::LogicalTargetArtifactRefMissing => "logical_target_artifact_ref_missing",
+            Self::PathEncodingMissing => "path_encoding_missing",
+            Self::PathEncodingRejected => "path_encoding_rejected",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ParentDirectoryNotDirectory => "parent_directory_not_directory",
+            Self::SymlinkDisallowed => "symlink_disallowed",
+            Self::CanonicalizationUnavailable => "canonicalization_unavailable",
+            Self::TraversalDetected => "traversal_detected",
+            Self::StorageRootEscapeDetected => "storage_root_escape_detected",
+            Self::HostPathAmbiguous => "host_path_ambiguous",
+            Self::HostPathRedactionRequired => "host_path_redaction_required",
+            Self::PolicyNotSelected => "policy_not_selected",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterHostPathPolicyRefs {
+    path_encoding: Option<ProofpackWriterHostPathPolicyRef>,
+    parent_directory: Option<ProofpackWriterHostPathPolicyRef>,
+    symlink: Option<ProofpackWriterHostPathPolicyRef>,
+    canonicalization: Option<ProofpackWriterHostPathPolicyRef>,
+    traversal: Option<ProofpackWriterHostPathPolicyRef>,
+}
+
+impl ProofpackWriterHostPathPolicyRefs {
+    pub fn new(
+        path_encoding: Option<ProofpackWriterHostPathPolicyRef>,
+        parent_directory: Option<ProofpackWriterHostPathPolicyRef>,
+        symlink: Option<ProofpackWriterHostPathPolicyRef>,
+        canonicalization: Option<ProofpackWriterHostPathPolicyRef>,
+        traversal: Option<ProofpackWriterHostPathPolicyRef>,
+    ) -> Self {
+        Self {
+            path_encoding,
+            parent_directory,
+            symlink,
+            canonicalization,
+            traversal,
+        }
+    }
+
+    pub fn all_selected(
+        path_encoding: ProofpackWriterHostPathPolicyRef,
+        parent_directory: ProofpackWriterHostPathPolicyRef,
+        symlink: ProofpackWriterHostPathPolicyRef,
+        canonicalization: ProofpackWriterHostPathPolicyRef,
+        traversal: ProofpackWriterHostPathPolicyRef,
+    ) -> Self {
+        Self::new(
+            Some(path_encoding),
+            Some(parent_directory),
+            Some(symlink),
+            Some(canonicalization),
+            Some(traversal),
+        )
+    }
+
+    pub fn path_encoding(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.path_encoding.as_ref()
+    }
+
+    pub fn parent_directory(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.parent_directory.as_ref()
+    }
+
+    pub fn symlink(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.symlink.as_ref()
+    }
+
+    pub fn canonicalization(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.canonicalization.as_ref()
+    }
+
+    pub fn traversal(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.traversal.as_ref()
+    }
+
+    pub fn has_path_encoding_policy(&self) -> bool {
+        self.path_encoding.is_some()
+    }
+
+    pub fn all_required_selected(&self) -> bool {
+        self.path_encoding.is_some()
+            && self.parent_directory.is_some()
+            && self.symlink.is_some()
+            && self.canonicalization.is_some()
+            && self.traversal.is_some()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterHostPathResolutionModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    preflight_status: ProofpackWriterPreflightIntegrationStatus,
+    storage_root_ref: Option<ProofpackWriterStorageRootRef>,
+    logical_target_artifact_ref: Option<ProofpackWriterTargetRef>,
+    target_path_ref: Option<ProofpackWriterTargetPathRef>,
+    policy_refs: ProofpackWriterHostPathPolicyRefs,
+    host_path_kind: ProofpackWriterHostPathKind,
+    host_path_ref: Option<ProofpackWriterDiagnosticPathRef>,
+    host_path_redacted: bool,
+    status: ProofpackWriterHostPathObservationStatus,
+    blockers: Vec<ProofpackWriterHostPathBlocker>,
+    diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterHostPathResolutionModel {
+    pub fn evaluate(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        policy_refs: ProofpackWriterHostPathPolicyRefs,
+        host_path_kind: ProofpackWriterHostPathKind,
+        host_path_ref: Option<ProofpackWriterDiagnosticPathRef>,
+        host_path_redacted: bool,
+        observation_blockers: Vec<ProofpackWriterHostPathBlocker>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let mut blockers = if preflight.is_not_selected() {
+            Vec::new()
+        } else {
+            writer_host_path_resolution_blockers(
+                preflight,
+                &policy_refs,
+                host_path_kind,
+                host_path_ref.as_ref(),
+                host_path_redacted,
+                &observation_blockers,
+            )
+        };
+
+        let status = if preflight.is_not_selected() {
+            ProofpackWriterHostPathObservationStatus::NotSelected
+        } else if blockers.is_empty() {
+            ProofpackWriterHostPathObservationStatus::Observed
+        } else {
+            ProofpackWriterHostPathObservationStatus::Blocked
+        };
+
+        if status == ProofpackWriterHostPathObservationStatus::NotSelected {
+            blockers.clear();
+        }
+
+        Self {
+            proofpack_id: preflight.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_HOST_PATH_RESOLUTION_MODEL_SCHEMA_VERSION,
+            preflight_status: preflight.status(),
+            storage_root_ref: preflight.storage_root_ref().cloned(),
+            logical_target_artifact_ref: preflight.target_artifact_ref().cloned(),
+            target_path_ref: preflight.target_path_ref().cloned(),
+            policy_refs,
+            host_path_kind,
+            host_path_ref,
+            host_path_redacted,
+            status,
+            blockers,
+            diagnostics: preflight.diagnostics().to_vec(),
+            boundary_notes: writer_host_path_resolution_boundary_notes(preflight, boundary_notes),
+        }
+    }
+
+    pub fn not_selected(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::evaluate(
+            preflight,
+            ProofpackWriterHostPathPolicyRefs::new(None, None, None, None, None),
+            ProofpackWriterHostPathKind::Unavailable,
+            None,
+            true,
+            vec![],
+            boundary_notes,
+        )
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn preflight_status(&self) -> ProofpackWriterPreflightIntegrationStatus {
+        self.preflight_status
+    }
+
+    pub fn storage_root_ref(&self) -> Option<&ProofpackWriterStorageRootRef> {
+        self.storage_root_ref.as_ref()
+    }
+
+    pub fn logical_target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.logical_target_artifact_ref.as_ref()
+    }
+
+    pub fn target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.logical_target_artifact_ref()
+    }
+
+    pub fn target_path_ref(&self) -> Option<&ProofpackWriterTargetPathRef> {
+        self.target_path_ref.as_ref()
+    }
+
+    pub fn policy_refs(&self) -> &ProofpackWriterHostPathPolicyRefs {
+        &self.policy_refs
+    }
+
+    pub fn host_path_kind(&self) -> ProofpackWriterHostPathKind {
+        self.host_path_kind
+    }
+
+    pub fn host_path_ref(&self) -> Option<&ProofpackWriterDiagnosticPathRef> {
+        self.host_path_ref.as_ref()
+    }
+
+    pub fn host_path_redacted(&self) -> bool {
+        self.host_path_redacted
+    }
+
+    pub fn status(&self) -> ProofpackWriterHostPathObservationStatus {
+        self.status
+    }
+
+    pub fn blockers(&self) -> &[ProofpackWriterHostPathBlocker] {
+        &self.blockers
+    }
+
+    pub fn diagnostics(&self) -> &[ProofpackWriterFileIoDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn is_observed(&self) -> bool {
+        self.status == ProofpackWriterHostPathObservationStatus::Observed
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status == ProofpackWriterHostPathObservationStatus::Blocked
+    }
+
+    pub fn is_not_selected(&self) -> bool {
+        self.status == ProofpackWriterHostPathObservationStatus::NotSelected
+    }
+
+    pub fn has_blocker(&self, blocker: ProofpackWriterHostPathBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn refs_are_separated(&self) -> bool {
+        writer_preflight_integration_refs_are_separated(
+            self.storage_root_ref.as_ref(),
+            self.logical_target_artifact_ref.as_ref(),
+            self.target_path_ref.as_ref(),
+        )
+    }
+
+    pub fn operation_outcome(&self) -> ProofpackWriterOperationOutcome {
+        if self.is_blocked() {
+            ProofpackWriterOperationOutcome::PreflightFailed
+        } else {
+            ProofpackWriterOperationOutcome::PlannedOnly
+        }
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterHostPathResolutionModelBoundary {
+        proofpack_writer_host_path_resolution_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn canonicalizes_host_paths(&self) -> bool {
+        self.boundary().canonicalizes_host_paths
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_punk_proofs(&self) -> bool {
+        self.boundary().writes_punk_proofs
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary().persists_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn writes_final_decision(&self) -> bool {
+        self.boundary().writes_final_decision
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn implies_proofpack_availability(&self) -> bool {
+        self.boundary()
+            .host_path_observation_implies_proofpack_availability
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+
+    pub fn host_path_is_proof_authority(&self) -> bool {
+        self.boundary().host_path_is_proof_authority
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn storage_root_ref_is_authority(&self) -> bool {
+        self.boundary().storage_root_ref_is_authority
+    }
+
+    pub fn uses_current_working_directory_as_authority(&self) -> bool {
+        self.boundary().uses_current_working_directory_as_authority
+    }
+
+    pub fn uses_global_config_as_authority(&self) -> bool {
+        self.boundary().uses_global_config_as_authority
+    }
+
+    pub fn uses_ide_state_as_authority(&self) -> bool {
+        self.boundary().uses_ide_state_as_authority
+    }
+
+    pub fn uses_executor_memory_as_authority(&self) -> bool {
+        self.boundary().uses_executor_memory_as_authority
+    }
+
+    pub fn uses_indexes_or_latest_as_authority(&self) -> bool {
+        self.boundary().uses_indexes_or_latest_as_authority
+    }
+
+    pub fn uses_service_mirror_as_authority(&self) -> bool {
+        self.boundary().uses_service_mirror_as_authority
+    }
+}
+
+fn writer_host_path_resolution_blockers(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    policy_refs: &ProofpackWriterHostPathPolicyRefs,
+    host_path_kind: ProofpackWriterHostPathKind,
+    host_path_ref: Option<&ProofpackWriterDiagnosticPathRef>,
+    host_path_redacted: bool,
+    observation_blockers: &[ProofpackWriterHostPathBlocker],
+) -> Vec<ProofpackWriterHostPathBlocker> {
+    let mut blockers = Vec::new();
+
+    if preflight.storage_root_ref().is_none() {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::StorageRootRefMissing,
+        );
+    }
+
+    if preflight.target_path_ref().is_none() {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::TargetPathRefMissing,
+        );
+    }
+
+    match preflight.target_artifact_ref() {
+        Some(target_ref) if !target_ref.is_aligned_target_artifact_ref() => {
+            writer_push_unique_host_path_blocker(
+                &mut blockers,
+                ProofpackWriterHostPathBlocker::PathEncodingRejected,
+            );
+        }
+        Some(_) => {}
+        None => writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::LogicalTargetArtifactRefMissing,
+        ),
+    }
+
+    if !policy_refs.has_path_encoding_policy() {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::PathEncodingMissing,
+        );
+    }
+
+    if !policy_refs.all_required_selected() {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::PolicyNotSelected,
+        );
+    }
+
+    if preflight.target_path_policy_status()
+        == Some(ProofpackWriterTargetPathPolicyStatus::Rejected)
+    {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::TargetPathRefInvalid,
+        );
+    }
+
+    if let Some(target_path_ref) = preflight.target_path_ref() {
+        for reason in writer_target_path_policy_reasons(target_path_ref.as_str()) {
+            match reason {
+                ProofpackWriterTargetPathPolicyReason::PathTraversal => {
+                    writer_push_unique_host_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterHostPathBlocker::TraversalDetected,
+                    );
+                    writer_push_unique_host_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterHostPathBlocker::TargetPathRefInvalid,
+                    );
+                }
+                ProofpackWriterTargetPathPolicyReason::StorageRootEscape => {
+                    writer_push_unique_host_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterHostPathBlocker::StorageRootEscapeDetected,
+                    );
+                }
+                ProofpackWriterTargetPathPolicyReason::AbsolutePath
+                | ProofpackWriterTargetPathPolicyReason::HomeRelativePath
+                | ProofpackWriterTargetPathPolicyReason::UrlRef
+                | ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment
+                | ProofpackWriterTargetPathPolicyReason::EmptySegment
+                | ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash => {
+                    writer_push_unique_host_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterHostPathBlocker::TargetPathRefInvalid,
+                    );
+                }
+            }
+        }
+    }
+
+    if host_path_kind == ProofpackWriterHostPathKind::Unavailable
+        && observation_blockers.is_empty()
+        && preflight.is_writer_ready()
+    {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::HostPathAmbiguous,
+        );
+    }
+
+    if host_path_kind.is_available() && host_path_ref.is_none() && !host_path_redacted {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::HostPathAmbiguous,
+        );
+    }
+
+    if host_path_kind.is_sensitive() && !host_path_redacted {
+        writer_push_unique_host_path_blocker(
+            &mut blockers,
+            ProofpackWriterHostPathBlocker::HostPathRedactionRequired,
+        );
+    }
+
+    for blocker in observation_blockers {
+        writer_push_unique_host_path_blocker(&mut blockers, *blocker);
+    }
+
+    blockers
+}
+
+fn writer_push_unique_host_path_blocker(
+    blockers: &mut Vec<ProofpackWriterHostPathBlocker>,
+    blocker: ProofpackWriterHostPathBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn writer_host_path_resolution_boundary_notes(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    let mut notes = preflight.boundary_notes().to_vec();
+    notes.extend(boundary_notes);
+
+    if notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer host path resolution model is evidence-only; missing boundary notes do not authorize filesystem side effects.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterHostPathResolutionModelBoundary {
+    pub models_host_path_resolution: bool,
+    pub requires_explicit_storage_root_ref: bool,
+    pub requires_explicit_target_path_ref: bool,
+    pub requires_explicit_logical_target_artifact_ref: bool,
+    pub requires_selected_policy_refs: bool,
+    pub keeps_storage_root_target_artifact_path_and_observation_separate: bool,
+    pub blockers_fail_closed: bool,
+    pub host_path_observations_are_operational_evidence: bool,
+    pub host_path_observation_implies_proofpack_availability: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_punk_proofs: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub uses_current_working_directory_as_authority: bool,
+    pub uses_global_config_as_authority: bool,
+    pub uses_ide_state_as_authority: bool,
+    pub uses_executor_memory_as_authority: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub uses_service_mirror_as_authority: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+    pub host_path_is_proof_authority: bool,
+    pub target_path_is_authority: bool,
+    pub storage_root_ref_is_authority: bool,
+}
+
+pub const fn proofpack_writer_host_path_resolution_model_boundary(
+) -> ProofpackWriterHostPathResolutionModelBoundary {
+    ProofpackWriterHostPathResolutionModelBoundary {
+        models_host_path_resolution: true,
+        requires_explicit_storage_root_ref: true,
+        requires_explicit_target_path_ref: true,
+        requires_explicit_logical_target_artifact_ref: true,
+        requires_selected_policy_refs: true,
+        keeps_storage_root_target_artifact_path_and_observation_separate: true,
+        blockers_fail_closed: true,
+        host_path_observations_are_operational_evidence: true,
+        host_path_observation_implies_proofpack_availability: false,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_punk_proofs: false,
+        writes_writer_operation_evidence: false,
+        persists_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        uses_current_working_directory_as_authority: false,
+        uses_global_config_as_authority: false,
+        uses_ide_state_as_authority: false,
+        uses_executor_memory_as_authority: false,
+        uses_indexes_or_latest_as_authority: false,
+        uses_service_mirror_as_authority: false,
+        evidence_only: true,
+        setup_neutral: true,
+        host_path_is_proof_authority: false,
+        target_path_is_authority: false,
+        storage_root_ref_is_authority: false,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterConcretePathStoragePolicyStatus {
+    Ready,
+    Blocked,
+    NotSelected,
+}
+
+impl ProofpackWriterConcretePathStoragePolicyStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Blocked => "blocked",
+            Self::NotSelected => "not_selected",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterConcretePathStoragePolicyBlocker {
+    PreflightNotReady,
+    StorageRootPolicyMissing,
+    StorageRootRefMissing,
+    StorageRootRefDisallowed,
+    LogicalTargetArtifactPolicyMissing,
+    LogicalTargetArtifactRefMissing,
+    LogicalTargetArtifactRefRejected,
+    TargetPathDerivationPolicyMissing,
+    TargetPathRefMissing,
+    RejectedTargetPathPolicy,
+    PathEncodingPolicyMissing,
+    PathEncodingRejected,
+    ParentDirectoryPolicyMissing,
+    ParentDirectoryMissing,
+    ParentDirectoryNotDirectory,
+    SymlinkPolicyMissing,
+    SymlinkDisallowed,
+    CanonicalizationPolicyMissing,
+    CanonicalizationUnavailable,
+    TraversalPolicyMissing,
+    TraversalDetected,
+    StorageRootEscapePolicyMissing,
+    StorageRootEscapeDetected,
+    RedactionPolicyMissing,
+    HostPathObservationRequired,
+    HostPathBlocked,
+    HostPathAmbiguous,
+    HostPathRedactionRequired,
+    HostPathObservationMismatch,
+    IdempotencyConflictPolicyMissing,
+    TempAtomicPolicyMissing,
+    IndexLatestPolicyMissing,
+    RefsNotSeparated,
+}
+
+impl ProofpackWriterConcretePathStoragePolicyBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PreflightNotReady => "preflight_not_ready",
+            Self::StorageRootPolicyMissing => "storage_root_policy_missing",
+            Self::StorageRootRefMissing => "storage_root_ref_missing",
+            Self::StorageRootRefDisallowed => "storage_root_ref_disallowed",
+            Self::LogicalTargetArtifactPolicyMissing => "logical_target_artifact_policy_missing",
+            Self::LogicalTargetArtifactRefMissing => "logical_target_artifact_ref_missing",
+            Self::LogicalTargetArtifactRefRejected => "logical_target_artifact_ref_rejected",
+            Self::TargetPathDerivationPolicyMissing => "target_path_derivation_policy_missing",
+            Self::TargetPathRefMissing => "target_path_ref_missing",
+            Self::RejectedTargetPathPolicy => "rejected_target_path_policy",
+            Self::PathEncodingPolicyMissing => "path_encoding_policy_missing",
+            Self::PathEncodingRejected => "path_encoding_rejected",
+            Self::ParentDirectoryPolicyMissing => "parent_directory_policy_missing",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ParentDirectoryNotDirectory => "parent_directory_not_directory",
+            Self::SymlinkPolicyMissing => "symlink_policy_missing",
+            Self::SymlinkDisallowed => "symlink_disallowed",
+            Self::CanonicalizationPolicyMissing => "canonicalization_policy_missing",
+            Self::CanonicalizationUnavailable => "canonicalization_unavailable",
+            Self::TraversalPolicyMissing => "traversal_policy_missing",
+            Self::TraversalDetected => "traversal_detected",
+            Self::StorageRootEscapePolicyMissing => "storage_root_escape_policy_missing",
+            Self::StorageRootEscapeDetected => "storage_root_escape_detected",
+            Self::RedactionPolicyMissing => "redaction_policy_missing",
+            Self::HostPathObservationRequired => "host_path_observation_required",
+            Self::HostPathBlocked => "host_path_blocked",
+            Self::HostPathAmbiguous => "host_path_ambiguous",
+            Self::HostPathRedactionRequired => "host_path_redaction_required",
+            Self::HostPathObservationMismatch => "host_path_observation_mismatch",
+            Self::IdempotencyConflictPolicyMissing => "idempotency_conflict_policy_missing",
+            Self::TempAtomicPolicyMissing => "temp_atomic_policy_missing",
+            Self::IndexLatestPolicyMissing => "index_latest_policy_missing",
+            Self::RefsNotSeparated => "refs_not_separated",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterConcretePathStoragePolicyRefs {
+    storage_root_selection: Option<ProofpackWriterHostPathPolicyRef>,
+    logical_target_artifact: Option<ProofpackWriterHostPathPolicyRef>,
+    target_path_derivation: Option<ProofpackWriterHostPathPolicyRef>,
+    path_encoding: Option<ProofpackWriterHostPathPolicyRef>,
+    parent_directory: Option<ProofpackWriterHostPathPolicyRef>,
+    symlink: Option<ProofpackWriterHostPathPolicyRef>,
+    canonicalization: Option<ProofpackWriterHostPathPolicyRef>,
+    traversal: Option<ProofpackWriterHostPathPolicyRef>,
+    storage_root_escape: Option<ProofpackWriterHostPathPolicyRef>,
+    redaction: Option<ProofpackWriterHostPathPolicyRef>,
+    idempotency_conflict: Option<ProofpackWriterHostPathPolicyRef>,
+    temp_atomic: Option<ProofpackWriterHostPathPolicyRef>,
+    index_latest_non_authority: Option<ProofpackWriterHostPathPolicyRef>,
+}
+
+impl ProofpackWriterConcretePathStoragePolicyRefs {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        storage_root_selection: Option<ProofpackWriterHostPathPolicyRef>,
+        logical_target_artifact: Option<ProofpackWriterHostPathPolicyRef>,
+        target_path_derivation: Option<ProofpackWriterHostPathPolicyRef>,
+        path_encoding: Option<ProofpackWriterHostPathPolicyRef>,
+        parent_directory: Option<ProofpackWriterHostPathPolicyRef>,
+        symlink: Option<ProofpackWriterHostPathPolicyRef>,
+        canonicalization: Option<ProofpackWriterHostPathPolicyRef>,
+        traversal: Option<ProofpackWriterHostPathPolicyRef>,
+        storage_root_escape: Option<ProofpackWriterHostPathPolicyRef>,
+        redaction: Option<ProofpackWriterHostPathPolicyRef>,
+        idempotency_conflict: Option<ProofpackWriterHostPathPolicyRef>,
+        temp_atomic: Option<ProofpackWriterHostPathPolicyRef>,
+        index_latest_non_authority: Option<ProofpackWriterHostPathPolicyRef>,
+    ) -> Self {
+        Self {
+            storage_root_selection,
+            logical_target_artifact,
+            target_path_derivation,
+            path_encoding,
+            parent_directory,
+            symlink,
+            canonicalization,
+            traversal,
+            storage_root_escape,
+            redaction,
+            idempotency_conflict,
+            temp_atomic,
+            index_latest_non_authority,
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn all_selected(
+        storage_root_selection: ProofpackWriterHostPathPolicyRef,
+        logical_target_artifact: ProofpackWriterHostPathPolicyRef,
+        target_path_derivation: ProofpackWriterHostPathPolicyRef,
+        path_encoding: ProofpackWriterHostPathPolicyRef,
+        parent_directory: ProofpackWriterHostPathPolicyRef,
+        symlink: ProofpackWriterHostPathPolicyRef,
+        canonicalization: ProofpackWriterHostPathPolicyRef,
+        traversal: ProofpackWriterHostPathPolicyRef,
+        storage_root_escape: ProofpackWriterHostPathPolicyRef,
+        redaction: ProofpackWriterHostPathPolicyRef,
+        idempotency_conflict: ProofpackWriterHostPathPolicyRef,
+        temp_atomic: ProofpackWriterHostPathPolicyRef,
+        index_latest_non_authority: ProofpackWriterHostPathPolicyRef,
+    ) -> Self {
+        Self::new(
+            Some(storage_root_selection),
+            Some(logical_target_artifact),
+            Some(target_path_derivation),
+            Some(path_encoding),
+            Some(parent_directory),
+            Some(symlink),
+            Some(canonicalization),
+            Some(traversal),
+            Some(storage_root_escape),
+            Some(redaction),
+            Some(idempotency_conflict),
+            Some(temp_atomic),
+            Some(index_latest_non_authority),
+        )
+    }
+
+    pub fn storage_root_selection(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.storage_root_selection.as_ref()
+    }
+
+    pub fn logical_target_artifact(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.logical_target_artifact.as_ref()
+    }
+
+    pub fn target_path_derivation(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.target_path_derivation.as_ref()
+    }
+
+    pub fn path_encoding(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.path_encoding.as_ref()
+    }
+
+    pub fn parent_directory(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.parent_directory.as_ref()
+    }
+
+    pub fn symlink(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.symlink.as_ref()
+    }
+
+    pub fn canonicalization(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.canonicalization.as_ref()
+    }
+
+    pub fn traversal(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.traversal.as_ref()
+    }
+
+    pub fn storage_root_escape(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.storage_root_escape.as_ref()
+    }
+
+    pub fn redaction(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.redaction.as_ref()
+    }
+
+    pub fn idempotency_conflict(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.idempotency_conflict.as_ref()
+    }
+
+    pub fn temp_atomic(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.temp_atomic.as_ref()
+    }
+
+    pub fn index_latest_non_authority(&self) -> Option<&ProofpackWriterHostPathPolicyRef> {
+        self.index_latest_non_authority.as_ref()
+    }
+
+    pub fn has_storage_root_selection_policy(&self) -> bool {
+        self.storage_root_selection.is_some()
+    }
+
+    pub fn has_logical_target_artifact_policy(&self) -> bool {
+        self.logical_target_artifact.is_some()
+    }
+
+    pub fn has_target_path_derivation_policy(&self) -> bool {
+        self.target_path_derivation.is_some()
+    }
+
+    pub fn has_path_encoding_policy(&self) -> bool {
+        self.path_encoding.is_some()
+    }
+
+    pub fn has_parent_directory_policy(&self) -> bool {
+        self.parent_directory.is_some()
+    }
+
+    pub fn has_symlink_policy(&self) -> bool {
+        self.symlink.is_some()
+    }
+
+    pub fn has_canonicalization_policy(&self) -> bool {
+        self.canonicalization.is_some()
+    }
+
+    pub fn has_traversal_policy(&self) -> bool {
+        self.traversal.is_some()
+    }
+
+    pub fn has_storage_root_escape_policy(&self) -> bool {
+        self.storage_root_escape.is_some()
+    }
+
+    pub fn has_redaction_policy(&self) -> bool {
+        self.redaction.is_some()
+    }
+
+    pub fn has_idempotency_conflict_policy(&self) -> bool {
+        self.idempotency_conflict.is_some()
+    }
+
+    pub fn has_temp_atomic_policy(&self) -> bool {
+        self.temp_atomic.is_some()
+    }
+
+    pub fn has_index_latest_non_authority_policy(&self) -> bool {
+        self.index_latest_non_authority.is_some()
+    }
+
+    pub fn all_required_selected(
+        &self,
+        planned_side_effects: &[ProofpackWriterPlannedSideEffect],
+    ) -> bool {
+        self.has_storage_root_selection_policy()
+            && self.has_logical_target_artifact_policy()
+            && self.has_target_path_derivation_policy()
+            && self.has_path_encoding_policy()
+            && self.has_parent_directory_policy()
+            && self.has_symlink_policy()
+            && self.has_canonicalization_policy()
+            && self.has_traversal_policy()
+            && self.has_storage_root_escape_policy()
+            && self.has_redaction_policy()
+            && self.has_idempotency_conflict_policy()
+            && self.has_temp_atomic_policy()
+            && (!writer_concrete_path_index_latest_policy_required(planned_side_effects)
+                || self.has_index_latest_non_authority_policy())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterConcretePathStoragePolicyModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    preflight_status: ProofpackWriterPreflightIntegrationStatus,
+    host_path_status: Option<ProofpackWriterHostPathObservationStatus>,
+    manifest_self_digest: Option<ArtifactDigest>,
+    storage_root_ref: Option<ProofpackWriterStorageRootRef>,
+    logical_target_artifact_ref: Option<ProofpackWriterTargetRef>,
+    target_path_ref: Option<ProofpackWriterTargetPathRef>,
+    host_path_kind: Option<ProofpackWriterHostPathKind>,
+    host_path_ref: Option<ProofpackWriterDiagnosticPathRef>,
+    host_path_redacted: Option<bool>,
+    policy_refs: ProofpackWriterConcretePathStoragePolicyRefs,
+    status: ProofpackWriterConcretePathStoragePolicyStatus,
+    blockers: Vec<ProofpackWriterConcretePathStoragePolicyBlocker>,
+    diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterConcretePathStoragePolicyModel {
+    pub fn evaluate(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        host_path_resolution: Option<&ProofpackWriterHostPathResolutionModel>,
+        policy_refs: ProofpackWriterConcretePathStoragePolicyRefs,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let mut blockers = if preflight.is_not_selected() {
+            Vec::new()
+        } else {
+            writer_concrete_path_storage_policy_blockers(
+                preflight,
+                host_path_resolution,
+                &policy_refs,
+            )
+        };
+
+        let status = if preflight.is_not_selected() {
+            ProofpackWriterConcretePathStoragePolicyStatus::NotSelected
+        } else if blockers.is_empty() {
+            ProofpackWriterConcretePathStoragePolicyStatus::Ready
+        } else {
+            ProofpackWriterConcretePathStoragePolicyStatus::Blocked
+        };
+
+        if status == ProofpackWriterConcretePathStoragePolicyStatus::NotSelected {
+            blockers.clear();
+        }
+
+        let diagnostics =
+            writer_concrete_path_storage_policy_diagnostics(preflight, host_path_resolution);
+
+        Self {
+            proofpack_id: preflight.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_CONCRETE_PATH_STORAGE_POLICY_MODEL_SCHEMA_VERSION,
+            preflight_status: preflight.status(),
+            host_path_status: host_path_resolution
+                .map(ProofpackWriterHostPathResolutionModel::status),
+            manifest_self_digest: preflight.manifest_self_digest().cloned(),
+            storage_root_ref: preflight.storage_root_ref().cloned(),
+            logical_target_artifact_ref: preflight.target_artifact_ref().cloned(),
+            target_path_ref: preflight.target_path_ref().cloned(),
+            host_path_kind: host_path_resolution
+                .map(ProofpackWriterHostPathResolutionModel::host_path_kind),
+            host_path_ref: host_path_resolution.and_then(|model| model.host_path_ref().cloned()),
+            host_path_redacted: host_path_resolution
+                .map(ProofpackWriterHostPathResolutionModel::host_path_redacted),
+            policy_refs,
+            status,
+            blockers,
+            diagnostics,
+            boundary_notes: writer_concrete_path_storage_policy_boundary_notes(
+                preflight,
+                host_path_resolution,
+                boundary_notes,
+            ),
+        }
+    }
+
+    pub fn not_selected(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::evaluate(
+            preflight,
+            None,
+            ProofpackWriterConcretePathStoragePolicyRefs::new(
+                None, None, None, None, None, None, None, None, None, None, None, None, None,
+            ),
+            boundary_notes,
+        )
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn preflight_status(&self) -> ProofpackWriterPreflightIntegrationStatus {
+        self.preflight_status
+    }
+
+    pub fn host_path_status(&self) -> Option<ProofpackWriterHostPathObservationStatus> {
+        self.host_path_status
+    }
+
+    pub fn manifest_self_digest(&self) -> Option<&ArtifactDigest> {
+        self.manifest_self_digest.as_ref()
+    }
+
+    pub fn storage_root_ref(&self) -> Option<&ProofpackWriterStorageRootRef> {
+        self.storage_root_ref.as_ref()
+    }
+
+    pub fn logical_target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.logical_target_artifact_ref.as_ref()
+    }
+
+    pub fn target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.logical_target_artifact_ref()
+    }
+
+    pub fn target_path_ref(&self) -> Option<&ProofpackWriterTargetPathRef> {
+        self.target_path_ref.as_ref()
+    }
+
+    pub fn host_path_kind(&self) -> Option<ProofpackWriterHostPathKind> {
+        self.host_path_kind
+    }
+
+    pub fn host_path_ref(&self) -> Option<&ProofpackWriterDiagnosticPathRef> {
+        self.host_path_ref.as_ref()
+    }
+
+    pub fn host_path_redacted(&self) -> Option<bool> {
+        self.host_path_redacted
+    }
+
+    pub fn policy_refs(&self) -> &ProofpackWriterConcretePathStoragePolicyRefs {
+        &self.policy_refs
+    }
+
+    pub fn status(&self) -> ProofpackWriterConcretePathStoragePolicyStatus {
+        self.status
+    }
+
+    pub fn blockers(&self) -> &[ProofpackWriterConcretePathStoragePolicyBlocker] {
+        &self.blockers
+    }
+
+    pub fn diagnostics(&self) -> &[ProofpackWriterFileIoDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn is_ready(&self) -> bool {
+        self.status == ProofpackWriterConcretePathStoragePolicyStatus::Ready
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status == ProofpackWriterConcretePathStoragePolicyStatus::Blocked
+    }
+
+    pub fn is_not_selected(&self) -> bool {
+        self.status == ProofpackWriterConcretePathStoragePolicyStatus::NotSelected
+    }
+
+    pub fn has_blocker(&self, blocker: ProofpackWriterConcretePathStoragePolicyBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn refs_are_separated(&self) -> bool {
+        writer_preflight_integration_refs_are_separated(
+            self.storage_root_ref.as_ref(),
+            self.logical_target_artifact_ref.as_ref(),
+            self.target_path_ref.as_ref(),
+        )
+    }
+
+    pub fn operation_outcome(&self) -> ProofpackWriterOperationOutcome {
+        if self.is_blocked() {
+            ProofpackWriterOperationOutcome::PreflightFailed
+        } else {
+            ProofpackWriterOperationOutcome::PlannedOnly
+        }
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterConcretePathStoragePolicyModelBoundary {
+        proofpack_writer_concrete_path_storage_policy_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn inspects_filesystem(&self) -> bool {
+        self.boundary().inspects_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn canonicalizes_host_paths(&self) -> bool {
+        self.boundary().canonicalizes_host_paths
+    }
+
+    pub fn normalizes_host_paths(&self) -> bool {
+        self.boundary().normalizes_host_paths
+    }
+
+    pub fn activates_writer(&self) -> bool {
+        self.boundary().activates_writer
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_punk_proofs(&self) -> bool {
+        self.boundary().writes_punk_proofs
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary().persists_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn writes_final_decision(&self) -> bool {
+        self.boundary().writes_final_decision
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn exposes_cli_behavior(&self) -> bool {
+        self.boundary().exposes_cli_behavior
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn invokes_adapter(&self) -> bool {
+        self.boundary().invokes_adapter
+    }
+
+    pub fn invokes_automation(&self) -> bool {
+        self.boundary().invokes_automation
+    }
+
+    pub fn invokes_provider_or_model_runner(&self) -> bool {
+        self.boundary().invokes_provider_or_model_runner
+    }
+
+    pub fn compiles_context(&self) -> bool {
+        self.boundary().compiles_context
+    }
+
+    pub fn implements_knowledge_vault(&self) -> bool {
+        self.boundary().implements_knowledge_vault
+    }
+
+    pub fn implements_compiled_wiki(&self) -> bool {
+        self.boundary().implements_compiled_wiki
+    }
+
+    pub fn implements_punk_init(&self) -> bool {
+        self.boundary().implements_punk_init
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+
+    pub fn policy_refs_are_proof_authority(&self) -> bool {
+        self.boundary().policy_refs_are_proof_authority
+    }
+
+    pub fn host_path_is_proof_authority(&self) -> bool {
+        self.boundary().host_path_is_proof_authority
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn storage_root_ref_is_authority(&self) -> bool {
+        self.boundary().storage_root_ref_is_authority
+    }
+
+    pub fn uses_current_working_directory_as_authority(&self) -> bool {
+        self.boundary().uses_current_working_directory_as_authority
+    }
+
+    pub fn uses_global_config_as_authority(&self) -> bool {
+        self.boundary().uses_global_config_as_authority
+    }
+
+    pub fn uses_ide_state_as_authority(&self) -> bool {
+        self.boundary().uses_ide_state_as_authority
+    }
+
+    pub fn uses_executor_memory_as_authority(&self) -> bool {
+        self.boundary().uses_executor_memory_as_authority
+    }
+
+    pub fn uses_indexes_or_latest_as_authority(&self) -> bool {
+        self.boundary().uses_indexes_or_latest_as_authority
+    }
+
+    pub fn uses_service_mirror_as_authority(&self) -> bool {
+        self.boundary().uses_service_mirror_as_authority
+    }
+}
+
+fn writer_concrete_path_storage_policy_blockers(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    host_path_resolution: Option<&ProofpackWriterHostPathResolutionModel>,
+    policy_refs: &ProofpackWriterConcretePathStoragePolicyRefs,
+) -> Vec<ProofpackWriterConcretePathStoragePolicyBlocker> {
+    let mut blockers = Vec::new();
+
+    if !preflight.is_writer_ready() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::PreflightNotReady,
+        );
+    }
+
+    if preflight.storage_root_ref().is_none() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootRefMissing,
+        );
+    }
+
+    match preflight.target_artifact_ref() {
+        Some(target_ref) if !target_ref.is_aligned_target_artifact_ref() => {
+            writer_push_unique_concrete_path_blocker(
+                &mut blockers,
+                ProofpackWriterConcretePathStoragePolicyBlocker::LogicalTargetArtifactRefRejected,
+            );
+        }
+        Some(_) => {}
+        None => writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::LogicalTargetArtifactRefMissing,
+        ),
+    }
+
+    if preflight.target_path_ref().is_none() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::TargetPathRefMissing,
+        );
+    }
+
+    if preflight.target_path_policy_status()
+        == Some(ProofpackWriterTargetPathPolicyStatus::Rejected)
+    {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::RejectedTargetPathPolicy,
+        );
+    }
+
+    if !preflight.refs_are_separated() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::RefsNotSeparated,
+        );
+    }
+
+    if !policy_refs.has_storage_root_selection_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_logical_target_artifact_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::LogicalTargetArtifactPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_target_path_derivation_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::TargetPathDerivationPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_path_encoding_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_parent_directory_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::ParentDirectoryPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_symlink_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::SymlinkPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_canonicalization_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::CanonicalizationPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_traversal_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::TraversalPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_storage_root_escape_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootEscapePolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_redaction_policy() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::RedactionPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_idempotency_conflict_policy()
+        || preflight.write_policy().is_none()
+        || preflight.idempotency_basis().is_none()
+    {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::IdempotencyConflictPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_temp_atomic_policy() || preflight.temp_atomic_policy().is_none() {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::TempAtomicPolicyMissing,
+        );
+    }
+
+    if writer_concrete_path_index_latest_policy_required(preflight.planned_side_effects())
+        && !policy_refs.has_index_latest_non_authority_policy()
+    {
+        writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::IndexLatestPolicyMissing,
+        );
+    }
+
+    if let Some(target_path_ref) = preflight.target_path_ref() {
+        for reason in writer_target_path_policy_reasons(target_path_ref.as_str()) {
+            match reason {
+                ProofpackWriterTargetPathPolicyReason::PathTraversal => {
+                    writer_push_unique_concrete_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterConcretePathStoragePolicyBlocker::TraversalDetected,
+                    );
+                    writer_push_unique_concrete_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingRejected,
+                    );
+                }
+                ProofpackWriterTargetPathPolicyReason::StorageRootEscape => {
+                    writer_push_unique_concrete_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootEscapeDetected,
+                    );
+                }
+                ProofpackWriterTargetPathPolicyReason::AbsolutePath
+                | ProofpackWriterTargetPathPolicyReason::HomeRelativePath
+                | ProofpackWriterTargetPathPolicyReason::UrlRef
+                | ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment
+                | ProofpackWriterTargetPathPolicyReason::EmptySegment
+                | ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash => {
+                    writer_push_unique_concrete_path_blocker(
+                        &mut blockers,
+                        ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingRejected,
+                    );
+                }
+            }
+        }
+    }
+
+    match host_path_resolution {
+        Some(model) if model.is_observed() => {
+            if model.storage_root_ref() != preflight.storage_root_ref()
+                || model.logical_target_artifact_ref() != preflight.target_artifact_ref()
+                || model.target_path_ref() != preflight.target_path_ref()
+            {
+                writer_push_unique_concrete_path_blocker(
+                    &mut blockers,
+                    ProofpackWriterConcretePathStoragePolicyBlocker::HostPathObservationMismatch,
+                );
+            }
+        }
+        Some(model) if model.is_blocked() => {
+            writer_push_unique_concrete_path_blocker(
+                &mut blockers,
+                ProofpackWriterConcretePathStoragePolicyBlocker::HostPathBlocked,
+            );
+            for blocker in model.blockers() {
+                writer_push_unique_concrete_path_blocker(
+                    &mut blockers,
+                    writer_concrete_path_blocker_from_host_path_blocker(*blocker),
+                );
+            }
+        }
+        Some(_) => writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathObservationRequired,
+        ),
+        None => writer_push_unique_concrete_path_blocker(
+            &mut blockers,
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathObservationRequired,
+        ),
+    }
+
+    blockers
+}
+
+fn writer_concrete_path_index_latest_policy_required(
+    planned_side_effects: &[ProofpackWriterPlannedSideEffect],
+) -> bool {
+    planned_side_effects.contains(&ProofpackWriterPlannedSideEffect::IndexUpdate)
+        || planned_side_effects.contains(&ProofpackWriterPlannedSideEffect::LatestPointerUpdate)
+}
+
+fn writer_concrete_path_blocker_from_host_path_blocker(
+    blocker: ProofpackWriterHostPathBlocker,
+) -> ProofpackWriterConcretePathStoragePolicyBlocker {
+    match blocker {
+        ProofpackWriterHostPathBlocker::StorageRootRefMissing => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootRefMissing
+        }
+        ProofpackWriterHostPathBlocker::StorageRootRefDisallowed => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootRefDisallowed
+        }
+        ProofpackWriterHostPathBlocker::TargetPathRefMissing => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::TargetPathRefMissing
+        }
+        ProofpackWriterHostPathBlocker::TargetPathRefInvalid => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingRejected
+        }
+        ProofpackWriterHostPathBlocker::LogicalTargetArtifactRefMissing => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::LogicalTargetArtifactRefMissing
+        }
+        ProofpackWriterHostPathBlocker::PathEncodingMissing => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingPolicyMissing
+        }
+        ProofpackWriterHostPathBlocker::PathEncodingRejected => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingRejected
+        }
+        ProofpackWriterHostPathBlocker::ParentDirectoryMissing => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::ParentDirectoryMissing
+        }
+        ProofpackWriterHostPathBlocker::ParentDirectoryNotDirectory => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::ParentDirectoryNotDirectory
+        }
+        ProofpackWriterHostPathBlocker::SymlinkDisallowed => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::SymlinkDisallowed
+        }
+        ProofpackWriterHostPathBlocker::CanonicalizationUnavailable => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::CanonicalizationUnavailable
+        }
+        ProofpackWriterHostPathBlocker::TraversalDetected => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::TraversalDetected
+        }
+        ProofpackWriterHostPathBlocker::StorageRootEscapeDetected => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootEscapeDetected
+        }
+        ProofpackWriterHostPathBlocker::HostPathAmbiguous => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathAmbiguous
+        }
+        ProofpackWriterHostPathBlocker::HostPathRedactionRequired => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathRedactionRequired
+        }
+        ProofpackWriterHostPathBlocker::PolicyNotSelected => {
+            ProofpackWriterConcretePathStoragePolicyBlocker::TargetPathDerivationPolicyMissing
+        }
+    }
+}
+
+fn writer_push_unique_concrete_path_blocker(
+    blockers: &mut Vec<ProofpackWriterConcretePathStoragePolicyBlocker>,
+    blocker: ProofpackWriterConcretePathStoragePolicyBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn writer_concrete_path_storage_policy_diagnostics(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    host_path_resolution: Option<&ProofpackWriterHostPathResolutionModel>,
+) -> Vec<ProofpackWriterFileIoDiagnostic> {
+    let mut diagnostics = preflight.diagnostics().to_vec();
+
+    if let Some(host_path_resolution) = host_path_resolution {
+        for diagnostic in host_path_resolution.diagnostics() {
+            if !diagnostics.contains(diagnostic) {
+                diagnostics.push(diagnostic.clone());
+            }
+        }
+    }
+
+    diagnostics
+}
+
+fn writer_concrete_path_storage_policy_boundary_notes(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    host_path_resolution: Option<&ProofpackWriterHostPathResolutionModel>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    let mut notes = preflight.boundary_notes().to_vec();
+
+    if let Some(host_path_resolution) = host_path_resolution {
+        notes.extend(host_path_resolution.boundary_notes().iter().cloned());
+    }
+
+    notes.extend(boundary_notes);
+
+    if notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer concrete path/storage policy model is evidence-only; missing boundary notes do not authorize filesystem or writer side effects.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterConcretePathStoragePolicyModelBoundary {
+    pub models_concrete_path_storage_policy: bool,
+    pub requires_explicit_storage_root_ref: bool,
+    pub requires_explicit_logical_target_artifact_ref: bool,
+    pub requires_explicit_target_path_ref: bool,
+    pub requires_selected_storage_and_path_policy_refs: bool,
+    pub keeps_storage_root_target_artifact_path_host_observation_policy_and_canonical_artifact_separate:
+        bool,
+    pub blockers_fail_closed: bool,
+    pub policy_refs_are_operational_evidence: bool,
+    pub host_path_observations_are_operational_evidence: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+    pub activates_writer: bool,
+    pub reads_filesystem: bool,
+    pub inspects_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub canonicalizes_host_paths: bool,
+    pub normalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_punk_proofs: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub exposes_cli_behavior: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub invokes_adapter: bool,
+    pub invokes_automation: bool,
+    pub invokes_provider_or_model_runner: bool,
+    pub compiles_context: bool,
+    pub implements_knowledge_vault: bool,
+    pub implements_compiled_wiki: bool,
+    pub implements_punk_init: bool,
+    pub policy_refs_are_proof_authority: bool,
+    pub host_path_is_proof_authority: bool,
+    pub target_path_is_authority: bool,
+    pub storage_root_ref_is_authority: bool,
+    pub uses_current_working_directory_as_authority: bool,
+    pub uses_global_config_as_authority: bool,
+    pub uses_ide_state_as_authority: bool,
+    pub uses_executor_memory_as_authority: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub uses_service_mirror_as_authority: bool,
+}
+
+pub const fn proofpack_writer_concrete_path_storage_policy_model_boundary(
+) -> ProofpackWriterConcretePathStoragePolicyModelBoundary {
+    ProofpackWriterConcretePathStoragePolicyModelBoundary {
+        models_concrete_path_storage_policy: true,
+        requires_explicit_storage_root_ref: true,
+        requires_explicit_logical_target_artifact_ref: true,
+        requires_explicit_target_path_ref: true,
+        requires_selected_storage_and_path_policy_refs: true,
+        keeps_storage_root_target_artifact_path_host_observation_policy_and_canonical_artifact_separate:
+            true,
+        blockers_fail_closed: true,
+        policy_refs_are_operational_evidence: true,
+        host_path_observations_are_operational_evidence: true,
+        evidence_only: true,
+        setup_neutral: true,
+        activates_writer: false,
+        reads_filesystem: false,
+        inspects_filesystem: false,
+        touches_filesystem: false,
+        canonicalizes_host_paths: false,
+        normalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_punk_proofs: false,
+        writes_writer_operation_evidence: false,
+        persists_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        exposes_cli_behavior: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        invokes_adapter: false,
+        invokes_automation: false,
+        invokes_provider_or_model_runner: false,
+        compiles_context: false,
+        implements_knowledge_vault: false,
+        implements_compiled_wiki: false,
+        implements_punk_init: false,
+        policy_refs_are_proof_authority: false,
+        host_path_is_proof_authority: false,
+        target_path_is_authority: false,
+        storage_root_ref_is_authority: false,
+        uses_current_working_directory_as_authority: false,
+        uses_global_config_as_authority: false,
+        uses_ide_state_as_authority: false,
+        uses_executor_memory_as_authority: false,
+        uses_indexes_or_latest_as_authority: false,
+        uses_service_mirror_as_authority: false,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterFirstActiveWriteSliceBlocker {
+    PreflightNotReady,
+    CanonicalArtifactWriteNotSelected,
+    ForbiddenSideEffectSelected,
+    ConcretePathStoragePolicyNotReady,
+    MissingCanonicalBytes,
+    CanonicalArtifactMismatch,
+    CanonicalArtifactDigestMismatch,
+    MissingStorageRootRef,
+    MissingTargetPathRef,
+    TargetPathMismatch,
+    StorageRootPathMissing,
+    StorageRootPathRelative,
+    StorageRootPathUnavailable,
+    StorageRootNotDirectory,
+    StorageRootSymlink,
+    TargetPathInvalid,
+    TargetPathTraversal,
+    TargetPathEscapesStorageRoot,
+    PunkRuntimePathForbidden,
+    ParentDirectoryMissing,
+    ParentDirectoryNotDirectory,
+    ParentDirectorySymlink,
+    TargetSymlink,
+    TargetUnreadableOrAmbiguous,
+    MissingIdempotencyPolicy,
+    MissingTempAtomicPolicy,
+    UnsupportedTempAtomicPolicy,
+    ExistingTargetDifferent,
+    WriteFailed,
+    ExactByteReadbackMismatch,
+}
+
+impl ProofpackWriterFirstActiveWriteSliceBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PreflightNotReady => "preflight_not_ready",
+            Self::CanonicalArtifactWriteNotSelected => "canonical_artifact_write_not_selected",
+            Self::ForbiddenSideEffectSelected => "forbidden_side_effect_selected",
+            Self::ConcretePathStoragePolicyNotReady => "concrete_path_storage_policy_not_ready",
+            Self::MissingCanonicalBytes => "missing_canonical_bytes",
+            Self::CanonicalArtifactMismatch => "canonical_artifact_mismatch",
+            Self::CanonicalArtifactDigestMismatch => "canonical_artifact_digest_mismatch",
+            Self::MissingStorageRootRef => "missing_storage_root_ref",
+            Self::MissingTargetPathRef => "missing_target_path_ref",
+            Self::TargetPathMismatch => "target_path_mismatch",
+            Self::StorageRootPathMissing => "storage_root_path_missing",
+            Self::StorageRootPathRelative => "storage_root_path_relative",
+            Self::StorageRootPathUnavailable => "storage_root_path_unavailable",
+            Self::StorageRootNotDirectory => "storage_root_not_directory",
+            Self::StorageRootSymlink => "storage_root_symlink",
+            Self::TargetPathInvalid => "target_path_invalid",
+            Self::TargetPathTraversal => "target_path_traversal",
+            Self::TargetPathEscapesStorageRoot => "target_path_escapes_storage_root",
+            Self::PunkRuntimePathForbidden => "punk_runtime_path_forbidden",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ParentDirectoryNotDirectory => "parent_directory_not_directory",
+            Self::ParentDirectorySymlink => "parent_directory_symlink",
+            Self::TargetSymlink => "target_symlink",
+            Self::TargetUnreadableOrAmbiguous => "target_unreadable_or_ambiguous",
+            Self::MissingIdempotencyPolicy => "missing_idempotency_policy",
+            Self::MissingTempAtomicPolicy => "missing_temp_atomic_policy",
+            Self::UnsupportedTempAtomicPolicy => "unsupported_temp_atomic_policy",
+            Self::ExistingTargetDifferent => "existing_target_different",
+            Self::WriteFailed => "write_failed",
+            Self::ExactByteReadbackMismatch => "exact_byte_readback_mismatch",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+
+    fn diagnostic_reason(self) -> Option<ProofpackWriterFileIoErrorReason> {
+        match self {
+            Self::MissingStorageRootRef
+            | Self::StorageRootPathMissing
+            | Self::StorageRootPathUnavailable => {
+                Some(ProofpackWriterFileIoErrorReason::StorageRootMissing)
+            }
+            Self::StorageRootPathRelative
+            | Self::StorageRootNotDirectory
+            | Self::StorageRootSymlink => {
+                Some(ProofpackWriterFileIoErrorReason::StorageRootDisallowed)
+            }
+            Self::MissingTargetPathRef
+            | Self::TargetPathMismatch
+            | Self::TargetPathInvalid
+            | Self::PunkRuntimePathForbidden
+            | Self::ParentDirectoryNotDirectory
+            | Self::ParentDirectorySymlink
+            | Self::TargetSymlink => Some(ProofpackWriterFileIoErrorReason::TargetPathInvalid),
+            Self::TargetPathTraversal | Self::TargetPathEscapesStorageRoot => {
+                Some(ProofpackWriterFileIoErrorReason::TargetPathEscapesStorageRoot)
+            }
+            Self::ParentDirectoryMissing => {
+                Some(ProofpackWriterFileIoErrorReason::ParentDirectoryMissing)
+            }
+            Self::TargetUnreadableOrAmbiguous | Self::ExactByteReadbackMismatch => {
+                Some(ProofpackWriterFileIoErrorReason::PartialCanonicalArtifactAmbiguous)
+            }
+            Self::UnsupportedTempAtomicPolicy => {
+                Some(ProofpackWriterFileIoErrorReason::AtomicMoveUnsupported)
+            }
+            Self::ExistingTargetDifferent => {
+                Some(ProofpackWriterFileIoErrorReason::ExistingTargetDifferent)
+            }
+            Self::WriteFailed => Some(ProofpackWriterFileIoErrorReason::TempWriteFailed),
+            Self::PreflightNotReady
+            | Self::CanonicalArtifactWriteNotSelected
+            | Self::ForbiddenSideEffectSelected
+            | Self::ConcretePathStoragePolicyNotReady
+            | Self::MissingCanonicalBytes
+            | Self::CanonicalArtifactMismatch
+            | Self::CanonicalArtifactDigestMismatch
+            | Self::MissingIdempotencyPolicy
+            | Self::MissingTempAtomicPolicy => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterFirstActiveWriteSliceResult {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    target_artifact_ref: Option<ProofpackWriterTargetRef>,
+    target_path_ref: Option<ProofpackWriterTargetPathRef>,
+    outcome: ProofpackWriterOperationOutcome,
+    canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+    index_status: ProofpackWriterSideEffectStatus,
+    latest_pointer_status: ProofpackWriterSideEffectStatus,
+    cleanup_status: ProofpackWriterSideEffectStatus,
+    blockers: Vec<ProofpackWriterFirstActiveWriteSliceBlocker>,
+    diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterFirstActiveWriteSliceResult {
+    fn new(
+        preflight: &ProofpackWriterPreflightIntegrationModel,
+        target_path_ref: Option<ProofpackWriterTargetPathRef>,
+        outcome: ProofpackWriterOperationOutcome,
+        canonical_artifact_status: ProofpackWriterCanonicalArtifactStatus,
+        cleanup_status: ProofpackWriterSideEffectStatus,
+        blockers: Vec<ProofpackWriterFirstActiveWriteSliceBlocker>,
+        mut diagnostics: Vec<ProofpackWriterFileIoDiagnostic>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        diagnostics.extend(writer_first_active_write_slice_diagnostics(
+            &blockers,
+            target_path_ref.as_ref(),
+        ));
+
+        Self {
+            proofpack_id: preflight.proofpack_id().clone(),
+            schema_version: PROOFPACK_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION,
+            target_artifact_ref: preflight.target_artifact_ref().cloned(),
+            target_path_ref,
+            outcome,
+            canonical_artifact_status,
+            index_status: ProofpackWriterSideEffectStatus::NotSelected,
+            latest_pointer_status: ProofpackWriterSideEffectStatus::NotSelected,
+            cleanup_status,
+            blockers,
+            diagnostics,
+            boundary_notes: writer_first_active_write_slice_boundary_notes(
+                preflight,
+                boundary_notes,
+            ),
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn target_artifact_ref(&self) -> Option<&ProofpackWriterTargetRef> {
+        self.target_artifact_ref.as_ref()
+    }
+
+    pub fn target_path_ref(&self) -> Option<&ProofpackWriterTargetPathRef> {
+        self.target_path_ref.as_ref()
+    }
+
+    pub fn outcome(&self) -> ProofpackWriterOperationOutcome {
+        self.outcome
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        writer_file_io_operation_kind(self.outcome)
+    }
+
+    pub fn canonical_artifact_status(&self) -> ProofpackWriterCanonicalArtifactStatus {
+        self.canonical_artifact_status
+    }
+
+    pub fn index_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.index_status
+    }
+
+    pub fn latest_pointer_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.latest_pointer_status
+    }
+
+    pub fn cleanup_status(&self) -> ProofpackWriterSideEffectStatus {
+        self.cleanup_status
+    }
+
+    pub fn blockers(&self) -> &[ProofpackWriterFirstActiveWriteSliceBlocker] {
+        &self.blockers
+    }
+
+    pub fn diagnostics(&self) -> &[ProofpackWriterFileIoDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn has_blocker(&self, blocker: ProofpackWriterFirstActiveWriteSliceBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn canonical_artifact_available(&self) -> bool {
+        self.canonical_artifact_status.is_available()
+    }
+
+    pub fn represents_new_canonical_artifact_write(&self) -> bool {
+        self.outcome == ProofpackWriterOperationOutcome::Written
+            && self.canonical_artifact_status == ProofpackWriterCanonicalArtifactStatus::Written
+    }
+
+    pub fn is_idempotent_existing_match(&self) -> bool {
+        self.outcome == ProofpackWriterOperationOutcome::AlreadyExistsMatching
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.outcome == ProofpackWriterOperationOutcome::ConflictExistingDifferent
+    }
+
+    pub fn has_partial_or_ambiguous_state(&self) -> bool {
+        self.outcome == ProofpackWriterOperationOutcome::PartialWriteDetected
+            || self.cleanup_status.is_failed()
+    }
+
+    pub fn to_operation_evidence(
+        &self,
+        operation_id: ProofpackWriterOperationId,
+        attempted_at: ProofpackWriterAttemptedAt,
+    ) -> Result<ProofpackWriterOperationEvidence, ProofpackError> {
+        let Some(target_ref) = self.target_artifact_ref.clone() else {
+            return Err(ProofpackError::EmptyWriterTargetRef);
+        };
+
+        ProofpackWriterOperationEvidence::new(
+            operation_id,
+            self.operation_kind(),
+            self.proofpack_id.clone(),
+            attempted_at,
+            target_ref,
+            self.outcome,
+            self.canonical_artifact_status,
+            self.index_status,
+            self.latest_pointer_status,
+            self.boundary_notes.clone(),
+        )
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterFirstActiveWriteSliceBoundary {
+        proofpack_writer_first_active_write_slice_boundary()
+    }
+
+    pub fn writes_exact_canonical_bytes(&self) -> bool {
+        self.boundary().writes_exact_canonical_bytes
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_punk_proofs(&self) -> bool {
+        self.boundary().writes_punk_proofs
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary().persists_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn exposes_cli_behavior(&self) -> bool {
+        self.boundary().exposes_cli_behavior
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn claims_platform_atomicity(&self) -> bool {
+        self.boundary().claims_platform_atomicity
+    }
+
+    pub fn claims_crash_durability(&self) -> bool {
+        self.boundary().claims_crash_durability
+    }
+
+    pub fn canonicalizes_host_paths(&self) -> bool {
+        self.boundary().canonicalizes_host_paths
+    }
+
+    pub fn normalizes_host_paths(&self) -> bool {
+        self.boundary().normalizes_host_paths
+    }
+
+    pub fn uses_current_working_directory_as_authority(&self) -> bool {
+        self.boundary().uses_current_working_directory_as_authority
+    }
+
+    pub fn uses_global_config_as_authority(&self) -> bool {
+        self.boundary().uses_global_config_as_authority
+    }
+
+    pub fn uses_ide_state_as_authority(&self) -> bool {
+        self.boundary().uses_ide_state_as_authority
+    }
+
+    pub fn uses_executor_memory_as_authority(&self) -> bool {
+        self.boundary().uses_executor_memory_as_authority
+    }
+
+    pub fn uses_indexes_or_latest_as_authority(&self) -> bool {
+        self.boundary().uses_indexes_or_latest_as_authority
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary().target_path_is_authority
+    }
+
+    pub fn storage_root_path_is_authority(&self) -> bool {
+        self.boundary().storage_root_path_is_authority
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+}
+
+pub fn proofpack_writer_write_first_active_slice(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    concrete_path_policy: &ProofpackWriterConcretePathStoragePolicyModel,
+    canonical_artifact: &ProofpackWriterCanonicalArtifactModel,
+    storage_root_path: impl AsRef<std::path::Path>,
+    target_relative_path: impl AsRef<std::path::Path>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> ProofpackWriterFirstActiveWriteSliceResult {
+    let storage_root_path = storage_root_path.as_ref();
+    let target_relative_path = target_relative_path.as_ref();
+    let mut blockers = writer_first_active_write_slice_precondition_blockers(
+        preflight,
+        concrete_path_policy,
+        canonical_artifact,
+        storage_root_path,
+        target_relative_path,
+    );
+    let mut diagnostics = concrete_path_policy.diagnostics().to_vec();
+    let target_path_ref = preflight.target_path_ref().cloned();
+
+    if !blockers.is_empty() {
+        return ProofpackWriterFirstActiveWriteSliceResult::new(
+            preflight,
+            target_path_ref,
+            ProofpackWriterOperationOutcome::PreflightFailed,
+            ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            blockers,
+            diagnostics,
+            boundary_notes,
+        );
+    }
+
+    let target_path = storage_root_path.join(target_relative_path);
+
+    match std::fs::symlink_metadata(&target_path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            blockers.push(ProofpackWriterFirstActiveWriteSliceBlocker::TargetSymlink);
+            return ProofpackWriterFirstActiveWriteSliceResult::new(
+                preflight,
+                target_path_ref,
+                ProofpackWriterOperationOutcome::PreflightFailed,
+                ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+                ProofpackWriterSideEffectStatus::NotAttempted,
+                blockers,
+                diagnostics,
+                boundary_notes,
+            );
+        }
+        Ok(_) => match std::fs::read(&target_path) {
+            Ok(existing_bytes) if existing_bytes == canonical_artifact.canonical_body_bytes() => {
+                return ProofpackWriterFirstActiveWriteSliceResult::new(
+                    preflight,
+                    target_path_ref,
+                    ProofpackWriterOperationOutcome::AlreadyExistsMatching,
+                    ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching,
+                    ProofpackWriterSideEffectStatus::NotAttempted,
+                    blockers,
+                    diagnostics,
+                    boundary_notes,
+                );
+            }
+            Ok(_) => {
+                blockers.push(ProofpackWriterFirstActiveWriteSliceBlocker::ExistingTargetDifferent);
+                return ProofpackWriterFirstActiveWriteSliceResult::new(
+                    preflight,
+                    target_path_ref,
+                    ProofpackWriterOperationOutcome::ConflictExistingDifferent,
+                    ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent,
+                    ProofpackWriterSideEffectStatus::NotAttempted,
+                    blockers,
+                    diagnostics,
+                    boundary_notes,
+                );
+            }
+            Err(_) => {
+                blockers
+                    .push(ProofpackWriterFirstActiveWriteSliceBlocker::TargetUnreadableOrAmbiguous);
+                return ProofpackWriterFirstActiveWriteSliceResult::new(
+                    preflight,
+                    target_path_ref,
+                    ProofpackWriterOperationOutcome::PreflightFailed,
+                    ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+                    ProofpackWriterSideEffectStatus::NotAttempted,
+                    blockers,
+                    diagnostics,
+                    boundary_notes,
+                );
+            }
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => {
+            blockers.push(ProofpackWriterFirstActiveWriteSliceBlocker::TargetUnreadableOrAmbiguous);
+            return ProofpackWriterFirstActiveWriteSliceResult::new(
+                preflight,
+                target_path_ref,
+                ProofpackWriterOperationOutcome::PreflightFailed,
+                ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+                ProofpackWriterSideEffectStatus::NotAttempted,
+                blockers,
+                diagnostics,
+                boundary_notes,
+            );
+        }
+    }
+
+    if let Err(error) = writer_first_active_write_exact_bytes(
+        &target_path,
+        canonical_artifact.canonical_body_bytes(),
+    ) {
+        if error.kind() == std::io::ErrorKind::AlreadyExists {
+            match std::fs::read(&target_path) {
+                Ok(existing_bytes)
+                    if existing_bytes == canonical_artifact.canonical_body_bytes() =>
+                {
+                    return ProofpackWriterFirstActiveWriteSliceResult::new(
+                        preflight,
+                        target_path_ref,
+                        ProofpackWriterOperationOutcome::AlreadyExistsMatching,
+                        ProofpackWriterCanonicalArtifactStatus::AlreadyExistsMatching,
+                        ProofpackWriterSideEffectStatus::NotAttempted,
+                        blockers,
+                        diagnostics,
+                        boundary_notes,
+                    );
+                }
+                Ok(_) => {
+                    blockers
+                        .push(ProofpackWriterFirstActiveWriteSliceBlocker::ExistingTargetDifferent);
+                    return ProofpackWriterFirstActiveWriteSliceResult::new(
+                        preflight,
+                        target_path_ref,
+                        ProofpackWriterOperationOutcome::ConflictExistingDifferent,
+                        ProofpackWriterCanonicalArtifactStatus::ConflictExistingDifferent,
+                        ProofpackWriterSideEffectStatus::NotAttempted,
+                        blockers,
+                        diagnostics,
+                        boundary_notes,
+                    );
+                }
+                Err(_) => {
+                    blockers.push(
+                        ProofpackWriterFirstActiveWriteSliceBlocker::TargetUnreadableOrAmbiguous,
+                    );
+                    return ProofpackWriterFirstActiveWriteSliceResult::new(
+                        preflight,
+                        target_path_ref,
+                        ProofpackWriterOperationOutcome::PreflightFailed,
+                        ProofpackWriterCanonicalArtifactStatus::NotAttempted,
+                        ProofpackWriterSideEffectStatus::NotAttempted,
+                        blockers,
+                        diagnostics,
+                        boundary_notes,
+                    );
+                }
+            }
+        }
+
+        blockers.push(ProofpackWriterFirstActiveWriteSliceBlocker::WriteFailed);
+        diagnostics.push(
+            ProofpackWriterFileIoDiagnostic::for_reason(
+                ProofpackWriterFileIoErrorReason::TempWriteFailed,
+            )
+            .with_source(ProofpackWriterFileIoDiagnosticSource::WriterDiagnostic),
+        );
+
+        return ProofpackWriterFirstActiveWriteSliceResult::new(
+            preflight,
+            target_path_ref,
+            ProofpackWriterOperationOutcome::WriteFailed,
+            ProofpackWriterCanonicalArtifactStatus::WriteFailed,
+            ProofpackWriterSideEffectStatus::NotAttempted,
+            blockers,
+            diagnostics,
+            boundary_notes,
+        );
+    }
+
+    match std::fs::read(&target_path) {
+        Ok(written_bytes) if written_bytes == canonical_artifact.canonical_body_bytes() => {
+            ProofpackWriterFirstActiveWriteSliceResult::new(
+                preflight,
+                target_path_ref,
+                ProofpackWriterOperationOutcome::Written,
+                ProofpackWriterCanonicalArtifactStatus::Written,
+                ProofpackWriterSideEffectStatus::NotSelected,
+                blockers,
+                diagnostics,
+                boundary_notes,
+            )
+        }
+        Ok(_) | Err(_) => {
+            blockers.push(ProofpackWriterFirstActiveWriteSliceBlocker::ExactByteReadbackMismatch);
+            ProofpackWriterFirstActiveWriteSliceResult::new(
+                preflight,
+                target_path_ref,
+                ProofpackWriterOperationOutcome::PartialWriteDetected,
+                ProofpackWriterCanonicalArtifactStatus::PartialWriteDetected,
+                ProofpackWriterSideEffectStatus::NotAttempted,
+                blockers,
+                diagnostics,
+                boundary_notes,
+            )
+        }
+    }
+}
+
+fn writer_first_active_write_slice_precondition_blockers(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    concrete_path_policy: &ProofpackWriterConcretePathStoragePolicyModel,
+    canonical_artifact: &ProofpackWriterCanonicalArtifactModel,
+    storage_root_path: &std::path::Path,
+    target_relative_path: &std::path::Path,
+) -> Vec<ProofpackWriterFirstActiveWriteSliceBlocker> {
+    let mut blockers = Vec::new();
+
+    if !preflight.is_writer_ready() {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::PreflightNotReady,
+        );
+    }
+
+    if !preflight
+        .planned_side_effects()
+        .contains(&ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite)
+    {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::CanonicalArtifactWriteNotSelected,
+        );
+    }
+
+    if preflight.planned_side_effects().iter().any(|side_effect| {
+        matches!(
+            side_effect,
+            ProofpackWriterPlannedSideEffect::IndexUpdate
+                | ProofpackWriterPlannedSideEffect::LatestPointerUpdate
+        )
+    }) {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::ForbiddenSideEffectSelected,
+        );
+    }
+
+    if !concrete_path_policy.is_ready() {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::ConcretePathStoragePolicyNotReady,
+        );
+    }
+
+    if canonical_artifact.canonical_body_bytes().is_empty() {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::MissingCanonicalBytes,
+        );
+    }
+
+    if preflight.proofpack_id() != canonical_artifact.proofpack_id()
+        || concrete_path_policy.proofpack_id() != canonical_artifact.proofpack_id()
+    {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::CanonicalArtifactMismatch,
+        );
+    }
+
+    if preflight.manifest_self_digest() != Some(canonical_artifact.manifest_self_digest())
+        || concrete_path_policy.manifest_self_digest()
+            != Some(canonical_artifact.manifest_self_digest())
+        || !canonical_artifact.manifest_self_digest_covers_canonical_body()
+    {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::CanonicalArtifactDigestMismatch,
+        );
+    }
+
+    if preflight.storage_root_ref().is_none() {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::MissingStorageRootRef,
+        );
+    }
+
+    let target_path_ref = preflight.target_path_ref();
+    let target_relative_path_text = target_relative_path.to_str();
+    match (target_path_ref, target_relative_path_text) {
+        (Some(target_path_ref), Some(target_relative_path_text))
+            if target_path_ref.as_str() != target_relative_path_text =>
+        {
+            writer_push_unique_first_active_write_slice_blocker(
+                &mut blockers,
+                ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathMismatch,
+            );
+        }
+        (Some(_), Some(_)) => {}
+        (Some(_), None) => writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathInvalid,
+        ),
+        (None, _) => writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::MissingTargetPathRef,
+        ),
+    }
+
+    writer_first_active_write_slice_path_blockers(
+        storage_root_path,
+        target_relative_path,
+        &mut blockers,
+    );
+
+    if preflight
+        .write_policy()
+        .map(ProofpackWriterWritePolicy::supports_idempotency)
+        != Some(true)
+        || preflight.idempotency_basis().is_none()
+    {
+        writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::MissingIdempotencyPolicy,
+        );
+    }
+
+    match preflight.temp_atomic_policy() {
+        Some(ProofpackWriterTempAtomicPolicy::ExplicitNonAtomic) => {}
+        Some(
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp
+            | ProofpackWriterTempAtomicPolicy::FailClosedIfAtomicUnavailable,
+        ) => writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::UnsupportedTempAtomicPolicy,
+        ),
+        None => writer_push_unique_first_active_write_slice_blocker(
+            &mut blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::MissingTempAtomicPolicy,
+        ),
+    }
+
+    blockers
+}
+
+fn writer_first_active_write_slice_path_blockers(
+    storage_root_path: &std::path::Path,
+    target_relative_path: &std::path::Path,
+    blockers: &mut Vec<ProofpackWriterFirstActiveWriteSliceBlocker>,
+) {
+    let storage_root_missing = storage_root_path.as_os_str().is_empty();
+    let storage_root_relative = !storage_root_path.is_absolute();
+    let storage_root_forbidden = writer_first_active_path_has_punk_component(storage_root_path);
+
+    if storage_root_path.as_os_str().is_empty() {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootPathMissing,
+        );
+    }
+
+    if storage_root_relative {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootPathRelative,
+        );
+    }
+
+    if storage_root_forbidden {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::PunkRuntimePathForbidden,
+        );
+    }
+
+    let storage_root_can_be_inspected =
+        !storage_root_missing && !storage_root_relative && !storage_root_forbidden;
+
+    if storage_root_can_be_inspected {
+        match std::fs::symlink_metadata(storage_root_path) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootSymlink,
+                );
+            }
+            Ok(metadata) if !metadata.is_dir() => {
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootNotDirectory,
+                );
+            }
+            Ok(_) => {}
+            Err(_) => {
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootPathUnavailable,
+                );
+            }
+        }
+    }
+
+    let target_path_missing = target_relative_path.as_os_str().is_empty();
+    let target_path_absolute = target_relative_path.is_absolute();
+    let target_path_forbidden = writer_first_active_path_has_punk_component(target_relative_path);
+    let mut target_path_has_traversal_or_invalid_component = false;
+
+    if target_path_missing {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathInvalid,
+        );
+    }
+
+    if target_path_absolute {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathEscapesStorageRoot,
+        );
+    }
+
+    if target_path_forbidden {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::PunkRuntimePathForbidden,
+        );
+    }
+
+    for component in target_relative_path.components() {
+        match component {
+            std::path::Component::Normal(_) => {}
+            std::path::Component::CurDir => {
+                target_path_has_traversal_or_invalid_component = true;
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathInvalid,
+                );
+            }
+            std::path::Component::ParentDir => {
+                target_path_has_traversal_or_invalid_component = true;
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathTraversal,
+                );
+            }
+            std::path::Component::RootDir | std::path::Component::Prefix(_) => {
+                target_path_has_traversal_or_invalid_component = true;
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathEscapesStorageRoot,
+                );
+            }
+        }
+    }
+
+    if !storage_root_can_be_inspected
+        || target_path_missing
+        || target_path_absolute
+        || target_path_forbidden
+        || target_path_has_traversal_or_invalid_component
+    {
+        return;
+    }
+
+    let target_path = storage_root_path.join(target_relative_path);
+    let Some(parent) = target_path.parent() else {
+        writer_push_unique_first_active_write_slice_blocker(
+            blockers,
+            ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryMissing,
+        );
+        return;
+    };
+
+    match std::fs::symlink_metadata(parent) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            writer_push_unique_first_active_write_slice_blocker(
+                blockers,
+                ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectorySymlink,
+            );
+        }
+        Ok(metadata) if !metadata.is_dir() => {
+            writer_push_unique_first_active_write_slice_blocker(
+                blockers,
+                ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryNotDirectory,
+            );
+        }
+        Ok(_) => {}
+        Err(_) => {
+            writer_push_unique_first_active_write_slice_blocker(
+                blockers,
+                ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryMissing,
+            );
+        }
+    }
+}
+
+fn writer_first_active_path_has_punk_component(path: &std::path::Path) -> bool {
+    path.components().any(|component| match component {
+        std::path::Component::Normal(value) => value == ".punk",
+        _ => false,
+    })
+}
+
+fn writer_push_unique_first_active_write_slice_blocker(
+    blockers: &mut Vec<ProofpackWriterFirstActiveWriteSliceBlocker>,
+    blocker: ProofpackWriterFirstActiveWriteSliceBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn writer_first_active_write_exact_bytes(
+    target_path: &std::path::Path,
+    canonical_bytes: &[u8],
+) -> std::io::Result<()> {
+    use std::io::Write as _;
+
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(target_path)?;
+    file.write_all(canonical_bytes)?;
+    file.flush()?;
+    Ok(())
+}
+
+fn writer_first_active_write_slice_diagnostics(
+    blockers: &[ProofpackWriterFirstActiveWriteSliceBlocker],
+    target_path_ref: Option<&ProofpackWriterTargetPathRef>,
+) -> Vec<ProofpackWriterFileIoDiagnostic> {
+    blockers
+        .iter()
+        .filter_map(|blocker| {
+            blocker.diagnostic_reason().map(|reason| {
+                let diagnostic = ProofpackWriterFileIoDiagnostic::for_reason(reason)
+                    .with_source(ProofpackWriterFileIoDiagnosticSource::WriterDiagnostic);
+                if let Some(target_path_ref) = target_path_ref {
+                    diagnostic.with_target_path_ref(target_path_ref.clone())
+                } else {
+                    diagnostic
+                }
+            })
+        })
+        .collect()
+}
+
+fn writer_first_active_write_slice_boundary_notes(
+    preflight: &ProofpackWriterPreflightIntegrationModel,
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    let mut notes = preflight.boundary_notes().to_vec();
+    notes.extend(boundary_notes);
+
+    if notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer first active write slice returns in-memory operation evidence and does not authorize runtime storage, CLI, gate decisions, or acceptance claims.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterFirstActiveWriteSliceBoundary {
+    pub implements_first_active_write_slice: bool,
+    pub requires_ready_preflight: bool,
+    pub requires_concrete_path_storage_policy_ready: bool,
+    pub requires_explicit_storage_root_path: bool,
+    pub requires_explicit_target_relative_path: bool,
+    pub writes_exact_canonical_bytes: bool,
+    pub uses_create_new_no_overwrite: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub writes_proofpack: bool,
+    pub writes_punk_proofs: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub exposes_cli_behavior: bool,
+    pub writes_schema_files: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub creates_parent_directories: bool,
+    pub canonicalizes_host_paths: bool,
+    pub normalizes_host_paths: bool,
+    pub claims_platform_atomicity: bool,
+    pub claims_crash_durability: bool,
+    pub uses_current_working_directory_as_authority: bool,
+    pub uses_global_config_as_authority: bool,
+    pub uses_ide_state_as_authority: bool,
+    pub uses_executor_memory_as_authority: bool,
+    pub uses_indexes_or_latest_as_authority: bool,
+    pub uses_service_mirror_as_authority: bool,
+    pub target_path_is_authority: bool,
+    pub storage_root_path_is_authority: bool,
+    pub operation_evidence_is_non_authoritative: bool,
+    pub setup_neutral: bool,
+}
+
+pub const fn proofpack_writer_first_active_write_slice_boundary(
+) -> ProofpackWriterFirstActiveWriteSliceBoundary {
+    ProofpackWriterFirstActiveWriteSliceBoundary {
+        implements_first_active_write_slice: true,
+        requires_ready_preflight: true,
+        requires_concrete_path_storage_policy_ready: true,
+        requires_explicit_storage_root_path: true,
+        requires_explicit_target_relative_path: true,
+        writes_exact_canonical_bytes: true,
+        uses_create_new_no_overwrite: true,
+        reads_filesystem: true,
+        touches_filesystem: true,
+        writes_proofpack: true,
+        writes_punk_proofs: false,
+        writes_writer_operation_evidence: false,
+        persists_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        exposes_cli_behavior: false,
+        writes_schema_files: false,
+        verifies_referenced_artifacts: false,
+        creates_parent_directories: false,
+        canonicalizes_host_paths: false,
+        normalizes_host_paths: false,
+        claims_platform_atomicity: false,
+        claims_crash_durability: false,
+        uses_current_working_directory_as_authority: false,
+        uses_global_config_as_authority: false,
+        uses_ide_state_as_authority: false,
+        uses_executor_memory_as_authority: false,
+        uses_indexes_or_latest_as_authority: false,
+        uses_service_mirror_as_authority: false,
+        target_path_is_authority: false,
+        storage_root_path_is_authority: false,
+        operation_evidence_is_non_authoritative: true,
+        setup_neutral: true,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterHashReferenceIntegrationStatus {
+    Ready,
+    Blocked,
+    NotSelected,
+}
+
+impl ProofpackWriterHashReferenceIntegrationStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Blocked => "blocked",
+            Self::NotSelected => "not_selected",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterDeclaredArtifactDigestStatus {
+    DeclaredValid,
+    DeclaredMissing,
+    DeclaredInvalidFormat,
+    DeclaredUnsupportedAlgorithm,
+    DeclaredWrongKindOrRef,
+    DeclaredUnverified,
+}
+
+impl ProofpackWriterDeclaredArtifactDigestStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::DeclaredValid => "declared_valid",
+            Self::DeclaredMissing => "declared_missing",
+            Self::DeclaredInvalidFormat => "declared_invalid_format",
+            Self::DeclaredUnsupportedAlgorithm => "declared_unsupported_algorithm",
+            Self::DeclaredWrongKindOrRef => "declared_wrong_kind_or_ref",
+            Self::DeclaredUnverified => "declared_unverified",
+        }
+    }
+
+    pub fn satisfies_required_declaration(self) -> bool {
+        self == Self::DeclaredValid
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterDeclaredArtifactDigestEvidence {
+    requirement: ProofArtifactDigestRequirement,
+    declared_kind: Option<ProofArtifactKind>,
+    declared_artifact_ref: Option<ProofArtifactRef>,
+    digest_value: Option<String>,
+    status: ProofpackWriterDeclaredArtifactDigestStatus,
+    required: bool,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterDeclaredArtifactDigestEvidence {
+    pub fn from_declared_digest(
+        requirement: ProofArtifactDigestRequirement,
+        digest: &ProofArtifactDigest,
+    ) -> Self {
+        let status = if digest.satisfies_requirement(&requirement) {
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredValid
+        } else {
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredWrongKindOrRef
+        };
+
+        Self {
+            requirement,
+            declared_kind: Some(digest.kind()),
+            declared_artifact_ref: Some(digest.artifact_ref().clone()),
+            digest_value: Some(digest.artifact_hash().as_str().to_owned()),
+            status,
+            required: true,
+            boundary_notes: Vec::new(),
+        }
+    }
+
+    pub fn missing(requirement: ProofArtifactDigestRequirement) -> Self {
+        Self::with_status(
+            requirement,
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredMissing,
+            None,
+            None,
+            None,
+            true,
+            Vec::new(),
+        )
+    }
+
+    pub fn invalid_format(
+        requirement: ProofArtifactDigestRequirement,
+        digest_value: impl Into<String>,
+    ) -> Self {
+        Self::with_status(
+            requirement,
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredInvalidFormat,
+            None,
+            None,
+            Some(digest_value.into()),
+            true,
+            Vec::new(),
+        )
+    }
+
+    pub fn unsupported_algorithm(
+        requirement: ProofArtifactDigestRequirement,
+        digest_value: impl Into<String>,
+    ) -> Self {
+        Self::with_status(
+            requirement,
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredUnsupportedAlgorithm,
+            None,
+            None,
+            Some(digest_value.into()),
+            true,
+            Vec::new(),
+        )
+    }
+
+    pub fn unverified(
+        requirement: ProofArtifactDigestRequirement,
+        digest: &ProofArtifactDigest,
+    ) -> Self {
+        Self::with_status(
+            requirement,
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredUnverified,
+            Some(digest.kind()),
+            Some(digest.artifact_ref().clone()),
+            Some(digest.artifact_hash().as_str().to_owned()),
+            true,
+            Vec::new(),
+        )
+    }
+
+    pub fn wrong_kind_or_ref(
+        requirement: ProofArtifactDigestRequirement,
+        digest: &ProofArtifactDigest,
+    ) -> Self {
+        Self::with_status(
+            requirement,
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredWrongKindOrRef,
+            Some(digest.kind()),
+            Some(digest.artifact_ref().clone()),
+            Some(digest.artifact_hash().as_str().to_owned()),
+            true,
+            Vec::new(),
+        )
+    }
+
+    pub fn optional_with_status(
+        requirement: ProofArtifactDigestRequirement,
+        status: ProofpackWriterDeclaredArtifactDigestStatus,
+        digest_value: Option<String>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self::with_status(
+            requirement,
+            status,
+            None,
+            None,
+            digest_value,
+            false,
+            boundary_notes,
+        )
+    }
+
+    pub fn with_status(
+        requirement: ProofArtifactDigestRequirement,
+        status: ProofpackWriterDeclaredArtifactDigestStatus,
+        declared_kind: Option<ProofArtifactKind>,
+        declared_artifact_ref: Option<ProofArtifactRef>,
+        digest_value: Option<String>,
+        required: bool,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            requirement,
+            declared_kind,
+            declared_artifact_ref,
+            digest_value,
+            status,
+            required,
+            boundary_notes,
+        }
+    }
+
+    pub fn requirement(&self) -> &ProofArtifactDigestRequirement {
+        &self.requirement
+    }
+
+    pub fn declared_kind(&self) -> Option<ProofArtifactKind> {
+        self.declared_kind
+    }
+
+    pub fn declared_artifact_ref(&self) -> Option<&ProofArtifactRef> {
+        self.declared_artifact_ref.as_ref()
+    }
+
+    pub fn digest_value(&self) -> Option<&str> {
+        self.digest_value.as_deref()
+    }
+
+    pub fn status(&self) -> ProofpackWriterDeclaredArtifactDigestStatus {
+        self.status
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.required
+    }
+
+    pub fn satisfies_required_declaration(&self) -> bool {
+        self.required && self.status.satisfies_required_declaration()
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterReferencedArtifactVerificationStatus {
+    Verified,
+    DigestMismatch,
+    Missing,
+    NotRegularFile,
+    Symlink,
+    ReadDenied,
+    ReadError,
+    InvalidRepoRoot,
+    OutsideRepoRoot,
+    InvalidRef,
+    InvalidExpectedDigest,
+    UnsupportedRef,
+    NotRequired,
+    Unverified,
+}
+
+impl ProofpackWriterReferencedArtifactVerificationStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Verified => "verified",
+            Self::DigestMismatch => "digest_mismatch",
+            Self::Missing => "missing",
+            Self::NotRegularFile => "not_regular_file",
+            Self::Symlink => "symlink",
+            Self::ReadDenied => "read_denied",
+            Self::ReadError => "read_error",
+            Self::InvalidRepoRoot => "invalid_repo_root",
+            Self::OutsideRepoRoot => "outside_repo_root",
+            Self::InvalidRef => "invalid_ref",
+            Self::InvalidExpectedDigest => "invalid_expected_digest",
+            Self::UnsupportedRef => "unsupported_ref",
+            Self::NotRequired => "not_required",
+            Self::Unverified => "unverified",
+        }
+    }
+
+    pub fn from_core_outcome(outcome: ReferencedArtifactVerificationOutcome) -> Self {
+        match outcome {
+            ReferencedArtifactVerificationOutcome::Verified => Self::Verified,
+            ReferencedArtifactVerificationOutcome::DigestMismatch => Self::DigestMismatch,
+            ReferencedArtifactVerificationOutcome::Missing => Self::Missing,
+            ReferencedArtifactVerificationOutcome::NotRegularFile => Self::NotRegularFile,
+            ReferencedArtifactVerificationOutcome::Symlink => Self::Symlink,
+            ReferencedArtifactVerificationOutcome::ReadDenied => Self::ReadDenied,
+            ReferencedArtifactVerificationOutcome::ReadError => Self::ReadError,
+            ReferencedArtifactVerificationOutcome::InvalidRepoRoot => Self::InvalidRepoRoot,
+            ReferencedArtifactVerificationOutcome::OutsideRepoRoot => Self::OutsideRepoRoot,
+        }
+    }
+
+    pub fn satisfies_required_verification(self) -> bool {
+        self == Self::Verified
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterReferencedArtifactVerificationEvidence {
+    requirement: ProofArtifactDigestRequirement,
+    status: ProofpackWriterReferencedArtifactVerificationStatus,
+    required: bool,
+    expected_digest: Option<ArtifactDigest>,
+    observed_digest: Option<ArtifactDigest>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterReferencedArtifactVerificationEvidence {
+    pub fn verified(requirement: ProofArtifactDigestRequirement, digest: ArtifactDigest) -> Self {
+        Self::required(
+            requirement,
+            ProofpackWriterReferencedArtifactVerificationStatus::Verified,
+            Some(digest.clone()),
+            Some(digest),
+            Vec::new(),
+        )
+    }
+
+    pub fn required(
+        requirement: ProofArtifactDigestRequirement,
+        status: ProofpackWriterReferencedArtifactVerificationStatus,
+        expected_digest: Option<ArtifactDigest>,
+        observed_digest: Option<ArtifactDigest>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            requirement,
+            status,
+            required: true,
+            expected_digest,
+            observed_digest,
+            boundary_notes,
+        }
+    }
+
+    pub fn optional(
+        requirement: ProofArtifactDigestRequirement,
+        status: ProofpackWriterReferencedArtifactVerificationStatus,
+        expected_digest: Option<ArtifactDigest>,
+        observed_digest: Option<ArtifactDigest>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            requirement,
+            status,
+            required: false,
+            expected_digest,
+            observed_digest,
+            boundary_notes,
+        }
+    }
+
+    pub fn from_core_outcome(
+        requirement: ProofArtifactDigestRequirement,
+        outcome: ReferencedArtifactVerificationOutcome,
+        required: bool,
+        expected_digest: Option<ArtifactDigest>,
+        observed_digest: Option<ArtifactDigest>,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        Self {
+            requirement,
+            status: ProofpackWriterReferencedArtifactVerificationStatus::from_core_outcome(outcome),
+            required,
+            expected_digest,
+            observed_digest,
+            boundary_notes,
+        }
+    }
+
+    pub fn requirement(&self) -> &ProofArtifactDigestRequirement {
+        &self.requirement
+    }
+
+    pub fn status(&self) -> ProofpackWriterReferencedArtifactVerificationStatus {
+        self.status
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.required
+    }
+
+    pub fn expected_digest(&self) -> Option<&ArtifactDigest> {
+        self.expected_digest.as_ref()
+    }
+
+    pub fn observed_digest(&self) -> Option<&ArtifactDigest> {
+        self.observed_digest.as_ref()
+    }
+
+    pub fn is_verified(&self) -> bool {
+        self.status.satisfies_required_verification()
+    }
+
+    pub fn is_optional_or_not_required(&self) -> bool {
+        !self.required
+            || self.status == ProofpackWriterReferencedArtifactVerificationStatus::NotRequired
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofpackWriterHashReferenceIntegrationBlocker {
+    MissingDeclaredArtifactDigest,
+    InvalidDeclaredArtifactDigest,
+    UnsupportedDeclaredDigestAlgorithm,
+    WrongDeclaredDigestKindOrRef,
+    DeclaredDigestUnverified,
+    StructuralLinkHashIntegrityIncomplete,
+    ManifestSelfDigestMissing,
+    ManifestSelfDigestMismatch,
+    VerificationDigestMismatch,
+    VerificationMissing,
+    VerificationNotRegularFile,
+    VerificationSymlink,
+    VerificationReadDenied,
+    VerificationReadError,
+    VerificationInvalidRepoRoot,
+    VerificationOutsideRepoRoot,
+    VerificationInvalidRef,
+    VerificationInvalidExpectedDigest,
+    VerificationUnsupportedRef,
+    RequiredVerificationNotRequired,
+    RequiredVerificationUnverified,
+}
+
+impl ProofpackWriterHashReferenceIntegrationBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingDeclaredArtifactDigest => "missing_declared_artifact_digest",
+            Self::InvalidDeclaredArtifactDigest => "invalid_declared_artifact_digest",
+            Self::UnsupportedDeclaredDigestAlgorithm => "unsupported_declared_digest_algorithm",
+            Self::WrongDeclaredDigestKindOrRef => "wrong_declared_digest_kind_or_ref",
+            Self::DeclaredDigestUnverified => "declared_digest_unverified",
+            Self::StructuralLinkHashIntegrityIncomplete => {
+                "structural_link_hash_integrity_incomplete"
+            }
+            Self::ManifestSelfDigestMissing => "manifest_self_digest_missing",
+            Self::ManifestSelfDigestMismatch => "manifest_self_digest_mismatch",
+            Self::VerificationDigestMismatch => "verification_digest_mismatch",
+            Self::VerificationMissing => "verification_missing",
+            Self::VerificationNotRegularFile => "verification_not_regular_file",
+            Self::VerificationSymlink => "verification_symlink",
+            Self::VerificationReadDenied => "verification_read_denied",
+            Self::VerificationReadError => "verification_read_error",
+            Self::VerificationInvalidRepoRoot => "verification_invalid_repo_root",
+            Self::VerificationOutsideRepoRoot => "verification_outside_repo_root",
+            Self::VerificationInvalidRef => "verification_invalid_ref",
+            Self::VerificationInvalidExpectedDigest => "verification_invalid_expected_digest",
+            Self::VerificationUnsupportedRef => "verification_unsupported_ref",
+            Self::RequiredVerificationNotRequired => "required_verification_not_required",
+            Self::RequiredVerificationUnverified => "required_verification_unverified",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofpackWriterHashReferenceIntegrationModel {
+    proofpack_id: ProofpackId,
+    schema_version: &'static str,
+    status: ProofpackWriterHashReferenceIntegrationStatus,
+    required_digest_refs: Vec<ProofArtifactDigestRequirement>,
+    declared_digest_evidence: Vec<ProofpackWriterDeclaredArtifactDigestEvidence>,
+    structural_integrity_report: ProofpackIntegrityReport,
+    referenced_artifact_verification_evidence:
+        Vec<ProofpackWriterReferencedArtifactVerificationEvidence>,
+    manifest_self_digest: Option<ArtifactDigest>,
+    blockers: Vec<ProofpackWriterHashReferenceIntegrationBlocker>,
+    boundary_notes: Vec<ProofBoundaryNote>,
+}
+
+impl ProofpackWriterHashReferenceIntegrationModel {
+    pub fn evaluate(
+        proofpack: &Proofpack,
+        canonical_artifact: Option<&ProofpackWriterCanonicalArtifactModel>,
+        declared_digest_evidence: Vec<ProofpackWriterDeclaredArtifactDigestEvidence>,
+        referenced_artifact_verification_evidence: Vec<
+            ProofpackWriterReferencedArtifactVerificationEvidence,
+        >,
+        boundary_notes: Vec<ProofBoundaryNote>,
+    ) -> Self {
+        let required_digest_refs = proofpack.required_artifact_digest_refs();
+        let structural_integrity_report = proofpack.link_hash_integrity_report();
+        let declared_digest_evidence = writer_hash_reference_declared_evidence(
+            proofpack,
+            &required_digest_refs,
+            declared_digest_evidence,
+        );
+        let manifest_self_digest =
+            canonical_artifact.map(|artifact| artifact.manifest_self_digest().clone());
+        let mut blockers = Vec::new();
+
+        for evidence in &declared_digest_evidence {
+            if evidence.is_required() {
+                if let Some(blocker) = writer_hash_reference_declared_blocker(evidence.status()) {
+                    writer_push_unique_hash_reference_blocker(&mut blockers, blocker);
+                }
+            }
+        }
+
+        if !structural_integrity_report.is_complete() {
+            writer_push_unique_hash_reference_blocker(
+                &mut blockers,
+                ProofpackWriterHashReferenceIntegrationBlocker::StructuralLinkHashIntegrityIncomplete,
+            );
+        }
+
+        match canonical_artifact {
+            Some(canonical_artifact)
+                if canonical_artifact.proofpack_id() == proofpack.id()
+                    && canonical_artifact.manifest_self_digest_covers_canonical_body() => {}
+            Some(_) => writer_push_unique_hash_reference_blocker(
+                &mut blockers,
+                ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMismatch,
+            ),
+            None => writer_push_unique_hash_reference_blocker(
+                &mut blockers,
+                ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMissing,
+            ),
+        }
+
+        for evidence in &referenced_artifact_verification_evidence {
+            if evidence.is_required() && !evidence.status().satisfies_required_verification() {
+                let blocker = writer_hash_reference_verification_blocker(evidence.status());
+                writer_push_unique_hash_reference_blocker(&mut blockers, blocker);
+            }
+        }
+
+        let status = if blockers.is_empty() {
+            ProofpackWriterHashReferenceIntegrationStatus::Ready
+        } else {
+            ProofpackWriterHashReferenceIntegrationStatus::Blocked
+        };
+
+        Self {
+            proofpack_id: proofpack.id().clone(),
+            schema_version: PROOFPACK_WRITER_HASH_REFERENCE_INTEGRATION_MODEL_SCHEMA_VERSION,
+            status,
+            required_digest_refs,
+            declared_digest_evidence,
+            structural_integrity_report,
+            referenced_artifact_verification_evidence,
+            manifest_self_digest,
+            blockers,
+            boundary_notes: writer_hash_reference_boundary_notes(boundary_notes),
+        }
+    }
+
+    pub fn not_selected(proofpack: &Proofpack, boundary_notes: Vec<ProofBoundaryNote>) -> Self {
+        Self {
+            proofpack_id: proofpack.id().clone(),
+            schema_version: PROOFPACK_WRITER_HASH_REFERENCE_INTEGRATION_MODEL_SCHEMA_VERSION,
+            status: ProofpackWriterHashReferenceIntegrationStatus::NotSelected,
+            required_digest_refs: proofpack.required_artifact_digest_refs(),
+            declared_digest_evidence: Vec::new(),
+            structural_integrity_report: proofpack.link_hash_integrity_report(),
+            referenced_artifact_verification_evidence: Vec::new(),
+            manifest_self_digest: None,
+            blockers: Vec::new(),
+            boundary_notes: writer_hash_reference_boundary_notes(boundary_notes),
+        }
+    }
+
+    pub fn proofpack_id(&self) -> &ProofpackId {
+        &self.proofpack_id
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn status(&self) -> ProofpackWriterHashReferenceIntegrationStatus {
+        self.status
+    }
+
+    pub fn required_digest_refs(&self) -> &[ProofArtifactDigestRequirement] {
+        &self.required_digest_refs
+    }
+
+    pub fn declared_digest_evidence(&self) -> &[ProofpackWriterDeclaredArtifactDigestEvidence] {
+        &self.declared_digest_evidence
+    }
+
+    pub fn structural_integrity_report(&self) -> &ProofpackIntegrityReport {
+        &self.structural_integrity_report
+    }
+
+    pub fn referenced_artifact_verification_evidence(
+        &self,
+    ) -> &[ProofpackWriterReferencedArtifactVerificationEvidence] {
+        &self.referenced_artifact_verification_evidence
+    }
+
+    pub fn manifest_self_digest(&self) -> Option<&ArtifactDigest> {
+        self.manifest_self_digest.as_ref()
+    }
+
+    pub fn blockers(&self) -> &[ProofpackWriterHashReferenceIntegrationBlocker] {
+        &self.blockers
+    }
+
+    pub fn boundary_notes(&self) -> &[ProofBoundaryNote] {
+        &self.boundary_notes
+    }
+
+    pub fn is_ready(&self) -> bool {
+        self.status == ProofpackWriterHashReferenceIntegrationStatus::Ready
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status == ProofpackWriterHashReferenceIntegrationStatus::Blocked
+    }
+
+    pub fn is_not_selected(&self) -> bool {
+        self.status == ProofpackWriterHashReferenceIntegrationStatus::NotSelected
+    }
+
+    pub fn has_blocker(&self, blocker: ProofpackWriterHashReferenceIntegrationBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn declared_digest_surface_is_complete(&self) -> bool {
+        self.declared_digest_evidence
+            .iter()
+            .filter(|evidence| evidence.is_required())
+            .all(|evidence| evidence.status().satisfies_required_declaration())
+    }
+
+    pub fn structural_link_hash_integrity_is_complete(&self) -> bool {
+        self.structural_integrity_report.is_complete()
+    }
+
+    pub fn has_referenced_artifact_verification_evidence(&self) -> bool {
+        !self.referenced_artifact_verification_evidence.is_empty()
+    }
+
+    pub fn has_optional_or_not_required_verification_evidence(&self) -> bool {
+        self.referenced_artifact_verification_evidence
+            .iter()
+            .any(ProofpackWriterReferencedArtifactVerificationEvidence::is_optional_or_not_required)
+    }
+
+    pub fn has_manifest_self_digest_ready(&self) -> bool {
+        self.manifest_self_digest.is_some()
+            && !self.has_blocker(
+                ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMismatch,
+            )
+            && !self.has_blocker(
+                ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMissing,
+            )
+    }
+
+    pub fn keeps_evidence_surfaces_separate(&self) -> bool {
+        self.boundary().keeps_evidence_surfaces_separate
+    }
+
+    pub fn operation_kind(&self) -> ProofpackWriterOperationKind {
+        ProofpackWriterOperationKind::PlannedOnly
+    }
+
+    pub fn operation_outcome(&self) -> ProofpackWriterOperationOutcome {
+        if self.is_blocked() {
+            ProofpackWriterOperationOutcome::PreflightFailed
+        } else {
+            ProofpackWriterOperationOutcome::PlannedOnly
+        }
+    }
+
+    pub fn boundary(&self) -> ProofpackWriterHashReferenceIntegrationModelBoundary {
+        proofpack_writer_hash_reference_integration_model_boundary()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary().evidence_only
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary().reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary().touches_filesystem
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary().writes_proofpack
+    }
+
+    pub fn writes_punk_proofs(&self) -> bool {
+        self.boundary().writes_punk_proofs
+    }
+
+    pub fn writes_writer_operation_evidence(&self) -> bool {
+        self.boundary().writes_writer_operation_evidence
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary().persists_operation_evidence
+    }
+
+    pub fn writes_indexes_or_latest(&self) -> bool {
+        self.boundary().writes_indexes_or_latest
+    }
+
+    pub fn writes_final_decision(&self) -> bool {
+        self.boundary().writes_final_decision
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary().creates_acceptance_claim
+    }
+
+    pub fn requires_runtime_storage(&self) -> bool {
+        self.boundary().requires_runtime_storage
+    }
+
+    pub fn writes_cli_output(&self) -> bool {
+        self.boundary().writes_cli_output
+    }
+
+    pub fn exposes_cli_behavior(&self) -> bool {
+        self.boundary().exposes_cli_behavior
+    }
+
+    pub fn writes_schema_files(&self) -> bool {
+        self.boundary().writes_schema_files
+    }
+
+    pub fn computes_referenced_artifact_hashes(&self) -> bool {
+        self.boundary().computes_referenced_artifact_hashes
+    }
+
+    pub fn verifies_referenced_artifacts(&self) -> bool {
+        self.boundary().verifies_referenced_artifacts
+    }
+
+    pub fn canonicalizes_host_paths(&self) -> bool {
+        self.boundary().canonicalizes_host_paths
+    }
+
+    pub fn broad_file_hashing(&self) -> bool {
+        self.boundary().broad_file_hashing
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+}
+
+fn writer_hash_reference_declared_evidence(
+    proofpack: &Proofpack,
+    required_digest_refs: &[ProofArtifactDigestRequirement],
+    explicit_evidence: Vec<ProofpackWriterDeclaredArtifactDigestEvidence>,
+) -> Vec<ProofpackWriterDeclaredArtifactDigestEvidence> {
+    let mut evidence = Vec::new();
+
+    for requirement in required_digest_refs {
+        if let Some(explicit) = explicit_evidence
+            .iter()
+            .find(|evidence| evidence.requirement() == requirement)
+        {
+            evidence.push(explicit.clone());
+            continue;
+        }
+
+        if let Some(digest) = proofpack
+            .artifact_digests()
+            .iter()
+            .find(|digest| digest.satisfies_requirement(requirement))
+        {
+            evidence.push(
+                ProofpackWriterDeclaredArtifactDigestEvidence::from_declared_digest(
+                    requirement.clone(),
+                    digest,
+                ),
+            );
+        } else {
+            evidence.push(ProofpackWriterDeclaredArtifactDigestEvidence::missing(
+                requirement.clone(),
+            ));
+        }
+    }
+
+    for explicit in explicit_evidence {
+        if !evidence
+            .iter()
+            .any(|existing| existing.requirement() == explicit.requirement())
+        {
+            evidence.push(explicit);
+        }
+    }
+
+    evidence
+}
+
+fn writer_hash_reference_declared_blocker(
+    status: ProofpackWriterDeclaredArtifactDigestStatus,
+) -> Option<ProofpackWriterHashReferenceIntegrationBlocker> {
+    match status {
+        ProofpackWriterDeclaredArtifactDigestStatus::DeclaredValid => None,
+        ProofpackWriterDeclaredArtifactDigestStatus::DeclaredMissing => {
+            Some(ProofpackWriterHashReferenceIntegrationBlocker::MissingDeclaredArtifactDigest)
+        }
+        ProofpackWriterDeclaredArtifactDigestStatus::DeclaredInvalidFormat => {
+            Some(ProofpackWriterHashReferenceIntegrationBlocker::InvalidDeclaredArtifactDigest)
+        }
+        ProofpackWriterDeclaredArtifactDigestStatus::DeclaredUnsupportedAlgorithm => {
+            Some(ProofpackWriterHashReferenceIntegrationBlocker::UnsupportedDeclaredDigestAlgorithm)
+        }
+        ProofpackWriterDeclaredArtifactDigestStatus::DeclaredWrongKindOrRef => {
+            Some(ProofpackWriterHashReferenceIntegrationBlocker::WrongDeclaredDigestKindOrRef)
+        }
+        ProofpackWriterDeclaredArtifactDigestStatus::DeclaredUnverified => {
+            Some(ProofpackWriterHashReferenceIntegrationBlocker::DeclaredDigestUnverified)
+        }
+    }
+}
+
+fn writer_hash_reference_verification_blocker(
+    status: ProofpackWriterReferencedArtifactVerificationStatus,
+) -> ProofpackWriterHashReferenceIntegrationBlocker {
+    match status {
+        ProofpackWriterReferencedArtifactVerificationStatus::Verified => {
+            ProofpackWriterHashReferenceIntegrationBlocker::RequiredVerificationUnverified
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::DigestMismatch => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationDigestMismatch
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::Missing => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationMissing
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::NotRegularFile => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationNotRegularFile
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::Symlink => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationSymlink
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::ReadDenied => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationReadDenied
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::ReadError => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationReadError
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::InvalidRepoRoot => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationInvalidRepoRoot
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::OutsideRepoRoot => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationOutsideRepoRoot
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::InvalidRef => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationInvalidRef
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::InvalidExpectedDigest => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationInvalidExpectedDigest
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::UnsupportedRef => {
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationUnsupportedRef
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::NotRequired => {
+            ProofpackWriterHashReferenceIntegrationBlocker::RequiredVerificationNotRequired
+        }
+        ProofpackWriterReferencedArtifactVerificationStatus::Unverified => {
+            ProofpackWriterHashReferenceIntegrationBlocker::RequiredVerificationUnverified
+        }
+    }
+}
+
+fn writer_push_unique_hash_reference_blocker(
+    blockers: &mut Vec<ProofpackWriterHashReferenceIntegrationBlocker>,
+    blocker: ProofpackWriterHashReferenceIntegrationBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn writer_hash_reference_boundary_notes(
+    boundary_notes: Vec<ProofBoundaryNote>,
+) -> Vec<ProofBoundaryNote> {
+    if boundary_notes.is_empty() {
+        return vec![ProofBoundaryNote::new(
+            "Writer hash/reference integration model is side-effect-free; it composes explicit declared digest, structural integrity, optional verification, and manifest self-digest evidence without writing proofpacks or claiming acceptance.",
+        )
+        .expect("fallback boundary note should be valid")];
+    }
+
+    boundary_notes
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProofpackWriterHashReferenceIntegrationModelBoundary {
+    pub models_hash_reference_integration: bool,
+    pub consumes_explicit_proofpack_refs: bool,
+    pub checks_declared_digest_policy: bool,
+    pub checks_structural_link_hash_integrity: bool,
+    pub consumes_optional_referenced_artifact_verification_outcomes: bool,
+    pub keeps_evidence_surfaces_separate: bool,
+    pub manifest_self_digest_is_readiness_metadata: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub computes_referenced_artifact_hashes: bool,
+    pub verifies_referenced_artifacts: bool,
+    pub broad_file_hashing: bool,
+    pub canonicalizes_host_paths: bool,
+    pub writes_proofpack: bool,
+    pub writes_punk_proofs: bool,
+    pub writes_writer_operation_evidence: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_indexes_or_latest: bool,
+    pub writes_final_decision: bool,
+    pub creates_acceptance_claim: bool,
+    pub requires_runtime_storage: bool,
+    pub writes_cli_output: bool,
+    pub exposes_cli_behavior: bool,
+    pub writes_schema_files: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+}
+
+pub const fn proofpack_writer_hash_reference_integration_model_boundary(
+) -> ProofpackWriterHashReferenceIntegrationModelBoundary {
+    ProofpackWriterHashReferenceIntegrationModelBoundary {
+        models_hash_reference_integration: true,
+        consumes_explicit_proofpack_refs: true,
+        checks_declared_digest_policy: true,
+        checks_structural_link_hash_integrity: true,
+        consumes_optional_referenced_artifact_verification_outcomes: true,
+        keeps_evidence_surfaces_separate: true,
+        manifest_self_digest_is_readiness_metadata: true,
+        reads_filesystem: false,
+        touches_filesystem: false,
+        computes_referenced_artifact_hashes: false,
+        verifies_referenced_artifacts: false,
+        broad_file_hashing: false,
+        canonicalizes_host_paths: false,
+        writes_proofpack: false,
+        writes_punk_proofs: false,
+        writes_writer_operation_evidence: false,
+        persists_operation_evidence: false,
+        writes_indexes_or_latest: false,
+        writes_final_decision: false,
+        creates_acceptance_claim: false,
+        requires_runtime_storage: false,
+        writes_cli_output: false,
+        exposes_cli_behavior: false,
+        writes_schema_files: false,
+        evidence_only: true,
+        setup_neutral: true,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProofpackError {
     EmptyProofpackId,
@@ -5540,6 +9324,7 @@ pub enum ProofpackError {
     EmptyWriterStorageRootRef,
     EmptyWriterTargetPathRef,
     EmptyWriterDiagnosticPathRef,
+    EmptyWriterHostPathPolicyRef,
     InvalidArtifactHash(ArtifactHashPolicyError),
     MissingContractRefs,
     MissingRunReceiptRefs,
@@ -5692,6 +9477,59 @@ mod tests {
     ) -> ProofArtifactDigestRequirement {
         ProofArtifactDigestRequirement::new(kind, artifact_ref)
             .expect("digest requirement should be valid")
+    }
+
+    fn artifact_digest_for_requirement<'a>(
+        proofpack: &'a Proofpack,
+        requirement: &ProofArtifactDigestRequirement,
+    ) -> &'a ProofArtifactDigest {
+        proofpack
+            .artifact_digests()
+            .iter()
+            .find(|digest| digest.satisfies_requirement(requirement))
+            .expect("sample proofpack should have digest for requirement")
+    }
+
+    fn core_digest_for_requirement(
+        proofpack: &Proofpack,
+        requirement: &ProofArtifactDigestRequirement,
+    ) -> ArtifactDigest {
+        ArtifactDigest::new(
+            artifact_digest_for_requirement(proofpack, requirement)
+                .artifact_hash()
+                .as_str(),
+        )
+        .expect("sample proof digest should be a valid core digest")
+    }
+
+    fn sample_hash_reference_declared_digest_evidence(
+        proofpack: &Proofpack,
+    ) -> Vec<ProofpackWriterDeclaredArtifactDigestEvidence> {
+        proofpack
+            .required_artifact_digest_refs()
+            .into_iter()
+            .map(|requirement| {
+                ProofpackWriterDeclaredArtifactDigestEvidence::from_declared_digest(
+                    requirement.clone(),
+                    artifact_digest_for_requirement(proofpack, &requirement),
+                )
+            })
+            .collect()
+    }
+
+    fn sample_hash_reference_verification_evidence(
+        proofpack: &Proofpack,
+    ) -> Vec<ProofpackWriterReferencedArtifactVerificationEvidence> {
+        proofpack
+            .required_artifact_digest_refs()
+            .into_iter()
+            .map(|requirement| {
+                ProofpackWriterReferencedArtifactVerificationEvidence::verified(
+                    requirement.clone(),
+                    core_digest_for_requirement(proofpack, &requirement),
+                )
+            })
+            .collect()
     }
 
     fn sample_writer_target_artifact_ref(proofpack: &Proofpack) -> ProofpackWriterTargetRef {
@@ -5862,6 +9700,164 @@ mod tests {
                     .expect("boundary note should be valid"),
             ],
         )
+    }
+
+    fn sample_writer_host_path_policy_refs() -> ProofpackWriterHostPathPolicyRefs {
+        ProofpackWriterHostPathPolicyRefs::all_selected(
+            ProofpackWriterHostPathPolicyRef::new("policy:path-encoding-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:parent-directory-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:symlink-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:canonicalization-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:traversal-v0.1")
+                .expect("policy ref should be valid"),
+        )
+    }
+
+    fn sample_writer_concrete_path_storage_policy_refs(
+    ) -> ProofpackWriterConcretePathStoragePolicyRefs {
+        ProofpackWriterConcretePathStoragePolicyRefs::all_selected(
+            ProofpackWriterHostPathPolicyRef::new("policy:storage-root-selection-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:logical-target-artifact-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:target-path-derivation-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:path-encoding-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:parent-directory-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:symlink-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:canonicalization-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:traversal-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:storage-root-escape-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:redaction-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:idempotency-conflict-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:temp-atomic-v0.1")
+                .expect("policy ref should be valid"),
+            ProofpackWriterHostPathPolicyRef::new("policy:index-latest-non-authority-v0.1")
+                .expect("policy ref should be valid"),
+        )
+    }
+
+    fn sample_first_active_write_slice_inputs() -> (
+        ProofpackWriterCanonicalArtifactModel,
+        ProofpackWriterPreflightIntegrationModel,
+        ProofpackWriterConcretePathStoragePolicyModel,
+    ) {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(
+            &proofpack,
+            vec![ProofBoundaryNote::new(
+                "Canonical artifact bytes are explicit first-slice input.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![ProofBoundaryNote::new("Target artifact ref is explicit.")
+                    .expect("boundary note should be valid")],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite],
+            vec![
+                ProofBoundaryNote::new("Only canonical artifact write is selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let file_io_plan = ProofpackWriterFileIoPlan::new(
+            &preflight_plan,
+            ProofpackWriterStorageRootRef::new("explicit_test_storage_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("proofpacks/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ExactManifestBytes,
+            ProofpackWriterTempAtomicPolicy::ExplicitNonAtomic,
+            vec![
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetMatching,
+                ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ProofpackWriterFileIoFailureVisibility::TempWriteFailed,
+                ProofpackWriterFileIoFailureVisibility::PartialCanonicalArtifactAmbiguous,
+            ],
+            vec![ProofBoundaryNote::new(
+                "First active write slice uses an explicit non-atomic policy without platform guarantees.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let target_path_policy = ProofpackWriterTargetPathPolicyModel::from_plan(
+            &file_io_plan,
+            vec![
+                ProofBoundaryNote::new("Target path policy is accepted before writing.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let preflight = ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![ProofBoundaryNote::new(
+                "First active write slice preflight is ready with explicit inputs.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let host_path = ProofpackWriterHostPathResolutionModel::evaluate(
+            &preflight,
+            sample_writer_host_path_policy_refs(),
+            ProofpackWriterHostPathKind::StorageRootRelative,
+            Some(
+                ProofpackWriterDiagnosticPathRef::new(
+                    "storage-root-relative:proofpacks/proofpack_local_001.json",
+                )
+                .expect("host path observation should be valid"),
+            ),
+            true,
+            vec![],
+            vec![
+                ProofBoundaryNote::new("Host path observation is explicit and operational only.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let concrete_path_policy = ProofpackWriterConcretePathStoragePolicyModel::evaluate(
+            &preflight,
+            Some(&host_path),
+            sample_writer_concrete_path_storage_policy_refs(),
+            vec![ProofBoundaryNote::new(
+                "Concrete path/storage policy is ready before first active write.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        (canonical, preflight, concrete_path_policy)
+    }
+
+    fn unique_first_active_write_storage_root() -> std::path::PathBuf {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+
+        std::env::temp_dir().join(format!(
+            "punk-proof-first-active-write-slice-{}-{}",
+            std::process::id(),
+            unique
+        ))
     }
 
     #[test]
@@ -8476,6 +12472,1369 @@ mod tests {
     }
 
     #[test]
+    fn proofpack_writer_host_path_resolution_vocabulary_is_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_HOST_PATH_RESOLUTION_MODEL_SCHEMA_VERSION,
+            "punk.proofpack.writer_host_path_resolution_model.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathObservationStatus::Observed.as_str(),
+            "observed"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathObservationStatus::Blocked.as_str(),
+            "blocked"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathObservationStatus::NotSelected.as_str(),
+            "not_selected"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathKind::StorageRootRelative.as_str(),
+            "storage_root_relative"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathKind::Unavailable.as_str(),
+            "unavailable"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathBlocker::StorageRootRefMissing.as_str(),
+            "storage_root_ref_missing"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathBlocker::PathEncodingMissing.as_str(),
+            "path_encoding_missing"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathBlocker::ParentDirectoryMissing.as_str(),
+            "parent_directory_missing"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathBlocker::SymlinkDisallowed.as_str(),
+            "symlink_disallowed"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathBlocker::CanonicalizationUnavailable.as_str(),
+            "canonicalization_unavailable"
+        );
+        assert_eq!(
+            ProofpackWriterHostPathBlocker::StorageRootEscapeDetected.as_str(),
+            "storage_root_escape_detected"
+        );
+        assert!(ProofpackWriterHostPathBlocker::HostPathAmbiguous.is_fail_closed());
+    }
+
+    #[test]
+    fn proofpack_writer_host_path_resolution_model_observes_explicit_refs_only() {
+        let preflight = sample_writer_preflight_integration_ready_model();
+        let model = ProofpackWriterHostPathResolutionModel::evaluate(
+            &preflight,
+            sample_writer_host_path_policy_refs(),
+            ProofpackWriterHostPathKind::StorageRootRelative,
+            Some(
+                ProofpackWriterDiagnosticPathRef::new(
+                    "storage-root-relative:proofpacks/proofpack_local_001.json",
+                )
+                .expect("host path observation ref should be valid"),
+            ),
+            true,
+            vec![],
+            vec![
+                ProofBoundaryNote::new("Host path observation is operational evidence only.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let boundary = model.boundary();
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_HOST_PATH_RESOLUTION_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            model.preflight_status(),
+            ProofpackWriterPreflightIntegrationStatus::Ready
+        );
+        assert_eq!(
+            model.status(),
+            ProofpackWriterHostPathObservationStatus::Observed
+        );
+        assert!(model.is_observed());
+        assert!(!model.is_blocked());
+        assert_eq!(model.proofpack_id().as_str(), "proofpack_local_001");
+        assert_eq!(model.storage_root_ref(), preflight.storage_root_ref());
+        assert_eq!(
+            model.logical_target_artifact_ref(),
+            preflight.target_artifact_ref()
+        );
+        assert_eq!(model.target_path_ref(), preflight.target_path_ref());
+        assert!(model.refs_are_separated());
+        assert!(model.policy_refs().all_required_selected());
+        assert_eq!(
+            model.host_path_kind(),
+            ProofpackWriterHostPathKind::StorageRootRelative
+        );
+        assert!(model.host_path_ref().is_some());
+        assert!(model.host_path_redacted());
+        assert!(model.blockers().is_empty());
+        assert!(model.diagnostics().is_empty());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+
+        assert!(model.is_evidence_only());
+        assert!(boundary.models_host_path_resolution);
+        assert!(boundary.requires_explicit_storage_root_ref);
+        assert!(boundary.requires_explicit_target_path_ref);
+        assert!(boundary.requires_explicit_logical_target_artifact_ref);
+        assert!(boundary.requires_selected_policy_refs);
+        assert!(boundary.keeps_storage_root_target_artifact_path_and_observation_separate);
+        assert!(boundary.blockers_fail_closed);
+        assert!(boundary.host_path_observations_are_operational_evidence);
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_punk_proofs());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!model.persists_operation_evidence());
+        assert!(!model.writes_indexes_or_latest());
+        assert!(!model.writes_final_decision());
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.writes_schema_files());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!model.implies_proofpack_availability());
+        assert!(!model.host_path_is_proof_authority());
+        assert!(!model.target_path_is_authority());
+        assert!(!model.storage_root_ref_is_authority());
+        assert!(!model.uses_current_working_directory_as_authority());
+        assert!(!model.uses_global_config_as_authority());
+        assert!(!model.uses_ide_state_as_authority());
+        assert!(!model.uses_executor_memory_as_authority());
+        assert!(!model.uses_indexes_or_latest_as_authority());
+        assert!(!model.uses_service_mirror_as_authority());
+        assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_host_path_resolution_model_fails_closed_for_unsafe_inputs() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite],
+            vec![ProofBoundaryNote::new("Preflight input is explicit.")
+                .expect("boundary note should be valid")],
+        );
+        let file_io_plan = ProofpackWriterFileIoPlan::new(
+            &preflight_plan,
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("future/.punk/../proofs/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent],
+            vec![ProofBoundaryNote::new("File IO plan is explicit.")
+                .expect("boundary note should be valid")],
+        );
+        let target_path_policy = ProofpackWriterTargetPathPolicyModel::from_plan(
+            &file_io_plan,
+            vec![ProofBoundaryNote::new("Target path policy is explicit.")
+                .expect("boundary note should be valid")],
+        );
+        let preflight = ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![
+                ProofBoundaryNote::new("Integrated preflight remains evidence-only.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let missing_policy_refs =
+            ProofpackWriterHostPathPolicyRefs::new(None, None, None, None, None);
+        let model = ProofpackWriterHostPathResolutionModel::evaluate(
+            &preflight,
+            missing_policy_refs,
+            ProofpackWriterHostPathKind::Absolute,
+            Some(
+                ProofpackWriterDiagnosticPathRef::new("/redaction-required/proofpack.json")
+                    .expect("host path observation ref should be valid"),
+            ),
+            false,
+            vec![
+                ProofpackWriterHostPathBlocker::ParentDirectoryMissing,
+                ProofpackWriterHostPathBlocker::SymlinkDisallowed,
+                ProofpackWriterHostPathBlocker::CanonicalizationUnavailable,
+            ],
+            vec![],
+        );
+
+        assert_eq!(
+            model.status(),
+            ProofpackWriterHostPathObservationStatus::Blocked
+        );
+        assert!(model.is_blocked());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::PathEncodingMissing));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::PolicyNotSelected));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::TargetPathRefInvalid));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::TraversalDetected));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::StorageRootEscapeDetected));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::HostPathRedactionRequired));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::ParentDirectoryMissing));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::SymlinkDisallowed));
+        assert!(model.has_blocker(ProofpackWriterHostPathBlocker::CanonicalizationUnavailable));
+        assert!(model.blockers_fail_closed());
+        assert!(!model.policy_refs().all_required_selected());
+        assert!(!model.host_path_redacted());
+        assert_eq!(
+            model.host_path_kind(),
+            ProofpackWriterHostPathKind::Absolute
+        );
+        assert!(!model.writes_proofpack());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.host_path_is_proof_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_host_path_resolution_model_not_selected_has_no_blockers() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let preflight = ProofpackWriterPreflightIntegrationModel::not_selected(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            vec![
+                ProofBoundaryNote::new("Host path resolution was not selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let model = ProofpackWriterHostPathResolutionModel::not_selected(
+            &preflight,
+            vec![
+                ProofBoundaryNote::new("No host path resolution attempt was selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+
+        assert_eq!(
+            model.status(),
+            ProofpackWriterHostPathObservationStatus::NotSelected
+        );
+        assert!(model.is_not_selected());
+        assert!(model.blockers().is_empty());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert!(model.storage_root_ref().is_none());
+        assert!(model.target_path_ref().is_none());
+        assert!(model.host_path_ref().is_none());
+        assert!(model.host_path_redacted());
+        assert!(!model.writes_proofpack());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_concrete_path_storage_policy_vocabulary_is_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_CONCRETE_PATH_STORAGE_POLICY_MODEL_SCHEMA_VERSION,
+            "punk.proofpack.writer_concrete_path_storage_policy_model.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyStatus::Ready.as_str(),
+            "ready"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyStatus::Blocked.as_str(),
+            "blocked"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyStatus::NotSelected.as_str(),
+            "not_selected"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootPolicyMissing.as_str(),
+            "storage_root_policy_missing"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingRejected.as_str(),
+            "path_encoding_rejected"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathRedactionRequired.as_str(),
+            "host_path_redaction_required"
+        );
+        assert_eq!(
+            ProofpackWriterConcretePathStoragePolicyBlocker::IndexLatestPolicyMissing.as_str(),
+            "index_latest_policy_missing"
+        );
+        assert!(
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathObservationRequired
+                .is_fail_closed()
+        );
+
+        let boundary = proofpack_writer_concrete_path_storage_policy_model_boundary();
+
+        assert!(boundary.models_concrete_path_storage_policy);
+        assert!(boundary.requires_explicit_storage_root_ref);
+        assert!(boundary.requires_explicit_logical_target_artifact_ref);
+        assert!(boundary.requires_explicit_target_path_ref);
+        assert!(boundary.requires_selected_storage_and_path_policy_refs);
+        assert!(
+            boundary
+                .keeps_storage_root_target_artifact_path_host_observation_policy_and_canonical_artifact_separate
+        );
+        assert!(boundary.blockers_fail_closed);
+        assert!(boundary.policy_refs_are_operational_evidence);
+        assert!(boundary.host_path_observations_are_operational_evidence);
+        assert!(boundary.evidence_only);
+        assert!(boundary.setup_neutral);
+        assert!(!boundary.activates_writer);
+        assert!(!boundary.reads_filesystem);
+        assert!(!boundary.inspects_filesystem);
+        assert!(!boundary.touches_filesystem);
+        assert!(!boundary.canonicalizes_host_paths);
+        assert!(!boundary.normalizes_host_paths);
+        assert!(!boundary.writes_proofpack);
+        assert!(!boundary.writes_punk_proofs);
+        assert!(!boundary.writes_writer_operation_evidence);
+        assert!(!boundary.persists_operation_evidence);
+        assert!(!boundary.writes_indexes_or_latest);
+        assert!(!boundary.writes_final_decision);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.requires_runtime_storage);
+        assert!(!boundary.writes_cli_output);
+        assert!(!boundary.exposes_cli_behavior);
+        assert!(!boundary.writes_schema_files);
+        assert!(!boundary.verifies_referenced_artifacts);
+        assert!(!boundary.invokes_adapter);
+        assert!(!boundary.invokes_automation);
+        assert!(!boundary.invokes_provider_or_model_runner);
+        assert!(!boundary.compiles_context);
+        assert!(!boundary.implements_knowledge_vault);
+        assert!(!boundary.implements_compiled_wiki);
+        assert!(!boundary.implements_punk_init);
+        assert!(!boundary.policy_refs_are_proof_authority);
+        assert!(!boundary.host_path_is_proof_authority);
+        assert!(!boundary.target_path_is_authority);
+        assert!(!boundary.storage_root_ref_is_authority);
+    }
+
+    #[test]
+    fn proofpack_writer_concrete_path_storage_policy_model_ready_with_explicit_inputs() {
+        let preflight = sample_writer_preflight_integration_ready_model();
+        let host_path = ProofpackWriterHostPathResolutionModel::evaluate(
+            &preflight,
+            sample_writer_host_path_policy_refs(),
+            ProofpackWriterHostPathKind::StorageRootRelative,
+            Some(
+                ProofpackWriterDiagnosticPathRef::new(
+                    "storage-root-relative:proofpacks/proofpack_local_001.json",
+                )
+                .expect("host path observation ref should be valid"),
+            ),
+            true,
+            vec![],
+            vec![
+                ProofBoundaryNote::new("Host path observation is operational evidence only.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let model = ProofpackWriterConcretePathStoragePolicyModel::evaluate(
+            &preflight,
+            Some(&host_path),
+            sample_writer_concrete_path_storage_policy_refs(),
+            vec![ProofBoundaryNote::new(
+                "Concrete path/storage policy is operational evidence only.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let boundary = model.boundary();
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_CONCRETE_PATH_STORAGE_POLICY_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            model.preflight_status(),
+            ProofpackWriterPreflightIntegrationStatus::Ready
+        );
+        assert_eq!(
+            model.host_path_status(),
+            Some(ProofpackWriterHostPathObservationStatus::Observed)
+        );
+        assert_eq!(
+            model.status(),
+            ProofpackWriterConcretePathStoragePolicyStatus::Ready
+        );
+        assert!(model.is_ready());
+        assert!(!model.is_blocked());
+        assert_eq!(model.proofpack_id().as_str(), "proofpack_local_001");
+        assert!(model.manifest_self_digest().is_some());
+        assert_eq!(model.storage_root_ref(), preflight.storage_root_ref());
+        assert_eq!(
+            model.logical_target_artifact_ref(),
+            preflight.target_artifact_ref()
+        );
+        assert_eq!(model.target_path_ref(), preflight.target_path_ref());
+        assert!(model.refs_are_separated());
+        assert_eq!(
+            model.host_path_kind(),
+            Some(ProofpackWriterHostPathKind::StorageRootRelative)
+        );
+        assert!(model.host_path_ref().is_some());
+        assert_eq!(model.host_path_redacted(), Some(true));
+        assert!(model
+            .policy_refs()
+            .all_required_selected(preflight.planned_side_effects()));
+        assert!(model.blockers().is_empty());
+        assert!(model.diagnostics().is_empty());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+
+        assert!(model.is_evidence_only());
+        assert!(boundary.models_concrete_path_storage_policy);
+        assert!(boundary.requires_selected_storage_and_path_policy_refs);
+        assert!(
+            boundary
+                .keeps_storage_root_target_artifact_path_host_observation_policy_and_canonical_artifact_separate
+        );
+        assert!(boundary.policy_refs_are_operational_evidence);
+        assert!(boundary.host_path_observations_are_operational_evidence);
+        assert!(!model.activates_writer());
+        assert!(!model.reads_filesystem());
+        assert!(!model.inspects_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.normalizes_host_paths());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_punk_proofs());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!model.persists_operation_evidence());
+        assert!(!model.writes_indexes_or_latest());
+        assert!(!model.writes_final_decision());
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.exposes_cli_behavior());
+        assert!(!model.writes_schema_files());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!model.invokes_adapter());
+        assert!(!model.invokes_automation());
+        assert!(!model.invokes_provider_or_model_runner());
+        assert!(!model.compiles_context());
+        assert!(!model.implements_knowledge_vault());
+        assert!(!model.implements_compiled_wiki());
+        assert!(!model.implements_punk_init());
+        assert!(!model.can_claim_acceptance_by_itself());
+        assert!(!model.policy_refs_are_proof_authority());
+        assert!(!model.host_path_is_proof_authority());
+        assert!(!model.target_path_is_authority());
+        assert!(!model.storage_root_ref_is_authority());
+        assert!(!model.uses_current_working_directory_as_authority());
+        assert!(!model.uses_global_config_as_authority());
+        assert!(!model.uses_ide_state_as_authority());
+        assert!(!model.uses_executor_memory_as_authority());
+        assert!(!model.uses_indexes_or_latest_as_authority());
+        assert!(!model.uses_service_mirror_as_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_concrete_path_storage_policy_model_fails_closed_for_unsafe_inputs() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let preflight_plan = ProofpackWriterPreflightPlan::new(
+            &proofpack,
+            ProofpackWriterTargetRef::from_target_artifact_ref_policy_model(&target_ref_policy)
+                .expect("target artifact ref policy should derive logical ref"),
+            vec![
+                ProofpackWriterPlannedSideEffect::CanonicalArtifactWrite,
+                ProofpackWriterPlannedSideEffect::IndexUpdate,
+                ProofpackWriterPlannedSideEffect::LatestPointerUpdate,
+            ],
+            vec![ProofBoundaryNote::new("Preflight input is explicit.")
+                .expect("boundary note should be valid")],
+        );
+        let file_io_plan = ProofpackWriterFileIoPlan::new(
+            &preflight_plan,
+            ProofpackWriterStorageRootRef::new("repo_runtime_proofs_root")
+                .expect("storage root ref should be valid"),
+            ProofpackWriterTargetPathRef::new("future/.punk/../proofs/proofpack_local_001.json")
+                .expect("target path ref should be valid"),
+            ProofpackWriterWritePolicy::IdempotentIfMatching,
+            ProofpackWriterIdempotencyBasis::ManifestSelfDigest,
+            ProofpackWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![ProofpackWriterFileIoFailureVisibility::ExistingTargetDifferent],
+            vec![ProofBoundaryNote::new("File IO plan is explicit.")
+                .expect("boundary note should be valid")],
+        );
+        let target_path_policy = ProofpackWriterTargetPathPolicyModel::from_plan(
+            &file_io_plan,
+            vec![ProofBoundaryNote::new("Target path policy is explicit.")
+                .expect("boundary note should be valid")],
+        );
+        let preflight = ProofpackWriterPreflightIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            Some(&preflight_plan),
+            Some(&file_io_plan),
+            Some(&target_path_policy),
+            vec![
+                ProofBoundaryNote::new("Integrated preflight remains evidence-only.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let host_path = ProofpackWriterHostPathResolutionModel::evaluate(
+            &preflight,
+            ProofpackWriterHostPathPolicyRefs::new(None, None, None, None, None),
+            ProofpackWriterHostPathKind::Absolute,
+            Some(
+                ProofpackWriterDiagnosticPathRef::new("/redaction-required/proofpack.json")
+                    .expect("host path observation ref should be valid"),
+            ),
+            false,
+            vec![
+                ProofpackWriterHostPathBlocker::StorageRootRefDisallowed,
+                ProofpackWriterHostPathBlocker::ParentDirectoryMissing,
+                ProofpackWriterHostPathBlocker::SymlinkDisallowed,
+                ProofpackWriterHostPathBlocker::CanonicalizationUnavailable,
+            ],
+            vec![],
+        );
+        let model = ProofpackWriterConcretePathStoragePolicyModel::evaluate(
+            &preflight,
+            Some(&host_path),
+            ProofpackWriterConcretePathStoragePolicyRefs::new(
+                None, None, None, None, None, None, None, None, None, None, None, None, None,
+            ),
+            vec![],
+        );
+
+        assert_eq!(
+            model.status(),
+            ProofpackWriterConcretePathStoragePolicyStatus::Blocked
+        );
+        assert!(model.is_blocked());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(
+            model.has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::PreflightNotReady)
+        );
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootRefDisallowed
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::LogicalTargetArtifactPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::TargetPathDerivationPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::RejectedTargetPathPolicy
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingPolicyMissing
+        ));
+        assert!(model
+            .has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::PathEncodingRejected));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::ParentDirectoryPolicyMissing
+        ));
+        assert!(model
+            .has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::ParentDirectoryMissing));
+        assert!(model
+            .has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::SymlinkPolicyMissing));
+        assert!(
+            model.has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::SymlinkDisallowed)
+        );
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::CanonicalizationPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::CanonicalizationUnavailable
+        ));
+        assert!(model
+            .has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::TraversalPolicyMissing));
+        assert!(
+            model.has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::TraversalDetected)
+        );
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootEscapePolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::StorageRootEscapeDetected
+        ));
+        assert!(model
+            .has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::RedactionPolicyMissing));
+        assert!(model.has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::HostPathBlocked));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::HostPathRedactionRequired
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::IdempotencyConflictPolicyMissing
+        ));
+        assert!(model
+            .has_blocker(ProofpackWriterConcretePathStoragePolicyBlocker::TempAtomicPolicyMissing));
+        assert!(model.has_blocker(
+            ProofpackWriterConcretePathStoragePolicyBlocker::IndexLatestPolicyMissing
+        ));
+        assert!(model.blockers_fail_closed());
+        assert_eq!(model.host_path_redacted(), Some(false));
+        assert!(!model.writes_proofpack());
+        assert!(!model.touches_filesystem());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.policy_refs_are_proof_authority());
+        assert!(!model.host_path_is_proof_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_concrete_path_storage_policy_model_not_selected_has_no_blockers() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let target_ref_policy =
+            ProofpackWriterTargetArtifactRefPolicyModel::from_canonical_artifact_model(
+                &canonical,
+                vec![],
+            );
+        let preflight = ProofpackWriterPreflightIntegrationModel::not_selected(
+            &proofpack,
+            Some(&canonical),
+            Some(&target_ref_policy),
+            vec![
+                ProofBoundaryNote::new("Concrete path/storage policy was not selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let model = ProofpackWriterConcretePathStoragePolicyModel::not_selected(
+            &preflight,
+            vec![
+                ProofBoundaryNote::new("No concrete path/storage policy attempt was selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+
+        assert_eq!(
+            model.status(),
+            ProofpackWriterConcretePathStoragePolicyStatus::NotSelected
+        );
+        assert!(model.is_not_selected());
+        assert!(model.blockers().is_empty());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert!(model.storage_root_ref().is_none());
+        assert!(model.target_path_ref().is_none());
+        assert!(model.host_path_ref().is_none());
+        assert_eq!(model.host_path_redacted(), None);
+        assert!(!model.writes_proofpack());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_first_active_write_slice_vocabulary_and_boundary_are_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION,
+            "punk.proofpack.writer_first_active_write_slice.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterFirstActiveWriteSliceBlocker::PreflightNotReady.as_str(),
+            "preflight_not_ready"
+        );
+        assert_eq!(
+            ProofpackWriterFirstActiveWriteSliceBlocker::ExistingTargetDifferent.as_str(),
+            "existing_target_different"
+        );
+        assert_eq!(
+            ProofpackWriterFirstActiveWriteSliceBlocker::PunkRuntimePathForbidden.as_str(),
+            "punk_runtime_path_forbidden"
+        );
+        assert!(ProofpackWriterFirstActiveWriteSliceBlocker::WriteFailed.is_fail_closed());
+
+        let boundary = proofpack_writer_first_active_write_slice_boundary();
+
+        assert!(boundary.implements_first_active_write_slice);
+        assert!(boundary.requires_ready_preflight);
+        assert!(boundary.requires_concrete_path_storage_policy_ready);
+        assert!(boundary.requires_explicit_storage_root_path);
+        assert!(boundary.requires_explicit_target_relative_path);
+        assert!(boundary.writes_exact_canonical_bytes);
+        assert!(boundary.uses_create_new_no_overwrite);
+        assert!(boundary.reads_filesystem);
+        assert!(boundary.touches_filesystem);
+        assert!(boundary.writes_proofpack);
+        assert!(!boundary.writes_punk_proofs);
+        assert!(!boundary.writes_writer_operation_evidence);
+        assert!(!boundary.persists_operation_evidence);
+        assert!(!boundary.writes_indexes_or_latest);
+        assert!(!boundary.writes_final_decision);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.requires_runtime_storage);
+        assert!(!boundary.writes_cli_output);
+        assert!(!boundary.exposes_cli_behavior);
+        assert!(!boundary.writes_schema_files);
+        assert!(!boundary.verifies_referenced_artifacts);
+        assert!(!boundary.creates_parent_directories);
+        assert!(!boundary.canonicalizes_host_paths);
+        assert!(!boundary.normalizes_host_paths);
+        assert!(!boundary.claims_platform_atomicity);
+        assert!(!boundary.claims_crash_durability);
+        assert!(!boundary.uses_current_working_directory_as_authority);
+        assert!(!boundary.uses_global_config_as_authority);
+        assert!(!boundary.uses_ide_state_as_authority);
+        assert!(!boundary.uses_executor_memory_as_authority);
+        assert!(!boundary.uses_indexes_or_latest_as_authority);
+        assert!(!boundary.uses_service_mirror_as_authority);
+        assert!(!boundary.target_path_is_authority);
+        assert!(!boundary.storage_root_path_is_authority);
+        assert!(boundary.operation_evidence_is_non_authoritative);
+        assert!(boundary.setup_neutral);
+    }
+
+    #[test]
+    fn proofpack_writer_first_active_write_slice_writes_exact_bytes_to_explicit_target() {
+        let (canonical, preflight, concrete_policy) = sample_first_active_write_slice_inputs();
+        let storage_root = unique_first_active_write_storage_root();
+        let target_relative = std::path::Path::new("proofpacks/proofpack_local_001.json");
+        std::fs::create_dir_all(storage_root.join("proofpacks"))
+            .expect("test should create explicit parent outside writer");
+
+        let result = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            &storage_root,
+            target_relative,
+            vec![ProofBoundaryNote::new(
+                "First active write slice test writes exact canonical bytes only.",
+            )
+            .expect("boundary note should be valid")],
+        );
+        let written =
+            std::fs::read(storage_root.join(target_relative)).expect("target should be written");
+        std::fs::remove_dir_all(&storage_root).expect("test storage root should clean up");
+
+        assert_eq!(
+            result.schema_version(),
+            PROOFPACK_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION
+        );
+        assert_eq!(result.outcome(), ProofpackWriterOperationOutcome::Written);
+        assert_eq!(
+            result.canonical_artifact_status(),
+            ProofpackWriterCanonicalArtifactStatus::Written
+        );
+        assert!(result.represents_new_canonical_artifact_write());
+        assert!(result.canonical_artifact_available());
+        assert!(result.blockers().is_empty());
+        assert_eq!(written, canonical.canonical_body_bytes());
+        assert_eq!(
+            result.index_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert_eq!(
+            result.latest_pointer_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert_eq!(
+            result.cleanup_status(),
+            ProofpackWriterSideEffectStatus::NotSelected
+        );
+        assert!(result.writes_exact_canonical_bytes());
+        assert!(result.reads_filesystem());
+        assert!(result.touches_filesystem());
+        assert!(result.writes_proofpack());
+        assert!(!result.writes_punk_proofs());
+        assert!(!result.persists_operation_evidence());
+        assert!(!result.writes_indexes_or_latest());
+        assert!(!result.requires_runtime_storage());
+        assert!(!result.writes_cli_output());
+        assert!(!result.writes_schema_files());
+        assert!(!result.verifies_referenced_artifacts());
+        assert!(!result.creates_acceptance_claim());
+        assert!(!result.claims_platform_atomicity());
+        assert!(!result.claims_crash_durability());
+        assert!(!result.can_claim_acceptance_by_itself());
+
+        let evidence = result
+            .to_operation_evidence(
+                ProofpackWriterOperationId::new("writer_first_active_001")
+                    .expect("operation id should be valid"),
+                ProofpackWriterAttemptedAt::new("2026-04-30T12:30:00Z")
+                    .expect("attempted_at should be valid"),
+            )
+            .expect("operation evidence should be consistent");
+        assert_eq!(evidence.outcome(), ProofpackWriterOperationOutcome::Written);
+        assert!(evidence.canonical_artifact_available());
+        assert!(!evidence.creates_acceptance_claim());
+        assert!(!evidence.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_first_active_write_slice_blocks_unsafe_or_unready_inputs() {
+        let (canonical, preflight, concrete_policy) = sample_first_active_write_slice_inputs();
+        let storage_root = unique_first_active_write_storage_root();
+        std::fs::create_dir_all(&storage_root).expect("test storage root should exist");
+
+        let missing_parent = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            &storage_root,
+            std::path::Path::new("proofpacks/proofpack_local_001.json"),
+            vec![
+                ProofBoundaryNote::new("Missing parent directory must block.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let punk_path = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            &storage_root,
+            std::path::Path::new(".punk/proofs/proofpack_local_001.json"),
+            vec![
+                ProofBoundaryNote::new("Punk runtime paths are forbidden in first slice.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let relative_root = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            std::path::Path::new("relative-storage-root"),
+            std::path::Path::new("proofpacks/proofpack_local_001.json"),
+            vec![
+                ProofBoundaryNote::new("Relative roots would depend on CWD authority.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        assert!(
+            !storage_root
+                .join("proofpacks/proofpack_local_001.json")
+                .exists(),
+            "missing-parent blocker must not create a target"
+        );
+        assert!(
+            !storage_root.join(".punk").exists(),
+            "first slice must not create .punk runtime state"
+        );
+        std::fs::remove_dir_all(&storage_root).expect("test storage root should clean up");
+
+        assert_eq!(
+            missing_parent.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(missing_parent
+            .has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryMissing));
+        assert!(!missing_parent.canonical_artifact_available());
+        assert!(missing_parent.blockers_fail_closed());
+
+        assert_eq!(
+            punk_path.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(punk_path
+            .has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::PunkRuntimePathForbidden));
+        assert!(
+            punk_path.has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::TargetPathMismatch)
+        );
+        assert!(!punk_path.writes_punk_proofs());
+
+        assert_eq!(
+            relative_root.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(relative_root
+            .has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootPathRelative));
+        assert!(!relative_root.uses_current_working_directory_as_authority());
+    }
+
+    #[test]
+    fn proofpack_writer_first_active_write_slice_handles_idempotent_and_conflict_targets() {
+        let (canonical, preflight, concrete_policy) = sample_first_active_write_slice_inputs();
+        let storage_root = unique_first_active_write_storage_root();
+        let target_relative = std::path::Path::new("proofpacks/proofpack_local_001.json");
+        let target = storage_root.join(target_relative);
+        std::fs::create_dir_all(target.parent().expect("target should have parent"))
+            .expect("test should create explicit parent outside writer");
+        std::fs::write(&target, canonical.canonical_body_bytes())
+            .expect("test should pre-create matching target");
+
+        let idempotent = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            &storage_root,
+            target_relative,
+            vec![
+                ProofBoundaryNote::new("Existing matching target is idempotent.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        std::fs::write(&target, b"different proofpack bytes")
+            .expect("test should pre-create conflicting target");
+        let conflict = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            &storage_root,
+            target_relative,
+            vec![
+                ProofBoundaryNote::new("Existing different target must conflict.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let remaining = std::fs::read(&target).expect("target should remain readable");
+        std::fs::remove_dir_all(&storage_root).expect("test storage root should clean up");
+
+        assert_eq!(
+            idempotent.outcome(),
+            ProofpackWriterOperationOutcome::AlreadyExistsMatching
+        );
+        assert!(idempotent.is_idempotent_existing_match());
+        assert!(idempotent.canonical_artifact_available());
+        assert!(!idempotent.represents_new_canonical_artifact_write());
+        assert!(idempotent.blockers().is_empty());
+
+        assert_eq!(
+            conflict.outcome(),
+            ProofpackWriterOperationOutcome::ConflictExistingDifferent
+        );
+        assert!(conflict.has_conflict());
+        assert!(conflict
+            .has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::ExistingTargetDifferent));
+        assert!(!conflict.canonical_artifact_available());
+        assert_eq!(remaining, b"different proofpack bytes");
+    }
+
+    #[test]
+    fn proofpack_writer_hash_reference_integration_vocabulary_and_boundary_are_stable() {
+        assert_eq!(
+            PROOFPACK_WRITER_HASH_REFERENCE_INTEGRATION_MODEL_SCHEMA_VERSION,
+            "punk.proofpack.writer_hash_reference_integration_model.v0.1"
+        );
+        assert_eq!(
+            ProofpackWriterHashReferenceIntegrationStatus::Ready.as_str(),
+            "ready"
+        );
+        assert_eq!(
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredInvalidFormat.as_str(),
+            "declared_invalid_format"
+        );
+        assert_eq!(
+            ProofpackWriterDeclaredArtifactDigestStatus::DeclaredUnsupportedAlgorithm.as_str(),
+            "declared_unsupported_algorithm"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::DigestMismatch.as_str(),
+            "digest_mismatch"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::InvalidRef.as_str(),
+            "invalid_ref"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::InvalidExpectedDigest.as_str(),
+            "invalid_expected_digest"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::UnsupportedRef.as_str(),
+            "unsupported_ref"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::NotRequired.as_str(),
+            "not_required"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::Unverified.as_str(),
+            "unverified"
+        );
+        assert_eq!(
+            ProofpackWriterReferencedArtifactVerificationStatus::from_core_outcome(
+                ReferencedArtifactVerificationOutcome::OutsideRepoRoot,
+            ),
+            ProofpackWriterReferencedArtifactVerificationStatus::OutsideRepoRoot
+        );
+        assert_eq!(
+            ProofpackWriterHashReferenceIntegrationBlocker::WrongDeclaredDigestKindOrRef.as_str(),
+            "wrong_declared_digest_kind_or_ref"
+        );
+        assert_eq!(
+            ProofpackWriterHashReferenceIntegrationBlocker::RequiredVerificationUnverified.as_str(),
+            "required_verification_unverified"
+        );
+        assert!(
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationSymlink.is_fail_closed()
+        );
+
+        let boundary = proofpack_writer_hash_reference_integration_model_boundary();
+
+        assert!(boundary.models_hash_reference_integration);
+        assert!(boundary.consumes_explicit_proofpack_refs);
+        assert!(boundary.checks_declared_digest_policy);
+        assert!(boundary.checks_structural_link_hash_integrity);
+        assert!(boundary.consumes_optional_referenced_artifact_verification_outcomes);
+        assert!(boundary.keeps_evidence_surfaces_separate);
+        assert!(boundary.manifest_self_digest_is_readiness_metadata);
+        assert!(boundary.evidence_only);
+        assert!(boundary.setup_neutral);
+        assert!(!boundary.reads_filesystem);
+        assert!(!boundary.touches_filesystem);
+        assert!(!boundary.computes_referenced_artifact_hashes);
+        assert!(!boundary.verifies_referenced_artifacts);
+        assert!(!boundary.broad_file_hashing);
+        assert!(!boundary.canonicalizes_host_paths);
+        assert!(!boundary.writes_proofpack);
+        assert!(!boundary.writes_punk_proofs);
+        assert!(!boundary.writes_writer_operation_evidence);
+        assert!(!boundary.persists_operation_evidence);
+        assert!(!boundary.writes_indexes_or_latest);
+        assert!(!boundary.writes_final_decision);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.requires_runtime_storage);
+        assert!(!boundary.writes_cli_output);
+        assert!(!boundary.exposes_cli_behavior);
+        assert!(!boundary.writes_schema_files);
+    }
+
+    #[test]
+    fn proofpack_writer_hash_reference_integration_model_is_ready_with_explicit_evidence() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(
+            &proofpack,
+            vec![
+                ProofBoundaryNote::new("Canonical artifact stays in memory.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let model = ProofpackWriterHashReferenceIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            sample_hash_reference_declared_digest_evidence(&proofpack),
+            sample_hash_reference_verification_evidence(&proofpack),
+            vec![ProofBoundaryNote::new(
+                "Hash/reference readiness composes explicit evidence only.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert_eq!(
+            model.schema_version(),
+            PROOFPACK_WRITER_HASH_REFERENCE_INTEGRATION_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            model.status(),
+            ProofpackWriterHashReferenceIntegrationStatus::Ready
+        );
+        assert!(model.is_ready());
+        assert!(!model.is_blocked());
+        assert_eq!(model.proofpack_id(), proofpack.id());
+        assert_eq!(
+            model.required_digest_refs().len(),
+            proofpack.required_artifact_digest_refs().len()
+        );
+        assert_eq!(
+            model.declared_digest_evidence().len(),
+            model.required_digest_refs().len()
+        );
+        assert!(model
+            .declared_digest_evidence()
+            .iter()
+            .all(ProofpackWriterDeclaredArtifactDigestEvidence::satisfies_required_declaration));
+        assert!(model.declared_digest_surface_is_complete());
+        assert!(model.structural_link_hash_integrity_is_complete());
+        assert!(model.structural_integrity_report().is_complete());
+        assert!(model.has_referenced_artifact_verification_evidence());
+        assert!(model
+            .referenced_artifact_verification_evidence()
+            .iter()
+            .all(ProofpackWriterReferencedArtifactVerificationEvidence::is_verified));
+        assert_eq!(
+            model.manifest_self_digest(),
+            Some(canonical.manifest_self_digest())
+        );
+        assert!(model.has_manifest_self_digest_ready());
+        assert!(model.blockers().is_empty());
+        assert_eq!(
+            model.operation_kind(),
+            ProofpackWriterOperationKind::PlannedOnly
+        );
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert!(model.keeps_evidence_surfaces_separate());
+        assert!(model.is_evidence_only());
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.computes_referenced_artifact_hashes());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!model.broad_file_hashing());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_punk_proofs());
+        assert!(!model.writes_writer_operation_evidence());
+        assert!(!model.persists_operation_evidence());
+        assert!(!model.writes_indexes_or_latest());
+        assert!(!model.writes_final_decision());
+        assert!(!model.creates_acceptance_claim());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.exposes_cli_behavior());
+        assert!(!model.writes_schema_files());
+        assert!(!model.canonicalizes_host_paths());
+        assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn proofpack_writer_hash_reference_integration_model_blocks_missing_invalid_and_non_passing_evidence(
+    ) {
+        let proofpack = sample_proofpack_without_digests();
+        let full_proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let requirements = proofpack.required_artifact_digest_refs();
+        let wrong_kind_digest = full_proofpack
+            .artifact_digests()
+            .iter()
+            .find(|digest| digest.kind() == ProofArtifactKind::OutputArtifact)
+            .expect("sample proofpack should have output digest");
+        let declared = vec![
+            ProofpackWriterDeclaredArtifactDigestEvidence::invalid_format(
+                requirements[0].clone(),
+                "sha256:NOT-LOWERCASE-HEX",
+            ),
+            ProofpackWriterDeclaredArtifactDigestEvidence::unsupported_algorithm(
+                requirements[1].clone(),
+                "blake3:0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+            ProofpackWriterDeclaredArtifactDigestEvidence::wrong_kind_or_ref(
+                requirements[2].clone(),
+                wrong_kind_digest,
+            ),
+        ];
+        let expected =
+            ArtifactDigest::new(PROOF_HASH_GATE_DECISION).expect("expected digest should be valid");
+        let observed =
+            ArtifactDigest::new(PROOF_HASH_CONTRACT).expect("observed digest should be valid");
+        let verification = vec![
+            ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                requirements[0].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::DigestMismatch,
+                Some(expected),
+                Some(observed),
+                vec![],
+            ),
+            ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                requirements[1].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::Missing,
+                None,
+                None,
+                vec![],
+            ),
+            ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                requirements[2].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::Symlink,
+                None,
+                None,
+                vec![],
+            ),
+            ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                requirements[3].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::OutsideRepoRoot,
+                None,
+                None,
+                vec![],
+            ),
+            ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                requirements[4].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::InvalidExpectedDigest,
+                None,
+                None,
+                vec![],
+            ),
+            ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                requirements[5].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::Unverified,
+                None,
+                None,
+                vec![],
+            ),
+        ];
+
+        let model = ProofpackWriterHashReferenceIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            declared,
+            verification,
+            vec![ProofBoundaryNote::new(
+                "Non-passing hash/reference evidence must remain visible.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert!(model.is_blocked());
+        assert_eq!(
+            model.operation_outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::InvalidDeclaredArtifactDigest
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::UnsupportedDeclaredDigestAlgorithm
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::WrongDeclaredDigestKindOrRef
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::MissingDeclaredArtifactDigest
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::StructuralLinkHashIntegrityIncomplete
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationDigestMismatch
+        ));
+        assert!(
+            model.has_blocker(ProofpackWriterHashReferenceIntegrationBlocker::VerificationMissing)
+        );
+        assert!(
+            model.has_blocker(ProofpackWriterHashReferenceIntegrationBlocker::VerificationSymlink)
+        );
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationOutsideRepoRoot
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::VerificationInvalidExpectedDigest
+        ));
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::RequiredVerificationUnverified
+        ));
+        assert!(model.blockers_fail_closed());
+        assert!(!model.structural_link_hash_integrity_is_complete());
+        assert!(model.manifest_self_digest().is_some());
+        assert!(!model.reads_filesystem());
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_proofpack());
+        assert!(!model.creates_acceptance_claim());
+    }
+
+    #[test]
+    fn proofpack_writer_hash_reference_integration_model_keeps_optional_unverified_visible() {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+        let requirements = proofpack.required_artifact_digest_refs();
+        let digest = core_digest_for_requirement(&proofpack, &requirements[0]);
+        let model = ProofpackWriterHashReferenceIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            sample_hash_reference_declared_digest_evidence(&proofpack),
+            vec![
+                ProofpackWriterReferencedArtifactVerificationEvidence::optional(
+                    requirements[0].clone(),
+                    ProofpackWriterReferencedArtifactVerificationStatus::Unverified,
+                    Some(digest),
+                    None,
+                    vec![ProofBoundaryNote::new(
+                        "Optional unverified evidence stays visible and non-authoritative.",
+                    )
+                    .expect("boundary note should be valid")],
+                ),
+                ProofpackWriterReferencedArtifactVerificationEvidence::optional(
+                    requirements[1].clone(),
+                    ProofpackWriterReferencedArtifactVerificationStatus::NotRequired,
+                    None,
+                    None,
+                    vec![],
+                ),
+            ],
+            vec![],
+        );
+        let not_selected = ProofpackWriterHashReferenceIntegrationModel::not_selected(
+            &proofpack,
+            vec![
+                ProofBoundaryNote::new("Hash/reference integration was not selected.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+
+        assert!(model.is_ready());
+        assert!(model.blockers().is_empty());
+        assert!(model.has_optional_or_not_required_verification_evidence());
+        assert_eq!(
+            model.referenced_artifact_verification_evidence()[0].status(),
+            ProofpackWriterReferencedArtifactVerificationStatus::Unverified
+        );
+        assert_eq!(
+            model.referenced_artifact_verification_evidence()[1].status(),
+            ProofpackWriterReferencedArtifactVerificationStatus::NotRequired
+        );
+        assert!(model.keeps_evidence_surfaces_separate());
+        assert!(model.has_manifest_self_digest_ready());
+        assert!(!model.verifies_referenced_artifacts());
+        assert!(!model.reads_filesystem());
+        assert!(!model.writes_proofpack());
+        assert!(!model.writes_punk_proofs());
+        assert!(!model.requires_runtime_storage());
+        assert!(!model.writes_cli_output());
+        assert!(!model.exposes_cli_behavior());
+        assert!(!model.writes_schema_files());
+        assert!(!model.creates_acceptance_claim());
+
+        assert!(not_selected.is_not_selected());
+        assert_eq!(
+            not_selected.operation_outcome(),
+            ProofpackWriterOperationOutcome::PlannedOnly
+        );
+        assert!(not_selected.blockers().is_empty());
+        assert!(not_selected.manifest_self_digest().is_none());
+        assert!(!not_selected.creates_acceptance_claim());
+    }
+
+    #[test]
     fn writer_operation_write_success_does_not_imply_acceptance() {
         let evidence = sample_writer_operation_evidence(
             ProofpackWriterOperationOutcome::Written,
@@ -8688,6 +14047,10 @@ mod tests {
         assert_eq!(
             ProofpackWriterDiagnosticPathRef::new(" "),
             Err(ProofpackError::EmptyWriterDiagnosticPathRef)
+        );
+        assert_eq!(
+            ProofpackWriterHostPathPolicyRef::new(" "),
+            Err(ProofpackError::EmptyWriterHostPathPolicyRef)
         );
     }
 

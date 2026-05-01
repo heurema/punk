@@ -5,13 +5,14 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-29
-updated_at: 2026-04-29
+updated_at: 2026-04-30
 review_after: 2026-06-15
 canonical_for:
   - project-north-star
   - frontier-direction
   - spec-and-intent-native-direction
   - code-first-to-spec-as-source-trajectory
+  - replayability-direction
 related_docs:
   - docs/product/START-HERE.md
   - docs/product/DOCUMENTATION-MAP.md
@@ -56,6 +57,18 @@ Punk should make intent, contracts, evidence, decisions, and proof more inspecta
 Code remains essential, but it should increasingly be linked to explicit intent, bounded scope, validation evidence, gate decisions, and project memory.
 
 Future spec-as-source work is experimental direction, not current behavior. It must be earned through research, contracts, evals, roadmap gates, and proof-bearing implementation.
+
+## Replayability direction
+
+Punk should preserve project memory so future humans and agents can replay intent, transpose contracts, and verify migrations or reimplementations.
+
+This does not mean deterministic automatic replay of development history or current spec-as-source behavior.
+
+The near-term direction is to make contracts, evidence, decisions, examples, invariants, and proof links more portable and inspectable so future migration/reimplementation work can be expressed as new bounded contracts and verified by gates.
+
+Greenfield Punk projects should record replay memory from day zero. Brownfield projects can only reconstruct replay candidates unless reviewed and promoted. Grayfield projects reconcile partial recorded memory with partial reconstruction.
+
+This direction does not activate code generation, migration automation, new CLI behavior, runtime storage, agents, adapters, Writer, gate writers, proof writers, or spec-as-source behavior.
 
 ## Current boundary
 
