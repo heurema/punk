@@ -76,10 +76,10 @@ Level 0 operating rules:
 
 Currently implemented CLI subset:
 
-- `punk init`
+- `punk init <project-id>`
 
-`punk init` creates only the Level 0 manual project-memory scaffold.
-It writes repo-tracked starter files plus `.punk` marker/setup files, and does not create `.punk` runtime stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
+`punk init <project-id>` creates only the greenfield Level 0 manual project-memory scaffold.
+It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter files plus `.punk` marker/setup files, and does not create brownfield reconstruction, grayfield reconciliation, `.punk` runtime stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Exit criteria:
 

@@ -78,11 +78,11 @@ If supported, an override must:
 
 Current implemented CLI subset:
 
-- `punk init`
+- `punk init <project-id>`
 - `punk flow inspect`
 
-`punk init` is a Level 0 setup command for repo-tracked manual project memory.
-It is not flow persistence and does not write flow events or `.punk/` runtime stores.
+`punk init <project-id>` is a greenfield Level 0 setup command for repo-tracked manual project memory.
+It records `project_id` and `entry_mode = greenfield`; it is not flow persistence and does not write flow events, brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores.
 
 Future target commands include:
 

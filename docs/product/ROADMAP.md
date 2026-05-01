@@ -58,13 +58,13 @@ Active target:
 
 - workspace compiles
 - docs define core boundaries
-- `punk init` creates a Level 0 manual project-memory scaffold only
+- `punk init <project-id>` creates a greenfield Level 0 manual project-memory scaffold only
 - parked crates/folders do not expose public behavior
 
 Exit criteria:
 
 - `cargo check --workspace` passes
-- `punk init` creates repo-tracked starter memory and `.punk` marker files without `.punk/` runtime stores
+- `punk init <project-id>` creates repo-tracked starter memory with `project_id`, `entry_mode = greenfield`, and `.punk` marker files without brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores
 - status vocabulary is documented
 - no parked capability appears in the public CLI
 

@@ -46,7 +46,9 @@ use punk_gate::{
     GateBoundaryNote, GateContractRef, GateCreatedAt, GateDecision, GateDecisionId,
     GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
 };
-use punk_project::{init_level0_project, ProjectInitArtifactKind, ProjectInitArtifactStatus};
+use punk_project::{
+    init_level0_project, ProjectId, ProjectInitArtifactKind, ProjectInitArtifactStatus,
+};
 use punk_proof::{
     compute_proofpack_manifest_digest, positive_acceptance_preconditions_met,
     proofpack_writer_first_active_write_slice_boundary,
@@ -576,7 +578,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         boundary_notes: vec![
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
-            "project init smoke cases create Level 0 project-memory scaffold files plus .punk marker files without creating .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims",
+            "greenfield init smoke cases create Level 0 project-memory scaffold files with project_id, entry_mode, and .punk marker files without brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims",
             "contract schema blueprint smoke cases preserve target shape, field status split, clause mapping, gate input policy, proof requirements, and Writer authority boundaries without runtime activation",
             "user intent-to-contract draft model smoke cases classify readiness in memory only and do not create contracts, runtime storage, CLI behavior, gate-writing behavior, proofpacks, or Writer behavior",
             "contract draft confirmation smoke cases require explicit user confirmation before approved_for_run model state without runtime storage, CLI behavior, gate-writing behavior, proofpacks, or Writer behavior",
@@ -830,15 +832,18 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
     if let Err(error) = fs::create_dir_all(&temp_path) {
         return SmokeEvalCaseResult::fail(
             "eval_project_init_creates_level0_manual_memory_scaffold",
-            "project init creates Level 0 manual memory scaffold",
+            "greenfield project init creates Level 0 manual memory scaffold",
             format!("temporary project root setup failed with {error:?}"),
         );
     }
 
-    let report = init_level0_project(&temp_path);
+    let project_id = ProjectId::parse("weekend-project").expect("smoke project id should parse");
+    let report = init_level0_project(&temp_path, project_id);
     let status_path = temp_path.join("work/STATUS.md");
-    let goal_path = temp_path.join("work/goals/goal_capture_initial_project_truth.md");
+    let goal_path = temp_path.join("work/goals/goal_initial_project_setup.md");
     let status_text = fs::read_to_string(&status_path);
+    let goal_text = fs::read_to_string(&goal_path);
+    let marker_text = fs::read_to_string(temp_path.join(".punk/project.toml"));
     let status_exists = status_path.is_file();
     let goal_exists = goal_path.is_file();
     let punk_marker_ok = temp_path.join(".punk/README.md").is_file()
@@ -853,14 +858,26 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
 
     let status_ok = status_text.as_ref().is_ok_and(|text| {
         text.contains("dogfooding_level: 0")
-            && text.contains("selected_next: \"work/goals/goal_capture_initial_project_truth.md\"")
+            && text.contains("project_id: \"weekend-project\"")
+            && text.contains("entry_mode: greenfield")
+            && text.contains("selected_next: \"work/goals/goal_initial_project_setup.md\"")
+    });
+    let goal_ok = goal_text.as_ref().is_ok_and(|text| {
+        text.contains("id: goal_initial_project_setup")
+            && text.contains("project_id: \"weekend-project\"")
+            && text.contains("entry_mode: greenfield")
+    });
+    let marker_ok = marker_text.as_ref().is_ok_and(|text| {
+        text.contains("project_id = \"weekend-project\"")
+            && text.contains("entry_mode = \"greenfield\"")
+            && text.contains("runtime_persistence = \"inactive\"")
     });
     let artifact_ok = report.artifacts().iter().any(|artifact| {
         artifact.repo_relative_path() == "work/STATUS.md"
             && artifact.kind() == ProjectInitArtifactKind::File
             && artifact.status() == ProjectInitArtifactStatus::Created
     }) && report.artifacts().iter().any(|artifact| {
-        artifact.repo_relative_path() == "work/goals/goal_capture_initial_project_truth.md"
+        artifact.repo_relative_path() == "work/goals/goal_initial_project_setup.md"
             && artifact.kind() == ProjectInitArtifactKind::File
             && artifact.status() == ProjectInitArtifactStatus::Created
     }) && report.artifacts().iter().any(|artifact| {
@@ -879,21 +896,23 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
         && punk_marker_ok
         && punk_runtime_store_absent
         && status_ok
+        && goal_ok
+        && marker_ok
         && artifact_ok
         && cleanup_ok;
 
     if scaffold_ok {
         SmokeEvalCaseResult::pass(
             "eval_project_init_creates_level0_manual_memory_scaffold",
-            "project init creates Level 0 manual memory scaffold",
-            "Level 0 scaffold created work/docs/knowledge files and .punk marker files while leaving .punk runtime stores absent",
+            "greenfield project init creates Level 0 manual memory scaffold",
+            "greenfield Level 0 scaffold created work/docs/knowledge files with project_id, entry_mode, and .punk marker files while leaving brownfield/grayfield and .punk runtime stores absent",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_project_init_creates_level0_manual_memory_scaffold",
-            "project init creates Level 0 manual memory scaffold",
+            "greenfield project init creates Level 0 manual memory scaffold",
             format!(
-                "init scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} punk_marker_ok={} punk_runtime_store_absent={} status_ok={} artifact_ok={} cleanup_ok={} status_read={:?}",
+                "init scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} punk_marker_ok={} punk_runtime_store_absent={} status_ok={} goal_ok={} marker_ok={} artifact_ok={} cleanup_ok={} status_read={:?} goal_read={:?} marker_read={:?}",
                 report.blocked(),
                 report.exit_code(),
                 status_exists,
@@ -901,9 +920,13 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
                 punk_marker_ok,
                 punk_runtime_store_absent,
                 status_ok,
+                goal_ok,
+                marker_ok,
                 artifact_ok,
                 cleanup_ok,
-                status_text.err()
+                status_text.err(),
+                goal_text.err(),
+                marker_text.err()
             ),
         )
     }
@@ -924,7 +947,8 @@ fn eval_project_init_refuses_to_overwrite_existing_memory() -> SmokeEvalCaseResu
         );
     }
 
-    let report = init_level0_project(&temp_path);
+    let project_id = ProjectId::parse("weekend-project").expect("smoke project id should parse");
+    let report = init_level0_project(&temp_path, project_id);
     let status_text = fs::read_to_string(&status_path);
     let cleanup_ok = fs::remove_dir_all(&temp_path).is_ok();
 
@@ -8022,7 +8046,7 @@ mod tests {
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
         assert!(rendered.contains(
-            "project init smoke cases create Level 0 project-memory scaffold files plus .punk marker files without creating .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims"
+            "greenfield init smoke cases create Level 0 project-memory scaffold files with project_id, entry_mode, and .punk marker files without brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims"
         ));
         assert!(rendered.contains(
             "contract schema blueprint smoke cases preserve target shape, field status split, clause mapping, gate input policy, proof requirements, and Writer authority boundaries without runtime activation"

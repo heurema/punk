@@ -184,13 +184,14 @@ At this stage:
 - `work/STATUS.md` is human-maintained;
 - `work/goals/` hold durable work intent;
 - `work/reports/` hold durable outcome and handoff artifacts;
-- `punk init` can create the initial Level 0 scaffold for these repo-tracked files;
+- `punk init <project-id>` can create the initial greenfield Level 0 scaffold for these repo-tracked files;
+- the scaffold records `project_id` and `entry_mode = greenfield`;
 - `.punk/README.md` and `.punk/project.toml` may mark the project root and setup metadata;
 - `.punk/` runtime stores are not written yet for this purpose;
 - this surface must not become a second tracker product or a hidden backend.
 
-The current `punk init` command is limited to this manual scaffold.
-It does not create runtime project storage, flow events, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
+The current `punk init <project-id>` command is limited to this manual greenfield scaffold.
+It does not create brownfield reconstruction, grayfield reconciliation, runtime project storage, flow events, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Level 0 `done` means manual closure with evidence.
 

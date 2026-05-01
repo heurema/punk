@@ -20,6 +20,8 @@ last_validated_commit: "2f64f0f"
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: cleanup docs-governance warnings v0.1.
 - Selected next: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`
+- Scope override note: maintainer explicitly selected the greenfield init scaffold direction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice tightens `punk init` to `punk init <project-id>` for greenfield Level 0 project-memory only.
+- Completion note: `work/goals/goal_add_greenfield_init_scaffold_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs, docs-governance fixture, and work-ledger evidence. It records `project_id` and `entry_mode = greenfield`, creates `work/goals/goal_initial_project_setup.md`, keeps `.punk` marker/setup files marker-only, and adds no brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, runtime stores, contracts, gate/proof artifacts, proofpacks, Writer behavior, adapters, automation, or acceptance claims.
 - Scope override note: maintainer explicitly selected a minimal `.punk` bootstrap after Level 0 `punk init`. The docs-governance cleanup goal remains ready, but this bounded slice adds only `.punk` marker/setup files and no runtime stores.
 - Completion note: `work/goals/goal_add_punk_root_marker_init_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-governance, and work-ledger evidence. It adds `.punk/README.md` and `.punk/project.toml` to `punk init` only as marker/setup files, with no `.punk` runtime stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, acceptance claims, adapters, automation, or provider/model execution.
 - Scope override note: maintainer explicitly selected a real-project dogfooding path before continuing docs-governance cleanup. The cleanup goal remains ready, but this bounded `punk init` slice now promotes only a manual Level 0 scaffold so a greenfield project can start using Punk discipline without runtime authority claims.
@@ -109,6 +111,7 @@ last_validated_commit: "2f64f0f"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Added greenfield init scaffold v0.1 | `work/goals/goal_add_greenfield_init_scaffold_v0_1.md`, `work/reports/2026-05-01-greenfield-init-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added Punk root marker init v0.1 | `work/goals/goal_add_punk_root_marker_init_v0_1.md`, `work/reports/2026-05-01-punk-root-marker-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added Level 0 project init v0.1 | `work/goals/goal_add_level0_project_init_v0_1.md`, `work/reports/2026-05-01-level0-project-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Closed contract-core checkpoint series v0.1 | `work/goals/goal_close_contract_core_checkpoint_series_v0_1.md`, `work/reports/2026-05-01-close-contract-core-checkpoint-series-v0-1.md`, `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` |
@@ -295,13 +298,15 @@ last_validated_commit: "2f64f0f"
 - Command: `cargo check --workspace`
 - Command: `cargo test --workspace`
 - Command: `cargo run -q -p punk-cli -- eval run smoke`
-- Command: `cargo run -q --manifest-path /Users/vi/personal/heurema/punk/Cargo.toml -p punk-cli -- init` from a temporary empty project root
+- Command: manual temp-root init through the repo `punk-cli` binary with `weekend-project`
 - Command: `cargo build -p punk-cli`
+- Command: `~/.local/bin/punk-dev init weekend-project` from a temporary empty project root
 - Command: `~/.local/bin/punk-dev flow inspect`
-- Command: `scripts/check.sh docs-governance --files ... --report work/reports/2026-05-01-punk-root-marker-init-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files ... --report work/reports/2026-05-01-greenfield-init-scaffold-v0-1.md`
 - Command: `git diff --check`
 - Result: `PASS`
 - Notes:
-  - `punk init` is now active only as a Dogfooding Level 0 manual project-memory scaffold with `.punk` marker/setup files.
+  - `punk init <project-id>` is now active only as a greenfield Dogfooding Level 0 manual project-memory scaffold with project identity, `entry_mode = greenfield`, and `.punk` marker/setup files.
+  - Brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, contracts, gate/proof runtime, Writer behavior, and `.punk` runtime stores remain inactive.
   - Selected next is restored to `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`.
   - Docs governance passed with 0 failures and 3 existing duplicate-definition warnings for this check.

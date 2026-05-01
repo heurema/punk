@@ -80,7 +80,7 @@ NEGATING_PHRASES = (
     "parked",
 )
 IMPLEMENTED_PUNK_CLI_COMMANDS = {
-    "punk init",
+    "punk init <project-id>",
     "punk flow inspect",
     "punk eval run smoke",
     "punk eval run smoke --format json",

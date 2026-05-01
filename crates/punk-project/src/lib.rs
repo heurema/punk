@@ -6,11 +6,18 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
-pub const PROJECT_INIT_SCHEMA_VERSION: &str = "project-init-level0.v0.1";
+pub const PROJECT_INIT_SCHEMA_VERSION: &str = "project-init-greenfield.v0.1";
 pub const PROJECT_INIT_MODE: &str = "manual-project-memory-level0";
+pub const PROJECT_INIT_ENTRY_MODE: &str = "greenfield";
 pub const PROJECT_INIT_RUNTIME_PERSISTENCE: &str = "inactive";
+pub const PROJECT_ID_FORMAT_NOTE: &str =
+    "project id must be a lowercase ASCII slug: a-z, 0-9, and hyphen, starting and ending with a letter or digit";
 
-const WORK_STATUS_TEMPLATE: &str = r#"---
+const INITIAL_GOAL_PATH: &str = "work/goals/goal_initial_project_setup.md";
+
+fn work_status_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"---
 id: work_status
 kind: manual-work-ledger
 status: active
@@ -18,10 +25,12 @@ authority: canonical
 owner: TODO
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
+project_id: "{project_id}"
+entry_mode: greenfield
 updated_at: TODO
 current_phase: "Dogfooding Level 0 / manual project memory"
-current_focus: "Capture initial project truth"
-selected_next: "work/goals/goal_capture_initial_project_truth.md"
+current_focus: "Initial project setup"
+selected_next: "{INITIAL_GOAL_PATH}"
 last_validated_commit: null
 ---
 
@@ -29,9 +38,9 @@ last_validated_commit: null
 
 ## Now
 
-- Current stage: project initialized with Punk Level 0 manual memory.
-- Current focus: capture initial project truth from existing docs and design.
-- Selected next: `work/goals/goal_capture_initial_project_truth.md`
+- Current stage: greenfield project initialized with Punk Level 0 manual memory.
+- Current focus: complete initial project setup.
+- Selected next: `{INITIAL_GOAL_PATH}`
 
 ## Blockers
 
@@ -39,21 +48,28 @@ last_validated_commit: null
 
 ## Recent Evidence
 
-- `punk init` created the Level 0 scaffold.
+- `punk init {project_id}` created the greenfield Level 0 scaffold.
 
 ## Open Drift Findings
 
 None.
-"#;
+"#,
+        project_id = project_id.as_str()
+    )
+}
 
-const INITIAL_GOAL_TEMPLATE: &str = r#"---
-id: goal_capture_initial_project_truth
-title: "Capture initial project truth"
+fn initial_goal_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"---
+id: goal_initial_project_setup
+title: "Initial project setup"
 status: ready
 owner: TODO
 module: "project"
 priority: P1
 authority: canonical
+project_id: "{project_id}"
+entry_mode: greenfield
 created_at: TODO
 updated_at: TODO
 selected_at: TODO
@@ -79,6 +95,7 @@ scope:
 acceptance:
   - "The canonical product/design/source documents are listed with repo-relative refs."
   - "Known constraints, non-goals, and acceptance criteria for the first implementation slice are recorded."
+  - "Project id and greenfield entry mode remain visible in work/STATUS.md."
   - "The next bounded implementation goal is created and selected in work/STATUS.md."
 knowledge_refs: []
 contract_refs: []
@@ -89,7 +106,7 @@ latest_proof_ref: null
 research_gate:
   classification: R0
   required: false
-  rationale: "Initial truth capture only inventories user-provided/repo-tracked project inputs and does not change architecture."
+  rationale: "Initial project setup only inventories user-provided/repo-tracked project inputs and does not change architecture."
   research_refs: []
   external_research_refs: []
   blocked_reason: null
@@ -103,7 +120,9 @@ doc_impact:
 
 ## Context
 
-The project has been initialized with Punk Level 0 manual project memory.
+The project has been initialized as a Punk greenfield project with Level 0 manual project memory.
+
+Project id: `{project_id}`
 
 ## Intent
 
@@ -116,7 +135,10 @@ Do not implement product behavior in this goal.
 Do not write `.punk/` runtime stores.
 
 Do not claim gate acceptance or proofpack coverage.
-"#;
+"#,
+        project_id = project_id.as_str()
+    )
+}
 
 const REPORTS_README_TEMPLATE: &str = r#"# Work Reports
 
@@ -157,12 +179,14 @@ Authoritative live work state remains `work/STATUS.md`.
 Runtime stores such as events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
 "#;
 
-const PUNK_PROJECT_TOML_TEMPLATE: &str = r#"# Punk project marker.
+fn punk_project_toml_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"# Punk project marker.
 # This file is setup metadata, not runtime authority.
 
 schema_version = "punk.project.v0.1"
-project_id = "TODO"
-project_name = "TODO"
+project_id = "{project_id}"
+entry_mode = "greenfield"
 dogfooding_level = 0
 runtime_persistence = "inactive"
 live_work_state = "work/STATUS.md"
@@ -171,21 +195,87 @@ live_work_state = "work/STATUS.md"
 live_state = "work/STATUS.md"
 final_decisions = "not_active"
 proofpacks = "not_active"
-"#;
+"#,
+        project_id = project_id.as_str()
+    )
+}
 
 const PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
-    "writes only Level 0 project-memory scaffold files and .punk marker files",
+    "writes only greenfield Level 0 project-memory scaffold files and .punk marker/setup files",
+    "records project_id and entry_mode = greenfield in the scaffold",
     "creates .punk as a project root marker without runtime stores",
+    "does not implement brownfield reconstruction or grayfield reconciliation",
     "does not create contracts, run receipts, gate artifacts, proofpacks, or acceptance claims",
+    "does not perform repo scanning, AI summaries, generated truth, or network behavior",
     "uses create-new/no-overwrite behavior and reports conflicts fail-closed",
 ];
 
 const PROJECT_INIT_DEFERRED_NOTES: &[&str] = &[
+    "brownfield reconstruction and grayfield reconciliation remain deferred",
     "runtime project storage remains inactive",
     "flow persistence and event writing remain inactive",
     "contract writer, receipt writer, gate writer, proof writer, and proofpack writer remain inactive",
     "project-specific source/design refs must be filled manually after init",
 ];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectId(String);
+
+impl ProjectId {
+    pub fn parse(value: impl Into<String>) -> Result<Self, ProjectIdError> {
+        let value = value.into();
+        validate_project_id(&value)?;
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectIdError {
+    Empty,
+    InvalidFormat,
+}
+
+impl ProjectIdError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::Empty => "project id must not be empty",
+            Self::InvalidFormat => PROJECT_ID_FORMAT_NOTE,
+        }
+    }
+}
+
+fn validate_project_id(value: &str) -> Result<(), ProjectIdError> {
+    if value.is_empty() {
+        return Err(ProjectIdError::Empty);
+    }
+
+    let mut previous_was_hyphen = false;
+    for (index, character) in value.chars().enumerate() {
+        let valid =
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-';
+        if !valid {
+            return Err(ProjectIdError::InvalidFormat);
+        }
+        if character == '-' {
+            if index == 0 || previous_was_hyphen {
+                return Err(ProjectIdError::InvalidFormat);
+            }
+            previous_was_hyphen = true;
+        } else {
+            previous_was_hyphen = false;
+        }
+    }
+
+    if previous_was_hyphen {
+        return Err(ProjectIdError::InvalidFormat);
+    }
+
+    Ok(())
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProjectInitArtifactKind {
@@ -272,12 +362,21 @@ impl ProjectInitArtifactReport {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectInitReport {
     project_root: PathBuf,
+    project_id: ProjectId,
     artifacts: Vec<ProjectInitArtifactReport>,
 }
 
 impl ProjectInitReport {
     pub fn project_root(&self) -> &Path {
         &self.project_root
+    }
+
+    pub fn project_id(&self) -> &ProjectId {
+        &self.project_id
+    }
+
+    pub fn entry_mode(&self) -> &'static str {
+        PROJECT_INIT_ENTRY_MODE
     }
 
     pub fn artifacts(&self) -> &[ProjectInitArtifactReport] {
@@ -327,6 +426,10 @@ impl ProjectInitReport {
             .expect("writing to String should succeed");
         writeln!(&mut output, "mode: {PROJECT_INIT_MODE}")
             .expect("writing to String should succeed");
+        writeln!(&mut output, "entry_mode: {}", self.entry_mode())
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "project_id: {}", self.project_id().as_str())
+            .expect("writing to String should succeed");
         writeln!(
             &mut output,
             "runtime_persistence: {PROJECT_INIT_RUNTIME_PERSISTENCE}"
@@ -373,6 +476,14 @@ impl ProjectInitReport {
 enum ProjectInitEntry {
     Directory(&'static str),
     File(&'static str, &'static str),
+    GeneratedFile(&'static str, ProjectInitTemplate),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProjectInitTemplate {
+    WorkStatus,
+    InitialGoal,
+    PunkProjectToml,
 }
 
 const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
@@ -385,20 +496,20 @@ const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::Directory("knowledge/research"),
     ProjectInitEntry::Directory("knowledge/ideas"),
     ProjectInitEntry::Directory(".punk"),
-    ProjectInitEntry::File("work/STATUS.md", WORK_STATUS_TEMPLATE),
-    ProjectInitEntry::File(
-        "work/goals/goal_capture_initial_project_truth.md",
-        INITIAL_GOAL_TEMPLATE,
-    ),
+    ProjectInitEntry::GeneratedFile("work/STATUS.md", ProjectInitTemplate::WorkStatus),
+    ProjectInitEntry::GeneratedFile(INITIAL_GOAL_PATH, ProjectInitTemplate::InitialGoal),
     ProjectInitEntry::File("work/reports/README.md", REPORTS_README_TEMPLATE),
     ProjectInitEntry::File("docs/adr/README.md", ADR_README_TEMPLATE),
     ProjectInitEntry::File("knowledge/research/README.md", RESEARCH_README_TEMPLATE),
     ProjectInitEntry::File("knowledge/ideas/README.md", IDEAS_README_TEMPLATE),
     ProjectInitEntry::File(".punk/README.md", PUNK_README_TEMPLATE),
-    ProjectInitEntry::File(".punk/project.toml", PUNK_PROJECT_TOML_TEMPLATE),
+    ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
 ];
 
-pub fn init_level0_project(project_root: impl AsRef<Path>) -> ProjectInitReport {
+pub fn init_level0_project(
+    project_root: impl AsRef<Path>,
+    project_id: ProjectId,
+) -> ProjectInitReport {
     let project_root = project_root.as_ref().to_path_buf();
     let mut artifacts = Vec::new();
 
@@ -413,6 +524,7 @@ pub fn init_level0_project(project_root: impl AsRef<Path>) -> ProjectInitReport 
             ));
             return ProjectInitReport {
                 project_root,
+                project_id,
                 artifacts,
             };
         }
@@ -425,6 +537,7 @@ pub fn init_level0_project(project_root: impl AsRef<Path>) -> ProjectInitReport 
             ));
             return ProjectInitReport {
                 project_root,
+                project_id,
                 artifacts,
             };
         }
@@ -436,13 +549,26 @@ pub fn init_level0_project(project_root: impl AsRef<Path>) -> ProjectInitReport 
             ProjectInitEntry::File(path, contents) => {
                 create_init_file(&project_root, path, contents.as_bytes())
             }
+            ProjectInitEntry::GeneratedFile(path, template) => {
+                let contents = render_init_template(template, &project_id);
+                create_init_file(&project_root, path, contents.as_bytes())
+            }
         };
         artifacts.push(report);
     }
 
     ProjectInitReport {
         project_root,
+        project_id,
         artifacts,
+    }
+}
+
+fn render_init_template(template: ProjectInitTemplate, project_id: &ProjectId) -> String {
+    match template {
+        ProjectInitTemplate::WorkStatus => work_status_template(project_id),
+        ProjectInitTemplate::InitialGoal => initial_goal_template(project_id),
+        ProjectInitTemplate::PunkProjectToml => punk_project_toml_template(project_id),
     }
 }
 
@@ -557,7 +683,10 @@ fn create_init_file(
 
 #[cfg(test)]
 mod tests {
-    use super::{init_level0_project, ProjectInitArtifactKind, ProjectInitArtifactStatus};
+    use super::{
+        init_level0_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
+        ProjectInitArtifactStatus, INITIAL_GOAL_PATH, PROJECT_INIT_ENTRY_MODE,
+    };
     use std::fs;
     use std::process;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -569,16 +698,17 @@ mod tests {
     fn init_creates_level0_manual_memory_scaffold() {
         let root = unique_temp_path();
         fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
 
-        let report = init_level0_project(&root);
+        let report = init_level0_project(&root, project_id);
 
         assert!(!report.blocked());
         assert_eq!(report.exit_code(), 0);
         assert_eq!(report.result_label(), "initialized");
+        assert_eq!(report.project_id().as_str(), "weekend-project");
+        assert_eq!(report.entry_mode(), PROJECT_INIT_ENTRY_MODE);
         assert!(root.join("work/STATUS.md").is_file());
-        assert!(root
-            .join("work/goals/goal_capture_initial_project_truth.md")
-            .is_file());
+        assert!(root.join(INITIAL_GOAL_PATH).is_file());
         assert!(root.join("work/reports/README.md").is_file());
         assert!(root.join("docs/adr/README.md").is_file());
         assert!(root.join("knowledge/research/README.md").is_file());
@@ -595,12 +725,19 @@ mod tests {
         let status = fs::read_to_string(root.join("work/STATUS.md"))
             .expect("status template should be readable");
         assert!(status.contains("dogfooding_level: 0"));
-        assert!(
-            status.contains("selected_next: \"work/goals/goal_capture_initial_project_truth.md\"")
-        );
+        assert!(status.contains("project_id: \"weekend-project\""));
+        assert!(status.contains("entry_mode: greenfield"));
+        assert!(status.contains(&format!("selected_next: \"{INITIAL_GOAL_PATH}\"")));
+        let goal = fs::read_to_string(root.join(INITIAL_GOAL_PATH))
+            .expect("initial goal template should be readable");
+        assert!(goal.contains("id: goal_initial_project_setup"));
+        assert!(goal.contains("project_id: \"weekend-project\""));
+        assert!(goal.contains("entry_mode: greenfield"));
         let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
             .expect("project marker should be readable");
         assert!(project_marker.contains("schema_version = \"punk.project.v0.1\""));
+        assert!(project_marker.contains("project_id = \"weekend-project\""));
+        assert!(project_marker.contains("entry_mode = \"greenfield\""));
         assert!(project_marker.contains("runtime_persistence = \"inactive\""));
         assert!(project_marker.contains("live_work_state = \"work/STATUS.md\""));
 
@@ -611,9 +748,10 @@ mod tests {
     fn init_is_idempotent_when_existing_files_match() {
         let root = unique_temp_path();
         fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
 
-        let first = init_level0_project(&root);
-        let second = init_level0_project(&root);
+        let first = init_level0_project(&root, project_id.clone());
+        let second = init_level0_project(&root, project_id);
 
         assert!(!first.blocked());
         assert!(!second.blocked());
@@ -632,8 +770,9 @@ mod tests {
         fs::create_dir_all(root.join("work")).expect("work dir should be created");
         fs::write(root.join("work/STATUS.md"), "custom status\n")
             .expect("custom status should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
 
-        let report = init_level0_project(&root);
+        let report = init_level0_project(&root, project_id);
 
         assert!(report.blocked());
         assert_eq!(report.exit_code(), 1);
@@ -649,6 +788,35 @@ mod tests {
         }));
 
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn project_id_requires_lowercase_slug() {
+        assert_eq!(
+            ProjectId::parse("").expect_err("empty project id should fail"),
+            ProjectIdError::Empty
+        );
+        for invalid in [
+            "Weekend",
+            "weekend project",
+            "-weekend",
+            "weekend-",
+            "weekend--project",
+            "weekend_project",
+            "weekend.project",
+        ] {
+            assert_eq!(
+                ProjectId::parse(invalid).expect_err("invalid project id should fail"),
+                ProjectIdError::InvalidFormat
+            );
+        }
+
+        assert_eq!(
+            ProjectId::parse("weekend-project-01")
+                .expect("valid project id should parse")
+                .as_str(),
+            "weekend-project-01"
+        );
     }
 
     fn unique_temp_path() -> std::path::PathBuf {

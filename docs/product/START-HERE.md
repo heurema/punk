@@ -84,14 +84,15 @@ See `docs/product/DOCUMENTATION-MAP.md` and `docs/product/GLOSSARY.md`.
 
 The implemented CLI surface today is intentionally small:
 
-- `punk init`
+- `punk init <project-id>`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
-`punk init` is active only as a Dogfooding Level 0 manual project-memory scaffold.
-It writes repo-tracked `work/`, `docs/adr/`, `knowledge/`, and `.punk` marker files with create-new/no-overwrite behavior.
+`punk init <project-id>` is active only as a greenfield Dogfooding Level 0 manual project-memory scaffold.
+It records `project_id` and `entry_mode = greenfield`, then writes repo-tracked `work/`, `docs/adr/`, `knowledge/`, and `.punk` marker/setup files with create-new/no-overwrite behavior.
 The `.punk` files are only a project root marker and setup metadata; they do not activate runtime stores, flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
+Brownfield reconstruction and grayfield reconciliation remain future modes.
 
 The active target remains the stable core:
 

@@ -32,13 +32,16 @@ Modules may assess, not decide. Adapters may invoke, not own truth. Project memo
 
 Today, the executable CLI surface is intentionally limited to:
 
+- `punk init <project-id>`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
 Everything else in product docs should be read as target architecture, phase-gated design, parked scope, or future scope unless explicitly marked active.
 
-`punk init` is a future setup target, not current behavior.
+`punk init <project-id>` is current behavior only for a greenfield Dogfooding Level 0 project-memory scaffold.
+
+It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory plus `.punk` marker/setup files, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
 
 `.punk/` runtime storage is not active for this purpose.
 
@@ -107,7 +110,7 @@ See:
 
 The following may be documented or parked, but they are not current operator surfaces:
 
-- `punk init`
+- brownfield or grayfield `punk init`
 - LLM contract drafting
 - coding agent execution
 - active proofpack writing
