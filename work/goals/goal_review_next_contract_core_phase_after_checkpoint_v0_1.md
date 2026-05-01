@@ -1,7 +1,7 @@
 ---
 id: goal_review_next_contract_core_phase_after_checkpoint_v0_1
 title: "Review next contract-core phase after checkpoint v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "process"
 priority: P1
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-01
 updated_at: 2026-05-01
 selected_at: 2026-05-01
-started_at: null
-completed_at: null
+started_at: 2026-05-01
+completed_at: 2026-05-01
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "work/reports/2026-05-01-contract-core-checkpoint-post-commit-verification.md"
   - "work/reports/2026-05-01-manual-commit-decision-contract-core-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-01-next-contract-core-phase-after-checkpoint-review.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -73,3 +74,15 @@ Do not implement Writer.
 Do not add CLI behavior, `.punk/contracts` storage, `.punk/runs` storage, `.punk/decisions` storage, `.punk/proofs` storage, runtime writers, gate writer, proofpack writer, artifact hash runtime, acceptance claim writer, agent execution, provider adapters, policy engine integration, runtime side effects, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or `punk init`.
 
 Do not add new contract model features unless a later bounded goal explicitly selects them.
+
+## Completion
+
+Completed on 2026-05-01.
+
+Outcome:
+
+- Reviewed the post-checkpoint contract-core state.
+- Found the contract-core model coherent enough to proceed with another review-only trust-boundary checkpoint.
+- Kept remaining docs-governance warnings accepted/deferred rather than fixing them opportunistically.
+- Selected `work/goals/goal_review_gate_proof_model_alignment_v0_1.md` as the next bounded review-only goal.
+- Added no implementation, runtime behavior, CLI, storage, Writer, gate writer, proofpack writer, artifact hash runtime, acceptance claim writer, adapter, policy engine, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, or `punk init` behavior.
