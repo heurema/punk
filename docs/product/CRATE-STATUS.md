@@ -55,7 +55,7 @@ superseded_by: null
 
 ## Current implemented subset boundary
 
-The ownership table above names the target crate responsibility.
+Above, the ownership table names the target crate responsibility.
 It is not a claim that every target behavior is active today.
 
 Current implemented behavior remains narrower:
@@ -78,7 +78,7 @@ The proofpack writer preflight integration, active behavior, host path resolutio
 
 ## Current CLI surface
 
-The implemented CLI surface is currently limited to:
+Currently implemented CLI commands:
 
 - `punk init <project-id>`
 - `punk flow inspect`

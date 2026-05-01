@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-01
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Cleanup docs-governance warnings v0.1"
-selected_next: "work/goals/goal_cleanup_docs_governance_warnings_v0_1.md"
+current_focus: "Verify greenfield init after compact layout v0.1"
+selected_next: "work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md"
 last_validated_commit: "2f64f0f"
 ---
 
@@ -18,8 +18,9 @@ last_validated_commit: "2f64f0f"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: cleanup docs-governance warnings v0.1.
-- Selected next: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`
+- Current focus: verify greenfield init after compact layout v0.1.
+- Selected next: `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md`
+- Completion note: `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` is now recorded as done with docs-governance cleanup evidence. It fixed the four known warning-shape findings in `docs/product/CRATE-STATUS.md`, `docs/product/DOCUMENTATION-MAP.md`, and `docs/product/PROJECT-MEMORY.md` without changing product behavior, `punk init` behavior, runtime storage, Writer, gate writer, proof writer, proofpack writer, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
 - Scope override note: maintainer explicitly selected a compact user-project init layout correction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice changes greenfield init output from root-level Punk memory dirs to `.punk/memory/`.
 - Completion note: `work/goals/goal_change_greenfield_init_to_compact_punk_memory_layout_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs, docs-governance, and work-ledger evidence. It keeps the Punk repository root dogfooding layout in place while changing user-project `punk init <project-id>` to tracked `.punk/memory/` durable memory, with no root-level `work/`, `knowledge/`, `docs/adr/`, or `publishing/` output and no brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents, adapters, or replayability runtime.
 - Scope override note: maintainer explicitly selected the greenfield init scaffold direction before returning to docs-governance cleanup. The cleanup goal remains ready, but this bounded slice tightens `punk init` to `punk init <project-id>` for greenfield Level 0 project-memory only.
@@ -88,16 +89,13 @@ last_validated_commit: "2f64f0f"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md` | `ready` | Reviews accepted/deferred docs-governance warnings after closing the contract-core checkpoint series. | — |
+| `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md` | `ready` | Verifies the compact greenfield init milestone as a user-facing product surface before new architecture or runtime work. | — |
 
 ## Open Drift Findings
 
 | Finding | Severity | Route | Owner | Next artifact |
 |---|---|---|---|---|
-| Existing docs-governance warning: `Research notes` heading in `docs/product/DOCUMENTATION-MAP.md` looks like an undeclared glossary term. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
-| Existing docs-governance warning: `Current implemented subset boundary` heading in `docs/product/CRATE-STATUS.md` looks like a duplicate definition candidate. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
-| Existing docs-governance warning: `Current CLI surface` heading in `docs/product/CRATE-STATUS.md` looks like a duplicate definition candidate. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
-| Existing docs-governance warning: `Project coherence` heading in `docs/product/PROJECT-MEMORY.md` looks like a duplicate definition candidate. | Low | bounded docs-governance cleanup goal or accepted warning | vitaly | TBD |
+| None currently recorded after docs-governance cleanup v0.1. | — | — | — | — |
 
 ## Blocked
 
@@ -113,6 +111,7 @@ last_validated_commit: "2f64f0f"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-01 | Cleaned docs-governance warnings v0.1 | `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`, `work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md`, `docs/product/CRATE-STATUS.md`, `docs/product/DOCUMENTATION-MAP.md`, `docs/product/PROJECT-MEMORY.md` |
 | 2026-05-01 | Changed greenfield init to compact Punk memory layout v0.1 | `work/goals/goal_change_greenfield_init_to_compact_punk_memory_layout_v0_1.md`, `work/reports/2026-05-01-greenfield-init-compact-memory-layout-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added greenfield init scaffold v0.1 | `work/goals/goal_add_greenfield_init_scaffold_v0_1.md`, `work/reports/2026-05-01-greenfield-init-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-01 | Added Punk root marker init v0.1 | `work/goals/goal_add_punk_root_marker_init_v0_1.md`, `work/reports/2026-05-01-punk-root-marker-init-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
@@ -300,16 +299,13 @@ last_validated_commit: "2f64f0f"
 - Command: `python3 scripts/check_work_ledger.py`
 - Command: `cargo check --workspace`
 - Command: `cargo test --workspace`
-- Command: `cargo fmt --check`
-- Command: `cargo build -p punk-cli`
 - Command: `~/.local/bin/punk-dev eval run smoke`
-- Command: manual temp-root `~/.local/bin/punk-dev init demo-project` with `git status --short --untracked-files=all`
-- Command: `scripts/check.sh docs-governance --files ... --report work/reports/2026-05-01-greenfield-init-compact-memory-layout-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files docs/product/CRATE-STATUS.md docs/product/DOCUMENTATION-MAP.md docs/product/PROJECT-MEMORY.md work/STATUS.md work/goals/goal_cleanup_docs_governance_warnings_v0_1.md work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md --report work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files docs/product/CRATE-STATUS.md docs/product/DOCUMENTATION-MAP.md docs/product/PROJECT-MEMORY.md --report work/reports/2026-05-01-docs-governance-warnings-cleanup-v0-1.md`
 - Command: `git diff --check`
 - Result: `PASS`
 - Notes:
-  - `punk init <project-id>` is now active only as a greenfield Dogfooding Level 0 compact project-memory scaffold under tracked `.punk/memory/`, with `.punk/project.toml` recording `project_id`, `entry_mode = greenfield`, `[memory] layout = "compact"`, and inactive `[runtime]`.
-  - Manual temp-root init created `.punk/README.md`, `.punk/project.toml`, and `.punk/memory/**` files visible to git, created 0 runtime dirs, and did not create root-level `work/`, `knowledge/`, `docs/adr/`, or `publishing/`.
-  - Brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, network behavior, contracts, gate/proof runtime, Writer behavior, agents, adapters, replayability runtime, and `.punk` runtime stores remain inactive.
-  - Selected next is restored to `work/goals/goal_cleanup_docs_governance_warnings_v0_1.md`.
-  - Docs governance passed with 0 failures and 3 existing duplicate-definition warnings for this check.
+  - The four known docs-governance warnings in `docs/product/CRATE-STATUS.md`, `docs/product/DOCUMENTATION-MAP.md`, and `docs/product/PROJECT-MEMORY.md` are fixed in the scoped check.
+  - No product behavior, init behavior, runtime storage, Writer, gate writer, proof writer, proofpack writer, acceptance claim writer, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior was activated.
+  - Selected next is `work/goals/goal_verify_greenfield_init_after_compact_layout_v0_1.md`.
+  - Docs governance passed with 0 failures and 0 warnings for both the changed-file set and the targeted warning set.

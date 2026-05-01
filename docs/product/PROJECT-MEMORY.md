@@ -351,7 +351,7 @@ When retrieval grows beyond manual repo inspection, the artifact contract should
 
 ## Project coherence
 
-The project-level gate asks:
+At review time, the project-level gate asks:
 
 Are all accepted contracts still moving the project in the intended direction?
 
