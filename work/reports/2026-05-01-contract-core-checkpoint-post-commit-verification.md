@@ -300,7 +300,7 @@ Non-scope:
 
 ```yaml
 doc_impact:
-  classification: process-ledger
+  classification: docs-only
   reason: "Record post-commit verification for the contract-core checkpoint and select a review-only next goal without changing product behavior."
   touched_surfaces:
     - work/STATUS.md

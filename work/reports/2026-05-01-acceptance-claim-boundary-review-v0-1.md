@@ -365,3 +365,21 @@ Next goal non-scope:
 - `cargo test -p punk-contract -p punk-eval` — PASS.
 - `git diff --check` — PASS.
 - `scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_review_acceptance_claim_boundary_v0_1.md work/goals/goal_define_acceptance_claim_boundary_v0_1.md work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md --report work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md` — PASS.
+
+## Doc impact
+
+```yaml
+doc_impact:
+  classification: docs-only
+  reason: "Record acceptance-claim boundary review and identify future boundary definition without implementing acceptance-claim or Writer behavior."
+  touched_surfaces:
+    - work/STATUS.md
+    - work/goals/goal_review_acceptance_claim_boundary_v0_1.md
+    - work/goals/goal_define_acceptance_claim_boundary_v0_1.md
+    - work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md
+  required_updates:
+    - work/STATUS.md
+  supersedes: []
+  archive_plan: []
+  evals_required: []
+```

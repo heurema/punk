@@ -670,7 +670,7 @@ Results:
 
 ```yaml
 doc_impact:
-  classification: process-ledger
+  classification: docs-only
   reason: "Review the proofpack-writer track after the contract-core checkpoint and select a review-only Writer readiness goal without changing product behavior."
   touched_surfaces:
     - work/STATUS.md

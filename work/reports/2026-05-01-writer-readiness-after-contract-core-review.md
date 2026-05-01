@@ -452,3 +452,21 @@ Next goal non-scope:
 - `cargo test -p punk-contract -p punk-eval` — PASS.
 - `git diff --check` — PASS.
 - `scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md work/goals/goal_review_acceptance_claim_boundary_v0_1.md work/reports/2026-05-01-writer-readiness-after-contract-core-review.md --report work/reports/2026-05-01-writer-readiness-after-contract-core-review.md` — PASS.
+
+## Doc impact
+
+```yaml
+doc_impact:
+  classification: docs-only
+  reason: "Record Writer-readiness review and select acceptance-claim boundary review without changing product behavior."
+  touched_surfaces:
+    - work/STATUS.md
+    - work/goals/goal_review_writer_readiness_after_contract_core_v0_1.md
+    - work/goals/goal_review_acceptance_claim_boundary_v0_1.md
+    - work/reports/2026-05-01-writer-readiness-after-contract-core-review.md
+  required_updates:
+    - work/STATUS.md
+  supersedes: []
+  archive_plan: []
+  evals_required: []
+```

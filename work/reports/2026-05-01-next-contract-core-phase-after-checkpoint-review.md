@@ -263,7 +263,7 @@ They should be handled by a bounded docs-governance cleanup goal if selected lat
 
 ```yaml
 doc_impact:
-  classification: process-ledger
+  classification: docs-only
   reason: "Review the post-checkpoint contract-core state and select a review-only gate/proof model alignment goal before any Writer/runtime work."
   touched_surfaces:
     - work/STATUS.md

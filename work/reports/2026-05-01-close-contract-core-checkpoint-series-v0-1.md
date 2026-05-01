@@ -142,3 +142,21 @@ Do not select acceptance claim definition, Writer boundary, or Writer implementa
 - `git diff --check` — PASS.
 - `scripts/check.sh docs-governance --files work/STATUS.md work/goals/goal_review_acceptance_claim_boundary_v0_1.md work/goals/goal_define_acceptance_claim_boundary_v0_1.md work/goals/goal_close_contract_core_checkpoint_series_v0_1.md work/goals/goal_cleanup_docs_governance_warnings_v0_1.md work/reports/2026-05-01-acceptance-claim-boundary-review-v0-1.md work/reports/2026-05-01-close-contract-core-checkpoint-series-v0-1.md --report work/reports/2026-05-01-close-contract-core-checkpoint-series-v0-1.md` — PASS.
 - `git diff --cached --name-only` — empty.
+
+## Doc impact
+
+```yaml
+doc_impact:
+  classification: docs-only
+  reason: "Record closure of the contract-core checkpoint review series and select docs-governance cleanup as the next non-runtime goal."
+  touched_surfaces:
+    - work/STATUS.md
+    - work/goals/goal_close_contract_core_checkpoint_series_v0_1.md
+    - work/goals/goal_cleanup_docs_governance_warnings_v0_1.md
+    - work/reports/2026-05-01-close-contract-core-checkpoint-series-v0-1.md
+  required_updates:
+    - work/STATUS.md
+  supersedes: []
+  archive_plan: []
+  evals_required: []
+```

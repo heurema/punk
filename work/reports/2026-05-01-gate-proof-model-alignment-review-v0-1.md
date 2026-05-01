@@ -380,7 +380,7 @@ Results:
 
 ```yaml
 doc_impact:
-  classification: process-ledger
+  classification: docs-only
   reason: "Review gate/proof/proofpack authority alignment and select a proofpack-writer track review before any Writer/runtime work."
   touched_surfaces:
     - work/STATUS.md
