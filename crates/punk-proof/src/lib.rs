@@ -8182,8 +8182,19 @@ fn writer_first_active_write_slice_path_blockers(
         return;
     }
 
-    let target_path = storage_root_path.join(target_relative_path);
-    let Some(parent) = target_path.parent() else {
+    writer_first_active_write_slice_parent_path_blockers(
+        storage_root_path,
+        target_relative_path,
+        blockers,
+    );
+}
+
+fn writer_first_active_write_slice_parent_path_blockers(
+    storage_root_path: &std::path::Path,
+    target_relative_path: &std::path::Path,
+    blockers: &mut Vec<ProofpackWriterFirstActiveWriteSliceBlocker>,
+) {
+    let Some(parent_relative_path) = target_relative_path.parent() else {
         writer_push_unique_first_active_write_slice_blocker(
             blockers,
             ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryMissing,
@@ -8191,25 +8202,36 @@ fn writer_first_active_write_slice_path_blockers(
         return;
     };
 
-    match std::fs::symlink_metadata(parent) {
-        Ok(metadata) if metadata.file_type().is_symlink() => {
-            writer_push_unique_first_active_write_slice_blocker(
-                blockers,
-                ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectorySymlink,
-            );
-        }
-        Ok(metadata) if !metadata.is_dir() => {
-            writer_push_unique_first_active_write_slice_blocker(
-                blockers,
-                ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryNotDirectory,
-            );
-        }
-        Ok(_) => {}
-        Err(_) => {
-            writer_push_unique_first_active_write_slice_blocker(
-                blockers,
-                ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryMissing,
-            );
+    let mut current_parent = storage_root_path.to_path_buf();
+    for component in parent_relative_path.components() {
+        let std::path::Component::Normal(component) = component else {
+            return;
+        };
+
+        current_parent.push(component);
+        match std::fs::symlink_metadata(&current_parent) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectorySymlink,
+                );
+                return;
+            }
+            Ok(metadata) if !metadata.is_dir() => {
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryNotDirectory,
+                );
+                return;
+            }
+            Ok(_) => {}
+            Err(_) => {
+                writer_push_unique_first_active_write_slice_blocker(
+                    blockers,
+                    ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectoryMissing,
+                );
+                return;
+            }
         }
     }
 }
@@ -9754,6 +9776,16 @@ mod tests {
         ProofpackWriterPreflightIntegrationModel,
         ProofpackWriterConcretePathStoragePolicyModel,
     ) {
+        sample_first_active_write_slice_inputs_for_target("proofpacks/proofpack_local_001.json")
+    }
+
+    fn sample_first_active_write_slice_inputs_for_target(
+        target_path_ref: &str,
+    ) -> (
+        ProofpackWriterCanonicalArtifactModel,
+        ProofpackWriterPreflightIntegrationModel,
+        ProofpackWriterConcretePathStoragePolicyModel,
+    ) {
         let proofpack = sample_proofpack();
         let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(
             &proofpack,
@@ -9782,7 +9814,7 @@ mod tests {
             &preflight_plan,
             ProofpackWriterStorageRootRef::new("explicit_test_storage_root")
                 .expect("storage root ref should be valid"),
-            ProofpackWriterTargetPathRef::new("proofpacks/proofpack_local_001.json")
+            ProofpackWriterTargetPathRef::new(target_path_ref)
                 .expect("target path ref should be valid"),
             ProofpackWriterWritePolicy::IdempotentIfMatching,
             ProofpackWriterIdempotencyBasis::ExactManifestBytes,
@@ -13391,6 +13423,55 @@ mod tests {
         assert!(relative_root
             .has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::StorageRootPathRelative));
         assert!(!relative_root.uses_current_working_directory_as_authority());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn proofpack_writer_first_active_write_slice_blocks_intermediate_parent_symlink() {
+        let (canonical, preflight, concrete_policy) =
+            sample_first_active_write_slice_inputs_for_target(
+                "proofpacks/nested/proofpack_local_001.json",
+            );
+        let storage_root = unique_first_active_write_storage_root();
+        let outside_root = unique_first_active_write_storage_root();
+        let target_relative = std::path::Path::new("proofpacks/nested/proofpack_local_001.json");
+        let outside_nested_target = outside_root.join("nested/proofpack_local_001.json");
+
+        std::fs::create_dir_all(&storage_root).expect("test storage root should exist");
+        std::fs::create_dir_all(outside_root.join("nested"))
+            .expect("test outside nested target parent should exist");
+        std::os::unix::fs::symlink(&outside_root, storage_root.join("proofpacks"))
+            .expect("test should create intermediate parent symlink");
+
+        let result = proofpack_writer_write_first_active_slice(
+            &preflight,
+            &concrete_policy,
+            &canonical,
+            &storage_root,
+            target_relative,
+            vec![
+                ProofBoundaryNote::new("Intermediate parent symlink must fail closed.")
+                    .expect("boundary note should be valid"),
+            ],
+        );
+        let outside_target_exists = outside_nested_target.exists();
+
+        std::fs::remove_dir_all(&storage_root).expect("test storage root should clean up");
+        std::fs::remove_dir_all(&outside_root).expect("test outside root should clean up");
+
+        assert_eq!(
+            result.outcome(),
+            ProofpackWriterOperationOutcome::PreflightFailed
+        );
+        assert!(
+            result.has_blocker(ProofpackWriterFirstActiveWriteSliceBlocker::ParentDirectorySymlink)
+        );
+        assert!(!result.canonical_artifact_available());
+        assert!(result.blockers_fail_closed());
+        assert!(
+            !outside_target_exists,
+            "intermediate symlink must not redirect the write outside storage_root"
+        );
     }
 
     #[test]
