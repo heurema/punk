@@ -1,7 +1,7 @@
 ---
 id: goal_verify_brownfield_inventory_boundary_v0_1
 title: "Verify brownfield inventory boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-03
 updated_at: 2026-05-03
 selected_at: 2026-05-03
-started_at: null
-completed_at: null
+started_at: 2026-05-03
+completed_at: 2026-05-03
 blocked_by: []
 scope:
   include:
@@ -32,7 +32,8 @@ knowledge_refs:
   - "evals/specs/brownfield-inventory-boundary.v0.1.md"
   - "work/reports/2026-05-03-brownfield-inventory-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-03-brownfield-inventory-boundary-verification-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -63,6 +64,17 @@ Brownfield inventory boundary v0.1 is defined as docs/eval only.
 ## Intent
 
 Verify the boundary before selecting any source corpus manifest implementation.
+
+## Outcome
+
+Verification confirmed that `docs/product/BROWNFIELD-INVENTORY.md` and
+`evals/specs/brownfield-inventory-boundary.v0.1.md` define inventory as
+observable structure only, keep inventory separate from claims and project
+truth, define source and sensitive classes, preserve advisory
+`observed_structure` authority, and keep source inventory implementation,
+repo scanning, AI summaries, claim extraction, contract generation,
+gate/proof runtime, Writer behavior, runtime storage, and grayfield behavior
+inactive.
 
 ## Non-scope
 
