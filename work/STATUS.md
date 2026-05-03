@@ -8,9 +8,9 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-03
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Verify brownfield init scaffold v0.1"
-selected_next: "work/goals/goal_verify_brownfield_init_scaffold_v0_1.md"
-last_validated_commit: "2f64f0f"
+current_focus: "Prepare brownfield inventory boundary v0.1"
+selected_next: "work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md"
+last_validated_commit: "b09f41d"
 ---
 
 # Work Status
@@ -18,9 +18,10 @@ last_validated_commit: "2f64f0f"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: verify brownfield init scaffold v0.1.
-- Selected next: `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`
-- Scope override note: maintainer explicitly selected `work/goals/goal_add_brownfield_init_scaffold_v0_1.md` after the greenfield init checkpoint. The bounded B0 slice is now recorded as done. It adds `punk init <project-id> --mode brownfield` as an advisory entry scaffold for existing projects, records `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, creates empty `.punk/memory/reconstruction/` placeholders, preserves greenfield default behavior, and reuses atomic preflight plus privacy-safe `target_root: .` output. It adds no brownfield reconstruction, repo scan, AI summaries, generated contracts/specs, accepted claims, gate/proof runtime, Writer behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, runtime `.punk` storage, or grayfield reconciliation. Selected next is `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`.
+- Current focus: prepare brownfield inventory boundary v0.1.
+- Selected next: `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md`
+- Completion note: `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md` is now recorded as done after PR #16 was merged. It verified B0 brownfield scaffold behavior from temp directories, confirmed greenfield default behavior remains unchanged, confirmed no scan/no AI/no claims/no runtime/no Writer behavior, confirmed conflict atomicity and `.punk/memory/**` git visibility, and selected `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md` as the next boundary/design-only step before any inventory implementation.
+- Scope override note: maintainer explicitly selected `work/goals/goal_add_brownfield_init_scaffold_v0_1.md` after the greenfield init checkpoint. The bounded B0 slice is now recorded as done. It adds `punk init <project-id> --mode brownfield` as an advisory entry scaffold for existing projects, records `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, creates empty `.punk/memory/reconstruction/` placeholders, preserves greenfield default behavior, and reuses atomic preflight plus privacy-safe `target_root: .` output. It adds no brownfield reconstruction, repo scan, AI summaries, generated contracts/specs, accepted claims, gate/proof runtime, Writer behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, runtime `.punk` storage, or grayfield reconciliation. Its verification follow-up is now recorded as done.
 - Scope override note: maintainer asked to inspect yesterday's PR Codex Review comments and fix important findings before continuing the pause checkpoint. `work/goals/goal_fix_pr12_codex_review_symlink_ancestor_write_guard_v0_1.md` is now recorded as done. It checked PRs created, closed, merged, or updated on 2026-05-01. PR #12 had the only actionable current-tree Codex Review P1 and is fixed by making the first active proofpack writer write slice reject symlinks in every storage-root-relative parent ancestor before writing, with a regression test for a non-terminal parent symlink redirecting a nested target outside the storage root. PR #3 still has an unresolved older Codex Review P1 but targets deleted `scripts/pr_intake_gate.py`; the local engine was removed after migration to shared `heurema/repo-governance`, so no current-tree Punk fix is available. It adds no greenfield init, CLI, runtime storage, gate writer, proof writer expansion, Writer orchestration, acceptance claim writer, brownfield, grayfield, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. At that checkpoint selected next remained `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`.
 - Completion note: `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md` is now recorded as done with CLI, docs, `.gitignore` consistency, and work-ledger evidence. It clarified that `punk init <project-id>` initializes the current directory in place and does not create a `<project-id>` subdirectory, kept the greenfield-only compact `.punk/memory/` boundary, removed the repo-internal `preview_goal_ref` from `punk flow inspect`, and found no real `.punk/project/` ignore/docs mismatch. It added no brownfield, grayfield, contracts, gate/proof runtime, Writer, Conformance Pack runtime, replayability runtime, or spec-as-source behavior.
 - Completion note: `work/goals/goal_harden_greenfield_init_atomic_and_privacy_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-status, manual temp-init, and work-ledger evidence. It changed active greenfield `punk init <project-id>` to preflight the full scaffold before writes, return blocked without creating missing planned artifacts on conflict, preserve modified scaffold files, and render normal human output with `target_root: .` instead of an absolute local path. It added no brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
@@ -96,7 +97,7 @@ last_validated_commit: "2f64f0f"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md` | `ready` | Verifies the new B0 brownfield entry scaffold without selecting inventory or reconstruction implementation. | - |
+| `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md` | `ready` | Defines the B1 inventory boundary before any source corpus inventory implementation. | - |
 | `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Still valid as a pause checkpoint if the maintainer chooses to stop after verification/status evidence. | - |
 
 ## Open Drift Findings
@@ -119,6 +120,7 @@ last_validated_commit: "2f64f0f"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-03 | Verified brownfield init scaffold v0.1 | `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`, `work/reports/2026-05-03-brownfield-init-scaffold-verification-v0-1.md`, `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md`, `b09f41d` |
 | 2026-05-03 | Added brownfield init scaffold v0.1 | `work/goals/goal_add_brownfield_init_scaffold_v0_1.md`, `work/reports/2026-05-03-brownfield-init-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-02 | Swept yesterday's Codex Review threads and fixed PR #12 symlink ancestor write guard v0.1 | `work/goals/goal_fix_pr12_codex_review_symlink_ancestor_write_guard_v0_1.md`, `work/reports/2026-05-02-pr12-codex-review-symlink-ancestor-write-guard-v0-1.md`, `crates/punk-proof/src/lib.rs` |
 | 2026-05-01 | Polished greenfield init docs and flow inspect preview v0.1 | `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md`, `work/reports/2026-05-01-greenfield-init-docs-flow-inspect-polish-v0-1.md`, `crates/punk-cli/src/main.rs`, `README.md`, `docs/product/START-HERE.md`, `docs/product/CRATE-STATUS.md` |
