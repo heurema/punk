@@ -6,10 +6,10 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-05-02
+updated_at: 2026-05-03
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Pause after greenfield init checkpoint v0.1"
-selected_next: "work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md"
+current_focus: "Verify brownfield init scaffold v0.1"
+selected_next: "work/goals/goal_verify_brownfield_init_scaffold_v0_1.md"
 last_validated_commit: "2f64f0f"
 ---
 
@@ -18,9 +18,10 @@ last_validated_commit: "2f64f0f"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: pause after greenfield init checkpoint v0.1.
-- Selected next: `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`
-- Scope override note: maintainer asked to inspect yesterday's PR Codex Review comments and fix important findings before continuing the pause checkpoint. `work/goals/goal_fix_pr12_codex_review_symlink_ancestor_write_guard_v0_1.md` is now recorded as done. It checked PRs created, closed, merged, or updated on 2026-05-01. PR #12 had the only actionable current-tree Codex Review P1 and is fixed by making the first active proofpack writer write slice reject symlinks in every storage-root-relative parent ancestor before writing, with a regression test for a non-terminal parent symlink redirecting a nested target outside the storage root. PR #3 still has an unresolved older Codex Review P1 but targets deleted `scripts/pr_intake_gate.py`; the local engine was removed after migration to shared `heurema/repo-governance`, so no current-tree Punk fix is available. It adds no greenfield init, CLI, runtime storage, gate writer, proof writer expansion, Writer orchestration, acceptance claim writer, brownfield, grayfield, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. Selected next remains `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`.
+- Current focus: verify brownfield init scaffold v0.1.
+- Selected next: `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`
+- Scope override note: maintainer explicitly selected `work/goals/goal_add_brownfield_init_scaffold_v0_1.md` after the greenfield init checkpoint. The bounded B0 slice is now recorded as done. It adds `punk init <project-id> --mode brownfield` as an advisory entry scaffold for existing projects, records `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, creates empty `.punk/memory/reconstruction/` placeholders, preserves greenfield default behavior, and reuses atomic preflight plus privacy-safe `target_root: .` output. It adds no brownfield reconstruction, repo scan, AI summaries, generated contracts/specs, accepted claims, gate/proof runtime, Writer behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, runtime `.punk` storage, or grayfield reconciliation. Selected next is `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`.
+- Scope override note: maintainer asked to inspect yesterday's PR Codex Review comments and fix important findings before continuing the pause checkpoint. `work/goals/goal_fix_pr12_codex_review_symlink_ancestor_write_guard_v0_1.md` is now recorded as done. It checked PRs created, closed, merged, or updated on 2026-05-01. PR #12 had the only actionable current-tree Codex Review P1 and is fixed by making the first active proofpack writer write slice reject symlinks in every storage-root-relative parent ancestor before writing, with a regression test for a non-terminal parent symlink redirecting a nested target outside the storage root. PR #3 still has an unresolved older Codex Review P1 but targets deleted `scripts/pr_intake_gate.py`; the local engine was removed after migration to shared `heurema/repo-governance`, so no current-tree Punk fix is available. It adds no greenfield init, CLI, runtime storage, gate writer, proof writer expansion, Writer orchestration, acceptance claim writer, brownfield, grayfield, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. At that checkpoint selected next remained `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`.
 - Completion note: `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md` is now recorded as done with CLI, docs, `.gitignore` consistency, and work-ledger evidence. It clarified that `punk init <project-id>` initializes the current directory in place and does not create a `<project-id>` subdirectory, kept the greenfield-only compact `.punk/memory/` boundary, removed the repo-internal `preview_goal_ref` from `punk flow inspect`, and found no real `.punk/project/` ignore/docs mismatch. It added no brownfield, grayfield, contracts, gate/proof runtime, Writer, Conformance Pack runtime, replayability runtime, or spec-as-source behavior.
 - Completion note: `work/goals/goal_harden_greenfield_init_atomic_and_privacy_v0_1.md` is now recorded as done with code, smoke eval, CLI, docs-status, manual temp-init, and work-ledger evidence. It changed active greenfield `punk init <project-id>` to preflight the full scaffold before writes, return blocked without creating missing planned artifacts on conflict, preserve modified scaffold files, and render normal human output with `target_root: .` instead of an absolute local path. It added no brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
 - Completion note: `work/goals/goal_reconcile_roadmap_after_greenfield_init_v0_1.md` is now recorded as done with docs/status reconciliation evidence. It updated `docs/product/NORTH-STAR.md` so the current executable CLI list includes `punk init <project-id>` with a narrow greenfield compact `.punk/memory/` scope caveat. It made no code changes and did not activate brownfield, grayfield, runtime storage, contracts, gate/proof runtime, Writer, agents/adapters, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
@@ -95,13 +96,14 @@ last_validated_commit: "2f64f0f"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Pauses after compact greenfield init implementation, hardening, docs/UX polish, verification, checkpointing, and docs/status reconciliation. | - |
+| `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md` | `ready` | Verifies the new B0 brownfield entry scaffold without selecting inventory or reconstruction implementation. | - |
+| `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Still valid as a pause checkpoint if the maintainer chooses to stop after verification/status evidence. | - |
 
 ## Open Drift Findings
 
 | Finding | Severity | Route | Owner | Next artifact |
 |---|---|---|---|---|
-| None currently recorded after greenfield init docs and flow inspect polish v0.1. | - | - | - | - |
+| None currently recorded after brownfield init scaffold v0.1. | - | - | - | - |
 
 ## Blocked
 
@@ -117,6 +119,7 @@ last_validated_commit: "2f64f0f"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-03 | Added brownfield init scaffold v0.1 | `work/goals/goal_add_brownfield_init_scaffold_v0_1.md`, `work/reports/2026-05-03-brownfield-init-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs` |
 | 2026-05-02 | Swept yesterday's Codex Review threads and fixed PR #12 symlink ancestor write guard v0.1 | `work/goals/goal_fix_pr12_codex_review_symlink_ancestor_write_guard_v0_1.md`, `work/reports/2026-05-02-pr12-codex-review-symlink-ancestor-write-guard-v0-1.md`, `crates/punk-proof/src/lib.rs` |
 | 2026-05-01 | Polished greenfield init docs and flow inspect preview v0.1 | `work/goals/goal_polish_greenfield_init_docs_and_flow_inspect_preview_v0_1.md`, `work/reports/2026-05-01-greenfield-init-docs-flow-inspect-polish-v0-1.md`, `crates/punk-cli/src/main.rs`, `README.md`, `docs/product/START-HERE.md`, `docs/product/CRATE-STATUS.md` |
 | 2026-05-01 | Hardened greenfield init atomicity and privacy v0.1 | `work/goals/goal_harden_greenfield_init_atomic_and_privacy_v0_1.md`, `work/reports/2026-05-01-greenfield-init-atomic-privacy-hardening-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-cli/src/main.rs`, `crates/punk-eval/src/lib.rs`, `docs/product/CRATE-STATUS.md` |
@@ -306,20 +309,20 @@ last_validated_commit: "2f64f0f"
 
 ## Validation
 
-- Last checked: 2026-05-02
+- Last checked: 2026-05-03
 - Command: `python3 scripts/check_research_gate.py`
 - Command: `python3 scripts/check_work_ledger.py`
 - Command: `cargo fmt --check`
 - Command: `cargo check --workspace`
 - Command: `cargo test --workspace`
+- Command: `cargo build -p punk-cli`
 - Command: `~/.local/bin/punk-dev eval run smoke`
 - Command: `git diff --check`
-- Command: `scripts/check.sh docs-governance --files crates/punk-proof/src/lib.rs work/STATUS.md work/goals/goal_fix_pr12_codex_review_symlink_ancestor_write_guard_v0_1.md work/reports/2026-05-02-pr12-codex-review-symlink-ancestor-write-guard-v0-1.md --report work/reports/2026-05-02-pr12-codex-review-symlink-ancestor-write-guard-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files README.md crates/punk-cli/src/main.rs crates/punk-eval/src/lib.rs crates/punk-project/src/lib.rs docs/product/CRATE-STATUS.md docs/product/DOGFOODING.md docs/product/FLOW.md docs/product/NORTH-STAR.md docs/product/PROJECT-MEMORY.md docs/product/ROADMAP.md docs/product/START-HERE.md evals/cases/docs/active-cli-surface/README.md scripts/check_docs_governance.py work/STATUS.md work/goals/goal_add_brownfield_init_scaffold_v0_1.md work/goals/goal_verify_brownfield_init_scaffold_v0_1.md work/reports/2026-05-03-brownfield-init-scaffold-v0-1.md --report work/reports/2026-05-03-brownfield-init-scaffold-v0-1.md`
 - Result: `PASS`
 - Notes:
-  - PRs #8, #9, #10, #11, #12, and #13 were created, closed, or merged on 2026-05-01 and were checked for Codex Review threads.
-  - PR #3 was also checked because it was updated on 2026-05-01; its unresolved Codex Review P1 targets deleted `scripts/pr_intake_gate.py` and has no current-tree Punk fix.
-  - PR #12 had one actionable Codex Review P1 finding: reject symlinks in every parent ancestor before writing.
-  - The first active proofpack writer write slice now walks each storage-root-relative parent prefix with `symlink_metadata` and fail-closes before writing through an intermediate parent symlink.
-  - No greenfield init, CLI, runtime storage, gate writer, proof writer expansion, Writer orchestration, acceptance claim writer, brownfield, grayfield, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior was activated.
-  - Selected next is `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md`.
+  - Brownfield temp init created `.punk/memory/reconstruction/*`, recorded `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, kept `target_root: .`, and left `.punk/memory/**` visible to git.
+  - Greenfield default temp init still created the compact greenfield `.punk/memory/` scaffold with `entry_mode = greenfield`.
+  - Brownfield conflict temp init returned `blocked`, preserved the custom `.punk/memory/STATUS.md`, and created no other planned scaffold artifacts.
+  - No brownfield reconstruction, repo scan, AI summaries, generated contracts/specs, accepted claims, gate/proof runtime, Writer behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, runtime `.punk` storage, or grayfield reconciliation was activated.
+  - Selected next is `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`.

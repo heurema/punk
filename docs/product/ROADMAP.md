@@ -58,13 +58,15 @@ Active target:
 
 - workspace compiles
 - docs define core boundaries
-- `punk init <project-id>` creates a greenfield Level 0 compact `.punk/memory/` project-memory scaffold only
+- `punk init <project-id>` creates a greenfield Level 0 compact `.punk/memory/` project-memory scaffold by default
+- `punk init <project-id> --mode brownfield` creates only a brownfield advisory reconstruction workspace under `.punk/memory/reconstruction/`
 - parked crates/folders do not expose public behavior
 
 Exit criteria:
 
 - `cargo check --workspace` passes
-- `punk init <project-id>` creates repo-tracked starter memory under `.punk/memory/` with `project_id`, `entry_mode = greenfield`, compact memory metadata, and `.punk` marker files without root-level `work/`, `knowledge/`, `docs/adr/`, `publishing/`, brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores
+- greenfield `punk init <project-id>` creates repo-tracked starter memory under `.punk/memory/` with `project_id`, `entry_mode = greenfield`, compact memory metadata, and `.punk` marker files without root-level `work/`, `knowledge/`, `docs/adr/`, `publishing/`, brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores
+- brownfield `punk init <project-id> --mode brownfield` creates only empty advisory reconstruction placeholders with `reconstruction_status = not_started`, without repo scan, reconstructed claims, generated contracts/specs, grayfield reconciliation, or `.punk/` runtime stores
 - status vocabulary is documented
 - no parked capability appears in the public CLI
 

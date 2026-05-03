@@ -7,8 +7,10 @@ use std::path::{Path, PathBuf};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROJECT_INIT_SCHEMA_VERSION: &str = "project-init-greenfield.v0.1";
+pub const PROJECT_INIT_BROWNFIELD_SCHEMA_VERSION: &str = "project-init-brownfield-scaffold.v0.1";
 pub const PROJECT_INIT_MODE: &str = "manual-project-memory-level0";
 pub const PROJECT_INIT_ENTRY_MODE: &str = "greenfield";
+pub const PROJECT_INIT_BROWNFIELD_ENTRY_MODE: &str = "brownfield";
 pub const PROJECT_INIT_RUNTIME_PERSISTENCE: &str = "inactive";
 pub const PROJECT_ID_FORMAT_NOTE: &str =
     "project id must be a lowercase ASCII slug: a-z, 0-9, and hyphen, starting and ending with a letter or digit";
@@ -16,6 +18,8 @@ pub const PROJECT_ID_FORMAT_NOTE: &str =
 const MEMORY_ROOT: &str = ".punk/memory";
 const STATUS_PATH: &str = ".punk/memory/STATUS.md";
 const INITIAL_GOAL_PATH: &str = ".punk/memory/goals/goal_initial_project_setup.md";
+const BROWNFIELD_BASELINE_GOAL_PATH: &str =
+    ".punk/memory/goals/goal_brownfield_reconstruction_baseline.md";
 
 fn work_status_template(project_id: &ProjectId) -> String {
     format!(
@@ -145,6 +149,145 @@ Do not claim gate acceptance or proofpack coverage.
     )
 }
 
+fn brownfield_work_status_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"---
+id: work_status
+kind: manual-work-ledger
+status: active
+authority: canonical
+owner: TODO
+ledger_version: work-ledger.v0.1
+dogfooding_level: 0
+project_id: "{project_id}"
+entry_mode: brownfield
+reconstruction_status: not_started
+updated_at: TODO
+current_phase: "Dogfooding Level 0 / brownfield reconstruction scaffold"
+current_focus: "Prepare brownfield reconstruction baseline"
+selected_next: "{BROWNFIELD_BASELINE_GOAL_PATH}"
+last_validated_commit: null
+---
+
+# Work Status
+
+## Now
+
+- Current stage: brownfield project initialized with Punk Level 0 advisory reconstruction workspace.
+- Current focus: prepare a future source-linked brownfield reconstruction baseline.
+- Selected next: `{BROWNFIELD_BASELINE_GOAL_PATH}`
+- Reconstruction status: not_started.
+
+## Brownfield Boundary
+
+No project knowledge has been reconstructed yet.
+Existing code/docs/history are not Punk truth.
+Future reconstruction artifacts are advisory candidates until reviewed.
+
+## Blockers
+
+- Fill owner/date TODOs before treating this ledger as current.
+- Create and review future source-linked reconstruction artifacts before drafting contracts.
+
+## Recent Evidence
+
+- `punk init {project_id} --mode brownfield` created the brownfield entry scaffold.
+
+## Open Drift Findings
+
+None.
+"#,
+        project_id = project_id.as_str()
+    )
+}
+
+fn brownfield_baseline_goal_template(project_id: &ProjectId) -> String {
+    format!(
+        r#"---
+id: goal_brownfield_reconstruction_baseline
+title: "Brownfield reconstruction baseline"
+status: ready
+owner: TODO
+module: "project"
+priority: P1
+authority: canonical
+project_id: "{project_id}"
+entry_mode: brownfield
+reconstruction_status: not_started
+created_at: TODO
+updated_at: TODO
+selected_at: TODO
+started_at: null
+completed_at: null
+blocked_by: []
+scope:
+  include:
+    - ".punk/memory/STATUS.md"
+    - ".punk/memory/reconstruction/**"
+    - ".punk/memory/reports/**"
+  exclude:
+    - "work/**"
+    - "knowledge/**"
+    - "docs/adr/**"
+    - ".punk/events/**"
+    - ".punk/contracts/**"
+    - ".punk/runs/**"
+    - ".punk/evals/**"
+    - ".punk/decisions/**"
+    - ".punk/proofs/**"
+    - ".punk/indexes/**"
+    - ".punk/views/**"
+    - ".punk/runtime/**"
+    - ".punk/cache/**"
+acceptance:
+  - "A future source corpus manifest boundary is defined before any inventory is generated."
+  - "Future claim-ledger, unknowns, contradictions, and contract-readiness artifacts remain advisory until reviewed."
+  - "No project knowledge is treated as reconstructed or accepted automatically."
+  - "No repo scan, AI summary, contract generation, gate decision, proof, or Writer behavior is activated."
+knowledge_refs: []
+contract_refs: []
+report_refs: []
+decision_refs: []
+proof_refs: []
+latest_proof_ref: null
+research_gate:
+  classification: R1
+  required: false
+  rationale: "Brownfield baseline preparation records advisory reconstruction workspace boundaries without external research or repo analysis."
+  research_refs: []
+  external_research_refs: []
+  blocked_reason: null
+doc_impact:
+  classification: project-memory
+  required_updates:
+    - ".punk/memory/STATUS.md"
+    - ".punk/memory/reconstruction/**"
+    - ".punk/memory/reports/**"
+  rationale: "Brownfield reconstruction preparation changes the manual Level 0 project-memory baseline."
+---
+
+## Context
+
+The project has been initialized as a Punk brownfield project with Level 0 advisory reconstruction workspace.
+
+Project id: `{project_id}`
+
+## Intent
+
+Prepare a reviewed source-linked reconstruction baseline before any brownfield claims are promoted.
+
+## Non-scope
+
+Do not scan the repository.
+
+Do not generate summaries, contracts, specs, claims, gate decisions, proofs, or acceptance claims.
+
+Do not write `.punk/` runtime stores.
+"#,
+        project_id = project_id.as_str()
+    )
+}
+
 const REPORTS_README_TEMPLATE: &str = r#"# Work Reports
 
 Manual Level 0 outcome, evidence, and handoff reports live here.
@@ -173,7 +316,75 @@ Raw or parked ideas live here.
 Ideas are not implementation truth until promoted through the project workflow.
 "#;
 
-const PUNK_README_TEMPLATE: &str = r#"# .punk
+const BROWNFIELD_RECONSTRUCTION_README_TEMPLATE: &str = r#"# Brownfield Reconstruction Workspace
+
+This directory is the advisory workspace for future brownfield reconstruction artifacts.
+
+No project knowledge has been reconstructed yet.
+
+Existing code, docs, tests, history, and issues are not Punk truth.
+
+Future reconstruction artifacts are advisory candidates until reviewed.
+
+No repo scan, AI summary, contract, gate decision, proof, or acceptance claim has been created by init.
+"#;
+
+const SOURCE_CORPUS_MANIFEST_TEMPLATE: &str = r#"# Source Corpus Manifest
+
+Purpose: Future source-linked inventory of files, docs, tests, CI, schemas, and history sources.
+
+Status: not_started.
+
+No generated inventory exists yet.
+
+Do not infer project intent from this placeholder.
+"#;
+
+const CLAIM_LEDGER_TEMPLATE: &str = r#"# Claim Ledger
+
+Purpose: Future ledger of source-linked reconstructed claims.
+
+Status: not_started.
+
+No claims are accepted automatically.
+
+No claims have been reconstructed or reviewed yet.
+"#;
+
+const UNKNOWNS_TEMPLATE: &str = r#"# Unknowns
+
+Purpose: Future unknowns/blockers for safe contract drafting.
+
+Status: not_started.
+
+No unknowns have been collected yet.
+"#;
+
+const CONTRADICTIONS_TEMPLATE: &str = r#"# Contradictions
+
+Purpose: Future stale/conflicting docs/code/history findings.
+
+Status: not_started.
+
+No contradictions have been collected yet.
+"#;
+
+const CONTRACT_READINESS_TEMPLATE: &str = r#"# Contract Readiness
+
+Purpose: Future Contract Readiness Baseline.
+
+Status: not_started.
+
+This is not a contract.
+This is not a gate decision.
+This is not proof.
+
+No contract-readiness claims have been reconstructed or reviewed yet.
+"#;
+
+fn punk_readme_template(entry_mode: ProjectInitEntryMode) -> String {
+    match entry_mode {
+        ProjectInitEntryMode::Greenfield => r#"# .punk
 
 This directory is the Punk project root marker.
 
@@ -184,16 +395,47 @@ Tracked durable project memory lives under `.punk/memory/`.
 Authoritative live work state for this project is `.punk/memory/STATUS.md`.
 
 Runtime and derived stores such as runtime, cache, events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
-"#;
+"#
+        .to_owned(),
+        ProjectInitEntryMode::Brownfield => r#"# .punk
 
-fn punk_project_toml_template(project_id: &ProjectId) -> String {
+This directory is the Punk project root marker.
+
+Current active behavior is Dogfooding Level 0 brownfield entry scaffold.
+
+Tracked durable project memory lives under `.punk/memory/`.
+
+Authoritative live work state for this project is `.punk/memory/STATUS.md`.
+
+Brownfield reconstruction has not started.
+
+The reconstruction workspace under `.punk/memory/reconstruction/` is advisory until reviewed.
+
+Runtime and derived stores such as runtime, cache, events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
+"#
+        .to_owned(),
+    }
+}
+
+fn punk_project_toml_template(project_id: &ProjectId, entry_mode: ProjectInitEntryMode) -> String {
+    let brownfield_section = match entry_mode {
+        ProjectInitEntryMode::Greenfield => "",
+        ProjectInitEntryMode::Brownfield => {
+            r#"
+[brownfield]
+reconstruction_status = "not_started"
+authority = "advisory_candidates_only"
+"#
+        }
+    };
+
     format!(
         r#"# Punk project marker.
 # This file is setup metadata, not runtime authority.
 
 schema_version = "punk.project.v0.1"
 project_id = "{project_id}"
-entry_mode = "greenfield"
+entry_mode = "{entry_mode}"
 dogfooding_level = 0
 runtime_persistence = "inactive"
 live_work_state = ".punk/memory/STATUS.md"
@@ -210,8 +452,11 @@ root = ".punk/runtime"
 live_state = ".punk/memory/STATUS.md"
 final_decisions = "not_active"
 proofpacks = "not_active"
+{brownfield_section}
 "#,
-        project_id = project_id.as_str()
+        project_id = project_id.as_str(),
+        entry_mode = entry_mode.as_str(),
+        brownfield_section = brownfield_section
     )
 }
 
@@ -232,6 +477,27 @@ const PROJECT_INIT_DEFERRED_NOTES: &[&str] = &[
     "flow persistence and event writing remain inactive",
     "contract writer, receipt writer, gate writer, proof writer, and proofpack writer remain inactive",
     "project-specific source/design refs must be filled manually after init",
+];
+
+const BROWNFIELD_PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
+    "writes only a brownfield Level 0 advisory reconstruction scaffold under .punk/memory",
+    "records project_id and entry_mode = brownfield in the scaffold",
+    "records reconstruction_status = not_started and authority = advisory_candidates_only",
+    "creates .punk as a project root marker and .punk/memory as tracked durable memory",
+    "creates empty reconstruction placeholders for source corpus, claims, unknowns, contradictions, and contract readiness",
+    "does not create root-level work, knowledge, docs/adr, or publishing directories",
+    "does not scan the repository or infer project knowledge",
+    "does not create contracts, specs, gate artifacts, proofpacks, or acceptance claims",
+    "uses create-new/no-overwrite behavior and reports conflicts fail-closed",
+];
+
+const BROWNFIELD_PROJECT_INIT_DEFERRED_NOTES: &[&str] = &[
+    "brownfield reconstruction remains not_started",
+    "grayfield reconciliation remains deferred",
+    ".punk/runtime project storage remains inactive",
+    "flow persistence and event writing remain inactive",
+    "contract writer, receipt writer, gate writer, proof writer, and proofpack writer remain inactive",
+    "all future reconstructed claims remain advisory candidates until reviewed",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -291,6 +557,49 @@ fn validate_project_id(value: &str) -> Result<(), ProjectIdError> {
     }
 
     Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectInitEntryMode {
+    Greenfield,
+    Brownfield,
+}
+
+impl ProjectInitEntryMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Greenfield => PROJECT_INIT_ENTRY_MODE,
+            Self::Brownfield => PROJECT_INIT_BROWNFIELD_ENTRY_MODE,
+        }
+    }
+
+    fn schema_version(self) -> &'static str {
+        match self {
+            Self::Greenfield => PROJECT_INIT_SCHEMA_VERSION,
+            Self::Brownfield => PROJECT_INIT_BROWNFIELD_SCHEMA_VERSION,
+        }
+    }
+
+    fn entries(self) -> &'static [ProjectInitEntry] {
+        match self {
+            Self::Greenfield => GREENFIELD_PROJECT_INIT_ENTRIES,
+            Self::Brownfield => BROWNFIELD_PROJECT_INIT_ENTRIES,
+        }
+    }
+
+    fn boundary_notes(self) -> &'static [&'static str] {
+        match self {
+            Self::Greenfield => PROJECT_INIT_BOUNDARY_NOTES,
+            Self::Brownfield => BROWNFIELD_PROJECT_INIT_BOUNDARY_NOTES,
+        }
+    }
+
+    fn deferred_notes(self) -> &'static [&'static str] {
+        match self {
+            Self::Greenfield => PROJECT_INIT_DEFERRED_NOTES,
+            Self::Brownfield => BROWNFIELD_PROJECT_INIT_DEFERRED_NOTES,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -381,6 +690,7 @@ impl ProjectInitArtifactReport {
 pub struct ProjectInitReport {
     project_root: PathBuf,
     project_id: ProjectId,
+    entry_mode: ProjectInitEntryMode,
     artifacts: Vec<ProjectInitArtifactReport>,
 }
 
@@ -394,7 +704,11 @@ impl ProjectInitReport {
     }
 
     pub fn entry_mode(&self) -> &'static str {
-        PROJECT_INIT_ENTRY_MODE
+        self.entry_mode.as_str()
+    }
+
+    pub fn schema_version(&self) -> &'static str {
+        self.entry_mode.schema_version()
     }
 
     pub fn artifacts(&self) -> &[ProjectInitArtifactReport] {
@@ -402,11 +716,11 @@ impl ProjectInitReport {
     }
 
     pub fn boundary_notes(&self) -> &'static [&'static str] {
-        PROJECT_INIT_BOUNDARY_NOTES
+        self.entry_mode.boundary_notes()
     }
 
     pub fn deferred_notes(&self) -> &'static [&'static str] {
-        PROJECT_INIT_DEFERRED_NOTES
+        self.entry_mode.deferred_notes()
     }
 
     pub fn blocked(&self) -> bool {
@@ -440,7 +754,7 @@ impl ProjectInitReport {
     pub fn render_human(&self) -> String {
         let mut output = String::new();
         writeln!(&mut output, "punk init").expect("writing to String should succeed");
-        writeln!(&mut output, "schema_version: {PROJECT_INIT_SCHEMA_VERSION}")
+        writeln!(&mut output, "schema_version: {}", self.schema_version())
             .expect("writing to String should succeed");
         writeln!(&mut output, "mode: {PROJECT_INIT_MODE}")
             .expect("writing to String should succeed");
@@ -496,10 +810,11 @@ enum ProjectInitEntry {
 enum ProjectInitTemplate {
     WorkStatus,
     InitialGoal,
+    PunkReadme,
     PunkProjectToml,
 }
 
-const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
+const GREENFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::Directory(".punk"),
     ProjectInitEntry::Directory(MEMORY_ROOT),
     ProjectInitEntry::Directory(".punk/memory/goals"),
@@ -520,13 +835,57 @@ const PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
         ".punk/memory/knowledge/ideas/README.md",
         IDEAS_README_TEMPLATE,
     ),
-    ProjectInitEntry::File(".punk/README.md", PUNK_README_TEMPLATE),
+    ProjectInitEntry::GeneratedFile(".punk/README.md", ProjectInitTemplate::PunkReadme),
+    ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
+];
+
+const BROWNFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
+    ProjectInitEntry::Directory(".punk"),
+    ProjectInitEntry::Directory(MEMORY_ROOT),
+    ProjectInitEntry::Directory(".punk/memory/goals"),
+    ProjectInitEntry::Directory(".punk/memory/reports"),
+    ProjectInitEntry::Directory(".punk/memory/reconstruction"),
+    ProjectInitEntry::GeneratedFile(STATUS_PATH, ProjectInitTemplate::WorkStatus),
+    ProjectInitEntry::GeneratedFile(
+        BROWNFIELD_BASELINE_GOAL_PATH,
+        ProjectInitTemplate::InitialGoal,
+    ),
+    ProjectInitEntry::File(
+        ".punk/memory/reconstruction/README.md",
+        BROWNFIELD_RECONSTRUCTION_README_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/memory/reconstruction/source-corpus-manifest.md",
+        SOURCE_CORPUS_MANIFEST_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/memory/reconstruction/claim-ledger.md",
+        CLAIM_LEDGER_TEMPLATE,
+    ),
+    ProjectInitEntry::File(".punk/memory/reconstruction/unknowns.md", UNKNOWNS_TEMPLATE),
+    ProjectInitEntry::File(
+        ".punk/memory/reconstruction/contradictions.md",
+        CONTRADICTIONS_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/memory/reconstruction/contract-readiness.md",
+        CONTRACT_READINESS_TEMPLATE,
+    ),
+    ProjectInitEntry::GeneratedFile(".punk/README.md", ProjectInitTemplate::PunkReadme),
     ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
 ];
 
 pub fn init_level0_project(
     project_root: impl AsRef<Path>,
     project_id: ProjectId,
+) -> ProjectInitReport {
+    init_project(project_root, project_id, ProjectInitEntryMode::Greenfield)
+}
+
+pub fn init_project(
+    project_root: impl AsRef<Path>,
+    project_id: ProjectId,
+    entry_mode: ProjectInitEntryMode,
 ) -> ProjectInitReport {
     let project_root = project_root.as_ref().to_path_buf();
 
@@ -542,6 +901,7 @@ pub fn init_level0_project(
             return ProjectInitReport {
                 project_root,
                 project_id,
+                entry_mode,
                 artifacts,
             };
         }
@@ -555,42 +915,64 @@ pub fn init_level0_project(
             return ProjectInitReport {
                 project_root,
                 project_id,
+                entry_mode,
                 artifacts,
             };
         }
     }
 
-    let preflight = preflight_init_entries(&project_root, &project_id);
+    let preflight = preflight_init_entries(&project_root, &project_id, entry_mode);
     if preflight.iter().any(ProjectInitArtifactReport::is_blocking) {
         return ProjectInitReport {
             project_root,
             project_id,
+            entry_mode,
             artifacts: preflight,
         };
     }
 
-    let artifacts = apply_init_entries(&project_root, &project_id, &preflight);
+    let artifacts = apply_init_entries(&project_root, &project_id, entry_mode, &preflight);
 
     ProjectInitReport {
         project_root,
         project_id,
+        entry_mode,
         artifacts,
     }
 }
 
-fn render_init_template(template: ProjectInitTemplate, project_id: &ProjectId) -> String {
-    match template {
-        ProjectInitTemplate::WorkStatus => work_status_template(project_id),
-        ProjectInitTemplate::InitialGoal => initial_goal_template(project_id),
-        ProjectInitTemplate::PunkProjectToml => punk_project_toml_template(project_id),
+fn render_init_template(
+    template: ProjectInitTemplate,
+    project_id: &ProjectId,
+    entry_mode: ProjectInitEntryMode,
+) -> String {
+    match (template, entry_mode) {
+        (ProjectInitTemplate::WorkStatus, ProjectInitEntryMode::Greenfield) => {
+            work_status_template(project_id)
+        }
+        (ProjectInitTemplate::WorkStatus, ProjectInitEntryMode::Brownfield) => {
+            brownfield_work_status_template(project_id)
+        }
+        (ProjectInitTemplate::InitialGoal, ProjectInitEntryMode::Greenfield) => {
+            initial_goal_template(project_id)
+        }
+        (ProjectInitTemplate::InitialGoal, ProjectInitEntryMode::Brownfield) => {
+            brownfield_baseline_goal_template(project_id)
+        }
+        (ProjectInitTemplate::PunkReadme, _) => punk_readme_template(entry_mode),
+        (ProjectInitTemplate::PunkProjectToml, _) => {
+            punk_project_toml_template(project_id, entry_mode)
+        }
     }
 }
 
 fn preflight_init_entries(
     project_root: &Path,
     project_id: &ProjectId,
+    entry_mode: ProjectInitEntryMode,
 ) -> Vec<ProjectInitArtifactReport> {
-    PROJECT_INIT_ENTRIES
+    entry_mode
+        .entries()
         .iter()
         .map(|entry| match *entry {
             ProjectInitEntry::Directory(path) => preflight_init_directory(project_root, path),
@@ -598,7 +980,7 @@ fn preflight_init_entries(
                 preflight_init_file(project_root, path, contents.as_bytes())
             }
             ProjectInitEntry::GeneratedFile(path, template) => {
-                let contents = render_init_template(template, project_id);
+                let contents = render_init_template(template, project_id, entry_mode);
                 preflight_init_file(project_root, path, contents.as_bytes())
             }
         })
@@ -608,9 +990,11 @@ fn preflight_init_entries(
 fn apply_init_entries(
     project_root: &Path,
     project_id: &ProjectId,
+    entry_mode: ProjectInitEntryMode,
     preflight: &[ProjectInitArtifactReport],
 ) -> Vec<ProjectInitArtifactReport> {
-    PROJECT_INIT_ENTRIES
+    entry_mode
+        .entries()
         .iter()
         .zip(preflight)
         .map(|(entry, preflight_report)| {
@@ -624,7 +1008,7 @@ fn apply_init_entries(
                     create_init_file(project_root, path, contents.as_bytes())
                 }
                 ProjectInitEntry::GeneratedFile(path, template) => {
-                    let contents = render_init_template(template, project_id);
+                    let contents = render_init_template(template, project_id, entry_mode);
                     create_init_file(project_root, path, contents.as_bytes())
                 }
             }
@@ -829,8 +1213,10 @@ fn create_init_file(
 #[cfg(test)]
 mod tests {
     use super::{
-        init_level0_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
-        ProjectInitArtifactStatus, INITIAL_GOAL_PATH, PROJECT_INIT_ENTRY_MODE, STATUS_PATH,
+        init_level0_project, init_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
+        ProjectInitArtifactStatus, ProjectInitEntryMode, BROWNFIELD_BASELINE_GOAL_PATH,
+        INITIAL_GOAL_PATH, PROJECT_INIT_BROWNFIELD_ENTRY_MODE, PROJECT_INIT_ENTRY_MODE,
+        STATUS_PATH,
     };
     use std::fs;
     use std::process;
@@ -904,6 +1290,255 @@ mod tests {
         assert!(project_marker.contains("[runtime]"));
         assert!(project_marker.contains("active = false"));
         assert!(project_marker.contains("root = \".punk/runtime\""));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn greenfield_default_behavior_unchanged() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+
+        assert!(!report.blocked());
+        assert_eq!(report.entry_mode(), PROJECT_INIT_ENTRY_MODE);
+        assert!(root.join(INITIAL_GOAL_PATH).is_file());
+        assert!(!root.join(BROWNFIELD_BASELINE_GOAL_PATH).exists());
+        assert!(!root.join(".punk/memory/reconstruction").exists());
+
+        let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
+            .expect("project marker should be readable");
+        assert!(project_marker.contains("entry_mode = \"greenfield\""));
+        assert!(!project_marker.contains("[brownfield]"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_creates_compact_memory_scaffold() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(!report.blocked());
+        assert_eq!(report.exit_code(), 0);
+        assert_eq!(report.result_label(), "initialized");
+        assert_eq!(report.entry_mode(), PROJECT_INIT_BROWNFIELD_ENTRY_MODE);
+        assert!(root.join(STATUS_PATH).is_file());
+        assert!(root.join(BROWNFIELD_BASELINE_GOAL_PATH).is_file());
+        assert!(root.join(".punk/memory/reports").is_dir());
+        assert!(root.join(".punk/memory/reconstruction").is_dir());
+        assert!(root.join(".punk/README.md").is_file());
+        assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join("work").exists());
+        assert!(!root.join("knowledge").exists());
+        assert!(!root.join("docs").exists());
+        assert!(!root.join("docs/adr").exists());
+        assert!(!root.join("publishing").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_records_entry_mode_brownfield() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert_eq!(report.entry_mode(), PROJECT_INIT_BROWNFIELD_ENTRY_MODE);
+        let status =
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status template should be readable");
+        let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
+            .expect("project marker should be readable");
+        assert!(status.contains("entry_mode: brownfield"));
+        assert!(project_marker.contains("entry_mode = \"brownfield\""));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_records_reconstruction_not_started() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(!report.blocked());
+        let status =
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status template should be readable");
+        let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
+            .expect("project marker should be readable");
+        assert!(status.contains("reconstruction_status: not_started"));
+        assert!(status.contains(&format!(
+            "selected_next: \"{BROWNFIELD_BASELINE_GOAL_PATH}\""
+        )));
+        assert!(status.contains("No project knowledge has been reconstructed yet."));
+        assert!(status.contains("Existing code/docs/history are not Punk truth."));
+        assert!(status
+            .contains("Future reconstruction artifacts are advisory candidates until reviewed."));
+        assert!(project_marker.contains("[brownfield]"));
+        assert!(project_marker.contains("reconstruction_status = \"not_started\""));
+        assert!(project_marker.contains("authority = \"advisory_candidates_only\""));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_creates_reconstruction_placeholders() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(!report.blocked());
+        for path in [
+            ".punk/memory/reconstruction/README.md",
+            ".punk/memory/reconstruction/source-corpus-manifest.md",
+            ".punk/memory/reconstruction/claim-ledger.md",
+            ".punk/memory/reconstruction/unknowns.md",
+            ".punk/memory/reconstruction/contradictions.md",
+            ".punk/memory/reconstruction/contract-readiness.md",
+        ] {
+            assert!(root.join(path).is_file(), "{path} should be created");
+        }
+        let source_manifest =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/source-corpus-manifest.md"))
+                .expect("source corpus manifest should be readable");
+        let claim_ledger =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/claim-ledger.md"))
+                .expect("claim ledger should be readable");
+        let contract_readiness =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/contract-readiness.md"))
+                .expect("contract readiness should be readable");
+        assert!(source_manifest.contains(
+            "Future source-linked inventory of files, docs, tests, CI, schemas, and history sources."
+        ));
+        assert!(claim_ledger.contains("No claims are accepted automatically."));
+        assert!(contract_readiness.contains("This is not a contract."));
+        assert!(contract_readiness.contains("This is not a gate decision."));
+        assert!(contract_readiness.contains("This is not proof."));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_does_not_scan_repo() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join("src")).expect("source dir should be created");
+        fs::write(root.join("src/main.rs"), "fn main() {}\n").expect("source should be written");
+        fs::write(root.join("README.md"), "# Existing project\n")
+            .expect("readme should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(!report.blocked());
+        let source_manifest =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/source-corpus-manifest.md"))
+                .expect("source corpus manifest should be readable");
+        let claim_ledger =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/claim-ledger.md"))
+                .expect("claim ledger should be readable");
+        assert!(!source_manifest.contains("src/main.rs"));
+        assert!(!source_manifest.contains("README.md"));
+        assert!(!claim_ledger.contains("fn main"));
+        assert!(!claim_ledger.contains("Existing project"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_does_not_create_runtime_dirs() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(!report.blocked());
+        for path in [
+            ".punk/events",
+            ".punk/contracts",
+            ".punk/runs",
+            ".punk/evals",
+            ".punk/decisions",
+            ".punk/proofs",
+            ".punk/views",
+            ".punk/indexes",
+            ".punk/runtime",
+            ".punk/cache",
+        ] {
+            assert!(!root.join(path).exists(), "{path} should stay inactive");
+        }
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_does_not_create_contracts_or_claims() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(!report.blocked());
+        assert!(!root.join(".punk/contracts").exists());
+        assert!(!root.join(".punk/proofs").exists());
+        let claim_ledger =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/claim-ledger.md"))
+                .expect("claim ledger should be readable");
+        let contract_readiness =
+            fs::read_to_string(root.join(".punk/memory/reconstruction/contract-readiness.md"))
+                .expect("contract readiness should be readable");
+        assert!(claim_ledger.contains("No claims are accepted automatically."));
+        assert!(claim_ledger.contains("No claims have been reconstructed or reviewed yet."));
+        assert!(contract_readiness
+            .contains("No contract-readiness claims have been reconstructed or reviewed yet."));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn brownfield_init_conflict_is_atomic_noop() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory")).expect("memory dir should be created");
+        fs::write(root.join(STATUS_PATH), "custom brownfield status\n")
+            .expect("custom status should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_project(&root, project_id, ProjectInitEntryMode::Brownfield);
+
+        assert!(report.blocked());
+        assert_eq!(report.exit_code(), 1);
+        assert_eq!(report.result_label(), "blocked");
+        assert!(report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == STATUS_PATH
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Conflict
+        }));
+        assert!(report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == BROWNFIELD_BASELINE_GOAL_PATH
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Planned
+        }));
+        assert_eq!(
+            fs::read_to_string(root.join(STATUS_PATH)).expect("status should remain readable"),
+            "custom brownfield status\n"
+        );
+        assert!(!root.join(BROWNFIELD_BASELINE_GOAL_PATH).exists());
+        assert!(!root.join(".punk/memory/reports").exists());
+        assert!(!root.join(".punk/memory/reconstruction").exists());
+        assert!(!root.join(".punk/README.md").exists());
+        assert!(!root.join(".punk/project.toml").exists());
 
         let _ = fs::remove_dir_all(root);
     }

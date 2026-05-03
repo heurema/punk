@@ -33,17 +33,24 @@ Modules may assess, not decide. Adapters may invoke, not own truth. Project memo
 Today, the executable CLI surface is intentionally limited to:
 
 - `punk init <project-id>`
+- `punk init <project-id> --mode brownfield`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
 Everything else in product docs should be read as target architecture, phase-gated design, parked scope, or future scope unless explicitly marked active.
 
-`punk init <project-id>` is current behavior only for a greenfield Dogfooding Level 0 compact project-memory scaffold.
+`punk init <project-id>` is the default greenfield Dogfooding Level 0 compact project-memory scaffold.
 
 Run it from the target project root. It initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 
 It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory under `.punk/memory/`, writes `.punk` marker/setup files, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
+
+`punk init <project-id> --mode brownfield` is active only as a brownfield entry scaffold for an existing project.
+
+It records `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, then creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/`.
+
+It does not scan the repository, infer intent, summarize code, generate contracts/specs, accept claims, write runtime state, or prove anything.
 
 `.punk/` runtime storage is not active for this purpose.
 
@@ -112,7 +119,7 @@ See:
 
 The following may be documented or parked, but they are not current operator surfaces:
 
-- brownfield or grayfield `punk init`
+- brownfield reconstruction or grayfield `punk init`
 - LLM contract drafting
 - coding agent execution
 - active proofpack writing
