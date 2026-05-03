@@ -144,7 +144,6 @@ manifest:
       size_policy:
         status: deferred
         value: null
-      claims_created: []
 ```
 
 ## Non-goals
