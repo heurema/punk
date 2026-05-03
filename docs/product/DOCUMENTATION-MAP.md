@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-30
+updated_at: 2026-05-03
 review_after: 2026-07-20
 canonical_for:
   - documentation-reading-order
@@ -55,14 +55,15 @@ For product and architecture work, read in this order:
 13. `docs/product/TELEMETRY.md`
 14. `docs/product/EVAL-PLANE.md`
 15. `docs/product/PROJECT-MEMORY.md`
-16. `docs/product/DOC-GOVERNANCE.md`
-17. `docs/product/PUBLIC-NARRATIVE.md`
-18. `docs/product/LINEAGE.md`
-19. `docs/adr/`
-20. `knowledge/research/`
-21. `knowledge/ideas/`
-22. `work/goals/` and `work/reports/`
-23. `publishing/`
+16. `docs/product/BROWNFIELD-INVENTORY.md`
+17. `docs/product/DOC-GOVERNANCE.md`
+18. `docs/product/PUBLIC-NARRATIVE.md`
+19. `docs/product/LINEAGE.md`
+20. `docs/adr/`
+21. `knowledge/research/`
+22. `knowledge/ideas/`
+23. `work/goals/` and `work/reports/`
+24. `publishing/`
 
 ## Canonical owners
 
@@ -81,6 +82,7 @@ For product and architecture work, read in this order:
 | Roadmap and phase gates | `docs/product/ROADMAP.md` | `work/goals/`, `docs/adr/` | Current phase order and exit criteria. |
 | Crate maturity/status | `docs/product/CRATE-STATUS.md` | `docs/product/ROADMAP.md` | Current crate boundary vocabulary. |
 | Project memory model | `docs/product/PROJECT-MEMORY.md` | `docs/adr/ADR-0003-project-memory-plane.md`, `docs/adr/ADR-0008-knowledge-vault-boundaries.md`, `knowledge/research/2026-04-29-project-knowledge-vault-for-agents.md`, `knowledge/research/2026-04-30-replayable-project-memory.md`, `knowledge/ideas/2026-04-29-compiled-project-wiki-and-claim-graph.md`, `knowledge/ideas/2026-04-30-replayable-project-memory.md`, `knowledge/ideas/2026-04-30-replayability-backlog.md` | Repo-tracked memory surfaces, Knowledge Vault direction, replayability direction, replayability backlog, and authority rules. |
+| Brownfield Inventory boundary | `docs/product/BROWNFIELD-INVENTORY.md` | `docs/product/PROJECT-MEMORY.md`, `docs/product/ROADMAP.md`, `evals/specs/brownfield-inventory-boundary.v0.1.md` | Defines future brownfield inventory as observable structure only, separate from claims, intent, contracts, decisions, and proof. |
 | Dogfooding levels and manual ledger discipline | `docs/product/DOGFOODING.md` | `work/`, `docs/product/PROJECT-MEMORY.md` | Manual-to-runtime adoption levels and Level 0 work rules. |
 | Research gate policy | `docs/product/RESEARCH-GATE.md` | `knowledge/research/` | When research is required before implementation. |
 | Research intake classification | `docs/product/RESEARCH-INTAKE.md` | `knowledge/research/`, `knowledge/ideas/` | `adopt / defer / park / avoid` intake discipline. |

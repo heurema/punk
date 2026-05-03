@@ -1,0 +1,133 @@
+# Brownfield Inventory boundary v0.1
+
+Date: 2026-05-03
+Status: proposed boundary
+Authority: advisory/design
+
+## Purpose
+
+Define deterministic boundary expectations for any future brownfield source corpus inventory before implementation exists.
+
+This is a design/spec artifact only. It does not activate repo scanning, file walking, inventory writing, claim extraction, AI summaries, contract generation, gate/proof runtime, Writer behavior, runtime `.punk` storage, grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
+
+## Status and authority
+
+Future inventory output is advisory observed structure only:
+
+```text
+status = advisory
+authority = observed_structure
+```
+
+It is not canonical project memory truth, accepted behavior, a contract, a gate decision, proof, or claim ledger.
+
+## Required deterministic eval cases
+
+### BFI-001: observable structure only
+
+Given a future inventory item, it may include repo-relative path, path kind, extension, candidate source class, and marker metadata.
+
+It must not include module purpose, requirements, accepted behavior, invariants, non-goals, ownership truth, or intent.
+
+### BFI-002: claims are not created
+
+Given a source artifact that looks meaningful, future inventory must not create a claim such as module purpose, requirement, architecture decision, accepted behavior, or contract clause.
+
+Candidate claims belong to a later reviewed reconstruction layer.
+
+### BFI-003: source classes are bounded
+
+Future inventory source classes must be limited to:
+
+```text
+source_code
+docs
+tests
+ci_config
+package_manifest
+schema
+migration
+script
+generated_candidate
+vendored_candidate
+unknown
+```
+
+If classification is uncertain, `unknown` must be used instead of forced interpretation.
+
+### BFI-004: sensitive classes are not exposed
+
+Future inventory must not expose raw secret values, raw environment values, local cache contents, build output contents, `.git` internals, `.punk/runtime`, `.punk/cache`, `.punk/indexes`, or private agent transcripts.
+
+### BFI-005: repo-relative paths only
+
+Future inventory output must use repo-relative paths.
+
+Absolute host paths such as `/Users/...`, `/home/...`, or drive-rooted local paths must be rejected or redacted.
+
+### BFI-006: no network and no remote AI
+
+Future inventory must be local-only by default.
+
+It must not require network access, remote AI calls, telemetry upload, remote indexing, or hidden sync.
+
+### BFI-007: file contents excluded by default
+
+Future inventory must not store file contents by default.
+
+If a later goal allows hashes or sizes, those fields must remain structural evidence and must not become semantic summaries.
+
+### BFI-008: docs are not canonical by default
+
+Given a README or docs file, future inventory may record that it exists and classify it as `docs`.
+
+It must not state that the doc is canonical, current, accepted, or contract authority.
+
+### BFI-009: tests are not proof
+
+Given test files, future inventory may record that tests exist and classify them as `tests`.
+
+It must not state that tests prove requirements, acceptance, compatibility, or invariants.
+
+### BFI-010: deterministic and atomic output
+
+Future source corpus manifest writing must be deterministic for the same checkout inputs and must preflight output conflicts.
+
+On conflict, it must not leave a partial manifest.
+
+### BFI-011: generated and vendored candidates stay marked
+
+Future inventory must mark generated or vendored material as candidates when detected.
+
+It must not silently treat generated or vendored artifacts as project-authored truth.
+
+### BFI-012: contract readiness remains advisory and future
+
+Future inventory may support later contract-readiness assessment by providing source refs.
+
+It must not decide contract readiness, draft contracts, write gate decisions, create proof, or accept claims.
+
+## Minimal fixture shape
+
+This is illustrative boundary shape only, not an implemented schema.
+
+```yaml
+inventory_item:
+  path: crates/example/src/lib.rs
+  path_kind: file
+  source_class: source_code
+  markers:
+    - extension: rs
+  status: advisory
+  authority: observed_structure
+  semantic_summary: null
+  claims_created: []
+```
+
+## Non-goals
+
+This v0.1 boundary does not define runtime inventory storage, `.punk/` inventory writers, CLI commands, repository traversal, language detection, file content extraction, hashing behavior, claim ledger population, contract-readiness scoring, AI summaries, gate/proof runtime, Writer behavior, or grayfield reconciliation.
+
+## Future implementation constraints
+
+Any future implementation must keep inventory as observable structure, keep claims in a later reviewed reconstruction layer, write repo-relative paths, avoid file contents by default, use allowlist/denylist rules, preserve privacy, and remain advisory until reviewed.
