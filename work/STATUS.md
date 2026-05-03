@@ -8,9 +8,9 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-03
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Prepare brownfield source corpus manifest design v0.1"
-selected_next: "work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md"
-last_validated_commit: "86b29c6"
+current_focus: "Verify brownfield source corpus manifest design v0.1"
+selected_next: "work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md"
+last_validated_commit: "dba700c"
 ---
 
 # Work Status
@@ -18,8 +18,9 @@ last_validated_commit: "86b29c6"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: prepare brownfield source corpus manifest design v0.1.
-- Selected next: `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md`
+- Current focus: verify brownfield source corpus manifest design v0.1.
+- Selected next: `work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md`
+- Completion note: `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md` is now recorded as done with docs/eval design evidence. It defines the future Brownfield Source Corpus Manifest schema, item schema, repo-relative path policy, no-content content policy, deferred hash and size policies, B1 source classes, default exclusions, generated/vendored candidate handling, advisory `observed_structure` authority, privacy/no-network constraints, and claim boundaries. It added no source inventory implementation, repo scan, file walker, content reading, manifest writer, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. Selected next is `work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md`.
 - Completion note: `work/goals/goal_verify_brownfield_inventory_boundary_v0_1.md` is now recorded as done with verification evidence. It confirms `docs/product/BROWNFIELD-INVENTORY.md` and `evals/specs/brownfield-inventory-boundary.v0.1.md` keep Brownfield Inventory as observable structure only, distinguish inventory items from claims, define source and sensitive classes, preserve advisory `observed_structure` authority, require local-only/no-network/no-remote-AI/repo-relative/no-file-contents-by-default boundaries, and avoid wording that activates brownfield reconstruction, source inventory implementation, repo scanning, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, runtime `.punk` storage, grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. Selected next is `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md`.
 - Completion note: `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md` is now recorded as done with docs/eval boundary evidence. It defines Brownfield Inventory as observable structure only, separates inventory items from claims, defines source classes and sensitive classes, records advisory observed-structure authority, codifies privacy/no-network rules, and keeps source corpus manifest implementation, repo scanning, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, runtime `.punk` storage, grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, and spec-as-source behavior inactive. Selected next is `work/goals/goal_verify_brownfield_inventory_boundary_v0_1.md`.
 - Completion note: `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md` is now recorded as done after PR #16 was merged. It verified B0 brownfield scaffold behavior from temp directories, confirmed greenfield default behavior remains unchanged, confirmed no scan/no AI/no claims/no runtime/no Writer behavior, confirmed conflict atomicity and `.punk/memory/**` git visibility, and selected `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md` as the next boundary/design-only step before any inventory implementation.
@@ -99,7 +100,7 @@ last_validated_commit: "86b29c6"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md` | `ready` | Prepares the future source corpus manifest design/spec before any inventory implementation. | - |
+| `work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md` | `ready` | Verifies the B2 manifest schema/policy design before any inventory model or implementation. | - |
 | `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Still valid as a pause checkpoint if the maintainer chooses to stop after verification/status evidence. | - |
 
 ## Open Drift Findings
@@ -122,6 +123,7 @@ last_validated_commit: "86b29c6"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-03 | Prepared brownfield source corpus manifest design v0.1 | `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md`, `docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md`, `evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md`, `work/reports/2026-05-03-brownfield-source-corpus-manifest-design-v0-1.md` |
 | 2026-05-03 | Verified brownfield inventory boundary v0.1 | `work/goals/goal_verify_brownfield_inventory_boundary_v0_1.md`, `work/reports/2026-05-03-brownfield-inventory-boundary-verification-v0-1.md`, `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md` |
 | 2026-05-03 | Prepared brownfield inventory boundary v0.1 | `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md`, `docs/product/BROWNFIELD-INVENTORY.md`, `evals/specs/brownfield-inventory-boundary.v0.1.md`, `work/reports/2026-05-03-brownfield-inventory-boundary-v0-1.md` |
 | 2026-05-03 | Verified brownfield init scaffold v0.1 | `work/goals/goal_verify_brownfield_init_scaffold_v0_1.md`, `work/reports/2026-05-03-brownfield-init-scaffold-verification-v0-1.md`, `work/goals/goal_prepare_brownfield_inventory_boundary_v0_1.md`, `b09f41d` |

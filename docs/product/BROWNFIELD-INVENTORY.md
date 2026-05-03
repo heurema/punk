@@ -14,12 +14,14 @@ canonical_for:
   - brownfield-claim-separation
   - brownfield-inventory-privacy-boundary
 related_docs:
+  - docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md
   - docs/product/PROJECT-MEMORY.md
   - docs/product/ROADMAP.md
   - docs/product/CRATE-STATUS.md
   - docs/product/GLOSSARY.md
 related_evals:
   - evals/specs/brownfield-inventory-boundary.v0.1.md
+  - evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -40,6 +42,10 @@ punk init <project-id> --mode brownfield
 B1 is only this boundary/design layer.
 
 Future source corpus inventory implementation remains inactive.
+
+`docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md` owns the B2 manifest
+schema and policy design. It is still design/spec only and does not implement
+inventory.
 
 ## Status and authority
 
