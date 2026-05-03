@@ -8,9 +8,9 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-05-03
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Prepare brownfield source corpus manifest model v0.1"
-selected_next: "work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md"
-last_validated_commit: "bbd1fa8"
+current_focus: "Verify brownfield source corpus manifest model v0.1"
+selected_next: "work/goals/goal_verify_brownfield_source_corpus_manifest_model_v0_1.md"
+last_validated_commit: "831f852"
 ---
 
 # Work Status
@@ -18,8 +18,9 @@ last_validated_commit: "bbd1fa8"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: prepare brownfield source corpus manifest model v0.1.
-- Selected next: `work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md`
+- Current focus: verify brownfield source corpus manifest model v0.1.
+- Selected next: `work/goals/goal_verify_brownfield_source_corpus_manifest_model_v0_1.md`
+- Completion note: `work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md` is now recorded as done with side-effect-free `punk-project` model behavior, `punk-eval` smoke coverage, crate-status evidence, and work-ledger evidence. It adds a Brownfield Source Corpus Manifest model with advisory `observed_structure` authority, repo-relative path validation, no-content defaults, deferred hash/size policy, source/caution classes, explicit no-scan/no-writer/no-claim capabilities, and a forbidden claim-field guard. It added no source inventory implementation, repo scan, file walker, content reading, filesystem hash computation, manifest writer, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, runtime `.punk` storage, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. Selected next is `work/goals/goal_verify_brownfield_source_corpus_manifest_model_v0_1.md`.
 - Completion note: `work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md` is now recorded as done with verification evidence. It confirms the B2 Brownfield Source Corpus Manifest design stays schema/policy only, uses repo-relative paths only, forbids absolute and home/user path leakage, avoids file contents/snippets/summaries by default, keeps hashes and sizes deferred, preserves advisory `observed_structure` authority, separates manifest items from claims, defines source classes/default exclusions, preserves no-network/no-remote-AI/privacy rules, and avoids implying source inventory implementation is active. It found no overclaim requiring correction; `claims_created` and `active-core now` were not present in the checked B2 docs/eval surfaces. Selected next is `work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md` as side-effect-free model only.
 - Completion note: `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md` is now recorded as done with docs/eval design evidence. It defines the future Brownfield Source Corpus Manifest schema, item schema, repo-relative path policy, no-content content policy, deferred hash and size policies, B1 source classes, default exclusions, generated/vendored candidate handling, advisory `observed_structure` authority, privacy/no-network constraints, and claim boundaries. It added no source inventory implementation, repo scan, file walker, content reading, manifest writer, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. Selected next is `work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md`.
 - Completion note: `work/goals/goal_verify_brownfield_inventory_boundary_v0_1.md` is now recorded as done with verification evidence. It confirms `docs/product/BROWNFIELD-INVENTORY.md` and `evals/specs/brownfield-inventory-boundary.v0.1.md` keep Brownfield Inventory as observable structure only, distinguish inventory items from claims, define source and sensitive classes, preserve advisory `observed_structure` authority, require local-only/no-network/no-remote-AI/repo-relative/no-file-contents-by-default boundaries, and avoid wording that activates brownfield reconstruction, source inventory implementation, repo scanning, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, runtime `.punk` storage, grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior. Selected next is `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md`.
@@ -101,7 +102,7 @@ last_validated_commit: "bbd1fa8"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md` | `ready` | Prepares side-effect-free manifest model types before any inventory scanner, writer, traversal, content reading, or runtime storage. | - |
+| `work/goals/goal_verify_brownfield_source_corpus_manifest_model_v0_1.md` | `ready` | Verifies the side-effect-free manifest model before any inventory scanner, writer, traversal, content reading, or runtime storage. | - |
 | `work/goals/goal_pause_after_greenfield_init_checkpoint_v0_1.md` | `ready` | Still valid as a pause checkpoint if the maintainer chooses to stop after verification/status evidence. | - |
 
 ## Open Drift Findings
@@ -124,6 +125,7 @@ last_validated_commit: "bbd1fa8"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-03 | Prepared brownfield source corpus manifest model v0.1 | `work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md`, `work/reports/2026-05-03-brownfield-source-corpus-manifest-model-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `docs/product/CRATE-STATUS.md` |
 | 2026-05-03 | Verified brownfield source corpus manifest design v0.1 | `work/goals/goal_verify_brownfield_source_corpus_manifest_design_v0_1.md`, `work/reports/2026-05-03-brownfield-source-corpus-manifest-design-verification-v0-1.md`, `work/goals/goal_prepare_brownfield_source_corpus_manifest_model_v0_1.md` |
 | 2026-05-03 | Prepared brownfield source corpus manifest design v0.1 | `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md`, `docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md`, `evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md`, `work/reports/2026-05-03-brownfield-source-corpus-manifest-design-v0-1.md` |
 | 2026-05-03 | Verified brownfield inventory boundary v0.1 | `work/goals/goal_verify_brownfield_inventory_boundary_v0_1.md`, `work/reports/2026-05-03-brownfield-inventory-boundary-verification-v0-1.md`, `work/goals/goal_prepare_brownfield_source_corpus_manifest_design_v0_1.md` |

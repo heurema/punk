@@ -14,6 +14,9 @@ pub const PROJECT_INIT_BROWNFIELD_ENTRY_MODE: &str = "brownfield";
 pub const PROJECT_INIT_RUNTIME_PERSISTENCE: &str = "inactive";
 pub const PROJECT_ID_FORMAT_NOTE: &str =
     "project id must be a lowercase ASCII slug: a-z, 0-9, and hyphen, starting and ending with a letter or digit";
+pub const SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION: &str =
+    "brownfield-source-corpus-manifest-model.v0.1";
+pub const SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION: &str = "brownfield-source-corpus-manifest.v0.1";
 
 const MEMORY_ROOT: &str = ".punk/memory";
 const STATUS_PATH: &str = ".punk/memory/STATUS.md";
@@ -799,6 +802,871 @@ impl ProjectInitReport {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifestId(String);
+
+impl SourceCorpusManifestId {
+    pub fn parse(value: impl Into<String>) -> Result<Self, SourceCorpusManifestError> {
+        let value = value.into();
+        if value.trim().is_empty() {
+            return Err(SourceCorpusManifestError::EmptyManifestId);
+        }
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusItemId(String);
+
+impl SourceCorpusItemId {
+    pub fn parse(value: impl Into<String>) -> Result<Self, SourceCorpusManifestError> {
+        let value = value.into();
+        if value.trim().is_empty() {
+            return Err(SourceCorpusManifestError::EmptyItemId);
+        }
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusEvidenceRef(String);
+
+impl SourceCorpusEvidenceRef {
+    pub fn parse(value: impl Into<String>) -> Result<Self, SourceCorpusManifestError> {
+        let value = value.into();
+        if value.trim().is_empty() {
+            return Err(SourceCorpusManifestError::EmptyEvidenceRef);
+        }
+        Ok(Self(value))
+    }
+
+    pub fn for_manifest_item(
+        manifest_id: &SourceCorpusManifestId,
+        item_id: &SourceCorpusItemId,
+    ) -> Result<Self, SourceCorpusManifestError> {
+        Self::parse(format!(
+            "{manifest_id}#{item_id}",
+            manifest_id = manifest_id.as_str(),
+            item_id = item_id.as_str()
+        ))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusRepoRelativePath(String);
+
+impl SourceCorpusRepoRelativePath {
+    pub fn parse(value: impl Into<String>) -> Result<Self, SourceCorpusPathError> {
+        let value = value.into();
+        validate_source_corpus_repo_relative_path(&value)?;
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusPathError {
+    Empty,
+    CurrentDirectory,
+    Absolute,
+    HomePath,
+    UrlLike,
+    ParentTraversal,
+    CurrentSegment,
+    EmptySegment,
+    Backslash,
+}
+
+impl SourceCorpusPathError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::Empty => "source corpus path must not be empty",
+            Self::CurrentDirectory => "source corpus item path must not be .",
+            Self::Absolute => "source corpus path must be repo-relative, not absolute",
+            Self::HomePath => "source corpus path must not use home/user path syntax",
+            Self::UrlLike => "source corpus path must not be URL-like",
+            Self::ParentTraversal => "source corpus path must not contain parent traversal",
+            Self::CurrentSegment => "source corpus path must not contain . segments",
+            Self::EmptySegment => "source corpus path must not contain empty segments",
+            Self::Backslash => "source corpus path must use forward slash separators",
+        }
+    }
+}
+
+fn validate_source_corpus_repo_relative_path(value: &str) -> Result<(), SourceCorpusPathError> {
+    if value.is_empty() {
+        return Err(SourceCorpusPathError::Empty);
+    }
+    if value == "." {
+        return Err(SourceCorpusPathError::CurrentDirectory);
+    }
+    if value.starts_with('/') || is_windows_drive_rooted(value) {
+        return Err(SourceCorpusPathError::Absolute);
+    }
+    if value.starts_with('~') {
+        return Err(SourceCorpusPathError::HomePath);
+    }
+    if value.contains("://") {
+        return Err(SourceCorpusPathError::UrlLike);
+    }
+    if value.contains('\\') {
+        return Err(SourceCorpusPathError::Backslash);
+    }
+
+    for segment in value.split('/') {
+        if segment.is_empty() {
+            return Err(SourceCorpusPathError::EmptySegment);
+        }
+        if segment == "." {
+            return Err(SourceCorpusPathError::CurrentSegment);
+        }
+        if segment == ".." {
+            return Err(SourceCorpusPathError::ParentTraversal);
+        }
+    }
+
+    Ok(())
+}
+
+fn is_windows_drive_rooted(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() >= 3
+        && bytes[0].is_ascii_alphabetic()
+        && bytes[1] == b':'
+        && (bytes[2] == b'/' || bytes[2] == b'\\')
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestStatus {
+    Advisory,
+}
+
+impl SourceCorpusManifestStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Advisory => "advisory",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestAuthority {
+    ObservedStructure,
+}
+
+impl SourceCorpusManifestAuthority {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ObservedStructure => "observed_structure",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusObservedKind {
+    File,
+    Directory,
+    SymlinkCandidate,
+    Unknown,
+}
+
+impl SourceCorpusObservedKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::File => "file",
+            Self::Directory => "directory",
+            Self::SymlinkCandidate => "symlink_candidate",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusSourceClass {
+    SourceCode,
+    Docs,
+    Tests,
+    CiConfig,
+    PackageManifest,
+    Schema,
+    Migration,
+    Script,
+    GeneratedCandidate,
+    VendoredCandidate,
+    Unknown,
+}
+
+impl SourceCorpusSourceClass {
+    pub const ALL: [Self; 11] = [
+        Self::SourceCode,
+        Self::Docs,
+        Self::Tests,
+        Self::CiConfig,
+        Self::PackageManifest,
+        Self::Schema,
+        Self::Migration,
+        Self::Script,
+        Self::GeneratedCandidate,
+        Self::VendoredCandidate,
+        Self::Unknown,
+    ];
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::SourceCode => "source_code",
+            Self::Docs => "docs",
+            Self::Tests => "tests",
+            Self::CiConfig => "ci_config",
+            Self::PackageManifest => "package_manifest",
+            Self::Schema => "schema",
+            Self::Migration => "migration",
+            Self::Script => "script",
+            Self::GeneratedCandidate => "generated_candidate",
+            Self::VendoredCandidate => "vendored_candidate",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusSourceMarkerKind {
+    Extension,
+    Basename,
+    ManifestType,
+    DocMarker,
+    TestMarker,
+    ConfigMarker,
+    SchemaMarker,
+    MigrationMarker,
+    ScriptMarker,
+}
+
+impl SourceCorpusSourceMarkerKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Extension => "extension",
+            Self::Basename => "basename",
+            Self::ManifestType => "manifest_type",
+            Self::DocMarker => "doc_marker",
+            Self::TestMarker => "test_marker",
+            Self::ConfigMarker => "config_marker",
+            Self::SchemaMarker => "schema_marker",
+            Self::MigrationMarker => "migration_marker",
+            Self::ScriptMarker => "script_marker",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusSourceMarker {
+    kind: SourceCorpusSourceMarkerKind,
+    value: String,
+}
+
+impl SourceCorpusSourceMarker {
+    pub fn new(
+        kind: SourceCorpusSourceMarkerKind,
+        value: impl Into<String>,
+    ) -> Result<Self, SourceCorpusManifestError> {
+        let value = value.into();
+        if value.trim().is_empty() {
+            return Err(SourceCorpusManifestError::EmptySourceMarker);
+        }
+        Ok(Self { kind, value })
+    }
+
+    pub fn kind(&self) -> SourceCorpusSourceMarkerKind {
+        self.kind
+    }
+
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusTrackingStatus {
+    Observed,
+    Excluded,
+    SensitiveRedacted,
+    Unknown,
+}
+
+impl SourceCorpusTrackingStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Observed => "observed",
+            Self::Excluded => "excluded",
+            Self::SensitiveRedacted => "sensitive_redacted",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusSensitivityClass {
+    Normal,
+    Caution,
+    Sensitive,
+    Excluded,
+    Unknown,
+}
+
+impl SourceCorpusSensitivityClass {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Normal => "normal",
+            Self::Caution => "caution",
+            Self::Sensitive => "sensitive",
+            Self::Excluded => "excluded",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusGeneratedOrVendoredCandidate {
+    None,
+    GeneratedCandidate,
+    VendoredCandidate,
+    Unknown,
+}
+
+impl SourceCorpusGeneratedOrVendoredCandidate {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::GeneratedCandidate => "generated_candidate",
+            Self::VendoredCandidate => "vendored_candidate",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceCorpusContentPolicy {
+    read_contents: bool,
+    store_snippets: bool,
+    summarize_contents: bool,
+}
+
+impl SourceCorpusContentPolicy {
+    pub fn no_content() -> Self {
+        Self {
+            read_contents: false,
+            store_snippets: false,
+            summarize_contents: false,
+        }
+    }
+
+    pub fn reads_contents(self) -> bool {
+        self.read_contents
+    }
+
+    pub fn stores_snippets(self) -> bool {
+        self.store_snippets
+    }
+
+    pub fn summarizes_contents(self) -> bool {
+        self.summarize_contents
+    }
+}
+
+impl Default for SourceCorpusContentPolicy {
+    fn default() -> Self {
+        Self::no_content()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusHashPolicy {
+    Deferred,
+}
+
+impl SourceCorpusHashPolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Deferred => "deferred",
+        }
+    }
+
+    pub fn requires_filesystem_hashing(self) -> bool {
+        false
+    }
+}
+
+impl Default for SourceCorpusHashPolicy {
+    fn default() -> Self {
+        Self::Deferred
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusSizePolicy {
+    Deferred,
+}
+
+impl SourceCorpusSizePolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Deferred => "deferred",
+        }
+    }
+
+    pub fn requires_filesystem_metadata(self) -> bool {
+        false
+    }
+}
+
+impl Default for SourceCorpusSizePolicy {
+    fn default() -> Self {
+        Self::Deferred
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusCautionClass {
+    Secrets,
+    EnvFiles,
+    LocalCache,
+    BuildOutput,
+    PrivateAgentTranscripts,
+    GeneratedCandidate,
+    VendoredCandidate,
+    Unknown,
+}
+
+impl SourceCorpusCautionClass {
+    pub const ALL: [Self; 8] = [
+        Self::Secrets,
+        Self::EnvFiles,
+        Self::LocalCache,
+        Self::BuildOutput,
+        Self::PrivateAgentTranscripts,
+        Self::GeneratedCandidate,
+        Self::VendoredCandidate,
+        Self::Unknown,
+    ];
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Secrets => "secrets",
+            Self::EnvFiles => "env_files",
+            Self::LocalCache => "local_cache",
+            Self::BuildOutput => "build_output",
+            Self::PrivateAgentTranscripts => "private_agent_transcripts",
+            Self::GeneratedCandidate => "generated_candidate",
+            Self::VendoredCandidate => "vendored_candidate",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+pub const SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS: &[&str] = &[
+    ".git",
+    ".punk/runtime",
+    ".punk/cache",
+    ".punk/indexes",
+    "node_modules",
+    "target",
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceCorpusExclusionPolicy {
+    excluded_paths: &'static [&'static str],
+    caution_classes: &'static [SourceCorpusCautionClass],
+}
+
+impl SourceCorpusExclusionPolicy {
+    pub fn default_boundary() -> Self {
+        Self {
+            excluded_paths: SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS,
+            caution_classes: &SourceCorpusCautionClass::ALL,
+        }
+    }
+
+    pub fn excluded_paths(&self) -> &'static [&'static str] {
+        self.excluded_paths
+    }
+
+    pub fn caution_classes(&self) -> &'static [SourceCorpusCautionClass] {
+        self.caution_classes
+    }
+}
+
+impl Default for SourceCorpusExclusionPolicy {
+    fn default() -> Self {
+        Self::default_boundary()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusSourceRootKind {
+    RepoRoot,
+}
+
+impl SourceCorpusSourceRootKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RepoRoot => "repo_root",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusSourceRootRef {
+    kind: SourceCorpusSourceRootKind,
+    path: &'static str,
+}
+
+impl SourceCorpusSourceRootRef {
+    pub fn repo_root() -> Self {
+        Self {
+            kind: SourceCorpusSourceRootKind::RepoRoot,
+            path: ".",
+        }
+    }
+
+    pub fn kind(&self) -> SourceCorpusSourceRootKind {
+        self.kind
+    }
+
+    pub fn path(&self) -> &'static str {
+        self.path
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceCorpusManifestModelCapabilities {
+    scans_repository: bool,
+    walks_files: bool,
+    reads_file_contents: bool,
+    computes_file_hashes: bool,
+    writes_manifest: bool,
+    creates_claims: bool,
+    infers_intent: bool,
+    uses_network: bool,
+    uses_remote_ai: bool,
+}
+
+impl SourceCorpusManifestModelCapabilities {
+    pub fn side_effect_free() -> Self {
+        Self {
+            scans_repository: false,
+            walks_files: false,
+            reads_file_contents: false,
+            computes_file_hashes: false,
+            writes_manifest: false,
+            creates_claims: false,
+            infers_intent: false,
+            uses_network: false,
+            uses_remote_ai: false,
+        }
+    }
+
+    pub fn scans_repository(self) -> bool {
+        self.scans_repository
+    }
+
+    pub fn walks_files(self) -> bool {
+        self.walks_files
+    }
+
+    pub fn reads_file_contents(self) -> bool {
+        self.reads_file_contents
+    }
+
+    pub fn computes_file_hashes(self) -> bool {
+        self.computes_file_hashes
+    }
+
+    pub fn writes_manifest(self) -> bool {
+        self.writes_manifest
+    }
+
+    pub fn creates_claims(self) -> bool {
+        self.creates_claims
+    }
+
+    pub fn infers_intent(self) -> bool {
+        self.infers_intent
+    }
+
+    pub fn uses_network(self) -> bool {
+        self.uses_network
+    }
+
+    pub fn uses_remote_ai(self) -> bool {
+        self.uses_remote_ai
+    }
+}
+
+impl Default for SourceCorpusManifestModelCapabilities {
+    fn default() -> Self {
+        Self::side_effect_free()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusItem {
+    item_id: SourceCorpusItemId,
+    repo_relative_path: SourceCorpusRepoRelativePath,
+    observed_kind: SourceCorpusObservedKind,
+    source_class: SourceCorpusSourceClass,
+    source_markers: Vec<SourceCorpusSourceMarker>,
+    tracking_status: SourceCorpusTrackingStatus,
+    sensitivity: SourceCorpusSensitivityClass,
+    generated_or_vendored_candidate: SourceCorpusGeneratedOrVendoredCandidate,
+    size_policy: SourceCorpusSizePolicy,
+    hash_policy: SourceCorpusHashPolicy,
+    content_policy: SourceCorpusContentPolicy,
+    evidence_ref: SourceCorpusEvidenceRef,
+    notes: Vec<String>,
+}
+
+impl SourceCorpusItem {
+    pub fn new(
+        manifest_id: &SourceCorpusManifestId,
+        item_id: SourceCorpusItemId,
+        repo_relative_path: SourceCorpusRepoRelativePath,
+        observed_kind: SourceCorpusObservedKind,
+        source_class: SourceCorpusSourceClass,
+    ) -> Result<Self, SourceCorpusManifestError> {
+        let evidence_ref = SourceCorpusEvidenceRef::for_manifest_item(manifest_id, &item_id)?;
+        Ok(Self {
+            item_id,
+            repo_relative_path,
+            observed_kind,
+            source_class,
+            source_markers: Vec::new(),
+            tracking_status: SourceCorpusTrackingStatus::Observed,
+            sensitivity: SourceCorpusSensitivityClass::Normal,
+            generated_or_vendored_candidate: SourceCorpusGeneratedOrVendoredCandidate::None,
+            size_policy: SourceCorpusSizePolicy::default(),
+            hash_policy: SourceCorpusHashPolicy::default(),
+            content_policy: SourceCorpusContentPolicy::default(),
+            evidence_ref,
+            notes: Vec::new(),
+        })
+    }
+
+    pub fn with_source_marker(mut self, marker: SourceCorpusSourceMarker) -> Self {
+        self.source_markers.push(marker);
+        self
+    }
+
+    pub fn with_sensitivity(mut self, sensitivity: SourceCorpusSensitivityClass) -> Self {
+        self.sensitivity = sensitivity;
+        self
+    }
+
+    pub fn with_generated_or_vendored_candidate(
+        mut self,
+        candidate: SourceCorpusGeneratedOrVendoredCandidate,
+    ) -> Self {
+        self.generated_or_vendored_candidate = candidate;
+        self
+    }
+
+    pub fn item_id(&self) -> &SourceCorpusItemId {
+        &self.item_id
+    }
+
+    pub fn repo_relative_path(&self) -> &SourceCorpusRepoRelativePath {
+        &self.repo_relative_path
+    }
+
+    pub fn observed_kind(&self) -> SourceCorpusObservedKind {
+        self.observed_kind
+    }
+
+    pub fn source_class(&self) -> SourceCorpusSourceClass {
+        self.source_class
+    }
+
+    pub fn source_markers(&self) -> &[SourceCorpusSourceMarker] {
+        &self.source_markers
+    }
+
+    pub fn tracking_status(&self) -> SourceCorpusTrackingStatus {
+        self.tracking_status
+    }
+
+    pub fn sensitivity(&self) -> SourceCorpusSensitivityClass {
+        self.sensitivity
+    }
+
+    pub fn generated_or_vendored_candidate(&self) -> SourceCorpusGeneratedOrVendoredCandidate {
+        self.generated_or_vendored_candidate
+    }
+
+    pub fn size_policy(&self) -> SourceCorpusSizePolicy {
+        self.size_policy
+    }
+
+    pub fn hash_policy(&self) -> SourceCorpusHashPolicy {
+        self.hash_policy
+    }
+
+    pub fn content_policy(&self) -> SourceCorpusContentPolicy {
+        self.content_policy
+    }
+
+    pub fn evidence_ref(&self) -> &SourceCorpusEvidenceRef {
+        &self.evidence_ref
+    }
+
+    pub fn notes(&self) -> &[String] {
+        &self.notes
+    }
+
+    pub fn has_claim_authority(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifest {
+    manifest_id: SourceCorpusManifestId,
+    project_id: ProjectId,
+    entry_mode: ProjectInitEntryMode,
+    status: SourceCorpusManifestStatus,
+    authority: SourceCorpusManifestAuthority,
+    source_root_ref: SourceCorpusSourceRootRef,
+    exclusion_policy: SourceCorpusExclusionPolicy,
+    items: Vec<SourceCorpusItem>,
+    capabilities: SourceCorpusManifestModelCapabilities,
+}
+
+impl SourceCorpusManifest {
+    pub fn new(
+        manifest_id: SourceCorpusManifestId,
+        project_id: ProjectId,
+        items: Vec<SourceCorpusItem>,
+    ) -> Self {
+        Self {
+            manifest_id,
+            project_id,
+            entry_mode: ProjectInitEntryMode::Brownfield,
+            status: SourceCorpusManifestStatus::Advisory,
+            authority: SourceCorpusManifestAuthority::ObservedStructure,
+            source_root_ref: SourceCorpusSourceRootRef::repo_root(),
+            exclusion_policy: SourceCorpusExclusionPolicy::default(),
+            items,
+            capabilities: SourceCorpusManifestModelCapabilities::default(),
+        }
+    }
+
+    pub fn schema_version(&self) -> &'static str {
+        SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION
+    }
+
+    pub fn manifest_schema_version(&self) -> &'static str {
+        SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION
+    }
+
+    pub fn manifest_id(&self) -> &SourceCorpusManifestId {
+        &self.manifest_id
+    }
+
+    pub fn project_id(&self) -> &ProjectId {
+        &self.project_id
+    }
+
+    pub fn entry_mode(&self) -> ProjectInitEntryMode {
+        self.entry_mode
+    }
+
+    pub fn status(&self) -> SourceCorpusManifestStatus {
+        self.status
+    }
+
+    pub fn authority(&self) -> SourceCorpusManifestAuthority {
+        self.authority
+    }
+
+    pub fn source_root_ref(&self) -> &SourceCorpusSourceRootRef {
+        &self.source_root_ref
+    }
+
+    pub fn exclusion_policy(&self) -> SourceCorpusExclusionPolicy {
+        self.exclusion_policy
+    }
+
+    pub fn items(&self) -> &[SourceCorpusItem] {
+        &self.items
+    }
+
+    pub fn capabilities(&self) -> SourceCorpusManifestModelCapabilities {
+        self.capabilities
+    }
+
+    pub fn has_project_truth_authority(&self) -> bool {
+        false
+    }
+
+    pub fn creates_claims(&self) -> bool {
+        self.capabilities.creates_claims()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestError {
+    EmptyManifestId,
+    EmptyItemId,
+    EmptyEvidenceRef,
+    EmptySourceMarker,
+}
+
+impl SourceCorpusManifestError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::EmptyManifestId => "source corpus manifest id must not be empty",
+            Self::EmptyItemId => "source corpus item id must not be empty",
+            Self::EmptyEvidenceRef => "source corpus evidence ref must not be empty",
+            Self::EmptySourceMarker => "source corpus source marker must not be empty",
+        }
+    }
+}
+
+pub const SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS: &[&str] = &[
+    "intent",
+    "requirement",
+    "module_purpose",
+    "architecture_decision",
+    "accepted_behavior",
+    "invariant",
+    "contract_ref_as_claim",
+    "proof_ref_as_truth",
+    "claims_created",
+    "contract_readiness",
+    "gate_decision",
+    "proof_status",
+    "risk",
+    "severity",
+];
+
+pub fn source_corpus_manifest_claim_field_allowed(field_name: &str) -> bool {
+    !SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS
+        .iter()
+        .any(|forbidden| *forbidden == field_name)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ProjectInitEntry {
     Directory(&'static str),
@@ -1216,7 +2084,17 @@ mod tests {
         init_level0_project, init_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
         ProjectInitArtifactStatus, ProjectInitEntryMode, BROWNFIELD_BASELINE_GOAL_PATH,
         INITIAL_GOAL_PATH, PROJECT_INIT_BROWNFIELD_ENTRY_MODE, PROJECT_INIT_ENTRY_MODE,
-        STATUS_PATH,
+        SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS, STATUS_PATH,
+    };
+    use super::{
+        source_corpus_manifest_claim_field_allowed, SourceCorpusCautionClass,
+        SourceCorpusGeneratedOrVendoredCandidate, SourceCorpusHashPolicy, SourceCorpusItem,
+        SourceCorpusItemId, SourceCorpusManifest, SourceCorpusManifestAuthority,
+        SourceCorpusManifestId, SourceCorpusManifestStatus, SourceCorpusObservedKind,
+        SourceCorpusPathError, SourceCorpusRepoRelativePath, SourceCorpusSensitivityClass,
+        SourceCorpusSizePolicy, SourceCorpusSourceClass, SourceCorpusSourceMarker,
+        SourceCorpusSourceMarkerKind, SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS,
+        SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION, SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION,
     };
     use std::fs;
     use std::process;
@@ -1679,6 +2557,248 @@ mod tests {
     }
 
     #[test]
+    fn manifest_default_authority_is_observed_structure() {
+        let manifest = sample_source_corpus_manifest();
+
+        assert_eq!(
+            manifest.authority(),
+            SourceCorpusManifestAuthority::ObservedStructure
+        );
+        assert_eq!(manifest.authority().as_str(), "observed_structure");
+        assert!(!manifest.has_project_truth_authority());
+    }
+
+    #[test]
+    fn manifest_default_status_is_advisory() {
+        let manifest = sample_source_corpus_manifest();
+
+        assert_eq!(manifest.status(), SourceCorpusManifestStatus::Advisory);
+        assert_eq!(manifest.status().as_str(), "advisory");
+        assert_eq!(
+            manifest.schema_version(),
+            SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION
+        );
+        assert_eq!(
+            manifest.manifest_schema_version(),
+            SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION
+        );
+        assert_eq!(manifest.entry_mode(), ProjectInitEntryMode::Brownfield);
+    }
+
+    #[test]
+    fn manifest_rejects_absolute_paths() {
+        for invalid in [
+            "/Users/vi/project/src/lib.rs",
+            "/home/vi/project",
+            "C:/repo/src/lib.rs",
+        ] {
+            assert_eq!(
+                SourceCorpusRepoRelativePath::parse(invalid)
+                    .expect_err("absolute path should fail"),
+                SourceCorpusPathError::Absolute
+            );
+        }
+    }
+
+    #[test]
+    fn manifest_rejects_home_paths() {
+        for invalid in ["~/repo/src/lib.rs", "~vi/repo/src/lib.rs"] {
+            assert_eq!(
+                SourceCorpusRepoRelativePath::parse(invalid).expect_err("home path should fail"),
+                SourceCorpusPathError::HomePath
+            );
+        }
+    }
+
+    #[test]
+    fn manifest_uses_repo_relative_paths() {
+        let path = SourceCorpusRepoRelativePath::parse("crates/example/src/lib.rs")
+            .expect("repo-relative path should parse");
+
+        assert_eq!(path.as_str(), "crates/example/src/lib.rs");
+
+        for invalid in [
+            "",
+            ".",
+            "crates/../secret.rs",
+            "crates/./example.rs",
+            "crates//example.rs",
+            "crates\\example.rs",
+            "https://example.test/repo",
+        ] {
+            assert!(
+                SourceCorpusRepoRelativePath::parse(invalid).is_err(),
+                "{invalid} should fail"
+            );
+        }
+    }
+
+    #[test]
+    fn manifest_content_policy_defaults_to_no_contents() {
+        let item = sample_source_corpus_item();
+        let policy = item.content_policy();
+
+        assert!(!policy.reads_contents());
+        assert!(!policy.stores_snippets());
+        assert!(!policy.summarizes_contents());
+    }
+
+    #[test]
+    fn manifest_hash_policy_defaults_to_deferred_or_unset() {
+        let item = sample_source_corpus_item();
+
+        assert_eq!(item.hash_policy(), SourceCorpusHashPolicy::Deferred);
+        assert_eq!(item.hash_policy().as_str(), "deferred");
+        assert!(!item.hash_policy().requires_filesystem_hashing());
+        assert_eq!(item.size_policy(), SourceCorpusSizePolicy::Deferred);
+        assert_eq!(item.size_policy().as_str(), "deferred");
+        assert!(!item.size_policy().requires_filesystem_metadata());
+    }
+
+    #[test]
+    fn manifest_item_has_no_claim_fields() {
+        let item = sample_source_corpus_item();
+
+        assert!(!item.has_claim_authority());
+        assert_eq!(item.observed_kind(), SourceCorpusObservedKind::File);
+        assert_eq!(item.source_class(), SourceCorpusSourceClass::SourceCode);
+        assert_eq!(item.tracking_status().as_str(), "observed");
+        assert_eq!(item.sensitivity(), SourceCorpusSensitivityClass::Normal);
+        assert_eq!(
+            item.generated_or_vendored_candidate(),
+            SourceCorpusGeneratedOrVendoredCandidate::None
+        );
+        assert_eq!(
+            item.evidence_ref().as_str(),
+            "brownfield-source-corpus-manifest.v0.1:weekend-project:test#item:test"
+        );
+        assert!(item.notes().is_empty());
+    }
+
+    #[test]
+    fn manifest_item_evidence_ref_includes_manifest_id() {
+        let manifest_id =
+            SourceCorpusManifestId::parse("brownfield-source-corpus-manifest.v0.1:demo:run-1")
+                .expect("manifest id should parse");
+        let item = sample_source_corpus_item_for_manifest(&manifest_id);
+
+        assert_eq!(
+            item.evidence_ref().as_str(),
+            "brownfield-source-corpus-manifest.v0.1:demo:run-1#item:test"
+        );
+    }
+
+    #[test]
+    fn manifest_does_not_allow_claims_created() {
+        assert!(SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS.contains(&"claims_created"));
+
+        for forbidden in SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS {
+            assert!(
+                !source_corpus_manifest_claim_field_allowed(forbidden),
+                "{forbidden} should be forbidden"
+            );
+        }
+
+        assert!(source_corpus_manifest_claim_field_allowed(
+            "repo_relative_path"
+        ));
+        assert!(source_corpus_manifest_claim_field_allowed("source_class"));
+    }
+
+    #[test]
+    fn manifest_source_classes_cover_boundary_docs() {
+        let class_names: Vec<&str> = SourceCorpusSourceClass::ALL
+            .iter()
+            .map(|class| class.as_str())
+            .collect();
+
+        assert_eq!(
+            class_names,
+            vec![
+                "source_code",
+                "docs",
+                "tests",
+                "ci_config",
+                "package_manifest",
+                "schema",
+                "migration",
+                "script",
+                "generated_candidate",
+                "vendored_candidate",
+                "unknown",
+            ]
+        );
+    }
+
+    #[test]
+    fn manifest_sensitive_classes_are_caution_or_excluded() {
+        let caution_names: Vec<&str> = SourceCorpusCautionClass::ALL
+            .iter()
+            .map(|class| class.as_str())
+            .collect();
+
+        assert_eq!(
+            caution_names,
+            vec![
+                "secrets",
+                "env_files",
+                "local_cache",
+                "build_output",
+                "private_agent_transcripts",
+                "generated_candidate",
+                "vendored_candidate",
+                "unknown",
+            ]
+        );
+        assert_eq!(
+            SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS,
+            &[
+                ".git",
+                ".punk/runtime",
+                ".punk/cache",
+                ".punk/indexes",
+                "node_modules",
+                "target",
+            ]
+        );
+
+        let manifest = sample_source_corpus_manifest();
+        let policy = manifest.exclusion_policy();
+        assert_eq!(
+            policy.excluded_paths(),
+            SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS
+        );
+        assert_eq!(policy.caution_classes(), &SourceCorpusCautionClass::ALL);
+    }
+
+    #[test]
+    fn manifest_model_does_not_scan_repo() {
+        let manifest = sample_source_corpus_manifest();
+
+        assert!(!manifest.capabilities().scans_repository());
+        assert!(!manifest.capabilities().uses_network());
+        assert!(!manifest.capabilities().uses_remote_ai());
+    }
+
+    #[test]
+    fn manifest_model_does_not_read_file_contents() {
+        let manifest = sample_source_corpus_manifest();
+
+        assert!(!manifest.capabilities().reads_file_contents());
+        assert!(!manifest.capabilities().computes_file_hashes());
+    }
+
+    #[test]
+    fn manifest_model_does_not_write_manifest() {
+        let manifest = sample_source_corpus_manifest();
+
+        assert!(!manifest.capabilities().walks_files());
+        assert!(!manifest.capabilities().writes_manifest());
+        assert!(!manifest.creates_claims());
+        assert!(!manifest.capabilities().infers_intent());
+    }
+
+    #[test]
     fn project_id_requires_lowercase_slug() {
         assert_eq!(
             ProjectId::parse("").expect_err("empty project id should fail"),
@@ -1705,6 +2825,53 @@ mod tests {
                 .as_str(),
             "weekend-project-01"
         );
+    }
+
+    fn sample_source_corpus_manifest() -> SourceCorpusManifest {
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+        let manifest_id = SourceCorpusManifestId::parse(
+            "brownfield-source-corpus-manifest.v0.1:weekend-project:local-smoke",
+        )
+        .expect("manifest id should parse");
+        let item = sample_source_corpus_item_for_manifest(&manifest_id);
+        SourceCorpusManifest::new(manifest_id, project_id, vec![item])
+    }
+
+    fn sample_source_corpus_item() -> SourceCorpusItem {
+        let manifest_id = SourceCorpusManifestId::parse(
+            "brownfield-source-corpus-manifest.v0.1:weekend-project:test",
+        )
+        .expect("manifest id should parse");
+        sample_source_corpus_item_for_manifest(&manifest_id)
+    }
+
+    fn sample_source_corpus_item_for_manifest(
+        manifest_id: &SourceCorpusManifestId,
+    ) -> SourceCorpusItem {
+        let item_id = SourceCorpusItemId::parse("item:test").expect("item id should parse");
+        let repo_relative_path = SourceCorpusRepoRelativePath::parse("crates/example/src/lib.rs")
+            .expect("repo-relative path should parse");
+        let marker = SourceCorpusSourceMarker::new(SourceCorpusSourceMarkerKind::Extension, "rs")
+            .expect("source marker should parse");
+        let item = SourceCorpusItem::new(
+            &manifest_id,
+            item_id,
+            repo_relative_path,
+            SourceCorpusObservedKind::File,
+            SourceCorpusSourceClass::SourceCode,
+        )
+        .expect("source corpus item should be built")
+        .with_source_marker(marker);
+
+        assert_eq!(item.item_id().as_str(), "item:test");
+        assert_eq!(
+            item.repo_relative_path().as_str(),
+            "crates/example/src/lib.rs"
+        );
+        assert_eq!(item.source_markers()[0].kind().as_str(), "extension");
+        assert_eq!(item.source_markers()[0].value(), "rs");
+
+        item
     }
 
     fn unique_temp_path() -> std::path::PathBuf {
