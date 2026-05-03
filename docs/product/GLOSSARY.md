@@ -201,7 +201,25 @@ It is advisory observed structure only. It is not project truth, not a claim led
 
 Future deterministic brownfield inventory artifact that may list observable repo-relative artifacts and source classes.
 
-It is not project memory truth, not a claim ledger, not a contract, not a gate decision, and not proof.
+The B2 design defines it as advisory observed structure with repo-relative
+paths, no file contents by default, deferred hashes/sizes by default, bounded
+source classes, and explicit exclusion/privacy rules.
+
+It is not project memory truth, not a claim ledger, not a contract, not a gate
+decision, and not proof.
+
+### source corpus manifest item
+
+One future manifest row for one observable repo-relative path and structural
+classification.
+
+It may carry path, observed kind, source class, markers, sensitivity, generated
+or vendored candidate status, deferred size/hash policy, content policy, and an
+evidence ref.
+
+It must not carry purpose, requirements, intent, invariants, owner truth,
+architecture decisions, accepted behavior, contract readiness conclusions,
+gate decisions, proof status, risk, or severity.
 
 ### inventory item
 
