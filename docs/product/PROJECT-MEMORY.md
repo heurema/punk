@@ -191,6 +191,8 @@ This root layout is allowed for the Punk repository itself because this reposito
 
 For user projects, `punk init <project-id>` uses the compact `.punk/memory/` layout by default.
 
+`punk init <project-id> --mode brownfield` uses the same compact memory root and adds only an advisory `.punk/memory/reconstruction/` workspace for future reviewed reconstruction.
+
 `.punk/memory/` is repo-tracked durable project memory.
 
 `.punk/runtime/`, `.punk/cache/`, `.punk/events/`, `.punk/runs/`, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
@@ -221,13 +223,16 @@ At this stage:
 - goals hold durable work intent;
 - reports hold durable outcome and handoff artifacts;
 - `punk init <project-id>` creates the initial greenfield Level 0 compact scaffold under `.punk/memory/`;
-- the scaffold records `project_id` and `entry_mode = greenfield`;
+- `punk init <project-id> --mode brownfield` creates a brownfield Level 0 advisory reconstruction scaffold under `.punk/memory/`;
+- the greenfield scaffold records `project_id` and `entry_mode = greenfield`;
+- the brownfield scaffold records `project_id`, `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`;
 - `.punk/README.md` and `.punk/project.toml` may mark the project root and setup metadata;
 - `.punk/` runtime stores are not written yet for this purpose;
+- brownfield init does not scan the repository, reconstruct project knowledge, generate summaries, generate contracts/specs, accept claims, or prove anything;
 - root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are not created by default for user projects;
 - this surface must not become a second tracker product or a hidden backend.
 
-The current `punk init <project-id>` command is limited to this manual greenfield scaffold.
+The current init CLI surface is limited to manual greenfield memory and brownfield entry scaffolding.
 It does not create brownfield reconstruction, grayfield reconciliation, runtime project storage, flow events, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Level 0 `done` means manual closure with evidence.

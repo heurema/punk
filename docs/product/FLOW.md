@@ -79,10 +79,13 @@ If supported, an override must:
 Current implemented CLI subset:
 
 - `punk init <project-id>`
+- `punk init <project-id> --mode brownfield`
 - `punk flow inspect`
 
-`punk init <project-id>` is a greenfield Level 0 setup command for repo-tracked compact manual project memory under `.punk/memory/`.
+`punk init <project-id>` is the default greenfield Level 0 setup command for repo-tracked compact manual project memory under `.punk/memory/`.
 It records `project_id`, `entry_mode = greenfield`, compact memory metadata, and inactive runtime metadata; it is not flow persistence and does not write flow events, root-level dogfooding memory directories, brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores.
+
+`punk init <project-id> --mode brownfield` creates only an advisory reconstruction workspace under `.punk/memory/reconstruction/`; it is not flow persistence, not reconstruction, and not a source of accepted claims.
 
 Future target commands include:
 

@@ -4,7 +4,7 @@ use std::process::ExitCode;
 
 use punk_eval::run_smoke_suite;
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
-use punk_project::{init_level0_project, ProjectId, PROJECT_ID_FORMAT_NOTE};
+use punk_project::{init_project, ProjectId, ProjectInitEntryMode, PROJECT_ID_FORMAT_NOTE};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct CommandOutput {
@@ -68,7 +68,16 @@ where
         [_bin] => Ok(CommandOutput::success(render_root_help())),
         [_bin, init, project_id] if init == "init" => {
             let project_id = parse_project_id(project_id)?;
-            Ok(render_project_init(project_root, project_id))
+            Ok(render_project_init(
+                project_root,
+                project_id,
+                ProjectInitEntryMode::Greenfield,
+            ))
+        }
+        [_bin, init, project_id, mode_flag, mode] if init == "init" && mode_flag == "--mode" => {
+            let project_id = parse_project_id(project_id)?;
+            let entry_mode = parse_init_entry_mode(mode)?;
+            Ok(render_project_init(project_root, project_id, entry_mode))
         }
         [_bin, flow, inspect] if flow == "flow" && inspect == "inspect" => {
             Ok(CommandOutput::success(render_flow_inspect()))
@@ -102,6 +111,7 @@ fn render_root_help() -> String {
         "runtime persistence is not active yet; init, inspect, and eval stay limited and honest\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
+        "  punk init <project-id> --mode brownfield\n",
         "  punk flow inspect\n",
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n"
@@ -113,6 +123,7 @@ fn root_usage() -> String {
         "unknown command\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
+        "  punk init <project-id> --mode brownfield\n",
         "  punk flow inspect\n",
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n\n",
@@ -129,11 +140,13 @@ fn init_usage() -> String {
         concat!(
         "unknown init command\n\n",
         "Usage:\n",
-        "  punk init <project-id>\n\n",
+        "  punk init <project-id>\n",
+        "  punk init <project-id> --mode brownfield\n\n",
         "Notes:\n",
         "  - run from the target project root; init writes into the current directory in place\n",
         "  - init does not create a new subdirectory named <project-id>\n",
-        "  - greenfield-only: creates compact .punk/memory tracked memory plus .punk marker/setup files\n",
+        "  - default mode is greenfield: creates compact .punk/memory tracked memory plus .punk marker/setup files\n",
+        "  - brownfield mode creates only an advisory reconstruction workspace; it does not scan or reconstruct the project\n",
         "  - {}\n",
         "  - existing files are never overwritten\n",
         "  - .punk runtime persistence is not active yet\n"
@@ -212,8 +225,12 @@ fn render_smoke_eval(format: SmokeEvalFormat) -> CommandOutput {
     CommandOutput::with_exit(text, report.exit_code())
 }
 
-fn render_project_init(project_root: &Path, project_id: ProjectId) -> CommandOutput {
-    let report = init_level0_project(project_root, project_id);
+fn render_project_init(
+    project_root: &Path,
+    project_id: ProjectId,
+    entry_mode: ProjectInitEntryMode,
+) -> CommandOutput {
+    let report = init_project(project_root, project_id, entry_mode);
     CommandOutput::with_exit(report.render_human(), report.exit_code())
 }
 
@@ -225,6 +242,14 @@ fn parse_project_id(value: &str) -> Result<ProjectId, String> {
             init_usage()
         )
     })
+}
+
+fn parse_init_entry_mode(value: &str) -> Result<ProjectInitEntryMode, String> {
+    match value {
+        "greenfield" => Ok(ProjectInitEntryMode::Greenfield),
+        "brownfield" => Ok(ProjectInitEntryMode::Brownfield),
+        _ => Err(format!("invalid init mode: {value}\n\n{}", init_usage())),
+    }
 }
 
 fn format_commands(commands: &[FlowCommand]) -> String {
@@ -403,6 +428,85 @@ mod tests {
         assert!(!root.join(".punk/proofs").exists());
         assert!(!root.join(".punk/indexes").exists());
         assert!(!root.join(".punk/views").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_command_creates_brownfield_reconstruction_scaffold_when_requested() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+
+        let output = run_at(
+            ["punk", "init", "weekend-project", "--mode", "brownfield"],
+            &root,
+        )
+        .expect("brownfield init command should run");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("punk init"));
+        assert!(output
+            .text
+            .contains("schema_version: project-init-brownfield-scaffold.v0.1"));
+        assert!(output.text.contains("entry_mode: brownfield"));
+        assert!(output.text.contains("project_id: weekend-project"));
+        assert!(output.text.contains("runtime_persistence: inactive"));
+        assert!(output.text.contains("target_root: ."));
+        assert!(!output.text.contains(&root.display().to_string()));
+        assert!(output.text.contains("result: initialized"));
+        assert!(output.text.contains("path: .punk/memory/STATUS.md"));
+        assert!(output
+            .text
+            .contains("path: .punk/memory/goals/goal_brownfield_reconstruction_baseline.md"));
+        assert!(output
+            .text
+            .contains("path: .punk/memory/reconstruction/claim-ledger.md"));
+        assert!(output
+            .text
+            .contains("does not scan the repository or infer project knowledge"));
+        assert!(output
+            .text
+            .contains("brownfield reconstruction remains not_started"));
+        assert!(root.join(".punk/memory/STATUS.md").is_file());
+        assert!(root
+            .join(".punk/memory/goals/goal_brownfield_reconstruction_baseline.md")
+            .is_file());
+        assert!(root
+            .join(".punk/memory/reconstruction/contract-readiness.md")
+            .is_file());
+        assert!(root.join(".punk/project.toml").is_file());
+        assert!(!root.join("work").exists());
+        assert!(!root.join("knowledge").exists());
+        assert!(!root.join("docs").exists());
+        assert!(!root.join("docs/adr").exists());
+        assert!(!root.join("publishing").exists());
+        assert!(!root.join(".punk/runtime").exists());
+        assert!(!root.join(".punk/cache").exists());
+        assert!(!root.join(".punk/events").exists());
+        assert!(!root.join(".punk/contracts").exists());
+        assert!(!root.join(".punk/runs").exists());
+        assert!(!root.join(".punk/decisions").exists());
+        assert!(!root.join(".punk/proofs").exists());
+        assert!(!root.join(".punk/indexes").exists());
+        assert!(!root.join(".punk/views").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_command_rejects_unknown_mode() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+
+        let error = run_at(
+            ["punk", "init", "weekend-project", "--mode", "grayfield"],
+            &root,
+        )
+        .expect_err("unsupported init mode must fail");
+
+        assert!(error.contains("invalid init mode: grayfield"));
+        assert!(error.contains("punk init <project-id> --mode brownfield"));
+        assert!(!root.join(".punk/memory/STATUS.md").exists());
 
         let _ = fs::remove_dir_all(root);
     }

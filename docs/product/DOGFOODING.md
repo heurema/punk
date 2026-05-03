@@ -77,9 +77,12 @@ Level 0 operating rules:
 Currently implemented CLI subset:
 
 - `punk init <project-id>`
+- `punk init <project-id> --mode brownfield`
 
-`punk init <project-id>` creates only the greenfield Level 0 compact manual project-memory scaffold for user projects.
+`punk init <project-id>` creates the default greenfield Level 0 compact manual project-memory scaffold for user projects.
 It records `project_id` and `entry_mode = greenfield`, writes repo-tracked durable memory under `.punk/memory/` plus `.punk` marker/setup files, and does not create root-level `work/`, `knowledge/`, `docs/adr/`, `publishing/`, brownfield reconstruction, grayfield reconciliation, `.punk/runtime`, runtime evidence stores, flow persistence, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
+
+`punk init <project-id> --mode brownfield` creates only a brownfield entry scaffold with empty advisory reconstruction placeholders under `.punk/memory/reconstruction/`; it does not scan, reconstruct, summarize, generate contracts/specs, accept claims, or write runtime evidence.
 
 Exit criteria:
 

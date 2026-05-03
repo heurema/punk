@@ -77,12 +77,16 @@ This north star does not change the active CLI surface, roadmap phase order, cra
 Current executable CLI remains limited to:
 
 - `punk init <project-id>`
+- `punk init <project-id> --mode brownfield`
 - `punk flow inspect`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
-`punk init <project-id>` is active only as a minimal greenfield compact `.punk/memory/` project-memory scaffold.
-It does not activate brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, generated docs, contract generation, gate/proof runtime, Writer, runtime `.punk/` storage, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
+`punk init <project-id>` is active as a minimal greenfield compact `.punk/memory/` project-memory scaffold.
+
+`punk init <project-id> --mode brownfield` is active only as a brownfield entry scaffold with empty advisory reconstruction placeholders.
+
+Neither mode activates brownfield reconstruction, grayfield reconciliation, repo scanning, AI summaries, generated docs, contract generation, gate/proof runtime, Writer, runtime `.punk/` storage, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or spec-as-source behavior.
 
 Active `.punk/` runtime storage for work, contracts, runs, evals, decisions, and proofs remains inactive.
 

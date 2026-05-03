@@ -47,7 +47,8 @@ use punk_gate::{
     GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
 };
 use punk_project::{
-    init_level0_project, ProjectId, ProjectInitArtifactKind, ProjectInitArtifactStatus,
+    init_level0_project, init_project, ProjectId, ProjectInitArtifactKind,
+    ProjectInitArtifactStatus, ProjectInitEntryMode,
 };
 use punk_proof::{
     compute_proofpack_manifest_digest, positive_acceptance_preconditions_met,
@@ -411,6 +412,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_flow_transition_produces_event_evidence(),
         eval_event_log_is_append_only(),
         eval_project_init_creates_level0_manual_memory_scaffold(),
+        eval_project_init_brownfield_scaffold_shape(),
         eval_project_init_refuses_to_overwrite_existing_memory(),
         eval_project_init_conflict_is_atomic_noop(),
         eval_contract_ready_for_bounded_work_allows_start_run(),
@@ -559,10 +561,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, project init scaffold, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, project init scaffold, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -580,6 +582,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
             "greenfield init smoke cases create compact .punk/memory project-memory scaffold files with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims",
+            "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, gate artifacts, proofpacks, or acceptance claims",
             "contract schema blueprint smoke cases preserve target shape, field status split, clause mapping, gate input policy, proof requirements, and Writer authority boundaries without runtime activation",
             "user intent-to-contract draft model smoke cases classify readiness in memory only and do not create contracts, runtime storage, CLI behavior, gate-writing behavior, proofpacks, or Writer behavior",
             "contract draft confirmation smoke cases require explicit user confirmation before approved_for_run model state without runtime storage, CLI behavior, gate-writing behavior, proofpacks, or Writer behavior",
@@ -943,6 +946,168 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
                 status_text.err(),
                 goal_text.err(),
                 marker_text.err()
+            ),
+        )
+    }
+}
+
+fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    if let Err(error) = fs::create_dir_all(&temp_path) {
+        return SmokeEvalCaseResult::fail(
+            "eval_project_init_brownfield_scaffold_shape",
+            "brownfield project init creates advisory reconstruction scaffold",
+            format!("temporary project root setup failed with {error:?}"),
+        );
+    }
+
+    let existing_source_setup = fs::create_dir_all(temp_path.join("src"))
+        .and_then(|_| fs::write(temp_path.join("src/main.rs"), b"fn main() {}\n"))
+        .and_then(|_| fs::write(temp_path.join("README.md"), b"# Existing project\n"));
+    if let Err(error) = existing_source_setup {
+        let _ = fs::remove_dir_all(&temp_path);
+        return SmokeEvalCaseResult::fail(
+            "eval_project_init_brownfield_scaffold_shape",
+            "brownfield project init creates advisory reconstruction scaffold",
+            format!("temporary source setup failed with {error:?}"),
+        );
+    }
+
+    let project_id = ProjectId::parse("weekend-project").expect("smoke project id should parse");
+    let report = init_project(&temp_path, project_id, ProjectInitEntryMode::Brownfield);
+    let status_path = temp_path.join(".punk/memory/STATUS.md");
+    let goal_path = temp_path.join(".punk/memory/goals/goal_brownfield_reconstruction_baseline.md");
+    let reconstruction_root = temp_path.join(".punk/memory/reconstruction");
+    let source_manifest_path = reconstruction_root.join("source-corpus-manifest.md");
+    let claim_ledger_path = reconstruction_root.join("claim-ledger.md");
+    let contract_readiness_path = reconstruction_root.join("contract-readiness.md");
+    let status_text = fs::read_to_string(&status_path);
+    let marker_text = fs::read_to_string(temp_path.join(".punk/project.toml"));
+    let source_manifest_text = fs::read_to_string(&source_manifest_path);
+    let claim_ledger_text = fs::read_to_string(&claim_ledger_path);
+    let contract_readiness_text = fs::read_to_string(&contract_readiness_path);
+
+    let status_exists = status_path.is_file();
+    let goal_exists = goal_path.is_file();
+    let reconstruction_placeholders_ok = reconstruction_root.join("README.md").is_file()
+        && source_manifest_path.is_file()
+        && claim_ledger_path.is_file()
+        && reconstruction_root.join("unknowns.md").is_file()
+        && reconstruction_root.join("contradictions.md").is_file()
+        && contract_readiness_path.is_file();
+    let runtime_store_absent = !temp_path.join(".punk/events").exists()
+        && !temp_path.join(".punk/runtime").exists()
+        && !temp_path.join(".punk/cache").exists()
+        && !temp_path.join(".punk/contracts").exists()
+        && !temp_path.join(".punk/runs").exists()
+        && !temp_path.join(".punk/evals").exists()
+        && !temp_path.join(".punk/decisions").exists()
+        && !temp_path.join(".punk/proofs").exists()
+        && !temp_path.join(".punk/views").exists()
+        && !temp_path.join(".punk/indexes").exists();
+    let root_layout_absent = !temp_path.join("work").exists()
+        && !temp_path.join("knowledge").exists()
+        && !temp_path.join("docs").exists()
+        && !temp_path.join("docs/adr").exists()
+        && !temp_path.join("publishing").exists();
+    let status_ok = status_text.as_ref().is_ok_and(|text| {
+        text.contains("entry_mode: brownfield")
+            && text.contains("reconstruction_status: not_started")
+            && text.contains(
+                "selected_next: \".punk/memory/goals/goal_brownfield_reconstruction_baseline.md\"",
+            )
+            && text.contains("No project knowledge has been reconstructed yet.")
+            && text.contains("Existing code/docs/history are not Punk truth.")
+            && text
+                .contains("Future reconstruction artifacts are advisory candidates until reviewed.")
+    });
+    let marker_ok = marker_text.as_ref().is_ok_and(|text| {
+        text.contains("project_id = \"weekend-project\"")
+            && text.contains("entry_mode = \"brownfield\"")
+            && text.contains("[memory]")
+            && text.contains("layout = \"compact\"")
+            && text.contains("root = \".punk/memory\"")
+            && text.contains("[runtime]")
+            && text.contains("active = false")
+            && text.contains("[brownfield]")
+            && text.contains("reconstruction_status = \"not_started\"")
+            && text.contains("authority = \"advisory_candidates_only\"")
+    });
+    let placeholders_ok = source_manifest_text.as_ref().is_ok_and(|text| {
+        text.contains(
+            "Future source-linked inventory of files, docs, tests, CI, schemas, and history sources.",
+        ) && text.contains("Status: not_started.")
+            && !text.contains("src/main.rs")
+            && !text.contains("Existing project")
+    }) && claim_ledger_text.as_ref().is_ok_and(|text| {
+        text.contains("No claims are accepted automatically.")
+            && text.contains("No claims have been reconstructed or reviewed yet.")
+            && !text.contains("fn main")
+            && !text.contains("Existing project")
+    }) && contract_readiness_text.as_ref().is_ok_and(|text| {
+        text.contains("This is not a contract.")
+            && text.contains("This is not a gate decision.")
+            && text.contains("This is not proof.")
+    });
+    let artifact_ok = report.artifacts().iter().any(|artifact| {
+        artifact.repo_relative_path() == ".punk/memory/STATUS.md"
+            && artifact.kind() == ProjectInitArtifactKind::File
+            && artifact.status() == ProjectInitArtifactStatus::Created
+    }) && report.artifacts().iter().any(|artifact| {
+        artifact.repo_relative_path()
+            == ".punk/memory/goals/goal_brownfield_reconstruction_baseline.md"
+            && artifact.kind() == ProjectInitArtifactKind::File
+            && artifact.status() == ProjectInitArtifactStatus::Created
+    }) && report.artifacts().iter().any(|artifact| {
+        artifact.repo_relative_path() == ".punk/memory/reconstruction/claim-ledger.md"
+            && artifact.kind() == ProjectInitArtifactKind::File
+            && artifact.status() == ProjectInitArtifactStatus::Created
+    });
+    let cleanup_ok = fs::remove_dir_all(&temp_path).is_ok();
+
+    let scaffold_ok = !report.blocked()
+        && report.exit_code() == 0
+        && report.entry_mode() == "brownfield"
+        && status_exists
+        && goal_exists
+        && reconstruction_placeholders_ok
+        && runtime_store_absent
+        && root_layout_absent
+        && status_ok
+        && marker_ok
+        && placeholders_ok
+        && artifact_ok
+        && cleanup_ok;
+
+    if scaffold_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_project_init_brownfield_scaffold_shape",
+            "brownfield project init creates advisory reconstruction scaffold",
+            "brownfield scaffold recorded not_started advisory reconstruction state, created empty placeholders, did not scan existing source files, and left runtime, contracts, proofs, and root dogfooding dirs absent",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_project_init_brownfield_scaffold_shape",
+            "brownfield project init creates advisory reconstruction scaffold",
+            format!(
+                "brownfield scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} reconstruction_placeholders_ok={} runtime_store_absent={} root_layout_absent={} status_ok={} marker_ok={} placeholders_ok={} artifact_ok={} cleanup_ok={} status_read={:?} marker_read={:?} source_manifest_read={:?} claim_ledger_read={:?} contract_readiness_read={:?}",
+                report.blocked(),
+                report.exit_code(),
+                status_exists,
+                goal_exists,
+                reconstruction_placeholders_ok,
+                runtime_store_absent,
+                root_layout_absent,
+                status_ok,
+                marker_ok,
+                placeholders_ok,
+                artifact_ok,
+                cleanup_ok,
+                status_text.err(),
+                marker_text.err(),
+                source_manifest_text.err(),
+                claim_ledger_text.err(),
+                contract_readiness_text.err()
             ),
         )
     }
@@ -7928,7 +8093,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 144);
+        assert_eq!(report.cases().len(), 145);
     }
 
     #[test]
@@ -7953,13 +8118,14 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, project init scaffold, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
         assert!(
             rendered.contains("  - id: eval_project_init_creates_level0_manual_memory_scaffold")
         );
+        assert!(rendered.contains("  - id: eval_project_init_brownfield_scaffold_shape"));
         assert!(rendered.contains("  - id: eval_project_init_refuses_to_overwrite_existing_memory"));
         assert!(rendered.contains("  - id: eval_project_init_conflict_is_atomic_noop"));
         assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
@@ -8132,6 +8298,9 @@ mod tests {
         assert!(rendered.contains("local assessment only; no authority is written here"));
         assert!(rendered.contains(
             "greenfield init smoke cases create compact .punk/memory project-memory scaffold files with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims"
+        ));
+        assert!(rendered.contains(
+            "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, gate artifacts, proofpacks, or acceptance claims"
         ));
         assert!(rendered.contains(
             "contract schema blueprint smoke cases preserve target shape, field status split, clause mapping, gate input policy, proof requirements, and Writer authority boundaries without runtime activation"
