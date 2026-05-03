@@ -1667,6 +1667,648 @@ pub fn source_corpus_manifest_claim_field_allowed(field_name: &str) -> bool {
         .any(|forbidden| *forbidden == field_name)
 }
 
+pub const SOURCE_CORPUS_MANIFEST_WRITER_PREFLIGHT_MODEL_SCHEMA_VERSION: &str =
+    "brownfield-source-corpus-manifest-writer-preflight-model.v0.1";
+pub const SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH: &str =
+    ".punk/memory/reconstruction/source-corpus-manifest.md";
+pub const SOURCE_CORPUS_MANIFEST_WRITER_RECONSTRUCTION_DIR: &str = ".punk/memory/reconstruction";
+pub const SOURCE_CORPUS_MANIFEST_WRITER_FORBIDDEN_RUNTIME_TARGET_PREFIXES: &[&str] = &[
+    ".punk/runtime",
+    ".punk/events",
+    ".punk/runs",
+    ".punk/decisions",
+    ".punk/proofs",
+    ".punk/cache",
+    ".punk/indexes",
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterTarget(String);
+
+impl SourceCorpusManifestWriterTarget {
+    pub fn new(value: impl Into<String>) -> Self {
+        Self(value.into())
+    }
+
+    pub fn default_manifest_path() -> Self {
+        Self::new(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterTargetPolicy {
+    DefaultManifestPath,
+    ConfiguredUnderReconstructionDir,
+}
+
+impl SourceCorpusManifestWriterTargetPolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::DefaultManifestPath => "default_manifest_path",
+            Self::ConfiguredUnderReconstructionDir => "configured_under_reconstruction_dir",
+        }
+    }
+}
+
+impl Default for SourceCorpusManifestWriterTargetPolicy {
+    fn default() -> Self {
+        Self::DefaultManifestPath
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterConflictPolicy {
+    MissingTarget,
+    IdenticalExistingTarget,
+    DifferentExistingTarget,
+    Unknown,
+}
+
+impl SourceCorpusManifestWriterConflictPolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingTarget => "missing_target",
+            Self::IdenticalExistingTarget => "identical_existing_target",
+            Self::DifferentExistingTarget => "different_existing_target",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+impl Default for SourceCorpusManifestWriterConflictPolicy {
+    fn default() -> Self {
+        Self::MissingTarget
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterParentStatus {
+    Valid,
+    Missing,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterSymlinkAncestorStatus {
+    Safe,
+    Escape,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterManifestStatusEvidence {
+    Advisory,
+    Other,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterManifestAuthorityEvidence {
+    ObservedStructure,
+    Other,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterManifestInspection {
+    status_evidence: SourceCorpusManifestWriterManifestStatusEvidence,
+    authority_evidence: SourceCorpusManifestWriterManifestAuthorityEvidence,
+    contains_absolute_path: bool,
+    contains_content_snippet: bool,
+    contains_summary: bool,
+    claim_fields: Vec<String>,
+}
+
+impl SourceCorpusManifestWriterManifestInspection {
+    pub fn for_manifest(manifest: &SourceCorpusManifest) -> Self {
+        let status_evidence = match manifest.status() {
+            SourceCorpusManifestStatus::Advisory => {
+                SourceCorpusManifestWriterManifestStatusEvidence::Advisory
+            }
+        };
+        let authority_evidence = match manifest.authority() {
+            SourceCorpusManifestAuthority::ObservedStructure => {
+                SourceCorpusManifestWriterManifestAuthorityEvidence::ObservedStructure
+            }
+        };
+        Self {
+            status_evidence,
+            authority_evidence,
+            contains_absolute_path: false,
+            contains_content_snippet: false,
+            contains_summary: false,
+            claim_fields: Vec::new(),
+        }
+    }
+
+    pub fn with_status_evidence(
+        mut self,
+        status_evidence: SourceCorpusManifestWriterManifestStatusEvidence,
+    ) -> Self {
+        self.status_evidence = status_evidence;
+        self
+    }
+
+    pub fn with_authority_evidence(
+        mut self,
+        authority_evidence: SourceCorpusManifestWriterManifestAuthorityEvidence,
+    ) -> Self {
+        self.authority_evidence = authority_evidence;
+        self
+    }
+
+    pub fn with_absolute_path(mut self) -> Self {
+        self.contains_absolute_path = true;
+        self
+    }
+
+    pub fn with_content_snippet(mut self) -> Self {
+        self.contains_content_snippet = true;
+        self
+    }
+
+    pub fn with_summary(mut self) -> Self {
+        self.contains_summary = true;
+        self
+    }
+
+    pub fn with_claim_field(mut self, field_name: impl Into<String>) -> Self {
+        self.claim_fields.push(field_name.into());
+        self
+    }
+
+    pub fn status_evidence(&self) -> SourceCorpusManifestWriterManifestStatusEvidence {
+        self.status_evidence
+    }
+
+    pub fn authority_evidence(&self) -> SourceCorpusManifestWriterManifestAuthorityEvidence {
+        self.authority_evidence
+    }
+
+    pub fn contains_absolute_path(&self) -> bool {
+        self.contains_absolute_path
+    }
+
+    pub fn contains_content_snippet(&self) -> bool {
+        self.contains_content_snippet
+    }
+
+    pub fn contains_summary(&self) -> bool {
+        self.contains_summary
+    }
+
+    pub fn claim_fields(&self) -> &[String] {
+        &self.claim_fields
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterPreflightInput {
+    target: SourceCorpusManifestWriterTarget,
+    target_policy: SourceCorpusManifestWriterTargetPolicy,
+    conflict_policy: SourceCorpusManifestWriterConflictPolicy,
+    parent_status: SourceCorpusManifestWriterParentStatus,
+    symlink_ancestor_status: SourceCorpusManifestWriterSymlinkAncestorStatus,
+    manifest: SourceCorpusManifest,
+    manifest_inspection: SourceCorpusManifestWriterManifestInspection,
+}
+
+impl SourceCorpusManifestWriterPreflightInput {
+    pub fn new(target: SourceCorpusManifestWriterTarget, manifest: SourceCorpusManifest) -> Self {
+        let manifest_inspection =
+            SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest);
+        Self {
+            target,
+            target_policy: SourceCorpusManifestWriterTargetPolicy::default(),
+            conflict_policy: SourceCorpusManifestWriterConflictPolicy::default(),
+            parent_status: SourceCorpusManifestWriterParentStatus::Valid,
+            symlink_ancestor_status: SourceCorpusManifestWriterSymlinkAncestorStatus::Safe,
+            manifest,
+            manifest_inspection,
+        }
+    }
+
+    pub fn with_target_policy(
+        mut self,
+        target_policy: SourceCorpusManifestWriterTargetPolicy,
+    ) -> Self {
+        self.target_policy = target_policy;
+        self
+    }
+
+    pub fn with_conflict_policy(
+        mut self,
+        conflict_policy: SourceCorpusManifestWriterConflictPolicy,
+    ) -> Self {
+        self.conflict_policy = conflict_policy;
+        self
+    }
+
+    pub fn with_parent_status(
+        mut self,
+        parent_status: SourceCorpusManifestWriterParentStatus,
+    ) -> Self {
+        self.parent_status = parent_status;
+        self
+    }
+
+    pub fn with_symlink_ancestor_status(
+        mut self,
+        symlink_ancestor_status: SourceCorpusManifestWriterSymlinkAncestorStatus,
+    ) -> Self {
+        self.symlink_ancestor_status = symlink_ancestor_status;
+        self
+    }
+
+    pub fn with_manifest_inspection(
+        mut self,
+        manifest_inspection: SourceCorpusManifestWriterManifestInspection,
+    ) -> Self {
+        self.manifest_inspection = manifest_inspection;
+        self
+    }
+
+    pub fn target(&self) -> &SourceCorpusManifestWriterTarget {
+        &self.target
+    }
+
+    pub fn target_policy(&self) -> SourceCorpusManifestWriterTargetPolicy {
+        self.target_policy
+    }
+
+    pub fn conflict_policy(&self) -> SourceCorpusManifestWriterConflictPolicy {
+        self.conflict_policy
+    }
+
+    pub fn parent_status(&self) -> SourceCorpusManifestWriterParentStatus {
+        self.parent_status
+    }
+
+    pub fn symlink_ancestor_status(&self) -> SourceCorpusManifestWriterSymlinkAncestorStatus {
+        self.symlink_ancestor_status
+    }
+
+    pub fn manifest(&self) -> &SourceCorpusManifest {
+        &self.manifest
+    }
+
+    pub fn manifest_inspection(&self) -> &SourceCorpusManifestWriterManifestInspection {
+        &self.manifest_inspection
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterPreflightFinding {
+    TargetAllowed,
+    TargetNotUnderReconstructionDir,
+    TargetAbsolutePath,
+    TargetPathEscape,
+    TargetSymlinkAncestorEscape,
+    TargetSymlinkAncestorUnknown,
+    TargetMissingParent,
+    TargetParentUnknown,
+    TargetConflictMissing,
+    TargetConflictIdentical,
+    TargetConflictDifferentBlocks,
+    TargetConflictUnknown,
+    ManifestAuthorityNotObservedStructure,
+    ManifestStatusNotAdvisory,
+    ManifestContainsAbsolutePath,
+    ManifestContainsContentSnippet,
+    ManifestContainsSummary,
+    ManifestContainsClaimField,
+    ManifestContainsClaimsCreated,
+    RuntimeStorageTargetForbidden,
+    OperationEvidenceIsNotProof,
+}
+
+impl SourceCorpusManifestWriterPreflightFinding {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::TargetAllowed => "target_allowed",
+            Self::TargetNotUnderReconstructionDir => "target_not_under_reconstruction_dir",
+            Self::TargetAbsolutePath => "target_absolute_path",
+            Self::TargetPathEscape => "target_path_escape",
+            Self::TargetSymlinkAncestorEscape => "target_symlink_ancestor_escape",
+            Self::TargetSymlinkAncestorUnknown => "target_symlink_ancestor_unknown",
+            Self::TargetMissingParent => "target_missing_parent",
+            Self::TargetParentUnknown => "target_parent_unknown",
+            Self::TargetConflictMissing => "target_conflict_missing",
+            Self::TargetConflictIdentical => "target_conflict_identical",
+            Self::TargetConflictDifferentBlocks => "target_conflict_different_blocks",
+            Self::TargetConflictUnknown => "target_conflict_unknown",
+            Self::ManifestAuthorityNotObservedStructure => {
+                "manifest_authority_not_observed_structure"
+            }
+            Self::ManifestStatusNotAdvisory => "manifest_status_not_advisory",
+            Self::ManifestContainsAbsolutePath => "manifest_contains_absolute_path",
+            Self::ManifestContainsContentSnippet => "manifest_contains_content_snippet",
+            Self::ManifestContainsSummary => "manifest_contains_summary",
+            Self::ManifestContainsClaimField => "manifest_contains_claim_field",
+            Self::ManifestContainsClaimsCreated => "manifest_contains_claims_created",
+            Self::RuntimeStorageTargetForbidden => "runtime_storage_target_forbidden",
+            Self::OperationEvidenceIsNotProof => "operation_evidence_is_not_proof",
+        }
+    }
+
+    pub fn blocks_write(self) -> bool {
+        !matches!(
+            self,
+            Self::TargetAllowed
+                | Self::TargetConflictMissing
+                | Self::TargetConflictIdentical
+                | Self::OperationEvidenceIsNotProof
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterPreflightCapabilities {
+    scans_repository: bool,
+    walks_files: bool,
+    reads_file_contents: bool,
+    computes_file_hashes: bool,
+    writes_manifest: bool,
+    generates_manifest: bool,
+    creates_claims: bool,
+    infers_intent: bool,
+    uses_network: bool,
+    uses_remote_ai: bool,
+    writes_runtime_storage: bool,
+}
+
+impl SourceCorpusManifestWriterPreflightCapabilities {
+    pub fn side_effect_free() -> Self {
+        Self {
+            scans_repository: false,
+            walks_files: false,
+            reads_file_contents: false,
+            computes_file_hashes: false,
+            writes_manifest: false,
+            generates_manifest: false,
+            creates_claims: false,
+            infers_intent: false,
+            uses_network: false,
+            uses_remote_ai: false,
+            writes_runtime_storage: false,
+        }
+    }
+
+    pub fn scans_repository(self) -> bool {
+        self.scans_repository
+    }
+
+    pub fn walks_files(self) -> bool {
+        self.walks_files
+    }
+
+    pub fn reads_file_contents(self) -> bool {
+        self.reads_file_contents
+    }
+
+    pub fn computes_file_hashes(self) -> bool {
+        self.computes_file_hashes
+    }
+
+    pub fn writes_manifest(self) -> bool {
+        self.writes_manifest
+    }
+
+    pub fn generates_manifest(self) -> bool {
+        self.generates_manifest
+    }
+
+    pub fn creates_claims(self) -> bool {
+        self.creates_claims
+    }
+
+    pub fn infers_intent(self) -> bool {
+        self.infers_intent
+    }
+
+    pub fn uses_network(self) -> bool {
+        self.uses_network
+    }
+
+    pub fn uses_remote_ai(self) -> bool {
+        self.uses_remote_ai
+    }
+
+    pub fn writes_runtime_storage(self) -> bool {
+        self.writes_runtime_storage
+    }
+}
+
+impl Default for SourceCorpusManifestWriterPreflightCapabilities {
+    fn default() -> Self {
+        Self::side_effect_free()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterPreflightResult {
+    findings: Vec<SourceCorpusManifestWriterPreflightFinding>,
+    capabilities: SourceCorpusManifestWriterPreflightCapabilities,
+}
+
+impl SourceCorpusManifestWriterPreflightResult {
+    pub fn findings(&self) -> &[SourceCorpusManifestWriterPreflightFinding] {
+        &self.findings
+    }
+
+    pub fn has_finding(&self, finding: SourceCorpusManifestWriterPreflightFinding) -> bool {
+        self.findings.contains(&finding)
+    }
+
+    pub fn capabilities(&self) -> SourceCorpusManifestWriterPreflightCapabilities {
+        self.capabilities
+    }
+
+    pub fn allowed_to_write(&self) -> bool {
+        self.findings.iter().all(|finding| !finding.blocks_write())
+    }
+
+    pub fn blocked(&self) -> bool {
+        !self.allowed_to_write()
+    }
+
+    pub fn operation_evidence_is_proof(&self) -> bool {
+        false
+    }
+
+    pub fn operation_evidence_is_gate_decision(&self) -> bool {
+        false
+    }
+
+    pub fn operation_evidence_is_acceptance(&self) -> bool {
+        false
+    }
+
+    pub fn operation_evidence_is_project_truth(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterPreflight;
+
+impl SourceCorpusManifestWriterPreflight {
+    pub fn schema_version() -> &'static str {
+        SOURCE_CORPUS_MANIFEST_WRITER_PREFLIGHT_MODEL_SCHEMA_VERSION
+    }
+
+    pub fn evaluate(
+        input: SourceCorpusManifestWriterPreflightInput,
+    ) -> SourceCorpusManifestWriterPreflightResult {
+        let mut findings = Vec::new();
+        let target = input.target().as_str();
+
+        if source_corpus_manifest_writer_target_is_runtime_storage(target) {
+            findings
+                .push(SourceCorpusManifestWriterPreflightFinding::RuntimeStorageTargetForbidden);
+        }
+
+        match validate_source_corpus_repo_relative_path(target) {
+            Ok(()) => {
+                if source_corpus_manifest_writer_target_allowed(target, input.target_policy()) {
+                    findings.push(SourceCorpusManifestWriterPreflightFinding::TargetAllowed);
+                } else {
+                    findings.push(
+                        SourceCorpusManifestWriterPreflightFinding::TargetNotUnderReconstructionDir,
+                    );
+                }
+            }
+            Err(error) => findings.push(source_corpus_manifest_writer_path_error_finding(error)),
+        }
+
+        match input.parent_status() {
+            SourceCorpusManifestWriterParentStatus::Valid => {}
+            SourceCorpusManifestWriterParentStatus::Missing => {
+                findings.push(SourceCorpusManifestWriterPreflightFinding::TargetMissingParent);
+            }
+            SourceCorpusManifestWriterParentStatus::Unknown => {
+                findings.push(SourceCorpusManifestWriterPreflightFinding::TargetParentUnknown);
+            }
+        }
+
+        match input.symlink_ancestor_status() {
+            SourceCorpusManifestWriterSymlinkAncestorStatus::Safe => {}
+            SourceCorpusManifestWriterSymlinkAncestorStatus::Escape => {
+                findings
+                    .push(SourceCorpusManifestWriterPreflightFinding::TargetSymlinkAncestorEscape);
+            }
+            SourceCorpusManifestWriterSymlinkAncestorStatus::Unknown => {
+                findings
+                    .push(SourceCorpusManifestWriterPreflightFinding::TargetSymlinkAncestorUnknown);
+            }
+        }
+
+        match input.conflict_policy() {
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget => {
+                findings.push(SourceCorpusManifestWriterPreflightFinding::TargetConflictMissing);
+            }
+            SourceCorpusManifestWriterConflictPolicy::IdenticalExistingTarget => {
+                findings.push(SourceCorpusManifestWriterPreflightFinding::TargetConflictIdentical);
+            }
+            SourceCorpusManifestWriterConflictPolicy::DifferentExistingTarget => findings
+                .push(SourceCorpusManifestWriterPreflightFinding::TargetConflictDifferentBlocks),
+            SourceCorpusManifestWriterConflictPolicy::Unknown => {
+                findings.push(SourceCorpusManifestWriterPreflightFinding::TargetConflictUnknown);
+            }
+        }
+
+        let inspection = input.manifest_inspection();
+        if inspection.status_evidence()
+            != SourceCorpusManifestWriterManifestStatusEvidence::Advisory
+        {
+            findings.push(SourceCorpusManifestWriterPreflightFinding::ManifestStatusNotAdvisory);
+        }
+        if inspection.authority_evidence()
+            != SourceCorpusManifestWriterManifestAuthorityEvidence::ObservedStructure
+        {
+            findings.push(
+                SourceCorpusManifestWriterPreflightFinding::ManifestAuthorityNotObservedStructure,
+            );
+        }
+        if inspection.contains_absolute_path() {
+            findings.push(SourceCorpusManifestWriterPreflightFinding::ManifestContainsAbsolutePath);
+        }
+        if inspection.contains_content_snippet() {
+            findings
+                .push(SourceCorpusManifestWriterPreflightFinding::ManifestContainsContentSnippet);
+        }
+        if inspection.contains_summary() {
+            findings.push(SourceCorpusManifestWriterPreflightFinding::ManifestContainsSummary);
+        }
+        if !inspection.claim_fields().is_empty() {
+            findings.push(SourceCorpusManifestWriterPreflightFinding::ManifestContainsClaimField);
+        }
+        if inspection
+            .claim_fields()
+            .iter()
+            .any(|field| field == "claims_created")
+        {
+            findings
+                .push(SourceCorpusManifestWriterPreflightFinding::ManifestContainsClaimsCreated);
+        }
+
+        findings.push(SourceCorpusManifestWriterPreflightFinding::OperationEvidenceIsNotProof);
+
+        SourceCorpusManifestWriterPreflightResult {
+            findings,
+            capabilities: SourceCorpusManifestWriterPreflightCapabilities::default(),
+        }
+    }
+}
+
+fn source_corpus_manifest_writer_target_allowed(
+    target: &str,
+    policy: SourceCorpusManifestWriterTargetPolicy,
+) -> bool {
+    match policy {
+        SourceCorpusManifestWriterTargetPolicy::DefaultManifestPath => {
+            target == SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH
+        }
+        SourceCorpusManifestWriterTargetPolicy::ConfiguredUnderReconstructionDir => {
+            target == SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH
+                || source_corpus_manifest_writer_target_under_reconstruction_dir(target)
+        }
+    }
+}
+
+fn source_corpus_manifest_writer_target_under_reconstruction_dir(target: &str) -> bool {
+    let prefix = format!("{SOURCE_CORPUS_MANIFEST_WRITER_RECONSTRUCTION_DIR}/");
+    target.starts_with(&prefix)
+}
+
+fn source_corpus_manifest_writer_target_is_runtime_storage(target: &str) -> bool {
+    SOURCE_CORPUS_MANIFEST_WRITER_FORBIDDEN_RUNTIME_TARGET_PREFIXES
+        .iter()
+        .any(|prefix| target == *prefix || target.starts_with(&format!("{prefix}/")))
+}
+
+fn source_corpus_manifest_writer_path_error_finding(
+    error: SourceCorpusPathError,
+) -> SourceCorpusManifestWriterPreflightFinding {
+    match error {
+        SourceCorpusPathError::Absolute
+        | SourceCorpusPathError::HomePath
+        | SourceCorpusPathError::UrlLike => {
+            SourceCorpusManifestWriterPreflightFinding::TargetAbsolutePath
+        }
+        SourceCorpusPathError::Empty
+        | SourceCorpusPathError::CurrentDirectory
+        | SourceCorpusPathError::ParentTraversal
+        | SourceCorpusPathError::CurrentSegment
+        | SourceCorpusPathError::EmptySegment
+        | SourceCorpusPathError::Backslash => {
+            SourceCorpusManifestWriterPreflightFinding::TargetPathEscape
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ProjectInitEntry {
     Directory(&'static str),
@@ -2090,11 +2732,19 @@ mod tests {
         source_corpus_manifest_claim_field_allowed, SourceCorpusCautionClass,
         SourceCorpusGeneratedOrVendoredCandidate, SourceCorpusHashPolicy, SourceCorpusItem,
         SourceCorpusItemId, SourceCorpusManifest, SourceCorpusManifestAuthority,
-        SourceCorpusManifestId, SourceCorpusManifestStatus, SourceCorpusObservedKind,
-        SourceCorpusPathError, SourceCorpusRepoRelativePath, SourceCorpusSensitivityClass,
-        SourceCorpusSizePolicy, SourceCorpusSourceClass, SourceCorpusSourceMarker,
-        SourceCorpusSourceMarkerKind, SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS,
-        SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION, SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION,
+        SourceCorpusManifestId, SourceCorpusManifestStatus,
+        SourceCorpusManifestWriterConflictPolicy,
+        SourceCorpusManifestWriterManifestAuthorityEvidence,
+        SourceCorpusManifestWriterManifestInspection,
+        SourceCorpusManifestWriterManifestStatusEvidence, SourceCorpusManifestWriterParentStatus,
+        SourceCorpusManifestWriterPreflight, SourceCorpusManifestWriterPreflightFinding,
+        SourceCorpusManifestWriterPreflightInput, SourceCorpusManifestWriterSymlinkAncestorStatus,
+        SourceCorpusManifestWriterTarget, SourceCorpusObservedKind, SourceCorpusPathError,
+        SourceCorpusRepoRelativePath, SourceCorpusSensitivityClass, SourceCorpusSizePolicy,
+        SourceCorpusSourceClass, SourceCorpusSourceMarker, SourceCorpusSourceMarkerKind,
+        SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS, SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION,
+        SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION, SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH,
+        SOURCE_CORPUS_MANIFEST_WRITER_PREFLIGHT_MODEL_SCHEMA_VERSION,
     };
     use std::fs;
     use std::process;
@@ -2799,6 +3449,288 @@ mod tests {
     }
 
     #[test]
+    fn preflight_allows_reconstruction_manifest_target() {
+        let result =
+            sample_writer_preflight_result(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+
+        assert_eq!(
+            SourceCorpusManifestWriterPreflight::schema_version(),
+            SOURCE_CORPUS_MANIFEST_WRITER_PREFLIGHT_MODEL_SCHEMA_VERSION
+        );
+        assert!(result.allowed_to_write());
+        assert!(result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetAllowed));
+        assert!(
+            result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictMissing)
+        );
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::OperationEvidenceIsNotProof));
+    }
+
+    #[test]
+    fn preflight_rejects_absolute_target() {
+        for target in [
+            "/example/project/.punk/memory/reconstruction/source-corpus-manifest.md",
+            "C:/repo/.punk/memory/reconstruction/source-corpus-manifest.md",
+        ] {
+            let result = sample_writer_preflight_result(target);
+
+            assert!(result.blocked());
+            assert!(
+                result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetAbsolutePath),
+                "{target} should be rejected as an absolute target"
+            );
+        }
+    }
+
+    #[test]
+    fn preflight_rejects_path_escape() {
+        let result =
+            sample_writer_preflight_result(".punk/memory/reconstruction/../source-corpus.md");
+
+        assert!(result.blocked());
+        assert!(result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetPathEscape));
+    }
+
+    #[test]
+    fn preflight_rejects_runtime_storage_target() {
+        let result = sample_writer_preflight_result(".punk/runtime/source-corpus-manifest.md");
+
+        assert!(result.blocked());
+        assert!(result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::RuntimeStorageTargetForbidden
+        ));
+        assert!(result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::TargetNotUnderReconstructionDir
+        ));
+    }
+
+    #[test]
+    fn preflight_rejects_symlink_escape_when_reported() {
+        let input =
+            sample_writer_preflight_input(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+                .with_symlink_ancestor_status(
+                    SourceCorpusManifestWriterSymlinkAncestorStatus::Escape,
+                );
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::TargetSymlinkAncestorEscape));
+    }
+
+    #[test]
+    fn preflight_rejects_missing_parent_when_reported() {
+        let input =
+            sample_writer_preflight_input(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+                .with_parent_status(SourceCorpusManifestWriterParentStatus::Missing);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetMissingParent));
+    }
+
+    #[test]
+    fn preflight_blocks_different_existing_target() {
+        let input =
+            sample_writer_preflight_input(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+                .with_conflict_policy(
+                    SourceCorpusManifestWriterConflictPolicy::DifferentExistingTarget,
+                );
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::TargetConflictDifferentBlocks
+        ));
+    }
+
+    #[test]
+    fn preflight_allows_missing_target() {
+        let input =
+            sample_writer_preflight_input(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+                .with_conflict_policy(SourceCorpusManifestWriterConflictPolicy::MissingTarget);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.allowed_to_write());
+        assert!(
+            result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictMissing)
+        );
+    }
+
+    #[test]
+    fn preflight_allows_identical_existing_target_as_idempotent() {
+        let input =
+            sample_writer_preflight_input(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+                .with_conflict_policy(
+                    SourceCorpusManifestWriterConflictPolicy::IdenticalExistingTarget,
+                );
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.allowed_to_write());
+        assert!(
+            result.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictIdentical)
+        );
+    }
+
+    #[test]
+    fn preflight_rejects_manifest_with_non_advisory_status() {
+        let manifest = sample_source_corpus_manifest();
+        let inspection = SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest)
+            .with_status_evidence(SourceCorpusManifestWriterManifestStatusEvidence::Other);
+        let input = SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::default_manifest_path(),
+            manifest,
+        )
+        .with_manifest_inspection(inspection);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::ManifestStatusNotAdvisory));
+    }
+
+    #[test]
+    fn preflight_rejects_manifest_with_non_observed_authority() {
+        let manifest = sample_source_corpus_manifest();
+        let inspection = SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest)
+            .with_authority_evidence(SourceCorpusManifestWriterManifestAuthorityEvidence::Other);
+        let input = SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::default_manifest_path(),
+            manifest,
+        )
+        .with_manifest_inspection(inspection);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::ManifestAuthorityNotObservedStructure
+        ));
+    }
+
+    #[test]
+    fn preflight_rejects_manifest_with_absolute_paths() {
+        let manifest = sample_source_corpus_manifest();
+        let inspection = SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest)
+            .with_absolute_path();
+        let input = SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::default_manifest_path(),
+            manifest,
+        )
+        .with_manifest_inspection(inspection);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::ManifestContainsAbsolutePath));
+    }
+
+    #[test]
+    fn preflight_rejects_manifest_with_content_snippets() {
+        let manifest = sample_source_corpus_manifest();
+        let inspection = SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest)
+            .with_content_snippet();
+        let input = SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::default_manifest_path(),
+            manifest,
+        )
+        .with_manifest_inspection(inspection);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::ManifestContainsContentSnippet
+        ));
+    }
+
+    #[test]
+    fn preflight_rejects_manifest_with_claim_fields() {
+        let manifest = sample_source_corpus_manifest();
+        let inspection = SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest)
+            .with_claim_field("intent");
+        let input = SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::default_manifest_path(),
+            manifest,
+        )
+        .with_manifest_inspection(inspection);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::ManifestContainsClaimField));
+        assert!(!result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::ManifestContainsClaimsCreated
+        ));
+    }
+
+    #[test]
+    fn preflight_rejects_claims_created() {
+        let manifest = sample_source_corpus_manifest();
+        let inspection = SourceCorpusManifestWriterManifestInspection::for_manifest(&manifest)
+            .with_claim_field("claims_created");
+        let input = SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::default_manifest_path(),
+            manifest,
+        )
+        .with_manifest_inspection(inspection);
+        let result = SourceCorpusManifestWriterPreflight::evaluate(input);
+
+        assert!(result.blocked());
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::ManifestContainsClaimField));
+        assert!(result.has_finding(
+            SourceCorpusManifestWriterPreflightFinding::ManifestContainsClaimsCreated
+        ));
+    }
+
+    #[test]
+    fn preflight_does_not_write_manifest() {
+        let result =
+            sample_writer_preflight_result(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.writes_manifest());
+        assert!(!capabilities.generates_manifest());
+        assert!(!capabilities.writes_runtime_storage());
+    }
+
+    #[test]
+    fn preflight_does_not_scan_repo() {
+        let result =
+            sample_writer_preflight_result(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.scans_repository());
+        assert!(!capabilities.walks_files());
+        assert!(!capabilities.uses_network());
+        assert!(!capabilities.uses_remote_ai());
+    }
+
+    #[test]
+    fn preflight_does_not_read_file_contents() {
+        let result =
+            sample_writer_preflight_result(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.reads_file_contents());
+        assert!(!capabilities.computes_file_hashes());
+        assert!(!capabilities.creates_claims());
+        assert!(!capabilities.infers_intent());
+    }
+
+    #[test]
+    fn preflight_operation_evidence_is_not_proof() {
+        let result =
+            sample_writer_preflight_result(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+
+        assert!(result
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::OperationEvidenceIsNotProof));
+        assert!(!result.operation_evidence_is_proof());
+        assert!(!result.operation_evidence_is_gate_decision());
+        assert!(!result.operation_evidence_is_acceptance());
+        assert!(!result.operation_evidence_is_project_truth());
+    }
+
+    #[test]
     fn project_id_requires_lowercase_slug() {
         assert_eq!(
             ProjectId::parse("").expect_err("empty project id should fail"),
@@ -2872,6 +3804,19 @@ mod tests {
         assert_eq!(item.source_markers()[0].value(), "rs");
 
         item
+    }
+
+    fn sample_writer_preflight_input(target: &str) -> SourceCorpusManifestWriterPreflightInput {
+        SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::new(target),
+            sample_source_corpus_manifest(),
+        )
+    }
+
+    fn sample_writer_preflight_result(
+        target: &str,
+    ) -> super::SourceCorpusManifestWriterPreflightResult {
+        SourceCorpusManifestWriterPreflight::evaluate(sample_writer_preflight_input(target))
     }
 
     fn unique_temp_path() -> std::path::PathBuf {

@@ -1,7 +1,7 @@
 ---
 id: goal_prepare_brownfield_source_corpus_manifest_writer_preflight_model_v0_1
 title: "Prepare brownfield source corpus manifest writer preflight model v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-03
 updated_at: 2026-05-03
 selected_at: 2026-05-03
-started_at: null
-completed_at: null
+started_at: 2026-05-03
+completed_at: 2026-05-03
 blocked_by: []
 scope:
   include:
@@ -35,7 +35,8 @@ knowledge_refs:
   - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
   - "work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-boundary-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-preflight-model-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -92,3 +93,18 @@ summaries, module maps, architecture recovery, intent recovery, contract
 generation, gate/proof runtime, Writer behavior, runtime `.punk` storage,
 grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime,
 Regenerative Spec behavior, or spec-as-source behavior.
+
+## Outcome
+
+Done in `work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-preflight-model-v0-1.md`.
+
+The source corpus manifest writer preflight model now represents future target,
+path escape, symlink ancestor, parent, conflict, manifest authority, content,
+absolute-path, claim-field, runtime-storage, and operation-evidence checks from
+explicit caller-provided inputs.
+
+The model is side-effect-free. It does not scan repositories, walk files, read
+file contents, compute hashes from filesystem, generate manifests, write
+manifests, create claims, infer intent, use network or remote AI, write runtime
+storage, create gate decisions, create proof, create acceptance, or create
+project truth.
