@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-01
+updated_at: 2026-05-03
 review_after: 2026-07-20
 canonical_for:
   - roadmap-phase-gates
@@ -21,6 +21,7 @@ related_evals:
   - evals/specs/docs-consistency.v0.1.md
   - evals/specs/executor-agnostic-validation-boundary.v0.1.md
   - evals/specs/surgical-change-discipline.v0.1.md
+  - evals/specs/brownfield-inventory-boundary.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -60,6 +61,7 @@ Active target:
 - docs define core boundaries
 - `punk init <project-id>` creates a greenfield Level 0 compact `.punk/memory/` project-memory scaffold by default
 - `punk init <project-id> --mode brownfield` creates only a brownfield advisory reconstruction workspace under `.punk/memory/reconstruction/`
+- brownfield inventory is defined only as a boundary for observable structure, not implemented source corpus inventory
 - parked crates/folders do not expose public behavior
 
 Exit criteria:
@@ -67,6 +69,7 @@ Exit criteria:
 - `cargo check --workspace` passes
 - greenfield `punk init <project-id>` creates repo-tracked starter memory under `.punk/memory/` with `project_id`, `entry_mode = greenfield`, compact memory metadata, and `.punk` marker files without root-level `work/`, `knowledge/`, `docs/adr/`, `publishing/`, brownfield reconstruction, grayfield reconciliation, or `.punk/` runtime stores
 - brownfield `punk init <project-id> --mode brownfield` creates only empty advisory reconstruction placeholders with `reconstruction_status = not_started`, without repo scan, reconstructed claims, generated contracts/specs, grayfield reconciliation, or `.punk/` runtime stores
+- brownfield inventory boundary separates observable structure from claims, intent, contracts, decisions, proof, and project truth before any inventory implementation
 - status vocabulary is documented
 - no parked capability appears in the public CLI
 

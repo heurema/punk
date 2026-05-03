@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-01
+updated_at: 2026-05-03
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -20,10 +20,12 @@ canonical_for:
   - contract-context-pack-memory-boundary
   - knowledge-impact-report-boundary
   - replayable-project-memory-direction
+  - brownfield-inventory-boundary
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/DOC-GOVERNANCE.md
   - docs/product/PUBLIC-NARRATIVE.md
+  - docs/product/BROWNFIELD-INVENTORY.md
 related_adrs:
   - docs/adr/ADR-0003-project-memory-plane.md
   - docs/adr/ADR-0008-knowledge-vault-boundaries.md
@@ -72,6 +74,23 @@ This is a directional memory quality, not a new runtime feature.
 Greenfield Punk projects record replay memory from day zero. Brownfield projects reconstruct replay candidates from existing artifacts. Grayfield projects reconcile partial recorded memory with partial reconstruction.
 
 Project memory remains repo-tracked and authority-tagged. Derived summaries, future conformance packs, migration packs, or regenerative spec packs must not become truth without review, gate decisions, and proof.
+
+## Brownfield inventory boundary
+
+`docs/product/BROWNFIELD-INVENTORY.md` owns the boundary for future brownfield inventory work.
+
+The rule is:
+
+```text
+inventory observes structure
+claims interpret meaning
+```
+
+A future source corpus manifest may record repo-relative files, directories, manifests, docs, tests, CI config, schemas, migrations, scripts, and candidate source classes.
+
+It must not infer intent, requirements, module purpose, architecture decisions, canonical docs, accepted behavior, invariants, non-goals, ownership truth, contract readiness, or project memory truth.
+
+Current product behavior still does not implement source inventory, repo scanning, file walking, AI summaries, claim extraction, contract generation, gate/proof runtime, Writer behavior, runtime `.punk` storage, or grayfield reconciliation.
 
 ## Prompt and skill memory boundary
 

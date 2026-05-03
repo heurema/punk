@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-04-30
+updated_at: 2026-05-03
 review_after: 2026-07-20
 canonical_for:
   - shared-terms
@@ -13,6 +13,7 @@ related_docs:
   - docs/product/DOCUMENTATION-MAP.md
   - docs/product/DOC-GOVERNANCE.md
   - docs/product/CONTRACT-SCHEMA.md
+  - docs/product/BROWNFIELD-INVENTORY.md
 supersedes: []
 superseded_by: null
 ---
@@ -189,6 +190,36 @@ A digest used to make artifacts verifiable. Hash stability and path normalizatio
 ### project memory
 
 Repo-tracked continuity across goals, contracts, reports, evals, decisions, proofs, knowledge, ADRs, and public narrative. Project memory is explicit and authority-tagged.
+
+### brownfield inventory
+
+Future boundary-governed inventory of observable source, docs, tests, config, schema, migration, script, and manifest structure in an existing project.
+
+It is advisory observed structure only. It is not project truth, not a claim ledger, not intent recovery, not a contract, not proof, and not an implementation command by itself.
+
+### source corpus manifest
+
+Future deterministic brownfield inventory artifact that may list observable repo-relative artifacts and source classes.
+
+It is not project memory truth, not a claim ledger, not a contract, not a gate decision, and not proof.
+
+### inventory item
+
+One observable structural fact about a repo-relative artifact, such as path existence, path kind, extension, source class candidate, or manifest marker.
+
+An inventory item must not contain semantic intent, requirements, module purpose, accepted behavior, invariants, ownership truth, or project truth.
+
+### claim
+
+An interpretation that needs source refs, confidence, and review before it can influence contracts or accepted project memory.
+
+Examples include module purpose, requirement, invariant, accepted behavior, architecture decision, and non-goal.
+
+### contract readiness
+
+Future advisory assessment that enough reviewed information may exist to draft a bounded contract.
+
+Inventory may support contract readiness with source refs, but inventory must not decide it.
 
 ### Replayable Project Memory
 
