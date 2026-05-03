@@ -1,7 +1,7 @@
 ---
 id: goal_verify_brownfield_init_scaffold_v0_1
 title: "Verify brownfield init scaffold v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-03
 updated_at: 2026-05-03
 selected_at: 2026-05-03
-started_at: null
-completed_at: null
+started_at: 2026-05-03
+completed_at: 2026-05-03
 blocked_by: []
 scope:
   include:
@@ -29,7 +29,8 @@ acceptance:
 knowledge_refs:
   - "work/reports/2026-05-03-brownfield-init-scaffold-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-03-brownfield-init-scaffold-verification-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
