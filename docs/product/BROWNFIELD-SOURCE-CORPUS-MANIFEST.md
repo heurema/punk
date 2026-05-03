@@ -14,6 +14,7 @@ canonical_for:
   - brownfield-manifest-content-policy
   - brownfield-manifest-hash-policy
   - brownfield-source-corpus-manifest-writer-boundary
+  - brownfield-source-corpus-manifest-writer-implementation-boundary
 related_docs:
   - docs/product/BROWNFIELD-INVENTORY.md
   - docs/product/PROJECT-MEMORY.md
@@ -31,8 +32,8 @@ superseded_by: null
 This document defines the B2 design boundary for a future Brownfield Source
 Corpus Manifest.
 
-It also defines the future source corpus manifest writer boundary before any
-writer implementation is selected.
+It also defines the future source corpus manifest writer boundary and writer
+implementation boundary before any writer implementation is selected.
 
 It is design/spec only.
 
@@ -464,6 +465,167 @@ Future source corpus manifest writer behavior must not activate or write:
 
 Persisting a tracked source corpus manifest under `.punk/memory/reconstruction/`
 must not be treated as runtime storage activation.
+
+## Source corpus manifest writer implementation boundary
+
+The source corpus manifest writer implementation boundary defines the smallest
+future write slice that may later be selected. It does not implement that
+slice.
+
+The allowed future slice is:
+
+```text
+take an already-constructed SourceCorpusManifest model
+render deterministic canonical manifest bytes
+require a successful preflight result
+write exactly one safe target
+emit non-authoritative operation evidence
+```
+
+It must not scan repositories, walk directories, read source file contents,
+compute source file hashes from the filesystem, generate manifest items, infer
+source classes, generate claims, call AI, write runtime storage, or write
+gate/proof artifacts.
+
+### Future writer input boundary
+
+A future writer may accept only:
+
+- an already-constructed `SourceCorpusManifest` model;
+- an explicit target path or the default safe target;
+- an explicit preflight result for the same model and target.
+
+It must not accept:
+
+- a repository root to scan;
+- directory lists to walk;
+- raw source files to inspect;
+- an AI prompt;
+- claim ledger input.
+
+### Future target path boundary
+
+The default future target remains:
+
+```text
+.punk/memory/reconstruction/source-corpus-manifest.md
+```
+
+A configured target is allowed only when it is repo-relative and under:
+
+```text
+.punk/memory/reconstruction/
+```
+
+Future writer behavior must reject absolute targets, path escape, symlink
+escape, hidden inferred targets, and writes to runtime or derived state
+surfaces including:
+
+```text
+.punk/runtime
+.punk/events
+.punk/runs
+.punk/decisions
+.punk/proofs
+.punk/cache
+.punk/indexes
+```
+
+### Future preflight requirement before writing
+
+The writer must require a successful preflight result before writing bytes.
+
+No write is allowed when preflight contains blocking findings. Blocking
+findings include:
+
+```text
+absolute target
+path escape
+symlink escape
+different existing target
+unknown target state
+missing or unknown parent
+non-advisory manifest
+non-observed_structure authority
+claim-like fields
+absolute paths in manifest
+content snippets
+summaries
+runtime storage target
+```
+
+The future writer must not treat operation evidence findings as proof, gate
+decision, acceptance, or project truth.
+
+### Future render boundary
+
+Future rendering must produce deterministic canonical bytes from the supplied
+manifest model.
+
+Required rendering rules:
+
+- stable field order;
+- no hidden timestamps;
+- no runtime clock reads unless a later bounded goal explicitly allows clock
+  injection;
+- no host paths;
+- no environment values;
+- no local usernames;
+- no raw file contents.
+
+If timestamps are needed, they must come from manifest model input unless a
+later bounded goal explicitly changes the clock boundary.
+
+### Future atomic write boundary
+
+Future writing must avoid partial target state.
+
+Required write rules:
+
+- write a temporary file in the same target directory;
+- flush or fsync only under an explicit later durability policy;
+- use atomic rename where platform-compatible;
+- leave no partial target on failure;
+- block different existing target content unless a later reviewed overwrite
+  boundary is selected;
+- treat identical existing content as an idempotent outcome.
+
+### Future operation evidence boundary
+
+Future operation evidence may record only:
+
+```text
+attempted
+blocked
+written
+idempotent
+conflict
+error
+```
+
+It must not be proof, gate decision, acceptance, project truth, claim ledger,
+or contract readiness.
+
+### Future authority, privacy, and runtime boundary
+
+A written manifest remains:
+
+```text
+manifest_status = advisory
+authority = observed_structure
+```
+
+Writing it does not promote it, create claims, decide contract readiness, or
+create contract inputs.
+
+Future writer output must not include absolute paths, home/user paths, raw
+environment values, secrets, file contents, private agent transcripts, or AI
+summaries.
+
+Future writer behavior must not activate `.punk/runtime`, `.punk/events`,
+`.punk/runs`, `.punk/decisions`, `.punk/proofs`, gate/proof runtime, Punk
+`Writer` behavior, Conformance Pack runtime, Migration Contract runtime,
+Regenerative Spec behavior, or spec-as-source behavior.
 
 ## Non-goals
 

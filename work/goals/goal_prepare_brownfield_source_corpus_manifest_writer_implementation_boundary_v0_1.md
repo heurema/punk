@@ -1,7 +1,7 @@
 ---
 id: goal_prepare_brownfield_source_corpus_manifest_writer_implementation_boundary_v0_1
 title: "Prepare brownfield source corpus manifest writer implementation boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-03
 updated_at: 2026-05-03
 selected_at: 2026-05-03
-started_at: null
-completed_at: null
+started_at: 2026-05-03
+completed_at: 2026-05-03
 blocked_by: []
 scope:
   include:
@@ -19,6 +19,8 @@ scope:
     - "work/reports/**"
     - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
     - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
+    - "docs/product/DOCUMENTATION-MAP.md"
+    - "docs/product/GLOSSARY.md"
   exclude:
     - "crates/**"
     - ".punk/**"
@@ -33,7 +35,8 @@ knowledge_refs:
   - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
   - "work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-preflight-model-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-implementation-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -56,6 +59,8 @@ doc_impact:
     - "work/reports/**"
     - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
     - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
+    - "docs/product/DOCUMENTATION-MAP.md"
+    - "docs/product/GLOSSARY.md"
   rationale: "The goal should define a future writer implementation boundary only and must not add code or active manifest writer behavior."
 ---
 
@@ -94,3 +99,32 @@ summaries, module maps, architecture recovery, intent recovery, contract
 generation, gate/proof runtime, Writer behavior, runtime `.punk` storage,
 grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime,
 Regenerative Spec behavior, or spec-as-source behavior.
+
+## Outcome
+
+Done in `work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-implementation-boundary-v0-1.md`.
+
+The boundary defines the smallest future writer implementation slice:
+
+- accept an already-constructed `SourceCorpusManifest` model;
+- accept an explicit target or default safe target;
+- require a successful preflight result;
+- render deterministic canonical bytes;
+- write exactly one target under `.punk/memory/reconstruction/`;
+- emit non-authoritative operation evidence only.
+
+It also records that the future writer must not accept repo roots, directory
+walk inputs, raw source files, AI prompts, or claim ledger input. It must block
+absolute targets, path escape, symlink escape, runtime storage targets,
+different existing target content, non-advisory manifest status,
+non-`observed_structure` authority, claim-like fields, absolute paths, content
+snippets, summaries, and hidden runtime-clock metadata.
+
+The next selected goal is
+`work/goals/goal_verify_brownfield_source_corpus_manifest_writer_implementation_boundary_v0_1.md`.
+
+No manifest writer implementation, source inventory implementation, repo scan,
+file walker, content reading, hash computation from filesystem, AI summaries,
+claim extraction, contract generation, gate/proof runtime, Writer, Conformance
+Pack runtime, Migration Contract runtime, Regenerative Spec behavior, or
+spec-as-source behavior was activated.

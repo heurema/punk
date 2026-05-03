@@ -198,6 +198,119 @@ authority, or final project decisions.
 A future writer must not create or populate a claim ledger and must not promote
 manifest observations into reconstructed claims.
 
+## Future writer implementation-boundary eval cases
+
+These cases define future eval requirements only. They do not implement writer
+tests or writer behavior.
+
+### BSCM-026: writer_accepts_only_preflight_pass
+
+A future writer may proceed only when supplied an already-constructed manifest
+model, an explicit safe target, and a preflight result with no blocking
+findings for that same model and target.
+
+### BSCM-027: writer_rejects_blocking_preflight
+
+A future writer must refuse to write when preflight contains any blocking
+finding, including absolute target, path escape, symlink escape, different
+existing target, unknown target state, missing or unknown parent,
+non-advisory manifest status, non-`observed_structure` authority, claim-like
+fields, absolute paths, content snippets, summaries, or runtime storage target.
+
+### BSCM-028: writer_input_is_manifest_model_not_repo_scan
+
+A future writer input must be an already-constructed `SourceCorpusManifest`
+model plus explicit target and preflight result.
+
+It must not take a repository root to scan, directory list to walk, raw source
+files to inspect, AI prompt, or claim ledger input.
+
+### BSCM-029: writer_render_is_deterministic
+
+Future rendering must produce deterministic canonical bytes from the manifest
+model with stable field order and no hidden runtime metadata.
+
+The same model input must produce the same bytes.
+
+### BSCM-030: writer_render_has_no_host_paths
+
+Future rendered bytes must not contain absolute paths, home/user paths,
+drive-rooted paths, symlink target host paths, local usernames, or environment
+paths.
+
+### BSCM-031: writer_render_has_no_hidden_runtime_clock
+
+Future rendering must not read the runtime clock implicitly.
+
+Any timestamp in rendered output must come from manifest model input unless a
+later bounded goal explicitly allows clock injection.
+
+### BSCM-032: writer_writes_only_safe_target
+
+A future writer may write only
+`.punk/memory/reconstruction/source-corpus-manifest.md` or a configured
+repo-relative target under `.punk/memory/reconstruction/`.
+
+It must not write absolute targets, escaped targets, symlink-escaped targets,
+hidden inferred targets, runtime storage, cache, index, proof, decision, run,
+or event paths.
+
+### BSCM-033: writer_blocks_different_existing_target
+
+A future writer must block when the existing target content differs from the
+canonical bytes unless a later reviewed overwrite boundary is selected.
+
+No overwrite flag is selected by this boundary.
+
+### BSCM-034: writer_idempotent_on_identical_target
+
+A future writer may treat identical existing target content as idempotent when
+preflight passes and the canonical bytes match exactly.
+
+### BSCM-035: writer_no_partial_target_on_failure
+
+A future writer must leave no partial target when preflight fails, canonical
+rendering fails, temporary write fails, flush/fsync policy fails, atomic rename
+is unavailable or fails, or conflict detection blocks the operation.
+
+### BSCM-036: writer_operation_evidence_is_not_proof
+
+Future operation evidence may report attempted, blocked, written, idempotent,
+conflict, or error outcomes only.
+
+It must not be proof or proofpack authority.
+
+### BSCM-037: writer_operation_evidence_is_not_acceptance
+
+Future operation evidence must not be acceptance, gate decision, final project
+decision, contract approval, or project truth.
+
+### BSCM-038: writer_does_not_promote_manifest_authority
+
+A written manifest must remain:
+
+```text
+manifest_status = advisory
+authority = observed_structure
+```
+
+Writing the file must not promote the manifest to canonical truth, accepted
+behavior, contract, gate decision, proof, or project memory truth.
+
+### BSCM-039: writer_does_not_create_claims
+
+A future writer must not create claims, claim ledger entries, contract
+readiness conclusions, requirements, invariants, intent recovery, architecture
+decisions, accepted behavior, or AI summaries.
+
+### BSCM-040: writer_does_not_activate_runtime_storage
+
+A future writer must not activate or write `.punk/runtime`, `.punk/events`,
+`.punk/runs`, `.punk/decisions`, `.punk/proofs`, `.punk/cache`, `.punk/indexes`,
+gate/proof runtime, Punk `Writer` behavior, Conformance Pack runtime,
+Migration Contract runtime, Regenerative Spec behavior, or spec-as-source
+behavior.
+
 ## Minimal fixture shape
 
 This is illustrative boundary shape only, not an implemented schema.

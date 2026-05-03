@@ -233,6 +233,20 @@ It is not Punk `Writer` behavior, not a manifest writer implementation, not
 repo scanning, not file walking, not content reading, not a claim ledger, not
 gate/proof runtime, and not project truth.
 
+### source corpus manifest writer implementation boundary
+
+Future boundary for the smallest source corpus manifest writer slice that may
+later be implemented.
+
+It allows only rendering canonical bytes from an already-constructed manifest
+model, requiring successful preflight, writing one safe reconstruction target,
+and emitting non-authoritative operation evidence.
+
+It is not the writer implementation, not source inventory generation, not repo
+scanning, not file walking, not content reading, not filesystem hash
+computation, not claim extraction, not gate/proof runtime, and not Punk
+`Writer` behavior.
+
 ### target path policy
 
 Policy that constrains where a future file-writing operation may write and how
