@@ -221,6 +221,48 @@ It must not carry purpose, requirements, intent, invariants, owner truth,
 architecture decisions, accepted behavior, contract readiness conclusions,
 gate decisions, proof status, risk, or severity.
 
+### source corpus manifest writer boundary
+
+Future boundary for how a source corpus manifest file may eventually be
+persisted under `.punk/memory/reconstruction/`.
+
+It covers target path, preflight, atomicity, conflict, content/privacy, claim,
+operation-evidence, and runtime-storage rules.
+
+It is not Punk `Writer` behavior, not a manifest writer implementation, not
+repo scanning, not file walking, not content reading, not a claim ledger, not
+gate/proof runtime, and not project truth.
+
+### target path policy
+
+Policy that constrains where a future file-writing operation may write and how
+target refs are represented.
+
+For the source corpus manifest writer boundary, targets must remain
+repo-relative and under `.punk/memory/reconstruction/`.
+
+### atomicity policy
+
+Policy that requires a future file-writing operation to avoid partial artifacts
+when validation, conflicts, or writes fail.
+
+For the source corpus manifest writer boundary, atomicity is a future
+implementation requirement only.
+
+### writer claim boundary
+
+Boundary that keeps future source corpus manifest writer output from containing
+claim-like fields or authority.
+
+Here `writer` means only the source corpus manifest file writer, not Punk
+`Writer` behavior.
+
+### runtime storage boundary
+
+Boundary that keeps tracked memory artifacts separate from runtime authority
+surfaces such as `.punk/runtime`, `.punk/events`, `.punk/runs`,
+`.punk/decisions`, and `.punk/proofs`.
+
 ### inventory item
 
 One observable structural fact about a repo-relative artifact, such as path existence, path kind, extension, source class candidate, or manifest marker.

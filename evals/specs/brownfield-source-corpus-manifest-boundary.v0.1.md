@@ -115,6 +115,89 @@ unknown
 
 If classification is uncertain, `unknown` must be used.
 
+### BSCM-013: writer_target_is_reconstruction_manifest_path
+
+A future source corpus manifest writer may write only to
+`.punk/memory/reconstruction/source-corpus-manifest.md` or to an explicitly
+configured repo-relative target under `.punk/memory/reconstruction/`.
+
+It must not infer hidden output targets.
+
+### BSCM-014: writer_rejects_path_escape
+
+A future writer preflight must reject parent traversal, normalized path escape,
+and target paths outside `.punk/memory/reconstruction/`.
+
+### BSCM-015: writer_rejects_absolute_target
+
+A future writer preflight must reject absolute host paths, home/user paths,
+drive-rooted paths, URL-like targets, and other non repo-relative targets.
+
+### BSCM-016: writer_rejects_symlink_escape
+
+A future writer preflight must reject target parent paths where any symlink
+ancestor can redirect the write outside the repository or outside the allowed
+reconstruction directory.
+
+### BSCM-017: writer_preflight_before_write
+
+A future writer must validate target path, parent directory, path escape,
+symlink ancestor escape, target conflict policy, manifest authority, manifest
+status, claim-field absence, content/snippet absence, and absolute-path absence
+before writing any bytes.
+
+### BSCM-018: writer_no_partial_write_on_conflict
+
+A future writer must not leave partial files when a target conflict, invalid
+manifest, invalid target, or atomic replacement failure is detected.
+
+Missing targets may be written after clean preflight. Identical content may be
+idempotent. Different existing content must block unless a later explicit
+overwrite boundary is selected.
+
+### BSCM-019: writer_blocks_claim_fields
+
+A future writer must reject manifest data containing claim-like fields such as
+intent, requirement, module purpose, architecture decision, accepted behavior,
+invariant, contract, proof, `claims_created`, or project truth.
+
+### BSCM-020: writer_blocks_absolute_paths
+
+A future writer must reject or redact absolute paths in both target refs and
+manifest data.
+
+Manifest output must remain repo-relative.
+
+### BSCM-021: writer_blocks_content_snippets
+
+A future writer must reject manifest data containing file contents, code
+snippets, document excerpts, semantic summaries, raw secret values, or raw
+environment values.
+
+### BSCM-022: writer_does_not_activate_runtime_storage
+
+A future source corpus manifest writer must not create or write `.punk/runtime`,
+`.punk/events`, `.punk/runs`, `.punk/decisions`, `.punk/proofs`, or other
+runtime authority surfaces.
+
+### BSCM-023: writer_operation_evidence_is_not_proof
+
+Any future writer operation evidence may describe write attempt and outcome
+only.
+
+It must not become proof, gate decision, acceptance, contract, project truth,
+or claim authority.
+
+### BSCM-024: writer_does_not_create_gate_decision
+
+A future writer must not create gate decisions, acceptance outcomes, proofpack
+authority, or final project decisions.
+
+### BSCM-025: writer_does_not_create_claim_ledger
+
+A future writer must not create or populate a claim ledger and must not promote
+manifest observations into reconstructed claims.
+
 ## Minimal fixture shape
 
 This is illustrative boundary shape only, not an implemented schema.
@@ -148,7 +231,7 @@ manifest:
 
 ## Non-goals
 
-This v0.1 boundary does not define runtime inventory storage, `.punk/`
+This v0.1 boundary does not implement runtime inventory storage, `.punk/`
 manifest writers, CLI commands, repository traversal, language detection, file
 content extraction, hashing behavior, size recording, claim ledger population,
 contract-readiness scoring, AI summaries, gate/proof runtime, Writer behavior,

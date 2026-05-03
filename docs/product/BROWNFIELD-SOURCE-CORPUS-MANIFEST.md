@@ -13,6 +13,7 @@ canonical_for:
   - brownfield-manifest-path-policy
   - brownfield-manifest-content-policy
   - brownfield-manifest-hash-policy
+  - brownfield-source-corpus-manifest-writer-boundary
 related_docs:
   - docs/product/BROWNFIELD-INVENTORY.md
   - docs/product/PROJECT-MEMORY.md
@@ -29,6 +30,9 @@ superseded_by: null
 
 This document defines the B2 design boundary for a future Brownfield Source
 Corpus Manifest.
+
+It also defines the future source corpus manifest writer boundary before any
+writer implementation is selected.
 
 It is design/spec only.
 
@@ -335,6 +339,131 @@ Before any implementation, a later goal must define:
 - fixture expectations.
 
 This document does not select that implementation.
+
+## Source corpus manifest writer boundary
+
+The source corpus manifest writer boundary describes how a future writer may
+persist a manifest. It does not implement the writer.
+
+In this section, `writer` means only a future source corpus manifest file
+writer. It does not mean Punk `Writer` behavior, orchestration, acceptance
+claim writing, gate writing, proof writing, or runtime storage.
+
+### Target path policy
+
+Future source corpus manifest writes are limited to:
+
+```text
+.punk/memory/reconstruction/source-corpus-manifest.md
+```
+
+or to a clearly configured repo-relative target under:
+
+```text
+.punk/memory/reconstruction/
+```
+
+It must not write outside the repository, follow symlinks out of the
+repository, infer hidden target paths, or use absolute host paths as output
+targets.
+
+### Writer preflight policy
+
+Before writing, a future writer must preflight the full operation:
+
+- target path is repo-relative and under `.punk/memory/reconstruction/`;
+- target parent directory is valid;
+- no path escape or parent traversal is present;
+- no symlink ancestor can redirect the write outside the repository;
+- target conflict policy is known before bytes are written;
+- manifest authority is `observed_structure`;
+- manifest status is `advisory`;
+- manifest data contains no claim fields;
+- manifest data contains no file contents, snippets, summaries, raw secrets, or
+  raw environment values;
+- manifest data contains no absolute host paths.
+
+If any preflight condition fails, the future writer must fail closed before
+modifying the target.
+
+### Atomicity policy
+
+Future writer behavior must not leave partial manifest files.
+
+The expected implementation shape is:
+
+- write complete bytes to a temporary file in the same target directory;
+- flush or fsync if a later implementation goal requires durability semantics;
+- atomically rename into place when the platform supports it;
+- fail closed without modifying the target when atomic replacement cannot be
+  guaranteed.
+
+This policy is not implemented by this document.
+
+### Conflict policy
+
+For an existing target:
+
+- missing target may be written after clean preflight;
+- identical content may be treated as idempotent;
+- different existing content must block unless a later bounded goal adds an
+  explicit overwrite flag and review boundary.
+
+No overwrite flag is selected by this boundary.
+
+### Writer content and privacy policy
+
+A future writer may only write manifest data already allowed by this document
+and the side-effect-free model.
+
+It must not read file contents, store snippets, store summaries, store secrets,
+store raw environment values, store absolute paths, use network access, call
+remote AI, or import private agent transcripts.
+
+### Writer claim boundary
+
+Future writer preflight must reject manifest data that contains claim-like
+fields such as:
+
+```text
+intent
+requirement
+module_purpose
+architecture_decision
+accepted_behavior
+invariant
+contract
+proof
+claims_created
+project_truth
+```
+
+The manifest writer may persist observed structure only. It must not create a
+claim ledger, decide contract readiness, accept behavior, or promote source
+corpus observations into project truth.
+
+### Operation evidence boundary
+
+If a future writer emits operation evidence, that evidence describes only the
+write attempt and outcome.
+
+Operation evidence is not proof, not a gate decision, not acceptance, not a
+contract, and not project truth.
+
+### Runtime storage boundary
+
+Future source corpus manifest writer behavior must not activate or write:
+
+```text
+.punk/runtime
+.punk/events
+.punk/runs
+.punk/decisions
+.punk/proofs
+```
+
+Persisting a tracked source corpus manifest under `.punk/memory/reconstruction/`
+must not be treated as runtime storage activation.
 
 ## Non-goals
 

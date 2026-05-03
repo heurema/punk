@@ -1,7 +1,7 @@
 ---
 id: goal_prepare_brownfield_source_corpus_manifest_writer_boundary_v0_1
 title: "Prepare brownfield source corpus manifest writer boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-03
 updated_at: 2026-05-03
 selected_at: 2026-05-03
-started_at: null
-completed_at: null
+started_at: 2026-05-03
+completed_at: 2026-05-03
 blocked_by: []
 scope:
   include:
@@ -34,7 +34,8 @@ knowledge_refs:
   - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
   - "work/reports/2026-05-03-brownfield-source-corpus-manifest-model-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -89,3 +90,18 @@ maps, architecture recovery, intent recovery, contract generation, gate/proof
 runtime, Writer behavior, runtime `.punk` storage, grayfield reconciliation,
 Conformance Pack runtime, Migration Contract runtime, Regenerative Spec
 behavior, or spec-as-source behavior.
+
+## Outcome
+
+Done in `work/reports/2026-05-03-brownfield-source-corpus-manifest-writer-boundary-v0-1.md`.
+
+The source corpus manifest writer boundary now defines future target path,
+preflight, atomicity, conflict, content/privacy, claim, operation-evidence, and
+runtime-storage rules for writing a Brownfield Source Corpus Manifest.
+
+This goal added docs/eval/work evidence only. It did not implement a source
+inventory writer, repo scan, file walker, directory traversal, content reading,
+filesystem hash computation, manifest generation, manifest writing, AI
+summaries, claim extraction, contract generation, gate/proof runtime, Writer
+behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative
+Spec behavior, or spec-as-source behavior.
