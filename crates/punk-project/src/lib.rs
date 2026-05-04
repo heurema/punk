@@ -5116,6 +5116,50 @@ mod tests {
         assert_eq!(remaining, b"changed after preflight");
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn writer_blocks_when_identical_target_cannot_be_read() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let manifest = sample_source_corpus_manifest();
+        let canonical = source_corpus_manifest_render_canonical_bytes(&manifest);
+        let root = unique_temp_path();
+        let target_path = root.join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        fs::create_dir_all(target_path.parent().expect("target should have parent"))
+            .expect("test should create explicit manifest parent");
+        fs::write(&target_path, &canonical).expect("test should pre-create matching target");
+        let unreadable_permissions = std::fs::Permissions::from_mode(0o000);
+        fs::set_permissions(&target_path, unreadable_permissions)
+            .expect("test should make target unreadable");
+        if fs::read(&target_path).is_ok() {
+            // Privileged runners may still read 000 files; this fixture cannot
+            // exercise the unreadable-target branch in that environment.
+            let readable_permissions = std::fs::Permissions::from_mode(0o600);
+            fs::set_permissions(&target_path, readable_permissions)
+                .expect("test should restore target permissions");
+            fs::remove_dir_all(&root).expect("test root should clean up");
+            return;
+        }
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::IdenticalExistingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let readable_permissions = std::fs::Permissions::from_mode(0o600);
+        fs::set_permissions(&target_path, readable_permissions)
+            .expect("test should restore target permissions");
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(result
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetReadFailed));
+        assert!(!result.write_attempted());
+    }
+
     #[test]
     fn writer_no_partial_target_on_failure() {
         let manifest = sample_source_corpus_manifest();
