@@ -47,11 +47,13 @@ use punk_gate::{
     GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
 };
 use punk_project::{
-    init_level0_project, init_project, source_corpus_manifest_claim_field_allowed, ProjectId,
-    ProjectInitArtifactKind, ProjectInitArtifactStatus, ProjectInitEntryMode, SourceCorpusItem,
-    SourceCorpusItemId, SourceCorpusManifest, SourceCorpusManifestAuthority,
+    init_level0_project, init_project, source_corpus_manifest_claim_field_allowed,
+    source_corpus_manifest_render_canonical_bytes, source_corpus_manifest_writer_write_first_slice,
+    ProjectId, ProjectInitArtifactKind, ProjectInitArtifactStatus, ProjectInitEntryMode,
+    SourceCorpusItem, SourceCorpusItemId, SourceCorpusManifest, SourceCorpusManifestAuthority,
     SourceCorpusManifestId, SourceCorpusManifestStatus, SourceCorpusManifestWriterConflictPolicy,
-    SourceCorpusManifestWriterManifestInspection, SourceCorpusManifestWriterPreflight,
+    SourceCorpusManifestWriterFirstSliceBlocker, SourceCorpusManifestWriterManifestInspection,
+    SourceCorpusManifestWriterOperationEvidenceStatus, SourceCorpusManifestWriterPreflight,
     SourceCorpusManifestWriterPreflightFinding, SourceCorpusManifestWriterPreflightInput,
     SourceCorpusManifestWriterSymlinkAncestorStatus, SourceCorpusManifestWriterTarget,
     SourceCorpusObservedKind, SourceCorpusRepoRelativePath, SourceCorpusSourceClass,
@@ -424,6 +426,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_project_init_conflict_is_atomic_noop(),
         eval_source_corpus_manifest_model_is_side_effect_free(),
         eval_source_corpus_manifest_writer_preflight_model_is_side_effect_free(),
+        eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest(),
         eval_contract_ready_for_bounded_work_allows_start_run(),
         eval_contract_draft_denies_start_run(),
         eval_contract_invalid_scope_denies_start_run(),
@@ -570,10 +573,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -594,6 +597,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, gate artifacts, proofpacks, or acceptance claims",
             "brownfield source corpus manifest model smoke case is side-effect-free and does not scan repositories, walk files, read file contents, compute file hashes, write manifests, create claims, infer intent, use network, or use remote AI",
             "brownfield source corpus manifest writer preflight model smoke case is side-effect-free and models target/path/conflict/claim/runtime blockers without scanning repositories, walking files, reading contents, computing filesystem hashes, writing manifests, generating manifests, creating claims, using network, or using remote AI",
+            "brownfield source corpus manifest writer first slice smoke case writes deterministic canonical bytes from an already-constructed model to one explicit safe target after preflight, without scanning repositories, walking files, reading source contents, computing source file hashes, creating claims, activating runtime storage, or promoting authority",
             "contract schema blueprint smoke cases preserve target shape, field status split, clause mapping, gate input policy, proof requirements, and Writer authority boundaries without runtime activation",
             "user intent-to-contract draft model smoke cases classify readiness in memory only and do not create contracts, runtime storage, CLI behavior, gate-writing behavior, proofpacks, or Writer behavior",
             "contract draft confirmation smoke cases require explicit user confirmation before approved_for_run model state without runtime storage, CLI behavior, gate-writing behavior, proofpacks, or Writer behavior",
@@ -1536,6 +1540,220 @@ fn eval_source_corpus_manifest_writer_preflight_model_is_side_effect_free() -> S
             format!(
                 "source corpus manifest writer preflight model drifted; allowed_ok={} blockers_ok={} side_effect_free_ok={}",
                 allowed_ok, blockers_ok, side_effect_free_ok
+            ),
+        )
+    }
+}
+
+fn eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest() -> SmokeEvalCaseResult
+{
+    let project_id = match ProjectId::parse("weekend-project") {
+        Ok(project_id) => project_id,
+        Err(error) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+                "brownfield source corpus manifest writer first slice writes prepared manifest",
+                format!("project id setup failed with {error:?}"),
+            );
+        }
+    };
+    let manifest_id = match SourceCorpusManifestId::parse(
+        "brownfield-source-corpus-manifest.v0.1:weekend-project:first-slice-smoke",
+    ) {
+        Ok(manifest_id) => manifest_id,
+        Err(error) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+                "brownfield source corpus manifest writer first slice writes prepared manifest",
+                format!("manifest id setup failed with {error:?}"),
+            );
+        }
+    };
+    let item_id = match SourceCorpusItemId::parse("item:first-slice-smoke") {
+        Ok(item_id) => item_id,
+        Err(error) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+                "brownfield source corpus manifest writer first slice writes prepared manifest",
+                format!("item id setup failed with {error:?}"),
+            );
+        }
+    };
+    let repo_relative_path = match SourceCorpusRepoRelativePath::parse("crates/example/src/lib.rs")
+    {
+        Ok(path) => path,
+        Err(error) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+                "brownfield source corpus manifest writer first slice writes prepared manifest",
+                format!("repo-relative path setup failed with {error:?}"),
+            );
+        }
+    };
+    let item = match SourceCorpusItem::new(
+        &manifest_id,
+        item_id,
+        repo_relative_path,
+        SourceCorpusObservedKind::File,
+        SourceCorpusSourceClass::SourceCode,
+    ) {
+        Ok(item) => item,
+        Err(error) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+                "brownfield source corpus manifest writer first slice writes prepared manifest",
+                format!("item setup failed with {error:?}"),
+            );
+        }
+    };
+    let manifest = SourceCorpusManifest::new(manifest_id, project_id, vec![item]);
+    let target =
+        SourceCorpusManifestWriterTarget::new(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+    let preflight = SourceCorpusManifestWriterPreflight::evaluate(
+        SourceCorpusManifestWriterPreflightInput::new(target.clone(), manifest.clone())
+            .with_conflict_policy(SourceCorpusManifestWriterConflictPolicy::MissingTarget),
+    );
+    let storage_root = unique_smoke_temp_path();
+    let parent_path = storage_root.join(".punk/memory/reconstruction");
+    if let Err(error) = fs::create_dir_all(&parent_path) {
+        return SmokeEvalCaseResult::fail(
+            "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+            "brownfield source corpus manifest writer first slice writes prepared manifest",
+            format!("test setup could not create explicit parent directory: {error:?}"),
+        );
+    }
+
+    let result = source_corpus_manifest_writer_write_first_slice(
+        &manifest,
+        &storage_root,
+        target,
+        &preflight,
+    );
+    let target_path = storage_root.join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+    let written = fs::read(&target_path);
+    let canonical = source_corpus_manifest_render_canonical_bytes(&manifest);
+    let rendered = String::from_utf8(canonical.clone()).unwrap_or_default();
+    let idempotent_preflight = SourceCorpusManifestWriterPreflight::evaluate(
+        SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::new(
+                SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH,
+            ),
+            manifest.clone(),
+        )
+        .with_conflict_policy(SourceCorpusManifestWriterConflictPolicy::IdenticalExistingTarget),
+    );
+    let idempotent = source_corpus_manifest_writer_write_first_slice(
+        &manifest,
+        &storage_root,
+        SourceCorpusManifestWriterTarget::new(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH),
+        &idempotent_preflight,
+    );
+    let stale_setup_ok = fs::write(&target_path, b"changed after preflight").is_ok();
+    let stale_identical = source_corpus_manifest_writer_write_first_slice(
+        &manifest,
+        &storage_root,
+        SourceCorpusManifestWriterTarget::new(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH),
+        &idempotent_preflight,
+    );
+    let conflict_preflight = SourceCorpusManifestWriterPreflight::evaluate(
+        SourceCorpusManifestWriterPreflightInput::new(
+            SourceCorpusManifestWriterTarget::new(
+                SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH,
+            ),
+            manifest.clone(),
+        )
+        .with_conflict_policy(SourceCorpusManifestWriterConflictPolicy::DifferentExistingTarget),
+    );
+    let conflict = source_corpus_manifest_writer_write_first_slice(
+        &manifest,
+        &storage_root,
+        SourceCorpusManifestWriterTarget::new(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH),
+        &conflict_preflight,
+    );
+    let runtime_exists = storage_root.join(".punk/runtime").exists();
+    let claim_ledger_exists = storage_root
+        .join(".punk/memory/reconstruction/claim-ledger.md")
+        .exists();
+    let cleanup_ok = fs::remove_dir_all(&storage_root).is_ok();
+
+    let write_ok = preflight.allowed_to_write()
+        && result.evidence_status() == SourceCorpusManifestWriterOperationEvidenceStatus::Written
+        && result.wrote_manifest()
+        && result.write_attempted()
+        && result.blockers().is_empty()
+        && matches!(&written, Ok(bytes) if *bytes == canonical)
+        && result.canonical_byte_len() == canonical.len();
+    let render_ok = rendered.contains("manifest_status: advisory\n")
+        && rendered.contains("authority: observed_structure\n")
+        && rendered.contains("generated_at_policy: no_runtime_clock\n")
+        && rendered.contains("read_contents: false\n")
+        && rendered.contains("hash_policy:\n")
+        && !rendered.contains("/Users/")
+        && !rendered.contains("/home/")
+        && !rendered.contains("claims_created")
+        && !rendered.contains("created_at:")
+        && !rendered.contains("generated_at:");
+    let blocker_ok = idempotent.is_idempotent()
+        && !idempotent.write_attempted()
+        && stale_setup_ok
+        && stale_identical.has_conflict()
+        && stale_identical
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent)
+        && !stale_identical.write_attempted()
+        && conflict.has_conflict()
+        && conflict
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent)
+        && !conflict.write_attempted();
+    let capabilities = result.capabilities();
+    let boundary_ok = capabilities.takes_manifest_model_input()
+        && capabilities.renders_canonical_bytes()
+        && capabilities.requires_preflight_pass()
+        && capabilities.writes_one_safe_target()
+        && capabilities.emits_operation_evidence()
+        && !capabilities.scans_repository()
+        && !capabilities.walks_files()
+        && !capabilities.reads_source_file_contents()
+        && !capabilities.computes_source_file_hashes()
+        && !capabilities.generates_manifest_from_repo()
+        && !capabilities.creates_claims()
+        && !capabilities.promotes_manifest_authority()
+        && !capabilities.writes_runtime_storage()
+        && !capabilities.activates_punk_writer()
+        && !capabilities.writes_gate_or_proof_artifacts()
+        && !capabilities.uses_network()
+        && !capabilities.uses_remote_ai()
+        && !result.operation_evidence_is_proof()
+        && !result.operation_evidence_is_gate_decision()
+        && !result.operation_evidence_is_acceptance()
+        && !result.operation_evidence_is_project_truth()
+        && !result.creates_claims()
+        && !result.promotes_manifest_authority();
+    let no_forbidden_side_effects = !runtime_exists && !claim_ledger_exists && cleanup_ok;
+
+    if write_ok && render_ok && blocker_ok && boundary_ok && no_forbidden_side_effects {
+        SmokeEvalCaseResult::pass(
+            "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+            "brownfield source corpus manifest writer first slice writes prepared manifest",
+            "source corpus manifest writer first slice wrote deterministic canonical bytes from an already-constructed model to one explicit safe target after preflight, kept idempotent/conflict evidence in memory, and left scanning, source content reads, hashing, claims, runtime storage, and authority promotion inactive",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
+            "brownfield source corpus manifest writer first slice writes prepared manifest",
+            format!(
+                "source corpus manifest writer first slice drifted; write_ok={} render_ok={} blocker_ok={} boundary_ok={} no_forbidden_side_effects={} status={:?} blockers={:?} idempotent={:?} stale_identical={:?} conflict={:?} written={:?} cleanup_ok={}",
+                write_ok,
+                render_ok,
+                blocker_ok,
+                boundary_ok,
+                no_forbidden_side_effects,
+                result.evidence_status(),
+                result.blockers(),
+                idempotent.evidence_status(),
+                stale_identical.evidence_status(),
+                conflict.evidence_status(),
+                written.as_ref().map(|bytes| bytes.len()),
+                cleanup_ok
             ),
         )
     }
@@ -8399,7 +8617,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "inactive");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 147);
+        assert_eq!(report.cases().len(), 148);
     }
 
     #[test]
@@ -8424,7 +8642,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -8437,6 +8655,9 @@ mod tests {
         assert!(rendered.contains("  - id: eval_source_corpus_manifest_model_is_side_effect_free"));
         assert!(rendered.contains(
             "  - id: eval_source_corpus_manifest_writer_preflight_model_is_side_effect_free"
+        ));
+        assert!(rendered.contains(
+            "  - id: eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest"
         ));
         assert!(rendered.contains("  - id: eval_contract_ready_for_bounded_work_allows_start_run"));
         assert!(rendered.contains("  - id: eval_contract_receipt_allowed_path_produces_evidence"));
@@ -8619,6 +8840,9 @@ mod tests {
             "brownfield source corpus manifest writer preflight model smoke case is side-effect-free and models target/path/conflict/claim/runtime blockers without scanning repositories, walking files, reading contents, computing filesystem hashes, writing manifests, generating manifests, creating claims, using network, or using remote AI"
         ));
         assert!(rendered.contains(
+            "brownfield source corpus manifest writer first slice smoke case writes deterministic canonical bytes from an already-constructed model to one explicit safe target after preflight, without scanning repositories, walking files, reading source contents, computing source file hashes, creating claims, activating runtime storage, or promoting authority"
+        ));
+        assert!(rendered.contains(
             "contract schema blueprint smoke cases preserve target shape, field status split, clause mapping, gate input policy, proof requirements, and Writer authority boundaries without runtime activation"
         ));
         assert!(rendered.contains(
@@ -8742,6 +8966,14 @@ mod tests {
         assert!(rendered.contains("\"report_storage\": \"inactive\""));
         assert!(rendered.contains("\"case_results\": ["));
         assert!(rendered.contains("\"case_id\": \"eval_flow_allows_approval_transition\""));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_source_corpus_manifest_model_is_side_effect_free\""));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_source_corpus_manifest_writer_preflight_model_is_side_effect_free\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest\""
+        ));
         assert!(rendered
             .contains("\"case_id\": \"eval_contract_ready_for_bounded_work_allows_start_run\""));
         assert!(rendered

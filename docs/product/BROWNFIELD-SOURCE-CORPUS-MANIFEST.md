@@ -29,17 +29,20 @@ superseded_by: null
 
 ## Purpose
 
-This document defines the B2 design boundary for a future Brownfield Source
-Corpus Manifest.
+This document defines the B2 design boundary for the Brownfield Source Corpus
+Manifest.
 
-It also defines the future source corpus manifest writer boundary and writer
-implementation boundary before any writer implementation is selected.
+It also defines the source corpus manifest writer boundary, writer
+implementation boundary, and the current first narrow writer slice.
 
-It is design/spec only.
+Most of the Brownfield Source Corpus Manifest track remains design/spec only.
+The current active writer behavior is limited to writing an already-constructed
+manifest model to one safe target after preflight.
 
 It does not implement repo scanning, file walking, language detection,
-manifest writing, hash computation, file content reading, claim extraction,
-AI summaries, contracts, gate/proof runtime, Writer behavior, runtime `.punk`
+source inventory generation, manifest generation from repository state, source
+file hash computation, source file content reading, claim extraction, AI
+summaries, contracts, gate/proof runtime, Writer behavior, runtime `.punk`
 storage, or grayfield reconciliation.
 
 ## Manifest status and authority
@@ -327,24 +330,28 @@ Required rules:
 - no absolute host paths;
 - no private transcript import.
 
-## Future implementation gates
+## Future broader implementation gates
 
-Before any implementation, a later goal must define:
+Before any broader implementation beyond the first prepared-model writer slice,
+a later goal must define:
 
 - deterministic traversal inputs;
 - path allowlist and denylist behavior;
 - atomic write and no-partial-manifest behavior;
-- manifest target path;
+- manifest generation input policy;
 - conflict/idempotency policy;
 - exact output format;
 - fixture expectations.
 
-This document does not select that implementation.
+The current first writer slice does not select traversal, inventory generation,
+source content reads, filesystem hash computation for source files, claim
+extraction, or CLI behavior.
 
 ## Source corpus manifest writer boundary
 
-The source corpus manifest writer boundary describes how a future writer may
-persist a manifest. It does not implement the writer.
+The source corpus manifest writer boundary describes how writer behavior may
+persist a manifest. The current active implementation remains limited to the
+first prepared-model writer slice described below.
 
 In this section, `writer` means only a future source corpus manifest file
 writer. It does not mean Punk `Writer` behavior, orchestration, acceptance
@@ -627,17 +634,54 @@ Future writer behavior must not activate `.punk/runtime`, `.punk/events`,
 `Writer` behavior, Conformance Pack runtime, Migration Contract runtime,
 Regenerative Spec behavior, or spec-as-source behavior.
 
+## Active first writer slice behavior
+
+The current active first writer slice is intentionally smaller than source
+inventory generation.
+
+It may only:
+
+- accept an already-constructed `SourceCorpusManifest` model;
+- accept an explicit repo-relative target under `.punk/memory/reconstruction/`;
+- require a matching preflight result with no blocking findings;
+- render deterministic canonical bytes from the supplied model;
+- write one safe target through a same-directory temporary file and no-overwrite
+  target creation;
+- treat a preflight-identical existing target as idempotent only after
+  rechecking the existing target bytes against the canonical render, without
+  rewriting;
+- block a different existing target without an overwrite flag;
+- return in-memory operation evidence for `written`, `idempotent`, `blocked`,
+  `conflict`, or `error`.
+
+Current canonical rendering uses stable field order and no hidden runtime
+clock. Since the model has no timestamp field in this slice, rendered bytes do
+not include `created_at` or `generated_at`; they record
+`generated_at_policy: no_runtime_clock` instead.
+
+The slice does not create parent directories. The target parent must already
+exist, and symlink ancestors fail closed.
+
+Operation evidence remains non-authoritative. It is not proof, not a gate
+decision, not acceptance, not project truth, not a claim ledger, and not
+contract readiness.
+
+This first writer slice still does not scan repositories, walk directories,
+read source file contents, compute source file hashes from the filesystem,
+generate manifest items from repository state, infer source classes, create
+claims, call AI, write runtime storage, write gate/proof artifacts, expose CLI
+behavior, or activate Punk `Writer` behavior.
+
 ## Non-goals
 
-This design does not implement:
+This design and first writer slice do not implement:
 
 - repo scanning;
 - file walking;
 - language detection;
-- manifest writing;
-- hash computation;
-- file content reading;
 - source corpus manifest generation;
+- source file hash computation;
+- source file content reading;
 - claim extraction;
 - claim ledger population;
 - AI summaries;
