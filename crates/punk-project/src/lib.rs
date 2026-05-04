@@ -4,6 +4,7 @@ use std::fmt::Write as _;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PROJECT_INIT_SCHEMA_VERSION: &str = "project-init-greenfield.v0.1";
@@ -1669,6 +1670,8 @@ pub fn source_corpus_manifest_claim_field_allowed(field_name: &str) -> bool {
 
 pub const SOURCE_CORPUS_MANIFEST_WRITER_PREFLIGHT_MODEL_SCHEMA_VERSION: &str =
     "brownfield-source-corpus-manifest-writer-preflight-model.v0.1";
+pub const SOURCE_CORPUS_MANIFEST_WRITER_FIRST_SLICE_SCHEMA_VERSION: &str =
+    "brownfield-source-corpus-manifest-writer-first-slice.v0.1";
 pub const SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH: &str =
     ".punk/memory/reconstruction/source-corpus-manifest.md";
 pub const SOURCE_CORPUS_MANIFEST_WRITER_RECONSTRUCTION_DIR: &str = ".punk/memory/reconstruction";
@@ -1681,6 +1684,8 @@ pub const SOURCE_CORPUS_MANIFEST_WRITER_FORBIDDEN_RUNTIME_TARGET_PREFIXES: &[&st
     ".punk/cache",
     ".punk/indexes",
 ];
+
+static SOURCE_CORPUS_MANIFEST_WRITER_TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceCorpusManifestWriterTarget(String);
@@ -2109,11 +2114,21 @@ impl Default for SourceCorpusManifestWriterPreflightCapabilities {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceCorpusManifestWriterPreflightResult {
+    target: SourceCorpusManifestWriterTarget,
+    manifest_id: SourceCorpusManifestId,
     findings: Vec<SourceCorpusManifestWriterPreflightFinding>,
     capabilities: SourceCorpusManifestWriterPreflightCapabilities,
 }
 
 impl SourceCorpusManifestWriterPreflightResult {
+    pub fn target(&self) -> &SourceCorpusManifestWriterTarget {
+        &self.target
+    }
+
+    pub fn manifest_id(&self) -> &SourceCorpusManifestId {
+        &self.manifest_id
+    }
+
     pub fn findings(&self) -> &[SourceCorpusManifestWriterPreflightFinding] {
         &self.findings
     }
@@ -2163,7 +2178,9 @@ impl SourceCorpusManifestWriterPreflight {
         input: SourceCorpusManifestWriterPreflightInput,
     ) -> SourceCorpusManifestWriterPreflightResult {
         let mut findings = Vec::new();
-        let target = input.target().as_str();
+        let result_target = input.target().clone();
+        let result_manifest_id = input.manifest().manifest_id().clone();
+        let target = result_target.as_str();
 
         if source_corpus_manifest_writer_target_is_runtime_storage(target) {
             findings
@@ -2257,6 +2274,8 @@ impl SourceCorpusManifestWriterPreflight {
         findings.push(SourceCorpusManifestWriterPreflightFinding::OperationEvidenceIsNotProof);
 
         SourceCorpusManifestWriterPreflightResult {
+            target: result_target,
+            manifest_id: result_manifest_id,
             findings,
             capabilities: SourceCorpusManifestWriterPreflightCapabilities::default(),
         }
@@ -2307,6 +2326,1028 @@ fn source_corpus_manifest_writer_path_error_finding(
             SourceCorpusManifestWriterPreflightFinding::TargetPathEscape
         }
     }
+}
+
+pub fn source_corpus_manifest_render_canonical_bytes(manifest: &SourceCorpusManifest) -> Vec<u8> {
+    let mut output = String::new();
+
+    source_corpus_manifest_write_quoted_field(
+        &mut output,
+        0,
+        "manifest_id",
+        manifest.manifest_id().as_str(),
+    );
+    source_corpus_manifest_write_quoted_field(
+        &mut output,
+        0,
+        "schema_version",
+        manifest.manifest_schema_version(),
+    );
+    source_corpus_manifest_write_quoted_field(
+        &mut output,
+        0,
+        "project_id",
+        manifest.project_id().as_str(),
+    );
+    writeln!(
+        &mut output,
+        "entry_mode: {}",
+        manifest.entry_mode().as_str()
+    )
+    .expect("writing to String should succeed");
+    writeln!(
+        &mut output,
+        "manifest_status: {}",
+        manifest.status().as_str()
+    )
+    .expect("writing to String should succeed");
+    writeln!(&mut output, "authority: {}", manifest.authority().as_str())
+        .expect("writing to String should succeed");
+    writeln!(&mut output, "generated_at_policy: no_runtime_clock")
+        .expect("writing to String should succeed");
+    writeln!(&mut output, "source_root_ref:").expect("writing to String should succeed");
+    writeln!(
+        &mut output,
+        "  kind: {}",
+        manifest.source_root_ref().kind().as_str()
+    )
+    .expect("writing to String should succeed");
+    source_corpus_manifest_write_quoted_field(
+        &mut output,
+        2,
+        "path",
+        manifest.source_root_ref().path(),
+    );
+    writeln!(&mut output, "inventory_scope:").expect("writing to String should succeed");
+    writeln!(&mut output, "  include:").expect("writing to String should succeed");
+    source_corpus_manifest_write_quoted_list_item(&mut output, 4, ".");
+    writeln!(&mut output, "  exclude:").expect("writing to String should succeed");
+    for path in manifest.exclusion_policy().excluded_paths() {
+        source_corpus_manifest_write_quoted_list_item(&mut output, 4, path);
+    }
+    writeln!(&mut output, "caution_classes:").expect("writing to String should succeed");
+    for caution_class in manifest.exclusion_policy().caution_classes() {
+        writeln!(&mut output, "  - {}", caution_class.as_str())
+            .expect("writing to String should succeed");
+    }
+    writeln!(&mut output, "items:").expect("writing to String should succeed");
+    if manifest.items().is_empty() {
+        writeln!(&mut output, "  []").expect("writing to String should succeed");
+    } else {
+        for item in manifest.items() {
+            source_corpus_manifest_write_quoted_field(
+                &mut output,
+                2,
+                "- item_id",
+                item.item_id().as_str(),
+            );
+            source_corpus_manifest_write_quoted_field(
+                &mut output,
+                4,
+                "repo_relative_path",
+                item.repo_relative_path().as_str(),
+            );
+            writeln!(
+                &mut output,
+                "    observed_kind: {}",
+                item.observed_kind().as_str()
+            )
+            .expect("writing to String should succeed");
+            writeln!(
+                &mut output,
+                "    source_class: {}",
+                item.source_class().as_str()
+            )
+            .expect("writing to String should succeed");
+            writeln!(&mut output, "    source_markers:").expect("writing to String should succeed");
+            if item.source_markers().is_empty() {
+                writeln!(&mut output, "      []").expect("writing to String should succeed");
+            } else {
+                for marker in item.source_markers() {
+                    writeln!(&mut output, "      - kind: {}", marker.kind().as_str())
+                        .expect("writing to String should succeed");
+                    source_corpus_manifest_write_quoted_field(
+                        &mut output,
+                        8,
+                        "value",
+                        marker.value(),
+                    );
+                }
+            }
+            writeln!(
+                &mut output,
+                "    tracking_status: {}",
+                item.tracking_status().as_str()
+            )
+            .expect("writing to String should succeed");
+            writeln!(
+                &mut output,
+                "    sensitivity: {}",
+                item.sensitivity().as_str()
+            )
+            .expect("writing to String should succeed");
+            writeln!(
+                &mut output,
+                "    generated_or_vendored_candidate: {}",
+                item.generated_or_vendored_candidate().as_str()
+            )
+            .expect("writing to String should succeed");
+            writeln!(&mut output, "    size_policy:").expect("writing to String should succeed");
+            writeln!(&mut output, "      status: {}", item.size_policy().as_str())
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "      value: null").expect("writing to String should succeed");
+            writeln!(&mut output, "    hash_policy:").expect("writing to String should succeed");
+            writeln!(&mut output, "      status: {}", item.hash_policy().as_str())
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "      value: null").expect("writing to String should succeed");
+            writeln!(&mut output, "    content_policy:").expect("writing to String should succeed");
+            writeln!(
+                &mut output,
+                "      read_contents: {}",
+                item.content_policy().reads_contents()
+            )
+            .expect("writing to String should succeed");
+            writeln!(
+                &mut output,
+                "      store_snippets: {}",
+                item.content_policy().stores_snippets()
+            )
+            .expect("writing to String should succeed");
+            writeln!(
+                &mut output,
+                "      summarize_contents: {}",
+                item.content_policy().summarizes_contents()
+            )
+            .expect("writing to String should succeed");
+            writeln!(&mut output, "    evidence_ref:").expect("writing to String should succeed");
+            writeln!(&mut output, "      kind: manifest_observation")
+                .expect("writing to String should succeed");
+            source_corpus_manifest_write_quoted_field(
+                &mut output,
+                6,
+                "ref",
+                item.evidence_ref().as_str(),
+            );
+            writeln!(&mut output, "    notes:").expect("writing to String should succeed");
+            if item.notes().is_empty() {
+                writeln!(&mut output, "      []").expect("writing to String should succeed");
+            } else {
+                for note in item.notes() {
+                    source_corpus_manifest_write_quoted_list_item(&mut output, 6, note);
+                }
+            }
+        }
+    }
+
+    output.into_bytes()
+}
+
+fn source_corpus_manifest_write_quoted_field(
+    output: &mut String,
+    indent: usize,
+    key: &str,
+    value: &str,
+) {
+    source_corpus_manifest_push_indent(output, indent);
+    write!(output, "{key}: ").expect("writing to String should succeed");
+    source_corpus_manifest_push_quoted(output, value);
+    output.push('\n');
+}
+
+fn source_corpus_manifest_write_quoted_list_item(output: &mut String, indent: usize, value: &str) {
+    source_corpus_manifest_push_indent(output, indent);
+    output.push_str("- ");
+    source_corpus_manifest_push_quoted(output, value);
+    output.push('\n');
+}
+
+fn source_corpus_manifest_push_indent(output: &mut String, indent: usize) {
+    for _ in 0..indent {
+        output.push(' ');
+    }
+}
+
+fn source_corpus_manifest_push_quoted(output: &mut String, value: &str) {
+    output.push('"');
+    for value_char in value.chars() {
+        match value_char {
+            '\\' => output.push_str("\\\\"),
+            '"' => output.push_str("\\\""),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            value_char if value_char.is_control() => {
+                write!(output, "\\u{:04x}", value_char as u32)
+                    .expect("writing to String should succeed");
+            }
+            value_char => output.push(value_char),
+        }
+    }
+    output.push('"');
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceCorpusManifestWriterOperationEvidenceStatus {
+    Attempted,
+    Blocked,
+    Written,
+    Idempotent,
+    Conflict,
+    Error,
+}
+
+impl SourceCorpusManifestWriterOperationEvidenceStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Attempted => "attempted",
+            Self::Blocked => "blocked",
+            Self::Written => "written",
+            Self::Idempotent => "idempotent",
+            Self::Conflict => "conflict",
+            Self::Error => "error",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SourceCorpusManifestWriterFirstSliceBlocker {
+    BlockingPreflightFinding,
+    PreflightTargetMismatch,
+    PreflightManifestMismatch,
+    PreflightTargetNotAllowed,
+    PreflightTargetStateMismatch,
+    TargetRootMissing,
+    TargetRootRelative,
+    TargetRootUnavailable,
+    TargetRootNotDirectory,
+    TargetRootSymlink,
+    TargetPathInvalid,
+    TargetPathNotUnderReconstructionDir,
+    TargetRuntimeStorageForbidden,
+    TargetParentMissing,
+    TargetParentNotDirectory,
+    TargetParentSymlink,
+    TargetSymlink,
+    ExistingTargetDifferent,
+    ExistingTargetReadFailed,
+    TempFileCreateFailed,
+    TempFileWriteFailed,
+    TempFileLinkFailed,
+    TempFileCleanupFailed,
+}
+
+impl SourceCorpusManifestWriterFirstSliceBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::BlockingPreflightFinding => "blocking_preflight_finding",
+            Self::PreflightTargetMismatch => "preflight_target_mismatch",
+            Self::PreflightManifestMismatch => "preflight_manifest_mismatch",
+            Self::PreflightTargetNotAllowed => "preflight_target_not_allowed",
+            Self::PreflightTargetStateMismatch => "preflight_target_state_mismatch",
+            Self::TargetRootMissing => "target_root_missing",
+            Self::TargetRootRelative => "target_root_relative",
+            Self::TargetRootUnavailable => "target_root_unavailable",
+            Self::TargetRootNotDirectory => "target_root_not_directory",
+            Self::TargetRootSymlink => "target_root_symlink",
+            Self::TargetPathInvalid => "target_path_invalid",
+            Self::TargetPathNotUnderReconstructionDir => "target_path_not_under_reconstruction_dir",
+            Self::TargetRuntimeStorageForbidden => "target_runtime_storage_forbidden",
+            Self::TargetParentMissing => "target_parent_missing",
+            Self::TargetParentNotDirectory => "target_parent_not_directory",
+            Self::TargetParentSymlink => "target_parent_symlink",
+            Self::TargetSymlink => "target_symlink",
+            Self::ExistingTargetDifferent => "existing_target_different",
+            Self::ExistingTargetReadFailed => "existing_target_read_failed",
+            Self::TempFileCreateFailed => "temp_file_create_failed",
+            Self::TempFileWriteFailed => "temp_file_write_failed",
+            Self::TempFileLinkFailed => "temp_file_link_failed",
+            Self::TempFileCleanupFailed => "temp_file_cleanup_failed",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterFirstSliceCapabilities {
+    takes_manifest_model_input: bool,
+    renders_canonical_bytes: bool,
+    requires_preflight_pass: bool,
+    writes_one_safe_target: bool,
+    emits_operation_evidence: bool,
+    scans_repository: bool,
+    walks_files: bool,
+    reads_source_file_contents: bool,
+    computes_source_file_hashes: bool,
+    generates_manifest_from_repo: bool,
+    creates_claims: bool,
+    promotes_manifest_authority: bool,
+    writes_runtime_storage: bool,
+    activates_punk_writer: bool,
+    writes_gate_or_proof_artifacts: bool,
+    uses_network: bool,
+    uses_remote_ai: bool,
+}
+
+impl SourceCorpusManifestWriterFirstSliceCapabilities {
+    pub fn minimal_writer_slice() -> Self {
+        Self {
+            takes_manifest_model_input: true,
+            renders_canonical_bytes: true,
+            requires_preflight_pass: true,
+            writes_one_safe_target: true,
+            emits_operation_evidence: true,
+            scans_repository: false,
+            walks_files: false,
+            reads_source_file_contents: false,
+            computes_source_file_hashes: false,
+            generates_manifest_from_repo: false,
+            creates_claims: false,
+            promotes_manifest_authority: false,
+            writes_runtime_storage: false,
+            activates_punk_writer: false,
+            writes_gate_or_proof_artifacts: false,
+            uses_network: false,
+            uses_remote_ai: false,
+        }
+    }
+
+    pub fn takes_manifest_model_input(self) -> bool {
+        self.takes_manifest_model_input
+    }
+
+    pub fn renders_canonical_bytes(self) -> bool {
+        self.renders_canonical_bytes
+    }
+
+    pub fn requires_preflight_pass(self) -> bool {
+        self.requires_preflight_pass
+    }
+
+    pub fn writes_one_safe_target(self) -> bool {
+        self.writes_one_safe_target
+    }
+
+    pub fn emits_operation_evidence(self) -> bool {
+        self.emits_operation_evidence
+    }
+
+    pub fn scans_repository(self) -> bool {
+        self.scans_repository
+    }
+
+    pub fn walks_files(self) -> bool {
+        self.walks_files
+    }
+
+    pub fn reads_source_file_contents(self) -> bool {
+        self.reads_source_file_contents
+    }
+
+    pub fn computes_source_file_hashes(self) -> bool {
+        self.computes_source_file_hashes
+    }
+
+    pub fn generates_manifest_from_repo(self) -> bool {
+        self.generates_manifest_from_repo
+    }
+
+    pub fn creates_claims(self) -> bool {
+        self.creates_claims
+    }
+
+    pub fn promotes_manifest_authority(self) -> bool {
+        self.promotes_manifest_authority
+    }
+
+    pub fn writes_runtime_storage(self) -> bool {
+        self.writes_runtime_storage
+    }
+
+    pub fn activates_punk_writer(self) -> bool {
+        self.activates_punk_writer
+    }
+
+    pub fn writes_gate_or_proof_artifacts(self) -> bool {
+        self.writes_gate_or_proof_artifacts
+    }
+
+    pub fn uses_network(self) -> bool {
+        self.uses_network
+    }
+
+    pub fn uses_remote_ai(self) -> bool {
+        self.uses_remote_ai
+    }
+}
+
+impl Default for SourceCorpusManifestWriterFirstSliceCapabilities {
+    fn default() -> Self {
+        Self::minimal_writer_slice()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCorpusManifestWriterFirstSliceResult {
+    schema_version: &'static str,
+    manifest_id: SourceCorpusManifestId,
+    target: SourceCorpusManifestWriterTarget,
+    evidence_status: SourceCorpusManifestWriterOperationEvidenceStatus,
+    write_attempted: bool,
+    canonical_byte_len: usize,
+    blockers: Vec<SourceCorpusManifestWriterFirstSliceBlocker>,
+    preflight_findings: Vec<SourceCorpusManifestWriterPreflightFinding>,
+    capabilities: SourceCorpusManifestWriterFirstSliceCapabilities,
+}
+
+impl SourceCorpusManifestWriterFirstSliceResult {
+    fn new(
+        manifest: &SourceCorpusManifest,
+        target: SourceCorpusManifestWriterTarget,
+        evidence_status: SourceCorpusManifestWriterOperationEvidenceStatus,
+        write_attempted: bool,
+        canonical_byte_len: usize,
+        blockers: Vec<SourceCorpusManifestWriterFirstSliceBlocker>,
+        preflight_findings: &[SourceCorpusManifestWriterPreflightFinding],
+    ) -> Self {
+        Self {
+            schema_version: SOURCE_CORPUS_MANIFEST_WRITER_FIRST_SLICE_SCHEMA_VERSION,
+            manifest_id: manifest.manifest_id().clone(),
+            target,
+            evidence_status,
+            write_attempted,
+            canonical_byte_len,
+            blockers,
+            preflight_findings: preflight_findings.to_vec(),
+            capabilities: SourceCorpusManifestWriterFirstSliceCapabilities::default(),
+        }
+    }
+
+    pub fn schema_version(&self) -> &str {
+        self.schema_version
+    }
+
+    pub fn manifest_id(&self) -> &SourceCorpusManifestId {
+        &self.manifest_id
+    }
+
+    pub fn target(&self) -> &SourceCorpusManifestWriterTarget {
+        &self.target
+    }
+
+    pub fn evidence_status(&self) -> SourceCorpusManifestWriterOperationEvidenceStatus {
+        self.evidence_status
+    }
+
+    pub fn write_attempted(&self) -> bool {
+        self.write_attempted
+    }
+
+    pub fn canonical_byte_len(&self) -> usize {
+        self.canonical_byte_len
+    }
+
+    pub fn blockers(&self) -> &[SourceCorpusManifestWriterFirstSliceBlocker] {
+        &self.blockers
+    }
+
+    pub fn has_blocker(&self, blocker: SourceCorpusManifestWriterFirstSliceBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn preflight_findings(&self) -> &[SourceCorpusManifestWriterPreflightFinding] {
+        &self.preflight_findings
+    }
+
+    pub fn capabilities(&self) -> SourceCorpusManifestWriterFirstSliceCapabilities {
+        self.capabilities
+    }
+
+    pub fn wrote_manifest(&self) -> bool {
+        self.evidence_status == SourceCorpusManifestWriterOperationEvidenceStatus::Written
+    }
+
+    pub fn is_idempotent(&self) -> bool {
+        self.evidence_status == SourceCorpusManifestWriterOperationEvidenceStatus::Idempotent
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.evidence_status == SourceCorpusManifestWriterOperationEvidenceStatus::Conflict
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.evidence_status == SourceCorpusManifestWriterOperationEvidenceStatus::Blocked
+    }
+
+    pub fn is_error(&self) -> bool {
+        self.evidence_status == SourceCorpusManifestWriterOperationEvidenceStatus::Error
+    }
+
+    pub fn operation_evidence_is_proof(&self) -> bool {
+        false
+    }
+
+    pub fn operation_evidence_is_gate_decision(&self) -> bool {
+        false
+    }
+
+    pub fn operation_evidence_is_acceptance(&self) -> bool {
+        false
+    }
+
+    pub fn operation_evidence_is_project_truth(&self) -> bool {
+        false
+    }
+
+    pub fn creates_claims(&self) -> bool {
+        false
+    }
+
+    pub fn promotes_manifest_authority(&self) -> bool {
+        false
+    }
+}
+
+pub fn source_corpus_manifest_writer_write_first_slice(
+    manifest: &SourceCorpusManifest,
+    target_root_path: impl AsRef<Path>,
+    target: SourceCorpusManifestWriterTarget,
+    preflight: &SourceCorpusManifestWriterPreflightResult,
+) -> SourceCorpusManifestWriterFirstSliceResult {
+    let canonical_bytes = source_corpus_manifest_render_canonical_bytes(manifest);
+    let mut blockers = source_corpus_manifest_writer_first_slice_precondition_blockers(
+        manifest,
+        target_root_path.as_ref(),
+        &target,
+        preflight,
+    );
+
+    if preflight
+        .has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictDifferentBlocks)
+    {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            &mut blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent,
+        );
+        return SourceCorpusManifestWriterFirstSliceResult::new(
+            manifest,
+            target,
+            SourceCorpusManifestWriterOperationEvidenceStatus::Conflict,
+            false,
+            canonical_bytes.len(),
+            blockers,
+            preflight.findings(),
+        );
+    }
+
+    if !blockers.is_empty() {
+        return SourceCorpusManifestWriterFirstSliceResult::new(
+            manifest,
+            target,
+            SourceCorpusManifestWriterOperationEvidenceStatus::Blocked,
+            false,
+            canonical_bytes.len(),
+            blockers,
+            preflight.findings(),
+        );
+    }
+
+    let target_path = target_root_path.as_ref().join(target.as_str());
+
+    if preflight.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictIdentical) {
+        return match fs::symlink_metadata(&target_path) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                source_corpus_manifest_writer_push_first_slice_blocker(
+                    &mut blockers,
+                    SourceCorpusManifestWriterFirstSliceBlocker::TargetSymlink,
+                );
+                SourceCorpusManifestWriterFirstSliceResult::new(
+                    manifest,
+                    target,
+                    SourceCorpusManifestWriterOperationEvidenceStatus::Blocked,
+                    false,
+                    canonical_bytes.len(),
+                    blockers,
+                    preflight.findings(),
+                )
+            }
+            Ok(metadata) if metadata.is_file() => match fs::read(&target_path) {
+                Ok(existing_bytes) if existing_bytes == canonical_bytes => {
+                    SourceCorpusManifestWriterFirstSliceResult::new(
+                        manifest,
+                        target,
+                        SourceCorpusManifestWriterOperationEvidenceStatus::Idempotent,
+                        false,
+                        canonical_bytes.len(),
+                        blockers,
+                        preflight.findings(),
+                    )
+                }
+                Ok(_) => {
+                    source_corpus_manifest_writer_push_first_slice_blocker(
+                        &mut blockers,
+                        SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent,
+                    );
+                    SourceCorpusManifestWriterFirstSliceResult::new(
+                        manifest,
+                        target,
+                        SourceCorpusManifestWriterOperationEvidenceStatus::Conflict,
+                        false,
+                        canonical_bytes.len(),
+                        blockers,
+                        preflight.findings(),
+                    )
+                }
+                Err(_) => {
+                    source_corpus_manifest_writer_push_first_slice_blocker(
+                        &mut blockers,
+                        SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetReadFailed,
+                    );
+                    SourceCorpusManifestWriterFirstSliceResult::new(
+                        manifest,
+                        target,
+                        SourceCorpusManifestWriterOperationEvidenceStatus::Blocked,
+                        false,
+                        canonical_bytes.len(),
+                        blockers,
+                        preflight.findings(),
+                    )
+                }
+            },
+            Ok(_) | Err(_) => {
+                source_corpus_manifest_writer_push_first_slice_blocker(
+                    &mut blockers,
+                    SourceCorpusManifestWriterFirstSliceBlocker::PreflightTargetStateMismatch,
+                );
+                SourceCorpusManifestWriterFirstSliceResult::new(
+                    manifest,
+                    target,
+                    SourceCorpusManifestWriterOperationEvidenceStatus::Blocked,
+                    false,
+                    canonical_bytes.len(),
+                    blockers,
+                    preflight.findings(),
+                )
+            }
+        };
+    }
+
+    match fs::symlink_metadata(&target_path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                &mut blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::TargetSymlink,
+            );
+            return SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Blocked,
+                false,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            );
+        }
+        Ok(_) => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                &mut blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent,
+            );
+            return SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Conflict,
+                false,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            );
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+        Err(_) => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                &mut blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::PreflightTargetStateMismatch,
+            );
+            return SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Blocked,
+                false,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            );
+        }
+    }
+
+    let temp_path = source_corpus_manifest_writer_first_slice_temp_path(&target_path);
+    match source_corpus_manifest_writer_write_temp_bytes(&temp_path, &canonical_bytes) {
+        Ok(()) => {}
+        Err(error) => {
+            let blocker = if error.kind() == io::ErrorKind::AlreadyExists {
+                SourceCorpusManifestWriterFirstSliceBlocker::TempFileCreateFailed
+            } else {
+                SourceCorpusManifestWriterFirstSliceBlocker::TempFileWriteFailed
+            };
+            source_corpus_manifest_writer_push_first_slice_blocker(&mut blockers, blocker);
+            let _ = fs::remove_file(&temp_path);
+            return SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Error,
+                true,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            );
+        }
+    }
+
+    match fs::hard_link(&temp_path, &target_path) {
+        Ok(()) => match fs::remove_file(&temp_path) {
+            Ok(()) => SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Written,
+                true,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            ),
+            Err(_) => {
+                source_corpus_manifest_writer_push_first_slice_blocker(
+                    &mut blockers,
+                    SourceCorpusManifestWriterFirstSliceBlocker::TempFileCleanupFailed,
+                );
+                SourceCorpusManifestWriterFirstSliceResult::new(
+                    manifest,
+                    target,
+                    SourceCorpusManifestWriterOperationEvidenceStatus::Error,
+                    true,
+                    canonical_bytes.len(),
+                    blockers,
+                    preflight.findings(),
+                )
+            }
+        },
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                &mut blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent,
+            );
+            let _ = fs::remove_file(&temp_path);
+            SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Conflict,
+                true,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            )
+        }
+        Err(_) => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                &mut blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::TempFileLinkFailed,
+            );
+            let _ = fs::remove_file(&temp_path);
+            SourceCorpusManifestWriterFirstSliceResult::new(
+                manifest,
+                target,
+                SourceCorpusManifestWriterOperationEvidenceStatus::Error,
+                true,
+                canonical_bytes.len(),
+                blockers,
+                preflight.findings(),
+            )
+        }
+    }
+}
+
+fn source_corpus_manifest_writer_first_slice_precondition_blockers(
+    manifest: &SourceCorpusManifest,
+    target_root_path: &Path,
+    target: &SourceCorpusManifestWriterTarget,
+    preflight: &SourceCorpusManifestWriterPreflightResult,
+) -> Vec<SourceCorpusManifestWriterFirstSliceBlocker> {
+    let mut blockers = Vec::new();
+
+    if preflight.target() != target {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            &mut blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::PreflightTargetMismatch,
+        );
+    }
+
+    if preflight.manifest_id() != manifest.manifest_id() {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            &mut blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::PreflightManifestMismatch,
+        );
+    }
+
+    if preflight.blocked() {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            &mut blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::BlockingPreflightFinding,
+        );
+    }
+
+    if !preflight.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetAllowed) {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            &mut blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::PreflightTargetNotAllowed,
+        );
+    }
+
+    if !preflight.has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictMissing)
+        && !preflight
+            .has_finding(SourceCorpusManifestWriterPreflightFinding::TargetConflictIdentical)
+    {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            &mut blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::PreflightTargetStateMismatch,
+        );
+    }
+
+    source_corpus_manifest_writer_first_slice_path_blockers(
+        target_root_path,
+        target,
+        &mut blockers,
+    );
+
+    blockers
+}
+
+fn source_corpus_manifest_writer_first_slice_path_blockers(
+    target_root_path: &Path,
+    target: &SourceCorpusManifestWriterTarget,
+    blockers: &mut Vec<SourceCorpusManifestWriterFirstSliceBlocker>,
+) {
+    if target_root_path.as_os_str().is_empty() {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetRootMissing,
+        );
+    }
+
+    if !target_root_path.is_absolute() {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetRootRelative,
+        );
+    }
+
+    match fs::symlink_metadata(target_root_path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::TargetRootSymlink,
+            );
+        }
+        Ok(metadata) if !metadata.is_dir() => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::TargetRootNotDirectory,
+            );
+        }
+        Ok(_) => {}
+        Err(_) => {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::TargetRootUnavailable,
+            );
+        }
+    }
+
+    if source_corpus_manifest_writer_target_is_runtime_storage(target.as_str()) {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetRuntimeStorageForbidden,
+        );
+    }
+
+    if validate_source_corpus_repo_relative_path(target.as_str()).is_err() {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetPathInvalid,
+        );
+    }
+
+    if !source_corpus_manifest_writer_target_under_reconstruction_dir(target.as_str())
+        && target.as_str() != SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH
+    {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetPathNotUnderReconstructionDir,
+        );
+    }
+
+    if !blockers.is_empty() {
+        return;
+    }
+
+    source_corpus_manifest_writer_first_slice_parent_path_blockers(
+        target_root_path,
+        Path::new(target.as_str()),
+        blockers,
+    );
+}
+
+fn source_corpus_manifest_writer_first_slice_parent_path_blockers(
+    target_root_path: &Path,
+    target_relative_path: &Path,
+    blockers: &mut Vec<SourceCorpusManifestWriterFirstSliceBlocker>,
+) {
+    let Some(parent_relative_path) = target_relative_path.parent() else {
+        source_corpus_manifest_writer_push_first_slice_blocker(
+            blockers,
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetParentMissing,
+        );
+        return;
+    };
+
+    let mut current_parent = target_root_path.to_path_buf();
+    for component in parent_relative_path.components() {
+        let std::path::Component::Normal(component) = component else {
+            source_corpus_manifest_writer_push_first_slice_blocker(
+                blockers,
+                SourceCorpusManifestWriterFirstSliceBlocker::TargetPathInvalid,
+            );
+            return;
+        };
+
+        current_parent.push(component);
+        match fs::symlink_metadata(&current_parent) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                source_corpus_manifest_writer_push_first_slice_blocker(
+                    blockers,
+                    SourceCorpusManifestWriterFirstSliceBlocker::TargetParentSymlink,
+                );
+                return;
+            }
+            Ok(metadata) if !metadata.is_dir() => {
+                source_corpus_manifest_writer_push_first_slice_blocker(
+                    blockers,
+                    SourceCorpusManifestWriterFirstSliceBlocker::TargetParentNotDirectory,
+                );
+                return;
+            }
+            Ok(_) => {}
+            Err(_) => {
+                source_corpus_manifest_writer_push_first_slice_blocker(
+                    blockers,
+                    SourceCorpusManifestWriterFirstSliceBlocker::TargetParentMissing,
+                );
+                return;
+            }
+        }
+    }
+}
+
+fn source_corpus_manifest_writer_push_first_slice_blocker(
+    blockers: &mut Vec<SourceCorpusManifestWriterFirstSliceBlocker>,
+    blocker: SourceCorpusManifestWriterFirstSliceBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn source_corpus_manifest_writer_first_slice_temp_path(target_path: &Path) -> PathBuf {
+    let parent = target_path.parent().unwrap_or_else(|| Path::new("."));
+    let file_name = target_path
+        .file_name()
+        .map(|name| name.to_string_lossy())
+        .unwrap_or_else(|| "source-corpus-manifest.md".into());
+    let counter = SOURCE_CORPUS_MANIFEST_WRITER_TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+    parent.join(format!(
+        ".{file_name}.tmp.{}.{}",
+        std::process::id(),
+        counter
+    ))
+}
+
+fn source_corpus_manifest_writer_write_temp_bytes(
+    temp_path: &Path,
+    canonical_bytes: &[u8],
+) -> io::Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(temp_path)?;
+    file.write_all(canonical_bytes)?;
+    file.flush()?;
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -2729,14 +3770,16 @@ mod tests {
         SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS, STATUS_PATH,
     };
     use super::{
-        source_corpus_manifest_claim_field_allowed, SourceCorpusCautionClass,
+        source_corpus_manifest_claim_field_allowed, source_corpus_manifest_render_canonical_bytes,
+        source_corpus_manifest_writer_write_first_slice, SourceCorpusCautionClass,
         SourceCorpusGeneratedOrVendoredCandidate, SourceCorpusHashPolicy, SourceCorpusItem,
         SourceCorpusItemId, SourceCorpusManifest, SourceCorpusManifestAuthority,
         SourceCorpusManifestId, SourceCorpusManifestStatus,
-        SourceCorpusManifestWriterConflictPolicy,
+        SourceCorpusManifestWriterConflictPolicy, SourceCorpusManifestWriterFirstSliceBlocker,
         SourceCorpusManifestWriterManifestAuthorityEvidence,
         SourceCorpusManifestWriterManifestInspection,
-        SourceCorpusManifestWriterManifestStatusEvidence, SourceCorpusManifestWriterParentStatus,
+        SourceCorpusManifestWriterManifestStatusEvidence,
+        SourceCorpusManifestWriterOperationEvidenceStatus, SourceCorpusManifestWriterParentStatus,
         SourceCorpusManifestWriterPreflight, SourceCorpusManifestWriterPreflightFinding,
         SourceCorpusManifestWriterPreflightInput, SourceCorpusManifestWriterSymlinkAncestorStatus,
         SourceCorpusManifestWriterTarget, SourceCorpusObservedKind, SourceCorpusPathError,
@@ -2744,6 +3787,7 @@ mod tests {
         SourceCorpusSourceClass, SourceCorpusSourceMarker, SourceCorpusSourceMarkerKind,
         SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS, SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION,
         SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION, SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH,
+        SOURCE_CORPUS_MANIFEST_WRITER_FIRST_SLICE_SCHEMA_VERSION,
         SOURCE_CORPUS_MANIFEST_WRITER_PREFLIGHT_MODEL_SCHEMA_VERSION,
     };
     use std::fs;
@@ -3731,6 +4775,446 @@ mod tests {
     }
 
     #[test]
+    fn writer_render_is_deterministic() {
+        let manifest = sample_source_corpus_manifest();
+        let first = source_corpus_manifest_render_canonical_bytes(&manifest);
+        let second = source_corpus_manifest_render_canonical_bytes(&manifest);
+        let rendered = String::from_utf8(first.clone()).expect("canonical bytes should be utf-8");
+
+        assert_eq!(first, second);
+        assert!(rendered.contains("manifest_status: advisory\n"));
+        assert!(rendered.contains("authority: observed_structure\n"));
+        assert!(rendered.contains("generated_at_policy: no_runtime_clock\n"));
+        assert!(rendered.contains("read_contents: false\n"));
+        assert!(rendered.contains("store_snippets: false\n"));
+        assert!(rendered.contains("summarize_contents: false\n"));
+        assert!(!rendered.contains("/Users/"));
+        assert!(!rendered.contains("/home/"));
+        assert!(!rendered.contains("claims_created"));
+        assert!(!rendered.contains("created_at:"));
+        assert!(!rendered.contains("generated_at:"));
+    }
+
+    #[test]
+    fn writer_writes_canonical_manifest_to_safe_target() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory/reconstruction"))
+            .expect("test should create explicit manifest parent");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let target_path = root.join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        let written = fs::read(&target_path).expect("manifest target should be written");
+        let expected = source_corpus_manifest_render_canonical_bytes(&manifest);
+        let temp_left = fs::read_dir(root.join(".punk/memory/reconstruction"))
+            .expect("manifest parent should be readable")
+            .any(|entry| {
+                entry
+                    .expect("directory entry should be readable")
+                    .file_name()
+                    .to_string_lossy()
+                    .contains(".tmp.")
+            });
+        let runtime_exists = root.join(".punk/runtime").exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert_eq!(
+            result.schema_version(),
+            SOURCE_CORPUS_MANIFEST_WRITER_FIRST_SLICE_SCHEMA_VERSION
+        );
+        assert_eq!(
+            result.evidence_status(),
+            SourceCorpusManifestWriterOperationEvidenceStatus::Written
+        );
+        assert!(result.wrote_manifest());
+        assert!(result.write_attempted());
+        assert_eq!(result.canonical_byte_len(), expected.len());
+        assert!(result.blockers().is_empty());
+        assert_eq!(written, expected);
+        assert!(!temp_left);
+        assert!(!runtime_exists);
+    }
+
+    #[test]
+    fn writer_requires_preflight_pass() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory/reconstruction"))
+            .expect("test should create explicit manifest parent");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::DifferentExistingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let target_exists = root
+            .join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+            .exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(preflight.blocked());
+        assert_eq!(
+            result.evidence_status(),
+            SourceCorpusManifestWriterOperationEvidenceStatus::Conflict
+        );
+        assert!(result
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent));
+        assert!(!result.write_attempted());
+        assert!(!target_exists);
+    }
+
+    #[test]
+    fn writer_blocks_on_failed_preflight() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("test root should exist");
+        let target = SourceCorpusManifestWriterTarget::new(
+            "/example/project/.punk/memory/reconstruction/source-corpus-manifest.md",
+        );
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(preflight.blocked());
+        assert!(result.is_blocked());
+        assert!(result
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::BlockingPreflightFinding));
+        assert!(!result.write_attempted());
+    }
+
+    #[test]
+    fn writer_rejects_absolute_target() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("test root should exist");
+        let target = SourceCorpusManifestWriterTarget::new(
+            "/example/project/.punk/memory/reconstruction/source-corpus-manifest.md",
+        );
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(result.has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::TargetPathInvalid));
+        assert!(!result.write_attempted());
+    }
+
+    #[test]
+    fn writer_rejects_path_escape() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory/reconstruction"))
+            .expect("test should create explicit manifest parent");
+        let target =
+            SourceCorpusManifestWriterTarget::new(".punk/memory/reconstruction/../manifest.md");
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let escaped_target_exists = root.join(".punk/memory/manifest.md").exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(result.has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::TargetPathInvalid));
+        assert!(!result.write_attempted());
+        assert!(!escaped_target_exists);
+    }
+
+    #[test]
+    fn writer_rejects_runtime_storage_target() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("test root should exist");
+        let target =
+            SourceCorpusManifestWriterTarget::new(".punk/runtime/source-corpus-manifest.md");
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let runtime_exists = root.join(".punk/runtime").exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(result.has_blocker(
+            SourceCorpusManifestWriterFirstSliceBlocker::TargetRuntimeStorageForbidden
+        ));
+        assert!(!result.write_attempted());
+        assert!(!runtime_exists);
+    }
+
+    #[test]
+    fn writer_rejects_symlink_escape_when_reported() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory/reconstruction"))
+            .expect("test should create explicit manifest parent");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight_input =
+            SourceCorpusManifestWriterPreflightInput::new(target.clone(), manifest.clone())
+                .with_symlink_ancestor_status(
+                    SourceCorpusManifestWriterSymlinkAncestorStatus::Escape,
+                );
+        let preflight = SourceCorpusManifestWriterPreflight::evaluate(preflight_input);
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let target_exists = root
+            .join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+            .exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(result
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::BlockingPreflightFinding));
+        assert!(!result.write_attempted());
+        assert!(!target_exists);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn writer_blocks_actual_intermediate_parent_symlink() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        let outside_root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk")).expect("test should create .punk parent");
+        fs::create_dir_all(outside_root.join("reconstruction"))
+            .expect("test should create outside reconstruction parent");
+        std::os::unix::fs::symlink(&outside_root, root.join(".punk/memory"))
+            .expect("test should create intermediate parent symlink");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let outside_target_exists = outside_root
+            .join("reconstruction/source-corpus-manifest.md")
+            .exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+        fs::remove_dir_all(&outside_root).expect("outside root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(
+            result.has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::TargetParentSymlink)
+        );
+        assert!(!result.write_attempted());
+        assert!(!outside_target_exists);
+    }
+
+    #[test]
+    fn writer_blocks_different_existing_content() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        let target_path = root.join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        fs::create_dir_all(target_path.parent().expect("target should have parent"))
+            .expect("test should create explicit manifest parent");
+        fs::write(&target_path, b"different manifest bytes")
+            .expect("test should pre-create conflicting target");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::DifferentExistingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let remaining = fs::read(&target_path).expect("target should remain readable");
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.has_conflict());
+        assert!(result
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent));
+        assert!(!result.write_attempted());
+        assert_eq!(remaining, b"different manifest bytes");
+    }
+
+    #[test]
+    fn writer_is_idempotent_on_identical_content() {
+        let manifest = sample_source_corpus_manifest();
+        let canonical = source_corpus_manifest_render_canonical_bytes(&manifest);
+        let root = unique_temp_path();
+        let target_path = root.join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        fs::create_dir_all(target_path.parent().expect("target should have parent"))
+            .expect("test should create explicit manifest parent");
+        fs::write(&target_path, &canonical).expect("test should pre-create matching target");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::IdenticalExistingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let remaining = fs::read(&target_path).expect("target should remain readable");
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_idempotent());
+        assert!(!result.write_attempted());
+        assert_eq!(remaining, canonical);
+    }
+
+    #[test]
+    fn writer_rechecks_identical_target_bytes_before_idempotent() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        let target_path = root.join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH);
+        fs::create_dir_all(target_path.parent().expect("target should have parent"))
+            .expect("test should create explicit manifest parent");
+        fs::write(&target_path, b"changed after preflight")
+            .expect("test should pre-create stale conflicting target");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::IdenticalExistingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let remaining = fs::read(&target_path).expect("target should remain readable");
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.has_conflict());
+        assert!(result
+            .has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::ExistingTargetDifferent));
+        assert!(!result.write_attempted());
+        assert_eq!(remaining, b"changed after preflight");
+    }
+
+    #[test]
+    fn writer_no_partial_target_on_failure() {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("test root should exist");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        let target_exists = root
+            .join(SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH)
+            .exists();
+        let reconstruction_exists = root.join(".punk/memory/reconstruction").exists();
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        assert!(result.is_blocked());
+        assert!(
+            result.has_blocker(SourceCorpusManifestWriterFirstSliceBlocker::TargetParentMissing)
+        );
+        assert!(!result.write_attempted());
+        assert!(!target_exists);
+        assert!(!reconstruction_exists);
+    }
+
+    #[test]
+    fn writer_does_not_scan_repo() {
+        let result = sample_writer_first_slice_result();
+        let capabilities = result.capabilities();
+
+        assert!(capabilities.takes_manifest_model_input());
+        assert!(!capabilities.scans_repository());
+        assert!(!capabilities.walks_files());
+        assert!(!capabilities.uses_network());
+        assert!(!capabilities.uses_remote_ai());
+    }
+
+    #[test]
+    fn writer_does_not_read_file_contents() {
+        let result = sample_writer_first_slice_result();
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.reads_source_file_contents());
+        assert!(!capabilities.generates_manifest_from_repo());
+    }
+
+    #[test]
+    fn writer_does_not_compute_file_hashes() {
+        let result = sample_writer_first_slice_result();
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.computes_source_file_hashes());
+    }
+
+    #[test]
+    fn writer_does_not_create_claims() {
+        let result = sample_writer_first_slice_result();
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.creates_claims());
+        assert!(!result.creates_claims());
+    }
+
+    #[test]
+    fn writer_does_not_promote_manifest_authority() {
+        let result = sample_writer_first_slice_result();
+        let capabilities = result.capabilities();
+
+        assert!(!capabilities.promotes_manifest_authority());
+        assert!(!result.promotes_manifest_authority());
+    }
+
+    #[test]
+    fn writer_operation_evidence_is_not_proof() {
+        let result = sample_writer_first_slice_result();
+
+        assert!(!result.operation_evidence_is_proof());
+    }
+
+    #[test]
+    fn writer_operation_evidence_is_not_gate_decision() {
+        let result = sample_writer_first_slice_result();
+
+        assert!(!result.operation_evidence_is_gate_decision());
+    }
+
+    #[test]
+    fn writer_operation_evidence_is_not_acceptance() {
+        let result = sample_writer_first_slice_result();
+
+        assert!(!result.operation_evidence_is_acceptance());
+        assert!(!result.operation_evidence_is_project_truth());
+    }
+
+    #[test]
     fn project_id_requires_lowercase_slug() {
         assert_eq!(
             ProjectId::parse("").expect_err("empty project id should fail"),
@@ -3817,6 +5301,35 @@ mod tests {
         target: &str,
     ) -> super::SourceCorpusManifestWriterPreflightResult {
         SourceCorpusManifestWriterPreflight::evaluate(sample_writer_preflight_input(target))
+    }
+
+    fn sample_writer_first_slice_preflight(
+        manifest: &SourceCorpusManifest,
+        target: SourceCorpusManifestWriterTarget,
+        conflict_policy: SourceCorpusManifestWriterConflictPolicy,
+    ) -> super::SourceCorpusManifestWriterPreflightResult {
+        SourceCorpusManifestWriterPreflight::evaluate(
+            SourceCorpusManifestWriterPreflightInput::new(target, manifest.clone())
+                .with_conflict_policy(conflict_policy),
+        )
+    }
+
+    fn sample_writer_first_slice_result() -> super::SourceCorpusManifestWriterFirstSliceResult {
+        let manifest = sample_source_corpus_manifest();
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/memory/reconstruction"))
+            .expect("test should create explicit manifest parent");
+        let target = SourceCorpusManifestWriterTarget::default_manifest_path();
+        let preflight = sample_writer_first_slice_preflight(
+            &manifest,
+            target.clone(),
+            SourceCorpusManifestWriterConflictPolicy::MissingTarget,
+        );
+        let result =
+            source_corpus_manifest_writer_write_first_slice(&manifest, &root, target, &preflight);
+        fs::remove_dir_all(&root).expect("test root should clean up");
+
+        result
     }
 
     fn unique_temp_path() -> std::path::PathBuf {
