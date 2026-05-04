@@ -1,7 +1,7 @@
 ---
 id: goal_verify_brownfield_source_corpus_manifest_writer_first_slice_v0_1
 title: "Verify brownfield source corpus manifest writer first slice v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-05-04
 updated_at: 2026-05-04
 selected_at: 2026-05-04
-started_at: null
-completed_at: null
+started_at: 2026-05-04
+completed_at: 2026-05-04
 blocked_by: []
 scope:
   include:
@@ -36,7 +36,8 @@ knowledge_refs:
   - "docs/product/CRATE-STATUS.md"
   - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -111,3 +112,23 @@ intent recovery, contract generation, gate/proof runtime, Punk `Writer`
 behavior, runtime `.punk` storage, CLI behavior, grayfield reconciliation,
 Conformance Pack runtime, Migration Contract runtime, Regenerative Spec
 behavior, or spec-as-source behavior.
+
+## Result
+
+Verification completed cleanly.
+
+The first writer slice remains limited to an already-constructed
+`SourceCorpusManifest`, explicit safe target, matching successful preflight,
+deterministic canonical bytes, one safe target write, and in-memory
+non-authoritative operation evidence.
+
+Verification confirmed idempotent existing targets recheck target bytes before
+success, different bytes conflict, unreadable target bytes block, missing
+parents leave no partial target, and symlink/path/runtime target cases fail
+closed.
+
+Selected next:
+
+```text
+work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md
+```
