@@ -16,6 +16,7 @@ related_research:
   - knowledge/research/2026-05-05-ai-agent-communication-landscape-notes.md
 related_ideas:
   - knowledge/ideas/2026-05-05-community-driven-development-with-agents.md
+  - knowledge/ideas/2026-05-05-community-lab-automated-intake-responder.md
 related_docs:
   - docs/product/RESEARCH-INTAKE.md
   - docs/product/PROJECT-MEMORY.md
@@ -30,10 +31,23 @@ superseded_by: null
 
 ## Status
 
-This is an advisory idea artifact and manual experiment proposal.
+This is an advisory idea artifact and community surface proposal.
 
 It is not active runtime behavior, not a Telegram feature, and not product truth
 by itself.
+
+Operational update:
+
+```text
+Manual answering is not the desired default first-response UX.
+Manual digest remains a review and aggregation path.
+First-message response should be automated by a bounded intake responder once
+policy, receipts, and privacy disclosure are defined.
+```
+
+Related responder boundary:
+
+- `knowledge/ideas/2026-05-05-community-lab-automated-intake-responder.md`
 
 ## One-liner
 
@@ -75,13 +89,13 @@ Community surface
 
 The chat, group, forum, inbox, or network itself is not source of truth.
 
-## Initial mode
+## Initial surface mode
 
-Manual only.
+Manual surface setup only.
 
-No bot at launch.
+No bot is added by this artifact.
 
-No live adapter.
+No live adapter is added by this artifact.
 
 No history scraping.
 
@@ -89,7 +103,10 @@ No raw transcript archive.
 
 No automatic Topic Graph.
 
-No autonomous replies.
+No autonomous replies are added by this artifact.
+
+The next selected direction for first-message handling is a separate bounded
+automated intake responder boundary, not manual maintainer answering.
 
 ## First surface
 
@@ -171,6 +188,17 @@ manual lab, no live Punk bot, no automated intake.
 ## Manual digest loop
 
 Run a weekly or periodic manual digest.
+
+This digest is a review and aggregation loop, not the desired default
+first-response path.
+
+The desired future first-response path is:
+
+```text
+automated responder replies immediately
+  -> private receipt records bounded assessment
+  -> digest later summarizes redacted patterns for maintainer review
+```
 
 Initial digest target:
 
