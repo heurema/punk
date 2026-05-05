@@ -17,6 +17,7 @@ related_research:
 related_ideas:
   - knowledge/ideas/2026-05-05-community-driven-development-with-agents.md
   - knowledge/ideas/2026-05-05-community-lab-automated-intake-responder.md
+  - knowledge/ideas/2026-05-05-community-intake-flow.md
 related_docs:
   - docs/product/RESEARCH-INTAKE.md
   - docs/product/PROJECT-MEMORY.md
@@ -43,11 +44,17 @@ Manual answering is not the desired default first-response UX.
 Manual digest remains a review and aggregation path.
 First-message response should be automated by a bounded intake responder once
 policy, receipts, and privacy disclosure are defined.
+Community Intake Flow is the higher-level flow connecting local Punk, visors,
+intake items, discussion, and future promotion.
 ```
 
 Related responder boundary:
 
 - `knowledge/ideas/2026-05-05-community-lab-automated-intake-responder.md`
+
+Related intake-flow boundary:
+
+- `knowledge/ideas/2026-05-05-community-intake-flow.md`
 
 ## One-liner
 
@@ -55,7 +62,10 @@ Punk Community Lab is a channel-agnostic external signal surface for real
 failures, cases, sources, questions, agent contributions, and ideas around
 Punk.
 
-Telegram may be the first surface, but the product primitive is not Telegram.
+Telegram may be the first Community Visor, but the product primitive is not
+Telegram.
+
+The broader architecture is Community Intake Flow.
 
 ## Purpose
 
@@ -88,6 +98,18 @@ Community surface
 ```
 
 The chat, group, forum, inbox, or network itself is not source of truth.
+
+## Community Visors
+
+Telegram, Discord, GitHub Discussions, web dashboards, mycel/private inboxes,
+email, and forums are Community Visors.
+
+They display and collect advisory signals over Community Intake Flow.
+
+They are not source of truth, decision surfaces, issues, or work acceptance.
+
+All visor-originated messages converge into Community Intake Items before any
+promotion path is considered.
 
 ## Initial surface mode
 

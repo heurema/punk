@@ -19,6 +19,7 @@ related_research:
 related_ideas:
   - knowledge/ideas/2026-05-05-community-driven-development-with-agents.md
   - knowledge/ideas/2026-05-05-channel-agnostic-community-lab.md
+  - knowledge/ideas/2026-05-05-community-intake-flow.md
 related_docs:
   - docs/product/PUNK-LAWS.md
   - docs/product/ARCHITECTURE.md
@@ -52,6 +53,18 @@ This artifact does not add code, CLI behavior, Telegram integration, adapter
 runtime, Topic Graph implementation, CommunityPunk runtime, raw chat storage, or
 project-truth promotion.
 
+Architecture correction:
+
+```text
+The Automated Intake Responder is a Community Visor automation component.
+It is not the center of the architecture.
+The center is Community Intake Flow.
+```
+
+Related intake-flow boundary:
+
+- `knowledge/ideas/2026-05-05-community-intake-flow.md`
+
 ## Formula
 
 ```text
@@ -79,18 +92,18 @@ Do not automate:
 - final decisions;
 - gate/proof outcomes.
 
-## Core flow
+## Responder flow
 
 ```text
-Telegram message
-  -> responder receives update
+Community Intake Item or allowed visor message
+  -> responder receives allowed update inside a Community Visor
   -> redaction / safety precheck
   -> classify kind
   -> search repo artifacts
   -> detect likely existing topics / ideas / rules
   -> decide response type
   -> send immediate bounded reply
-  -> write minimal receipt / inbox item
+  -> write minimal private receipt / intake link
   -> optionally include redacted summary in future digest
 ```
 
