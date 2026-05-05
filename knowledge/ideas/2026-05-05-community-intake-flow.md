@@ -168,7 +168,7 @@ Examples:
 Telegram
 Discord
 GitHub Discussions
-GitHub Issues only after promotion
+linked GitHub Issue updates after promotion
 web dashboard later
 mycel/private inbox later
 email/forum later
@@ -184,6 +184,10 @@ Visor != work acceptance
 ```
 
 A visor may collect replies and show safe summaries or status updates.
+
+A GitHub Issue is a promoted work surface, not a Community Visor.
+
+A visor may display or link issue status after promotion.
 
 The repo remains the project-truth surface.
 
