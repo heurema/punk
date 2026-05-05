@@ -6,7 +6,7 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-05-04
+updated_at: 2026-05-05
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
 current_focus: "Pause after brownfield manifest writer first slice v0.1"
 selected_next: "work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md"
@@ -20,6 +20,7 @@ last_validated_commit: "0f013f6"
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: pause after brownfield manifest writer first slice v0.1.
 - Selected next: `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`
+- Side-track completion note: maintainer/user explicitly selected a bounded R2 Community-Signaled, Evidence-Gated Development / Punk Community Lab documentation side-track before the pause checkpoint. `work/goals/goal_capture_community_signaled_development_boundary_v0_1.md` is now recorded as done with two advisory idea artifacts and one advisory research note. It added no runtime behavior, CLI behavior, bot, live adapter, live send, raw chat storage, Topic Graph implementation, CommunityPunk active module, module-host behavior, source-of-truth change, or docs/product promotion. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`; any community launch or digest is a separate future manual action or bounded goal.
 - Completion note: `work/goals/goal_verify_brownfield_source_corpus_manifest_writer_first_slice_v0_1.md` is now recorded as done with verification evidence after PR #31 landed. It confirms the first source corpus manifest writer slice writes only an already-constructed `SourceCorpusManifest` model to one explicit safe target after matching successful preflight; deterministic canonical bytes preserve advisory `observed_structure` authority and no hidden runtime clock; identical existing targets are idempotent only after target-byte recheck; stale or different target bytes conflict; unreadable target bytes block; missing parents leave no partial target; and operation evidence remains in-memory, non-proof, non-gate, non-acceptance, non-project-truth, non-claim-ledger, and non-contract-readiness. It added only verification coverage for unreadable idempotent targets and no source inventory implementation, repo scan, file walker, source content reading, source filesystem hash computation, manifest generation from repository state, AI summaries, claim extraction, contract generation, gate/proof runtime, Punk `Writer` behavior, Conformance Pack runtime, Migration Contract runtime, Regenerative Spec behavior, spec-as-source behavior, runtime `.punk` storage, CLI command, or authority promotion. Selected next is `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md` as a checkpoint before any source inventory generation.
 - Side-track completed: `work/goals/goal_capture_codebase_evidence_boundary_for_agents_v0_1.md` recorded R2 advisory Codebase Evidence Boundary research, two advisory eval/spec boundaries, and a minimal parked `docs/adapters/repo-search.md` update. No runtime, CLI, repo-search activation, MCP, agent execution, vector/code graph runtime, gate writer, or broader proofpack runtime behavior was added. That side track left the brownfield writer first-slice verification as the next selected task before this verification closure.
 - Side-track completion note: maintainer explicitly selected a bounded Punk Trust Stack v0.1 research/eval/spec patch before continuing the brownfield writer first slice. `work/goals/goal_add_punk_trust_stack_research_and_eval_specs_v0_1.md` is now recorded as done with advisory research, idea backlog, NeSy idea capture, and eval/spec boundary artifacts only. It added no runtime behavior, CLI commands, Rust dependencies, provider adapters, MCP, plugin runtime, graph DB, vector DB, CRDT sync, policy-engine dependency, LLM gate, autonomous agent runner, cloud/control-plane behavior, proof writer, gate writer, context-pack writer, contract storage, or active module host behavior. That side track left the brownfield writer first slice as the next selected implementation task.
@@ -136,6 +137,7 @@ last_validated_commit: "0f013f6"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-05 | Captured Community-Signaled Development / Punk Community Lab boundary v0.1 | `work/goals/goal_capture_community_signaled_development_boundary_v0_1.md`, `knowledge/ideas/2026-05-05-community-driven-development-with-agents.md`, `knowledge/ideas/2026-05-05-channel-agnostic-community-lab.md`, `knowledge/research/2026-05-05-ai-agent-communication-landscape-notes.md`, `work/reports/2026-05-05-community-signaled-development-boundary-v0-1.md` |
 | 2026-05-04 | Verified brownfield source corpus manifest writer first slice v0.1 | `work/goals/goal_verify_brownfield_source_corpus_manifest_writer_first_slice_v0_1.md`, `work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md`, `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`, `142d25e` |
 | 2026-05-04 | Captured codebase evidence boundary for agents v0.1 | `work/goals/goal_capture_codebase_evidence_boundary_for_agents_v0_1.md`, `knowledge/research/2026-05-03-codebase-understanding-for-agents.md`, `evals/specs/repo-search-adapter-boundary.v0.1.md`, `evals/specs/codebase-context-pack-boundary.v0.1.md`, `docs/adapters/repo-search.md`, `work/reports/2026-05-04-codebase-evidence-boundary-for-agents-v0-1.md`, `0f013f6` |
 | 2026-05-04 | Added brownfield source corpus manifest writer first slice v0.1 | `work/goals/goal_prepare_brownfield_source_corpus_manifest_writer_first_slice_v0_1.md`, `work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `142d25e` |
@@ -340,19 +342,14 @@ last_validated_commit: "0f013f6"
 
 ## Validation
 
-- Last checked: 2026-05-04
+- Last checked: 2026-05-05
 - Command: `python3 scripts/check_research_gate.py`
 - Command: `python3 scripts/check_work_ledger.py`
-- Command: `cargo check --workspace`
-- Command: `cargo test --workspace`
-- Command: `cargo run -p punk-cli -- eval run smoke`
-- Command: `cargo run -p punk-cli -- eval run smoke --format json`
 - Command: `git diff --check`
-- Command: `scripts/check.sh docs-governance --files knowledge/research/2026-05-04-adjacent-paradigms-for-punk.md knowledge/ideas/punk-trust-stack-v0-1.md knowledge/ideas/neuro-symbolic-ai-for-punk.md evals/specs/contract-clause-coverage.v0.1.md evals/specs/context-pack-compiler-boundary.v0.1.md evals/specs/flow-counterexample-state-model.v0.1.md evals/specs/gate-policy-input.v0.1.md evals/specs/proofpack-provenance-projection.v0.1.md work/goals/goal_add_punk_trust_stack_research_and_eval_specs_v0_1.md work/reports/2026-05-04-punk-trust-stack-research-and-eval-specs-v0-1.md work/STATUS.md --report work/reports/2026-05-04-punk-trust-stack-research-and-eval-specs-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files knowledge/ideas/2026-05-05-community-driven-development-with-agents.md knowledge/ideas/2026-05-05-channel-agnostic-community-lab.md knowledge/research/2026-05-05-ai-agent-communication-landscape-notes.md work/goals/goal_capture_community_signaled_development_boundary_v0_1.md work/STATUS.md --report work/reports/2026-05-05-community-signaled-development-boundary-v0-1.md`
 - Result: `PASS`
 - Notes:
-  - Punk Trust Stack v0.1 was added as advisory research, idea backlog, NeSy idea capture, and eval/spec boundary artifacts only.
-  - Smoke eval human and JSON output both reported pass.
-  - Textual overclaim scan found only non-goal/avoid/negative-context uses for the requested forbidden terms.
-  - No runtime behavior, CLI commands, Rust dependencies, provider adapters, MCP, plugin runtime, graph DB, vector DB, CRDT sync, policy-engine dependency, LLM gate, autonomous agent runner, cloud/control-plane behavior, proof writer, gate writer, context-pack writer, contract storage, or active module host behavior was activated.
-  - Selected next remains `work/goals/goal_prepare_brownfield_source_corpus_manifest_writer_first_slice_v0_1.md`.
+  - Community-Signaled, Evidence-Gated Development and Punk Community Lab were added as advisory research/idea/work-ledger artifacts only.
+  - No runtime behavior, CLI commands, code, Telegram/Discord/Slack/GitHub/mycel adapters, bot, live send, raw chat storage, Topic Graph implementation, CommunityPunk active module, module-host behavior, docs/product promotion, or source-of-truth change was activated.
+  - No Rust code changed; `cargo check --workspace` was not required for this patch.
+  - Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`.
