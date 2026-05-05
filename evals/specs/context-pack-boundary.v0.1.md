@@ -63,6 +63,72 @@ A gate decision may cite a context pack as evidence selection, but acceptance st
 
 A persisted context pack must be rebuildable or inspectable from refs, metadata, exclusions, unknowns, contradiction sets, and retrieval receipts. Hidden prompt text or executor-local memory must not be required to understand why context was selected.
 
+## Research intake addendum: deterministic context compression
+
+This addendum records the 2026-05-05 research intake from
+`knowledge/research/2026-05-05-contract-bounded-context-compression.md`.
+
+It does not replace `docs/adr/ADR-0016-contract-context-pack-boundary.md` and
+does not activate runtime context-pack storage, compression, retrieval, MCP,
+shell hooks, embeddings, vector indexes, executor briefs, CLI behavior, gate
+writing, or proof writing.
+
+### CTX-PACK-011: compressed views require raw fallback
+
+Every compressed or derived view must cite raw fallback refs for the artifacts
+it represents. A compressed view with no raw fallback ref is invalid for
+context readiness.
+
+### CTX-PACK-012: summaries cannot satisfy proof alone
+
+Proof requirement coverage must not cite summaries, signatures, compressed
+views, or cache stubs as sufficient evidence by themselves. Proof coverage must
+link raw source refs, validator refs, run receipts, eval reports, or later
+proofpack refs.
+
+### CTX-PACK-013: stale cache or index fails closed
+
+If a cache, symbol index, code graph, retrieval index, or compressed-view cache
+has missing provenance, stale source hashes, stale repo state, stale index
+version, or the wrong repo namespace, the derived state must be rebuilt, marked
+unusable, or represented as an explicit unknown. Stale derived state must not be
+accepted silently.
+
+### CTX-PACK-014: memory and advisory sources stay non-canonical
+
+Executor-local memory, prior session summaries, advisory research, ideas, and
+retrieval results may be cited only with explicit authority and source/date
+metadata. They must not be treated as canonical truth, and conflicts with
+canonical docs or raw artifacts must be recorded as contradictions or resolved
+in favor of canonical/raw refs.
+
+### CTX-PACK-015: deterministic rebuild for fixed inputs
+
+For the same contract refs, selected source refs, source hashes, budget,
+exclusions, unknowns, and retrieval receipts, context pack rendering must be
+deterministic. Runtime clocks, host paths, local usernames, environment values,
+or nondeterministic ordering must not affect canonical pack bytes or pack hash.
+
+### CTX-PACK-016: frozen after plot
+
+A context pack approved during `plot` is frozen input for `cut`. New material
+context discovered during `cut` must be recorded as a deviation, new context
+request, explicit unknown, contract amendment candidate, or re-plot/gate
+handling route. The approved pack must not mutate silently during execution.
+
+### CTX-PACK-017: CLI and log compaction preserves evidence
+
+If command output, build logs, validator logs, or shell transcripts are
+compacted, the compact view must preserve command, exit status, failures,
+errors, warnings, and raw log refs. Omitted sections must be declared. A compact
+view that hides a failure or warning is invalid.
+
+### CTX-PACK-018: non-goals and exclusions have coverage
+
+Material non-goals, excluded source classes, and out-of-scope paths must be
+represented in clause coverage, non-goal coverage, or exclusions. A pack that
+claims readiness while omitting material non-goals or exclusions is incomplete.
+
 ## Minimal fixture shape
 
 ```yaml
