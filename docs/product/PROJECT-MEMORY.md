@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-03
+updated_at: 2026-05-15
 review_after: 2026-07-20
 canonical_for:
   - project-memory-model
@@ -214,6 +214,8 @@ For user projects, `punk init <project-id>` uses the compact `.punk/memory/` lay
 
 `.punk/memory/` is repo-tracked durable project memory.
 
+`.punk/instructions/` is repo-tracked source guidance for local orientation and future module instruction trees. Its generated page-index view path is advisory and rebuildable; `punk init` does not create `.punk/views/`.
+
 `.punk/events/flow.jsonl` is active only for the narrow local `punk-events` writer slice under an explicit initialized project root. It is append-only event evidence, not project truth and not decision authority.
 
 `.punk/runtime/`, `.punk/cache/`, `.punk/events/` beyond that narrow flow event log, `.punk/runs/`, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
@@ -248,13 +250,14 @@ At this stage:
 - the greenfield scaffold records `project_id` and `entry_mode = greenfield`;
 - the brownfield scaffold records `project_id`, `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`;
 - `.punk/README.md` and `.punk/project.toml` may mark the project root and setup metadata;
+- `.punk/instructions/` gives the project a thin local instruction index and source pages without activating module host behavior;
 - `.punk/` runtime stores are not written yet for this purpose;
 - brownfield init does not scan the repository, reconstruct project knowledge, generate summaries, generate contracts/specs, accept claims, or prove anything;
 - root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are not created by default for user projects;
 - this surface must not become a second tracker product or a hidden backend.
 
 The current init CLI surface is limited to manual greenfield memory and brownfield entry scaffolding.
-It does not create brownfield reconstruction, grayfield reconciliation, runtime project storage, flow events, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
+It does not create brownfield reconstruction, grayfield reconciliation, generated instruction views, runtime project storage, flow events, contracts, receipts, gate artifacts, proofpacks, or acceptance claims.
 
 Level 0 `done` means manual closure with evidence.
 

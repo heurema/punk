@@ -47,7 +47,8 @@ use punk_gate::{
     GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
 };
 use punk_project::{
-    init_level0_project, init_project, source_corpus_manifest_claim_field_allowed,
+    default_instruction_page_index_nodes, init_level0_project, init_project,
+    render_instruction_page_index_json, source_corpus_manifest_claim_field_allowed,
     source_corpus_manifest_render_canonical_bytes, source_corpus_manifest_writer_write_first_slice,
     ProjectId, ProjectInitArtifactKind, ProjectInitArtifactStatus, ProjectInitEntryMode,
     SourceCorpusItem, SourceCorpusItemId, SourceCorpusManifest, SourceCorpusManifestAuthority,
@@ -57,7 +58,8 @@ use punk_project::{
     SourceCorpusManifestWriterPreflightFinding, SourceCorpusManifestWriterPreflightInput,
     SourceCorpusManifestWriterSymlinkAncestorStatus, SourceCorpusManifestWriterTarget,
     SourceCorpusObservedKind, SourceCorpusRepoRelativePath, SourceCorpusSourceClass,
-    SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS, SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH,
+    INSTRUCTIONS_INDEX_PATH, SOURCE_CORPUS_DEFAULT_EXCLUDED_PATHS,
+    SOURCE_CORPUS_MANIFEST_WRITER_DEFAULT_TARGET_PATH,
 };
 use punk_proof::{
     compute_proofpack_manifest_digest, positive_acceptance_preconditions_met,
@@ -421,6 +423,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_flow_transition_produces_event_evidence(),
         eval_event_log_is_append_only(),
         eval_local_flow_event_writer_appends_project_event(),
+        eval_instruction_page_index_model_is_deterministic_and_advisory(),
         eval_project_init_creates_level0_manual_memory_scaffold(),
         eval_project_init_brownfield_scaffold_shape(),
         eval_project_init_refuses_to_overwrite_existing_memory(),
@@ -574,10 +577,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, instruction page-index model, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, instruction page-index model, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -595,8 +598,9 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
             "local event writer smoke coverage writes only .punk/events/flow.jsonl under an explicit temporary project root with a .punk/project.toml marker",
-            "greenfield init smoke cases create compact .punk/memory project-memory scaffold files with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims",
-            "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, gate artifacts, proofpacks, or acceptance claims",
+            "instruction page-index smoke case renders a deterministic advisory tree from source instruction refs without creating .punk/views, summaries, vector DBs, hidden truth stores, LLM calls, or runtime side effects",
+            "greenfield init smoke cases create compact .punk/memory project-memory scaffold files plus thin .punk/instructions entrypoints with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, .punk/views, contracts, receipts, gate artifacts, proofpacks, or acceptance claims",
+            "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace plus thin .punk/instructions entrypoints with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, .punk/views, gate artifacts, proofpacks, or acceptance claims",
             "brownfield source corpus manifest model smoke case is side-effect-free and does not scan repositories, walk files, read file contents, compute file hashes, write manifests, create claims, infer intent, use network, or use remote AI",
             "brownfield source corpus manifest writer preflight model smoke case is side-effect-free and models target/path/conflict/claim/runtime blockers without scanning repositories, walking files, reading contents, computing filesystem hashes, writing manifests, generating manifests, creating claims, using network, or using remote AI",
             "brownfield source corpus manifest writer first slice smoke case writes deterministic canonical bytes from an already-constructed model to one explicit safe target after preflight, without scanning repositories, walking files, reading source contents, computing source file hashes, creating claims, activating runtime storage, or promoting authority",
@@ -925,6 +929,36 @@ fn eval_local_flow_event_writer_appends_project_event() -> SmokeEvalCaseResult {
     result
 }
 
+fn eval_instruction_page_index_model_is_deterministic_and_advisory() -> SmokeEvalCaseResult {
+    let nodes = default_instruction_page_index_nodes();
+    let rendered = render_instruction_page_index_json(&nodes);
+    let rendered_again = render_instruction_page_index_json(&nodes);
+    let model_ok = rendered == rendered_again
+        && rendered.contains("\"schema_version\": \"punk-instruction-page-index.v0.1\"")
+        && rendered.contains("\"authority\": \"advisory\"")
+        && rendered.contains("\"generated_from\": \"source_instruction_pages\"")
+        && rendered.contains("\"source_ref\": \".punk/instructions/INDEX.md\"")
+        && rendered.contains("\"source_ref\": \".punk/instructions/pages/init.md\"")
+        && rendered.contains("\"status\": \"parked\"")
+        && rendered.contains("\"module_id\": \"module-host\"")
+        && !rendered.contains("raw_prompt")
+        && !rendered.contains("transcript");
+
+    if model_ok {
+        SmokeEvalCaseResult::pass(
+            "eval_instruction_page_index_model_is_deterministic_and_advisory",
+            "instruction page-index model stays deterministic and advisory",
+            "default instruction page-index tree renders stable source refs without views, vector DB, hidden truth, summaries, or runtime side effects",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_instruction_page_index_model_is_deterministic_and_advisory",
+            "instruction page-index model stays deterministic and advisory",
+            "instruction page-index model drifted from deterministic advisory source-ref tree",
+        )
+    }
+}
+
 fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseResult {
     let temp_path = unique_smoke_temp_path();
     if let Err(error) = fs::create_dir_all(&temp_path) {
@@ -939,11 +973,30 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
     let report = init_level0_project(&temp_path, project_id);
     let status_path = temp_path.join(".punk/memory/STATUS.md");
     let goal_path = temp_path.join(".punk/memory/goals/goal_initial_project_setup.md");
+    let instruction_index_path = temp_path.join(INSTRUCTIONS_INDEX_PATH);
     let status_text = fs::read_to_string(&status_path);
     let goal_text = fs::read_to_string(&goal_path);
+    let instruction_index_text = fs::read_to_string(&instruction_index_path);
     let marker_text = fs::read_to_string(temp_path.join(".punk/project.toml"));
     let status_exists = status_path.is_file();
     let goal_exists = goal_path.is_file();
+    let instructions_ok = instruction_index_path.is_file()
+        && temp_path
+            .join(".punk/instructions/pages/getting-started.md")
+            .is_file()
+        && temp_path
+            .join(".punk/instructions/pages/layout.md")
+            .is_file()
+        && temp_path.join(".punk/instructions/pages/init.md").is_file()
+        && temp_path
+            .join(".punk/instructions/pages/modules.md")
+            .is_file()
+        && temp_path
+            .join(".punk/instructions/pages/authority.md")
+            .is_file()
+        && temp_path
+            .join(".punk/instructions/modules/README.md")
+            .is_file();
     let punk_marker_ok = temp_path.join(".punk/README.md").is_file()
         && temp_path.join(".punk/project.toml").is_file();
     let punk_runtime_store_absent = !temp_path.join(".punk/events").exists()
@@ -953,7 +1006,9 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
         && !temp_path.join(".punk/runs").exists()
         && !temp_path.join(".punk/evals").exists()
         && !temp_path.join(".punk/decisions").exists()
-        && !temp_path.join(".punk/proofs").exists();
+        && !temp_path.join(".punk/proofs").exists()
+        && !temp_path.join(".punk/views").exists()
+        && !temp_path.join(".punk/indexes").exists();
     let root_layout_absent = !temp_path.join("work").exists()
         && !temp_path.join("knowledge").exists()
         && !temp_path.join("docs").exists()
@@ -971,6 +1026,13 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
         text.contains("id: goal_initial_project_setup")
             && text.contains("project_id: \"weekend-project\"")
             && text.contains("entry_mode: greenfield")
+            && text.contains("- \".punk/instructions/**\"")
+    });
+    let instruction_index_ok = instruction_index_text.as_ref().is_ok_and(|text| {
+        text.contains("# Punk Instructions")
+            && text.contains("[Getting started](pages/getting-started.md)")
+            && text.contains(".punk/views/instructions/page-index.json")
+            && text.contains("rebuildable and advisory")
     });
     let marker_ok = marker_text.as_ref().is_ok_and(|text| {
         text.contains("project_id = \"weekend-project\"")
@@ -979,6 +1041,11 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
             && text.contains("[memory]")
             && text.contains("layout = \"compact\"")
             && text.contains("root = \".punk/memory\"")
+            && text.contains("[instructions]")
+            && text.contains("root = \".punk/instructions\"")
+            && text.contains("index = \".punk/instructions/INDEX.md\"")
+            && text.contains("page_index_view = \".punk/views/instructions/page-index.json\"")
+            && text.contains("views_active = false")
             && text.contains("[runtime]")
             && text.contains("active = false")
             && text.contains("root = \".punk/runtime\"")
@@ -999,16 +1066,22 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
         artifact.repo_relative_path() == ".punk/project.toml"
             && artifact.kind() == ProjectInitArtifactKind::File
             && artifact.status() == ProjectInitArtifactStatus::Created
+    }) && report.artifacts().iter().any(|artifact| {
+        artifact.repo_relative_path() == INSTRUCTIONS_INDEX_PATH
+            && artifact.kind() == ProjectInitArtifactKind::File
+            && artifact.status() == ProjectInitArtifactStatus::Created
     });
     let scaffold_ok = !report.blocked()
         && report.exit_code() == 0
         && status_exists
         && goal_exists
+        && instructions_ok
         && punk_marker_ok
         && punk_runtime_store_absent
         && root_layout_absent
         && status_ok
         && goal_ok
+        && instruction_index_ok
         && marker_ok
         && artifact_ok
         && cleanup_ok;
@@ -1017,28 +1090,31 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
         SmokeEvalCaseResult::pass(
             "eval_project_init_creates_level0_manual_memory_scaffold",
             "greenfield project init creates Level 0 manual memory scaffold",
-            "greenfield Level 0 scaffold created compact .punk/memory files with project_id, entry_mode, and .punk marker files while leaving root-level Punk memory dirs, brownfield/grayfield, and .punk runtime stores absent",
+            "greenfield Level 0 scaffold created compact .punk/memory files and thin .punk/instructions source pages with project_id, entry_mode, and .punk marker files while leaving root-level Punk memory dirs, brownfield/grayfield, .punk/views, and .punk runtime stores absent",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_project_init_creates_level0_manual_memory_scaffold",
             "greenfield project init creates Level 0 manual memory scaffold",
             format!(
-                "init scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} punk_marker_ok={} punk_runtime_store_absent={} root_layout_absent={} status_ok={} goal_ok={} marker_ok={} artifact_ok={} cleanup_ok={} status_read={:?} goal_read={:?} marker_read={:?}",
+                "init scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} instructions_ok={} punk_marker_ok={} punk_runtime_store_absent={} root_layout_absent={} status_ok={} goal_ok={} instruction_index_ok={} marker_ok={} artifact_ok={} cleanup_ok={} status_read={:?} goal_read={:?} instruction_index_read={:?} marker_read={:?}",
                 report.blocked(),
                 report.exit_code(),
                 status_exists,
                 goal_exists,
+                instructions_ok,
                 punk_marker_ok,
                 punk_runtime_store_absent,
                 root_layout_absent,
                 status_ok,
                 goal_ok,
+                instruction_index_ok,
                 marker_ok,
                 artifact_ok,
                 cleanup_ok,
                 status_text.err(),
                 goal_text.err(),
+                instruction_index_text.err(),
                 marker_text.err()
             ),
         )
@@ -1075,7 +1151,9 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
     let source_manifest_path = reconstruction_root.join("source-corpus-manifest.md");
     let claim_ledger_path = reconstruction_root.join("claim-ledger.md");
     let contract_readiness_path = reconstruction_root.join("contract-readiness.md");
+    let instruction_index_path = temp_path.join(INSTRUCTIONS_INDEX_PATH);
     let status_text = fs::read_to_string(&status_path);
+    let instruction_index_text = fs::read_to_string(&instruction_index_path);
     let marker_text = fs::read_to_string(temp_path.join(".punk/project.toml"));
     let source_manifest_text = fs::read_to_string(&source_manifest_path);
     let claim_ledger_text = fs::read_to_string(&claim_ledger_path);
@@ -1089,6 +1167,14 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
         && reconstruction_root.join("unknowns.md").is_file()
         && reconstruction_root.join("contradictions.md").is_file()
         && contract_readiness_path.is_file();
+    let instructions_ok = instruction_index_path.is_file()
+        && temp_path.join(".punk/instructions/pages/init.md").is_file()
+        && temp_path
+            .join(".punk/instructions/pages/modules.md")
+            .is_file()
+        && temp_path
+            .join(".punk/instructions/modules/README.md")
+            .is_file();
     let runtime_store_absent = !temp_path.join(".punk/events").exists()
         && !temp_path.join(".punk/runtime").exists()
         && !temp_path.join(".punk/cache").exists()
@@ -1121,6 +1207,10 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
             && text.contains("[memory]")
             && text.contains("layout = \"compact\"")
             && text.contains("root = \".punk/memory\"")
+            && text.contains("[instructions]")
+            && text.contains("root = \".punk/instructions\"")
+            && text.contains("index = \".punk/instructions/INDEX.md\"")
+            && text.contains("views_active = false")
             && text.contains("[runtime]")
             && text.contains("active = false")
             && text.contains("[brownfield]")
@@ -1143,6 +1233,11 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
             && text.contains("This is not a gate decision.")
             && text.contains("This is not proof.")
     });
+    let instruction_index_ok = instruction_index_text.as_ref().is_ok_and(|text| {
+        text.contains("# Punk Instructions")
+            && text.contains("Module-specific instruction trees live under `modules/<module-id>/`")
+            && text.contains("No module is active just because this directory exists.")
+    });
     let artifact_ok = report.artifacts().iter().any(|artifact| {
         artifact.repo_relative_path() == ".punk/memory/STATUS.md"
             && artifact.kind() == ProjectInitArtifactKind::File
@@ -1156,6 +1251,10 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
         artifact.repo_relative_path() == ".punk/memory/reconstruction/claim-ledger.md"
             && artifact.kind() == ProjectInitArtifactKind::File
             && artifact.status() == ProjectInitArtifactStatus::Created
+    }) && report.artifacts().iter().any(|artifact| {
+        artifact.repo_relative_path() == INSTRUCTIONS_INDEX_PATH
+            && artifact.kind() == ProjectInitArtifactKind::File
+            && artifact.status() == ProjectInitArtifactStatus::Created
     });
     let cleanup_ok = fs::remove_dir_all(&temp_path).is_ok();
 
@@ -1165,11 +1264,13 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
         && status_exists
         && goal_exists
         && reconstruction_placeholders_ok
+        && instructions_ok
         && runtime_store_absent
         && root_layout_absent
         && status_ok
         && marker_ok
         && placeholders_ok
+        && instruction_index_ok
         && artifact_ok
         && cleanup_ok;
 
@@ -1177,27 +1278,30 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
         SmokeEvalCaseResult::pass(
             "eval_project_init_brownfield_scaffold_shape",
             "brownfield project init creates advisory reconstruction scaffold",
-            "brownfield scaffold recorded not_started advisory reconstruction state, created empty placeholders, did not scan existing source files, and left runtime, contracts, proofs, and root dogfooding dirs absent",
+            "brownfield scaffold recorded not_started advisory reconstruction state, created empty placeholders and thin .punk/instructions source pages, did not scan existing source files, and left runtime, views, contracts, proofs, and root dogfooding dirs absent",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_project_init_brownfield_scaffold_shape",
             "brownfield project init creates advisory reconstruction scaffold",
             format!(
-                "brownfield scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} reconstruction_placeholders_ok={} runtime_store_absent={} root_layout_absent={} status_ok={} marker_ok={} placeholders_ok={} artifact_ok={} cleanup_ok={} status_read={:?} marker_read={:?} source_manifest_read={:?} claim_ledger_read={:?} contract_readiness_read={:?}",
+                "brownfield scaffold drifted; blocked={} exit_code={} status_exists={} goal_exists={} reconstruction_placeholders_ok={} instructions_ok={} runtime_store_absent={} root_layout_absent={} status_ok={} marker_ok={} placeholders_ok={} instruction_index_ok={} artifact_ok={} cleanup_ok={} status_read={:?} instruction_index_read={:?} marker_read={:?} source_manifest_read={:?} claim_ledger_read={:?} contract_readiness_read={:?}",
                 report.blocked(),
                 report.exit_code(),
                 status_exists,
                 goal_exists,
                 reconstruction_placeholders_ok,
+                instructions_ok,
                 runtime_store_absent,
                 root_layout_absent,
                 status_ok,
                 marker_ok,
                 placeholders_ok,
+                instruction_index_ok,
                 artifact_ok,
                 cleanup_ok,
                 status_text.err(),
+                instruction_index_text.err(),
                 marker_text.err(),
                 source_manifest_text.err(),
                 claim_ledger_text.err(),
@@ -8696,7 +8800,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "local-event-log-writer");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 149);
+        assert_eq!(report.cases().len(), 150);
     }
 
     #[test]
@@ -8721,11 +8825,13 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, instruction page-index model, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
         assert!(rendered.contains("  - id: eval_local_flow_event_writer_appends_project_event"));
+        assert!(rendered
+            .contains("  - id: eval_instruction_page_index_model_is_deterministic_and_advisory"));
         assert!(
             rendered.contains("  - id: eval_project_init_creates_level0_manual_memory_scaffold")
         );
@@ -8908,10 +9014,13 @@ mod tests {
         assert!(rendered.contains("notes:"));
         assert!(rendered.contains("local assessment only; no authority is written here"));
         assert!(rendered.contains(
-            "greenfield init smoke cases create compact .punk/memory project-memory scaffold files with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims"
+            "instruction page-index smoke case renders a deterministic advisory tree from source instruction refs without creating .punk/views, summaries, vector DBs, hidden truth stores, LLM calls, or runtime side effects"
         ));
         assert!(rendered.contains(
-            "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, gate artifacts, proofpacks, or acceptance claims"
+            "greenfield init smoke cases create compact .punk/memory project-memory scaffold files plus thin .punk/instructions entrypoints with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, .punk/views, contracts, receipts, gate artifacts, proofpacks, or acceptance claims"
+        ));
+        assert!(rendered.contains(
+            "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace plus thin .punk/instructions entrypoints with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, .punk/views, gate artifacts, proofpacks, or acceptance claims"
         ));
         assert!(rendered.contains(
             "brownfield source corpus manifest model smoke case is side-effect-free and does not scan repositories, walk files, read file contents, compute file hashes, write manifests, create claims, infer intent, use network, or use remote AI"

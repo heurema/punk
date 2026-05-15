@@ -402,9 +402,13 @@ mod tests {
         assert!(output
             .text
             .contains("path: .punk/memory/goals/goal_initial_project_setup.md"));
+        assert!(output.text.contains("path: .punk/instructions/INDEX.md"));
         assert!(output
             .text
             .contains("does not implement brownfield reconstruction or grayfield reconciliation"));
+        assert!(output
+            .text
+            .contains("creates thin local instruction entrypoints under .punk/instructions"));
         assert!(output.text.contains(
             "does not create root-level work, knowledge, docs/adr, or publishing directories"
         ));
@@ -415,6 +419,9 @@ mod tests {
         assert!(root
             .join(".punk/memory/goals/goal_initial_project_setup.md")
             .is_file());
+        assert!(root.join(".punk/instructions/INDEX.md").is_file());
+        assert!(root.join(".punk/instructions/pages/init.md").is_file());
+        assert!(root.join(".punk/instructions/modules/README.md").is_file());
         assert!(root.join(".punk/project.toml").is_file());
         assert!(!root.join("work").exists());
         assert!(!root.join("knowledge").exists());
@@ -463,9 +470,13 @@ mod tests {
         assert!(output
             .text
             .contains("path: .punk/memory/reconstruction/claim-ledger.md"));
+        assert!(output.text.contains("path: .punk/instructions/INDEX.md"));
         assert!(output
             .text
             .contains("does not scan the repository or infer project knowledge"));
+        assert!(output
+            .text
+            .contains("creates thin local instruction entrypoints under .punk/instructions"));
         assert!(output
             .text
             .contains("brownfield reconstruction remains not_started"));
@@ -476,6 +487,9 @@ mod tests {
         assert!(root
             .join(".punk/memory/reconstruction/contract-readiness.md")
             .is_file());
+        assert!(root.join(".punk/instructions/INDEX.md").is_file());
+        assert!(root.join(".punk/instructions/pages/modules.md").is_file());
+        assert!(root.join(".punk/instructions/modules/README.md").is_file());
         assert!(root.join(".punk/project.toml").is_file());
         assert!(!root.join("work").exists());
         assert!(!root.join("knowledge").exists());

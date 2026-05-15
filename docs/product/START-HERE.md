@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-01
+updated_at: 2026-05-15
 review_after: 2026-07-20
 canonical_for:
   - product-entry-path
@@ -91,11 +91,12 @@ The implemented CLI surface today is intentionally small:
 - `punk eval run smoke --format json`
 
 `punk init <project-id>` is active as the default greenfield Dogfooding Level 0 compact manual project-memory scaffold.
-It records `project_id` and `entry_mode = greenfield`, then writes repo-tracked `.punk/memory/` durable memory plus `.punk` marker/setup files with create-new/no-overwrite behavior.
+It records `project_id` and `entry_mode = greenfield`, then writes repo-tracked `.punk/memory/` durable memory, `.punk` marker/setup files, and thin source instruction entrypoints under `.punk/instructions/` with create-new/no-overwrite behavior.
 Run it from the target project root; it initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 For user projects, the default layout is compact `.punk/memory/`; root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are Punk repository dogfooding layout, not the default init layout.
 `punk init <project-id> --mode brownfield` is active only as a brownfield entry scaffold.
-It creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/`, records `reconstruction_status = not_started`, and does not scan, reconstruct, summarize, generate contracts/specs, accept claims, or write runtime state.
+It creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/` plus the same thin `.punk/instructions/` source entrypoints, records `reconstruction_status = not_started`, and does not scan, reconstruct, summarize, generate contracts/specs, accept claims, or write runtime state.
+Instruction page-index behavior is active only as a deterministic advisory model and source-page scaffold. `.punk/views/instructions/page-index.json` is named as a future rebuildable view path, but `punk init` does not create `.punk/views/` or generated instruction views.
 The first Runtime Automation Spine slice is active only as a `punk-events` library writer that appends flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. It is local-only event evidence, not decision authority and not external automation.
 The `.punk/runtime/` tree and runtime evidence directories beyond that narrow event-log slice remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
 Brownfield reconstruction and grayfield reconciliation remain future modes.
