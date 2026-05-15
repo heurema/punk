@@ -214,7 +214,9 @@ For user projects, `punk init <project-id>` uses the compact `.punk/memory/` lay
 
 `.punk/memory/` is repo-tracked durable project memory.
 
-`.punk/runtime/`, `.punk/cache/`, `.punk/events/`, `.punk/runs/`, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
+`.punk/events/flow.jsonl` is active only for the narrow local `punk-events` writer slice under an explicit initialized project root. It is append-only event evidence, not project truth and not decision authority.
+
+`.punk/runtime/`, `.punk/cache/`, `.punk/events/` beyond that narrow flow event log, `.punk/runs/`, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
 
 ## Level 0 manual Work Ledger
 

@@ -40,6 +40,8 @@ Today, the executable CLI surface is intentionally limited to:
 
 Everything else in product docs should be read as target architecture, phase-gated design, parked scope, or future scope unless explicitly marked active.
 
+Runtime automation has one narrow active library slice: `punk-events` can append flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. This is local-only event evidence, not a CLI transition runner, not external automation, and not decision authority.
+
 `punk init <project-id>` is the default greenfield Dogfooding Level 0 compact project-memory scaffold.
 
 Run it from the target project root. It initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
@@ -123,7 +125,8 @@ The following may be documented or parked, but they are not current operator sur
 - LLM contract drafting
 - coding agent execution
 - active proofpack writing
-- `.punk/` runtime storage for work, runs, evals, decisions, or proofs
+- `.punk/` runtime storage beyond the narrow local event-log writer slice, including work, runs, evals, decisions, or proofs
+- persisted flow state beyond local event evidence
 - gate decision writer
 - acceptance claim writer
 - PubPunk publishing automation

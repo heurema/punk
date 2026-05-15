@@ -108,7 +108,7 @@ fn render_root_help() -> String {
         "active setup surface: `punk init`\n",
         "active inspect surface: `punk flow inspect`\n",
         "active eval surface: `punk eval run smoke`\n",
-        "runtime persistence is not active yet; init, inspect, and eval stay limited and honest\n\n",
+        "runtime persistence is limited to a local event-log writer slice; init and inspect do not read or write runtime state\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
         "  punk init <project-id> --mode brownfield\n",
@@ -131,7 +131,7 @@ fn root_usage() -> String {
         "  - init writes only a compact Level 0 repo-tracked .punk/memory scaffold\n",
         "  - init operates in the current directory and does not create a <project-id> subdirectory\n",
         "  - only bounded init, inspect, and smoke-eval surfaces are active\n",
-        "  - .punk runtime persistence is not active yet\n"
+        "  - broad .punk runtime persistence is not active; local event-log writer behavior is library-only\n"
     ))
 }
 
@@ -149,7 +149,7 @@ fn init_usage() -> String {
         "  - brownfield mode creates only an advisory reconstruction workspace; it does not scan or reconstruct the project\n",
         "  - {}\n",
         "  - existing files are never overwritten\n",
-        "  - .punk runtime persistence is not active yet\n"
+        "  - .punk runtime persistence is not active during init\n"
     ),
         PROJECT_ID_FORMAT_NOTE
     )
@@ -280,7 +280,7 @@ mod tests {
         assert!(output.contains("punk init"));
         assert!(output.contains("punk flow inspect"));
         assert!(output.contains("punk eval run smoke"));
-        assert!(output.contains("runtime persistence is not active yet"));
+        assert!(output.contains("runtime persistence is limited to a local event-log writer slice"));
     }
 
     #[test]
@@ -316,7 +316,9 @@ mod tests {
         assert_eq!(output.exit_code, 0);
         assert!(output.text.contains("punk eval run smoke"));
         assert!(output.text.contains("mode: local-smoke-check"));
-        assert!(output.text.contains("runtime_persistence: inactive"));
+        assert!(output
+            .text
+            .contains("runtime_persistence: local-event-log-writer"));
         assert!(output.text.contains("report_storage: inactive"));
         assert!(output.text.contains("suite_id: smoke.v0"));
         assert!(output.text.contains("smoke_result: pass"));

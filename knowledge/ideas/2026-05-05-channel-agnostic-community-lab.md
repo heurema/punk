@@ -5,7 +5,7 @@ status: active
 authority: advisory
 owner: vitaly
 created_at: 2026-05-05
-updated_at: 2026-05-05
+updated_at: 2026-05-09
 review_after: 2026-06-05
 components:
   - community
@@ -14,6 +14,7 @@ components:
   - research-intake
 related_research:
   - knowledge/research/2026-05-05-ai-agent-communication-landscape-notes.md
+  - knowledge/research/2026-05-09-community-driven-development-governance.md
 related_ideas:
   - knowledge/ideas/2026-05-05-community-driven-development-with-agents.md
   - knowledge/ideas/2026-05-05-community-lab-automated-intake-responder.md
@@ -55,6 +56,10 @@ Related responder boundary:
 Related intake-flow boundary:
 
 - `knowledge/ideas/2026-05-05-community-intake-flow.md`
+
+Related cycle 0 launch pack:
+
+- `knowledge/ops/2026-05-09-community-lab-cycle-0-launch-pack.md`
 
 ## One-liner
 
