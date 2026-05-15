@@ -96,7 +96,8 @@ Run it from the target project root; it initializes the current directory in pla
 For user projects, the default layout is compact `.punk/memory/`; root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are Punk repository dogfooding layout, not the default init layout.
 `punk init <project-id> --mode brownfield` is active only as a brownfield entry scaffold.
 It creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/`, records `reconstruction_status = not_started`, and does not scan, reconstruct, summarize, generate contracts/specs, accept claims, or write runtime state.
-The `.punk/runtime/` tree and runtime evidence directories remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
+The first Runtime Automation Spine slice is active only as a `punk-events` library writer that appends flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. It is local-only event evidence, not decision authority and not external automation.
+The `.punk/runtime/` tree and runtime evidence directories beyond that narrow event-log slice remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
 Brownfield reconstruction and grayfield reconciliation remain future modes.
 
 The active target remains the stable core:

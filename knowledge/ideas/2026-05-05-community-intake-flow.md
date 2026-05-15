@@ -16,6 +16,7 @@ components:
   - public-narrative
 related_research:
   - knowledge/research/2026-05-05-ai-agent-communication-landscape-notes.md
+  - knowledge/research/2026-05-09-community-driven-development-governance.md
 related_ideas:
   - knowledge/ideas/2026-05-05-community-driven-development-with-agents.md
   - knowledge/ideas/2026-05-05-channel-agnostic-community-lab.md

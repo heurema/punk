@@ -2,15 +2,18 @@
 //!
 //! This crate intentionally stays narrow in its first implementation step.
 //! It defines a small event schema fixture, append-only log behavior, and
-//! deterministic JSONL output without activating `.punk/` runtime paths,
-//! CLI inspect behavior, or replay/gate/proof integration.
+//! deterministic JSONL output. It also exposes the first bounded local
+//! `.punk/events` writer slice for explicit project roots only, without CLI
+//! inspect behavior, replay/gate/proof integration, or external side effects.
 
 use std::fs::{File, OpenOptions};
-use std::io::{self, Cursor, Write};
+use std::io::{self, BufRead, BufReader, Cursor, Write};
 use std::path::Path;
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const EVENT_SCHEMA_VERSION: &str = "punk.event.v0.1";
+pub const LOCAL_EVENT_ROOT_REF: &str = ".punk/events";
+pub const LOCAL_FLOW_EVENT_LOG_REF: &str = ".punk/events/flow.jsonl";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EventPhase {
@@ -324,6 +327,18 @@ impl<W: Write> AppendOnlyEventLog<W> {
         }
     }
 
+    pub fn with_next_sequence(sink: W, next_sequence: u64) -> Result<Self, EventLogError> {
+        if next_sequence == 0 {
+            return Err(EventLogError::SequenceOverflow);
+        }
+
+        Ok(Self {
+            sink,
+            events: Vec::new(),
+            next_sequence,
+        })
+    }
+
     pub fn append(&mut self, draft: EventDraft) -> Result<EventRecord, EventLogError> {
         let sequence = self.next_sequence;
         let record = EventRecord::from_draft(sequence, draft);
@@ -370,6 +385,179 @@ pub fn create_new_file_event_log(path: impl AsRef<Path>) -> io::Result<AppendOnl
         .write(true)
         .open(path)?;
     Ok(AppendOnlyEventLog::new(file))
+}
+
+#[derive(Debug)]
+pub enum LocalEventLogError {
+    RelativeProjectRoot,
+    MissingProjectRoot,
+    ProjectRootNotDirectory,
+    MissingPunkProjectMarker,
+    EventDirectoryConflict,
+    EventLogPathConflict,
+    UnsafeArtifactRef { artifact_ref: String },
+    Io(io::Error),
+    EventLog(EventLogError),
+}
+
+impl From<io::Error> for LocalEventLogError {
+    fn from(error: io::Error) -> Self {
+        Self::Io(error)
+    }
+}
+
+impl From<EventLogError> for LocalEventLogError {
+    fn from(error: EventLogError) -> Self {
+        Self::EventLog(error)
+    }
+}
+
+pub fn append_local_flow_event(
+    project_root: impl AsRef<Path>,
+    draft: EventDraft,
+) -> Result<EventRecord, LocalEventLogError> {
+    let project_root = project_root.as_ref();
+    validate_project_root(project_root)?;
+    validate_event_artifact_refs(&draft)?;
+
+    let event_dir = project_root.join(LOCAL_EVENT_ROOT_REF);
+    match std::fs::symlink_metadata(&event_dir) {
+        Ok(_) => ensure_plain_directory(&event_dir)?,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            std::fs::create_dir_all(&event_dir).map_err(LocalEventLogError::Io)?;
+            ensure_plain_directory(&event_dir)?;
+        }
+        Err(error) => return Err(LocalEventLogError::Io(error)),
+    }
+
+    let event_log_path = project_root.join(LOCAL_FLOW_EVENT_LOG_REF);
+    ensure_plain_file_or_absent(&event_log_path)?;
+    let next_sequence = next_sequence_for_existing_log(&event_log_path)?;
+    let file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .write(true)
+        .open(&event_log_path)
+        .map_err(LocalEventLogError::Io)?;
+
+    let mut log = AppendOnlyEventLog::with_next_sequence(file, next_sequence)?;
+    log.append(draft).map_err(LocalEventLogError::EventLog)
+}
+
+fn validate_project_root(project_root: &Path) -> Result<(), LocalEventLogError> {
+    if !project_root.is_absolute() {
+        return Err(LocalEventLogError::RelativeProjectRoot);
+    }
+
+    let metadata = match std::fs::symlink_metadata(project_root) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Err(LocalEventLogError::MissingProjectRoot);
+        }
+        Err(error) => return Err(LocalEventLogError::Io(error)),
+    };
+
+    if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
+        return Err(LocalEventLogError::ProjectRootNotDirectory);
+    }
+
+    if !project_root.join(".punk/project.toml").is_file() {
+        return Err(LocalEventLogError::MissingPunkProjectMarker);
+    }
+
+    Ok(())
+}
+
+fn validate_event_artifact_refs(draft: &EventDraft) -> Result<(), LocalEventLogError> {
+    for artifact_ref in &draft.artifacts.refs {
+        if !is_safe_event_artifact_ref(artifact_ref) {
+            return Err(LocalEventLogError::UnsafeArtifactRef {
+                artifact_ref: artifact_ref.clone(),
+            });
+        }
+    }
+
+    Ok(())
+}
+
+fn is_safe_event_artifact_ref(artifact_ref: &str) -> bool {
+    if artifact_ref.is_empty()
+        || artifact_ref.starts_with('/')
+        || artifact_ref.starts_with('~')
+        || artifact_ref.contains('\\')
+        || has_url_scheme(artifact_ref)
+        || artifact_ref
+            .split('/')
+            .any(|segment| segment.is_empty() || segment == "." || segment == "..")
+    {
+        return false;
+    }
+
+    true
+}
+
+fn has_url_scheme(value: &str) -> bool {
+    let Some(colon_index) = value.find(':') else {
+        return false;
+    };
+    let first_slash_index = value.find('/').unwrap_or(value.len());
+
+    if colon_index > first_slash_index {
+        return false;
+    }
+
+    let scheme = &value[..colon_index];
+
+    !scheme.is_empty()
+        && scheme
+            .chars()
+            .next()
+            .is_some_and(|character| character.is_ascii_alphabetic())
+        && scheme.chars().all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '+' | '-' | '.')
+        })
+}
+
+fn ensure_plain_directory(path: &Path) -> Result<(), LocalEventLogError> {
+    let metadata = std::fs::symlink_metadata(path).map_err(LocalEventLogError::Io)?;
+    if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() {
+        Ok(())
+    } else {
+        Err(LocalEventLogError::EventDirectoryConflict)
+    }
+}
+
+fn ensure_plain_file_or_absent(path: &Path) -> Result<(), LocalEventLogError> {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_file() && !metadata.file_type().is_symlink() => {
+            Ok(())
+        }
+        Ok(_) => Err(LocalEventLogError::EventLogPathConflict),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(LocalEventLogError::Io(error)),
+    }
+}
+
+fn next_sequence_for_existing_log(path: &Path) -> Result<u64, LocalEventLogError> {
+    let file = match File::open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(1),
+        Err(error) => return Err(LocalEventLogError::Io(error)),
+    };
+
+    let mut lines = 0_u64;
+    for line in BufReader::new(file).lines() {
+        let line = line.map_err(LocalEventLogError::Io)?;
+        if !line.trim().is_empty() {
+            lines = lines.checked_add(1).ok_or(LocalEventLogError::EventLog(
+                EventLogError::SequenceOverflow,
+            ))?;
+        }
+    }
+
+    lines.checked_add(1).ok_or(LocalEventLogError::EventLog(
+        EventLogError::SequenceOverflow,
+    ))
 }
 
 pub fn serialize_event_record(record: &EventRecord) -> String {
@@ -481,9 +669,10 @@ fn push_json_string(output: &mut String, value: &str) {
 #[cfg(test)]
 mod tests {
     use super::{
-        create_new_file_event_log, schema_fixture, AppendOnlyEventLog, EventArtifacts,
-        EventCorrelation, EventDraft, EventKind, EventPhase, EventResult, EventSource, EventStatus,
-        FlowTransitionRef, MemoryEventLog,
+        append_local_flow_event, create_new_file_event_log, schema_fixture, AppendOnlyEventLog,
+        EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase, EventResult,
+        EventSource, EventStatus, FlowTransitionRef, LocalEventLogError, MemoryEventLog,
+        LOCAL_FLOW_EVENT_LOG_REF,
     };
     use std::fs;
     use std::io::Cursor;
@@ -641,6 +830,130 @@ mod tests {
     }
 
     #[test]
+    fn local_flow_event_writer_appends_under_punk_events_for_marked_project() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+
+        let first = append_local_flow_event(&temp_path, schema_fixture())
+            .expect("first local event append should succeed");
+        let second = append_local_flow_event(
+            &temp_path,
+            EventDraft::new(
+                EventPhase::Cut,
+                EventKind::TransitionCommitted,
+                EventSource::new("punk-flow", "transition_guard"),
+                EventCorrelation::new("flow_local_001"),
+                EventResult::new(EventStatus::Succeeded),
+            )
+            .with_transition(
+                FlowTransitionRef::new()
+                    .with_from_state("AwaitingApproval")
+                    .with_command("Approve")
+                    .with_to_state("Approved"),
+            )
+            .with_artifacts(EventArtifacts::new().with_ref("work/goals/goal_local_event.md")),
+        )
+        .expect("second local event append should succeed");
+
+        assert_eq!(first.sequence, 1);
+        assert_eq!(first.event_id, "evt_0000000000000001");
+        assert_eq!(second.sequence, 2);
+        assert_eq!(second.event_id, "evt_0000000000000002");
+
+        let rendered = fs::read_to_string(temp_path.join(LOCAL_FLOW_EVENT_LOG_REF))
+            .expect("local event log should be readable");
+        assert_eq!(rendered.lines().count(), 2);
+        assert!(rendered.contains("\"kind\":\"transition_denied\""));
+        assert!(rendered.contains("\"kind\":\"transition_committed\""));
+        assert!(!rendered.contains("decision_id"));
+        assert!(!temp_path.join(".punk/runs").exists());
+        assert!(!temp_path.join(".punk/decisions").exists());
+        assert!(!temp_path.join(".punk/proofs").exists());
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
+    fn local_flow_event_writer_requires_punk_project_marker() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+
+        let error = append_local_flow_event(&temp_path, schema_fixture())
+            .expect_err("missing project marker should block local runtime writes");
+
+        assert!(matches!(
+            error,
+            LocalEventLogError::MissingPunkProjectMarker
+        ));
+        assert!(!temp_path.join(".punk/events").exists());
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
+    fn local_flow_event_writer_rejects_unsafe_artifact_refs_before_creating_store() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+
+        let draft = EventDraft::new(
+            EventPhase::Inspect,
+            EventKind::InspectRead,
+            EventSource::new("punk-events", "local_event_writer"),
+            EventCorrelation::new("flow_local_001"),
+            EventResult::new(EventStatus::Succeeded),
+        )
+        .with_artifacts(EventArtifacts::new().with_ref("/tmp/private-log.txt"));
+
+        let error = append_local_flow_event(&temp_path, draft)
+            .expect_err("absolute artifact refs should be rejected");
+
+        assert!(matches!(
+            error,
+            LocalEventLogError::UnsafeArtifactRef { artifact_ref }
+                if artifact_ref == "/tmp/private-log.txt"
+        ));
+        assert!(!temp_path.join(".punk/events").exists());
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
+    fn local_event_artifact_ref_policy_rejects_path_escape_and_url_shapes() {
+        assert!(super::is_safe_event_artifact_ref(
+            "work/goals/goal_local_event.md"
+        ));
+        assert!(super::is_safe_event_artifact_ref(".punk/events/flow.jsonl"));
+        assert!(!super::is_safe_event_artifact_ref(""));
+        assert!(!super::is_safe_event_artifact_ref("../work/report.md"));
+        assert!(!super::is_safe_event_artifact_ref("work//report.md"));
+        assert!(!super::is_safe_event_artifact_ref("work/./report.md"));
+        assert!(!super::is_safe_event_artifact_ref(
+            "https://example.com/report.md"
+        ));
+        assert!(!super::is_safe_event_artifact_ref("file:/tmp/report.md"));
+        assert!(!super::is_safe_event_artifact_ref("work\\report.md"));
+    }
+
+    #[test]
+    fn local_flow_event_writer_rejects_event_directory_conflict() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+        fs::write(temp_path.join(".punk/events"), b"not a directory\n")
+            .expect("conflicting events path should be written");
+
+        let error = append_local_flow_event(&temp_path, schema_fixture())
+            .expect_err("file at event directory path should be rejected");
+
+        assert!(matches!(error, LocalEventLogError::EventDirectoryConflict));
+        assert!(!temp_path.join(LOCAL_FLOW_EVENT_LOG_REF).exists());
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
     fn explicit_memory_sink_can_be_used_without_runtime_paths() {
         let mut log = AppendOnlyEventLog::new(Cursor::new(Vec::new()));
         let event = log.append(schema_fixture()).expect("append should succeed");
@@ -666,5 +979,14 @@ mod tests {
             unique,
             counter
         ))
+    }
+
+    fn write_project_marker(root: &std::path::Path) {
+        fs::create_dir_all(root.join(".punk")).expect(".punk marker dir should be created");
+        fs::write(
+            root.join(".punk/project.toml"),
+            "schema_version = \"punk.project.v0.1\"\nproject_id = \"event-test\"\n",
+        )
+        .expect("project marker should be written");
     }
 }

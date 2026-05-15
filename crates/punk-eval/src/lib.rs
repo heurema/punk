@@ -40,7 +40,7 @@ use punk_core::{
     REFERENCED_ARTIFACT_VERIFICATION_CAPABILITIES,
 };
 use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
-use punk_events::{schema_fixture, MemoryEventLog};
+use punk_events::{append_local_flow_event, schema_fixture, MemoryEventLog};
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
 use punk_gate::{
     GateBoundaryNote, GateContractRef, GateCreatedAt, GateDecision, GateDecisionId,
@@ -420,6 +420,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_denied_transition_preserves_state(),
         eval_flow_transition_produces_event_evidence(),
         eval_event_log_is_append_only(),
+        eval_local_flow_event_writer_appends_project_event(),
         eval_project_init_creates_level0_manual_memory_scaffold(),
         eval_project_init_brownfield_scaffold_shape(),
         eval_project_init_refuses_to_overwrite_existing_memory(),
@@ -573,10 +574,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -586,13 +587,14 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             smoke_result,
             assessment,
             mode: "local-smoke-check",
-            runtime_persistence: "inactive",
+            runtime_persistence: "local-event-log-writer",
             report_storage: "inactive",
         },
         cases,
         boundary_notes: vec![
             "local assessment only; no authority is written here",
             "no .punk/evals runtime state is read or written",
+            "local event writer smoke coverage writes only .punk/events/flow.jsonl under an explicit temporary project root with a .punk/project.toml marker",
             "greenfield init smoke cases create compact .punk/memory project-memory scaffold files with project_id, entry_mode, and .punk marker files without root-level Punk memory dirs, brownfield reconstruction, grayfield reconciliation, network behavior, .punk runtime stores, contracts, receipts, gate artifacts, proofpacks, or acceptance claims",
             "brownfield init smoke case creates only an advisory .punk/memory/reconstruction workspace with reconstruction_status not_started and no repo scan, AI summary, contracts, claims, runtime stores, gate artifacts, proofpacks, or acceptance claims",
             "brownfield source corpus manifest model smoke case is side-effect-free and does not scan repositories, walk files, read file contents, compute file hashes, write manifests, create claims, infer intent, use network, or use remote AI",
@@ -844,6 +846,83 @@ fn eval_event_log_is_append_only() -> SmokeEvalCaseResult {
             format!("append failed with {error:?}"),
         ),
     }
+}
+
+fn eval_local_flow_event_writer_appends_project_event() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    if let Err(error) = fs::create_dir_all(temp_path.join(".punk")) {
+        return SmokeEvalCaseResult::fail(
+            "eval_local_flow_event_writer_appends_project_event",
+            "local flow event writer appends bounded .punk event evidence",
+            format!("temporary project marker setup failed with {error:?}"),
+        );
+    }
+    if let Err(error) = fs::write(
+        temp_path.join(".punk/project.toml"),
+        "schema_version = \"punk.project.v0.1\"\nproject_id = \"smoke-eval\"\n",
+    ) {
+        let _ = fs::remove_dir_all(&temp_path);
+        return SmokeEvalCaseResult::fail(
+            "eval_local_flow_event_writer_appends_project_event",
+            "local flow event writer appends bounded .punk event evidence",
+            format!("temporary project marker write failed with {error:?}"),
+        );
+    }
+
+    let attempt =
+        FlowInstance::new(FlowState::AwaitingApproval).attempt_transition(FlowCommand::StartRun);
+    let draft = transition_attempt_event_draft(
+        &attempt,
+        "smoke_eval_local_flow",
+        Some("work/goals/goal_start_runtime_automation_spine_v0_1.md"),
+    );
+    let append_result = append_local_flow_event(&temp_path, draft);
+    let rendered = fs::read_to_string(temp_path.join(".punk/events/flow.jsonl"));
+    let forbidden_runtime_created = temp_path.join(".punk/runs").exists()
+        || temp_path.join(".punk/decisions").exists()
+        || temp_path.join(".punk/proofs").exists();
+
+    let result = match (append_result, rendered) {
+        (Ok(record), Ok(text))
+            if record.sequence == 1
+                && record.event_id == "evt_0000000000000001"
+                && text.lines().count() == 1
+                && text.contains("\"kind\":\"transition_denied\"")
+                && text.contains("\"status\":\"denied\"")
+                && !text.contains("decision_id")
+                && !forbidden_runtime_created =>
+        {
+            SmokeEvalCaseResult::pass(
+                "eval_local_flow_event_writer_appends_project_event",
+                "local flow event writer appends bounded .punk event evidence",
+                "explicit temporary project root received one .punk/events/flow.jsonl event without decision/proof/runtime side effects",
+            )
+        }
+        (Ok(record), Ok(text)) => SmokeEvalCaseResult::fail(
+            "eval_local_flow_event_writer_appends_project_event",
+            "local flow event writer appends bounded .punk event evidence",
+            format!(
+                "local event writer evidence drifted; event_id={} sequence={} lines={} forbidden_runtime_created={}",
+                record.event_id,
+                record.sequence,
+                text.lines().count(),
+                forbidden_runtime_created,
+            ),
+        ),
+        (Err(error), _) => SmokeEvalCaseResult::fail(
+            "eval_local_flow_event_writer_appends_project_event",
+            "local flow event writer appends bounded .punk event evidence",
+            format!("local event append failed with {error:?}"),
+        ),
+        (_, Err(error)) => SmokeEvalCaseResult::fail(
+            "eval_local_flow_event_writer_appends_project_event",
+            "local flow event writer appends bounded .punk event evidence",
+            format!("local event log read failed with {error:?}"),
+        ),
+    };
+
+    let _ = fs::remove_dir_all(&temp_path);
+    result
 }
 
 fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseResult {
@@ -8615,9 +8694,9 @@ mod tests {
         assert_eq!(report.suite_id(), SMOKE_SUITE_ID);
         assert_eq!(report.smoke_result(), SmokeEvalStatus::Pass);
         assert_eq!(report.mode(), "local-smoke-check");
-        assert_eq!(report.runtime_persistence(), "inactive");
+        assert_eq!(report.runtime_persistence(), "local-event-log-writer");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 148);
+        assert_eq!(report.cases().len(), 149);
     }
 
     #[test]
@@ -8638,14 +8717,15 @@ mod tests {
 
         assert!(rendered.contains("punk eval run smoke"));
         assert!(rendered.contains("mode: local-smoke-check"));
-        assert!(rendered.contains("runtime_persistence: inactive"));
+        assert!(rendered.contains("runtime_persistence: local-event-log-writer"));
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
+        assert!(rendered.contains("  - id: eval_local_flow_event_writer_appends_project_event"));
         assert!(
             rendered.contains("  - id: eval_project_init_creates_level0_manual_memory_scaffold")
         );
@@ -8962,10 +9042,12 @@ mod tests {
         assert!(rendered.contains("\"run_id\": null"));
         assert!(rendered.contains("\"smoke_result\": \"pass\""));
         assert!(rendered.contains("\"mode\": \"local-smoke-check\""));
-        assert!(rendered.contains("\"runtime_persistence\": \"inactive\""));
+        assert!(rendered.contains("\"runtime_persistence\": \"local-event-log-writer\""));
         assert!(rendered.contains("\"report_storage\": \"inactive\""));
         assert!(rendered.contains("\"case_results\": ["));
         assert!(rendered.contains("\"case_id\": \"eval_flow_allows_approval_transition\""));
+        assert!(rendered
+            .contains("\"case_id\": \"eval_local_flow_event_writer_appends_project_event\""));
         assert!(rendered
             .contains("\"case_id\": \"eval_source_corpus_manifest_model_is_side_effect_free\""));
         assert!(rendered.contains(
