@@ -1,10 +1,13 @@
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use punk_eval::run_smoke_suite;
 use punk_flow::{transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState};
-use punk_project::{init_project, ProjectId, ProjectInitEntryMode, PROJECT_ID_FORMAT_NOTE};
+use punk_project::{
+    init_project, locate_publishing_workspace, ProjectId, ProjectInitEntryMode,
+    PROJECT_ID_FORMAT_NOTE,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct CommandOutput {
@@ -14,6 +17,12 @@ struct CommandOutput {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SmokeEvalFormat {
+    Human,
+    Json,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PublishingLocateFormat {
     Human,
     Json,
 }
@@ -82,6 +91,15 @@ where
         [_bin, flow, inspect] if flow == "flow" && inspect == "inspect" => {
             Ok(CommandOutput::success(render_flow_inspect()))
         }
+        [_bin, publishing, locate, options @ ..]
+            if publishing == "publishing" && locate == "locate" =>
+        {
+            let options = parse_publishing_locate_options(project_root, options)?;
+            Ok(render_publishing_locate(
+                &options.project_root,
+                options.format,
+            ))
+        }
         [_bin, eval, run, smoke] if eval == "eval" && run == "run" && smoke == "smoke" => {
             Ok(render_smoke_eval(SmokeEvalFormat::Human))
         }
@@ -96,6 +114,7 @@ where
         }
         [_bin, init, ..] if init == "init" => Err(init_usage()),
         [_bin, flow, ..] if flow == "flow" => Err(flow_usage()),
+        [_bin, publishing, ..] if publishing == "publishing" => Err(publishing_usage()),
         [_bin, eval, ..] if eval == "eval" => Err(eval_usage()),
         [_bin, ..] => Err(root_usage()),
         [] => Err(root_usage()),
@@ -107,12 +126,14 @@ fn render_root_help() -> String {
         "punk: early-stage local-first bounded work kernel\n",
         "active setup surface: `punk init`\n",
         "active inspect surface: `punk flow inspect`\n",
+        "active publishing resolver surface: `punk publishing locate`\n",
         "active eval surface: `punk eval run smoke`\n",
         "runtime persistence is limited to a local event-log writer slice; init and inspect do not read or write runtime state\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
         "  punk init <project-id> --mode brownfield\n",
         "  punk flow inspect\n",
+        "  punk publishing locate [--project-root <path>] [--json]\n",
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n"
     ))
@@ -125,6 +146,7 @@ fn root_usage() -> String {
         "  punk init <project-id>\n",
         "  punk init <project-id> --mode brownfield\n",
         "  punk flow inspect\n",
+        "  punk publishing locate [--project-root <path>] [--json]\n",
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n\n",
         "Notes:\n",
@@ -170,6 +192,64 @@ fn eval_usage() -> String {
         "  punk eval run smoke\n",
         "  punk eval run smoke --format json\n"
     ))
+}
+
+fn publishing_usage() -> String {
+    format!(concat!(
+        "unknown publishing command\n\n",
+        "Usage:\n",
+        "  punk publishing locate [--project-root <path>] [--json]\n\n",
+        "Notes:\n",
+        "  - locate reads .punk/publishing.toml and local-only .punk/publishing.local.toml only\n",
+        "  - locate does not create files, publish, call APIs, open browsers, or read credentials\n",
+        "  - .punk/publishing.local.toml is local-only pointer state, not project truth\n"
+    ))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PublishingLocateOptions {
+    project_root: PathBuf,
+    format: PublishingLocateFormat,
+}
+
+fn parse_publishing_locate_options(
+    cwd: &Path,
+    options: &[String],
+) -> Result<PublishingLocateOptions, String> {
+    let mut project_root = cwd.to_path_buf();
+    let mut format = PublishingLocateFormat::Human;
+    let mut index = 0;
+
+    while index < options.len() {
+        match options[index].as_str() {
+            "--json" => {
+                format = PublishingLocateFormat::Json;
+                index += 1;
+            }
+            "--project-root" => {
+                let Some(value) = options.get(index + 1) else {
+                    return Err(publishing_usage());
+                };
+                project_root = resolve_cli_path(cwd, value);
+                index += 2;
+            }
+            _ => return Err(publishing_usage()),
+        }
+    }
+
+    Ok(PublishingLocateOptions {
+        project_root,
+        format,
+    })
+}
+
+fn resolve_cli_path(cwd: &Path, value: &str) -> PathBuf {
+    let path = PathBuf::from(value);
+    if path.is_absolute() {
+        path
+    } else {
+        cwd.join(path)
+    }
 }
 
 fn render_flow_inspect() -> String {
@@ -225,6 +305,15 @@ fn render_smoke_eval(format: SmokeEvalFormat) -> CommandOutput {
     CommandOutput::with_exit(text, report.exit_code())
 }
 
+fn render_publishing_locate(project_root: &Path, format: PublishingLocateFormat) -> CommandOutput {
+    let report = locate_publishing_workspace(project_root);
+    let text = match format {
+        PublishingLocateFormat::Human => report.render_human(),
+        PublishingLocateFormat::Json => report.render_json(),
+    };
+    CommandOutput::with_exit(text, report.exit_code())
+}
+
 fn render_project_init(
     project_root: &Path,
     project_id: ProjectId,
@@ -263,8 +352,8 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        eval_usage, init_usage, render_flow_inspect, render_root_help, render_smoke_eval, run,
-        run_at, SmokeEvalFormat,
+        eval_usage, init_usage, publishing_usage, render_flow_inspect, render_publishing_locate,
+        render_root_help, render_smoke_eval, run, run_at, PublishingLocateFormat, SmokeEvalFormat,
     };
     use std::fs;
     use std::process;
@@ -279,6 +368,7 @@ mod tests {
 
         assert!(output.contains("punk init"));
         assert!(output.contains("punk flow inspect"));
+        assert!(output.contains("punk publishing locate"));
         assert!(output.contains("punk eval run smoke"));
         assert!(output.contains("runtime persistence is limited to a local event-log writer slice"));
     }
@@ -307,6 +397,104 @@ mod tests {
         assert!(output.contains("preview_event_status: denied"));
         assert!(!output.contains("preview_goal_ref:"));
         assert!(!output.contains("work/goals/"));
+    }
+
+    #[test]
+    fn publishing_locate_resolves_local_workspace_pointer() {
+        let root = unique_temp_path();
+        let workspace = root.join("external-publishing-workspace");
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        fs::create_dir_all(&workspace).expect("workspace dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+        write_publishing_local_pointer(
+            &root,
+            "punk-publishing://project/goalrail",
+            &workspace.display().to_string(),
+        );
+
+        let output = render_publishing_locate(&root, PublishingLocateFormat::Human);
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("punk publishing locate"));
+        assert!(output
+            .text
+            .contains("mode: local-publishing-workspace-resolver"));
+        assert!(output.text.contains("status: located"));
+        assert!(output.text.contains("project_id: goalrail"));
+        assert!(output
+            .text
+            .contains("workspace_ref: punk-publishing://project/goalrail"));
+        assert!(output.text.contains("workspace_exists: true"));
+        assert!(output
+            .text
+            .contains("no files are created, modified, or published"));
+        assert!(output
+            .text
+            .contains("no browser, network API, credential, token, adapter, bot"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn publishing_locate_json_supports_project_root_option() {
+        let root = unique_temp_path();
+        let cwd = unique_temp_path();
+        let workspace = root.join("external-publishing-workspace");
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        fs::create_dir_all(&cwd).expect("cwd should be created");
+        fs::create_dir_all(&workspace).expect("workspace dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+        write_publishing_local_pointer(
+            &root,
+            "punk-publishing://project/goalrail",
+            &workspace.display().to_string(),
+        );
+
+        let output = run_at(
+            [
+                "punk",
+                "publishing",
+                "locate",
+                "--project-root",
+                root.to_str().expect("test path should be utf-8"),
+                "--json",
+            ],
+            &cwd,
+        )
+        .expect("publishing locate should run");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.starts_with("{"));
+        assert!(output.text.contains("\"status\": \"located\""));
+        assert!(output.text.contains("\"project_id\": \"goalrail\""));
+        assert!(output
+            .text
+            .contains("\"workspace_ref\": \"punk-publishing://project/goalrail\""));
+        assert!(output.text.contains("\"workspace_exists\": true"));
+        assert!(output.text.contains("\"writes_files\": false"));
+        assert!(output.text.contains("\"external_side_effects\": false"));
+
+        let _ = fs::remove_dir_all(root);
+        let _ = fs::remove_dir_all(cwd);
+    }
+
+    #[test]
+    fn publishing_locate_blocks_missing_local_pointer() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+
+        let output = run_at(["punk", "publishing", "locate", "--json"], &root)
+            .expect("publishing locate should report blocked state");
+
+        assert_eq!(output.exit_code, 1);
+        assert!(output.text.contains("\"status\": \"blocked\""));
+        assert!(output
+            .text
+            .contains("\"blocker_code\": \"local_pointer_missing\""));
+        assert!(output.text.contains("\"workspace_root\": null"));
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
@@ -603,13 +791,56 @@ mod tests {
     }
 
     #[test]
+    fn unknown_publishing_command_returns_usage_error() {
+        let error =
+            run(["punk", "publishing", "unknown"]).expect_err("unknown publishing command fails");
+
+        assert_eq!(error, publishing_usage());
+        assert!(error.contains("punk publishing locate"));
+    }
+
+    #[test]
     fn unknown_command_returns_usage_error() {
         let error = run(["punk", "unknown"]).expect_err("unknown command must fail");
 
         assert!(error.contains("unknown command"));
         assert!(error.contains("punk init"));
         assert!(error.contains("punk flow inspect"));
+        assert!(error.contains("punk publishing locate"));
         assert!(error.contains("punk eval run smoke"));
+    }
+
+    fn write_publishing_binding(root: &std::path::Path, project_id: &str, workspace_ref: &str) {
+        fs::write(
+            root.join(".punk/publishing.toml"),
+            format!(
+                r#"schema_version = "punk.publishing.binding.v1"
+project_id = "{project_id}"
+workspace_ref = "{workspace_ref}"
+
+[workspace]
+workspace_ref_kind = "logical"
+"#
+            ),
+        )
+        .expect("publishing binding should be written");
+    }
+
+    fn write_publishing_local_pointer(
+        root: &std::path::Path,
+        workspace_ref: &str,
+        workspace_root: &str,
+    ) {
+        fs::write(
+            root.join(".punk/publishing.local.toml"),
+            format!(
+                r#"schema_version = "punk.publishing.local.v1"
+workspace_ref = "{workspace_ref}"
+workspace_root = "{workspace_root}"
+"#
+            ),
+        )
+        .expect("local publishing pointer should be written");
     }
 
     fn unique_temp_path() -> std::path::PathBuf {

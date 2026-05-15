@@ -87,6 +87,7 @@ The implemented CLI surface today is intentionally small:
 - `punk init <project-id>`
 - `punk init <project-id> --mode brownfield`
 - `punk flow inspect`
+- `punk publishing locate [--project-root <path>] [--json]`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
@@ -98,6 +99,7 @@ For user projects, the default layout is compact `.punk/memory/`; root-level `wo
 It creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/` plus the same thin `.punk/instructions/` source entrypoints, records `reconstruction_status = not_started`, and does not scan, reconstruct, summarize, generate contracts/specs, accept claims, or write runtime state.
 Instruction page-index behavior is active only as a deterministic advisory model and source-page scaffold. `.punk/views/instructions/page-index.json` is named as a future rebuildable view path, but `punk init` does not create `.punk/views/` or generated instruction views.
 The first Runtime Automation Spine slice is active only as a `punk-events` library writer that appends flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. It is local-only event evidence, not decision authority and not external automation.
+The first publishing-related CLI slice is active only as `punk publishing locate`. It reads `.punk/publishing.toml` and local-only `.punk/publishing.local.toml`, validates the logical workspace binding, and reports the external local publishing workspace. It does not write files, publish, open browsers, call APIs, read credentials, activate adapters, or run PubPunk automation.
 The `.punk/runtime/` tree and runtime evidence directories beyond that narrow event-log slice remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
 Brownfield reconstruction and grayfield reconciliation remain future modes.
 
@@ -125,6 +127,7 @@ Do not build or describe these as current operator paths:
 
 - autonomous coding agent execution
 - PubPunk publishing automation
+- publishing execution beyond local workspace location
 - provider adapters
 - MCP integration
 - knowledge embeddings as project truth

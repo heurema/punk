@@ -35,12 +35,15 @@ Today, the executable CLI surface is intentionally limited to:
 - `punk init <project-id>`
 - `punk init <project-id> --mode brownfield`
 - `punk flow inspect`
+- `punk publishing locate [--project-root <path>] [--json]`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
 Everything else in product docs should be read as target architecture, phase-gated design, parked scope, or future scope unless explicitly marked active.
 
 Runtime automation has one narrow active library slice: `punk-events` can append flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. This is local-only event evidence, not a CLI transition runner, not external automation, and not decision authority.
+
+Publishing has one narrow active resolver surface: `punk publishing locate` reads `.punk/publishing.toml` plus local-only `.punk/publishing.local.toml`, validates the logical workspace binding, and reports the external local publishing workspace in human or JSON form. It creates no files, publishes nothing, opens no browser, calls no API, reads no credentials, and does not activate PubPunk automation.
 
 `punk init <project-id>` is the default greenfield Dogfooding Level 0 compact project-memory scaffold.
 
@@ -127,6 +130,7 @@ The following may be documented or parked, but they are not current operator sur
 - active proofpack writing
 - `.punk/` runtime storage beyond the narrow local event-log writer slice, including work, runs, evals, decisions, or proofs
 - persisted flow state beyond local event evidence
+- publishing execution beyond local workspace location
 - generated instruction views beyond source `.punk/instructions/` pages
 - gate decision writer
 - acceptance claim writer

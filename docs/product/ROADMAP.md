@@ -357,12 +357,14 @@ Goal: prove the architecture is not code-only.
 
 Initial scope:
 
+- local-only publishing workspace location
 - draft-only
 - no external publishing side effects
 - style/fact-check receipts
 
 Exit criteria:
 
+- local resolver cannot publish, call APIs, read credentials, open browsers, or create receipts
 - PubPunk follows the same lifecycle
 - no hidden external side effects
 
