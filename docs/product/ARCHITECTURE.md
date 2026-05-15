@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-29
+updated_at: 2026-05-15
 review_after: 2026-07-20
 canonical_for:
   - architecture-boundaries
@@ -239,6 +239,10 @@ Project memory has four repo-tracked truth surfaces:
 - `publishing/` — public-build narrative and receipts
 
 Runtime and derived data live under `.punk/`.
+
+User-project source instructions may also live under `.punk/instructions/`.
+They are thin repo-tracked source pages for local orientation, not generated runtime state.
+Derived instruction indexes or views under `.punk/views/` remain rebuildable advisory artifacts and are not source of truth.
 
 ### Project-memory link graph
 

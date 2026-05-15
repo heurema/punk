@@ -18,12 +18,18 @@ pub const PROJECT_ID_FORMAT_NOTE: &str =
 pub const SOURCE_CORPUS_MANIFEST_MODEL_SCHEMA_VERSION: &str =
     "brownfield-source-corpus-manifest-model.v0.1";
 pub const SOURCE_CORPUS_MANIFEST_SCHEMA_VERSION: &str = "brownfield-source-corpus-manifest.v0.1";
+pub const INSTRUCTION_PAGE_INDEX_SCHEMA_VERSION: &str = "punk-instruction-page-index.v0.1";
 
 const MEMORY_ROOT: &str = ".punk/memory";
 const STATUS_PATH: &str = ".punk/memory/STATUS.md";
 const INITIAL_GOAL_PATH: &str = ".punk/memory/goals/goal_initial_project_setup.md";
 const BROWNFIELD_BASELINE_GOAL_PATH: &str =
     ".punk/memory/goals/goal_brownfield_reconstruction_baseline.md";
+pub const INSTRUCTIONS_ROOT: &str = ".punk/instructions";
+pub const INSTRUCTIONS_INDEX_PATH: &str = ".punk/instructions/INDEX.md";
+pub const INSTRUCTION_PAGES_ROOT: &str = ".punk/instructions/pages";
+pub const INSTRUCTION_MODULES_ROOT: &str = ".punk/instructions/modules";
+pub const INSTRUCTION_PAGE_INDEX_VIEW_PATH: &str = ".punk/views/instructions/page-index.json";
 
 fn work_status_template(project_id: &ProjectId) -> String {
     format!(
@@ -92,6 +98,7 @@ scope:
     - "design/**"
     - ".punk/README.md"
     - ".punk/project.toml"
+    - ".punk/instructions/**"
     - ".punk/memory/**"
   exclude:
     - "work/**"
@@ -229,6 +236,7 @@ scope:
     - ".punk/memory/STATUS.md"
     - ".punk/memory/reconstruction/**"
     - ".punk/memory/reports/**"
+    - ".punk/instructions/**"
   exclude:
     - "work/**"
     - "knowledge/**"
@@ -320,6 +328,128 @@ Raw or parked ideas live here.
 Ideas are not implementation truth until promoted through the project workflow.
 "#;
 
+const INSTRUCTIONS_INDEX_TEMPLATE: &str = r#"# Punk Instructions
+
+This is a thin local instruction index for this Punk project.
+
+Use it to find the focused instruction page you need. Do not copy every rule
+into this file.
+
+## Start here
+
+- [Getting started](pages/getting-started.md)
+- [Project layout](pages/layout.md)
+- [Init behavior](pages/init.md)
+- [Modules](pages/modules.md)
+- [Authority and generated views](pages/authority.md)
+
+## Module instructions
+
+Module-specific instruction trees live under `modules/<module-id>/` when a
+module is explicitly added later.
+
+No module is active just because this directory exists.
+
+## Page index view
+
+A future derived page index may live at:
+
+```text
+.punk/views/instructions/page-index.json
+```
+
+That view is rebuildable and advisory. The source instruction pages remain the
+thing to inspect.
+"#;
+
+const INSTRUCTIONS_GETTING_STARTED_TEMPLATE: &str = r#"# Getting Started
+
+This project has been initialized with Punk.
+
+Start with:
+
+1. Read `.punk/README.md`.
+2. Read `.punk/project.toml`.
+3. Read `.punk/memory/STATUS.md`.
+4. Follow the selected next goal in `.punk/memory/goals/`.
+
+Keep changes bounded and record evidence in project memory.
+"#;
+
+const INSTRUCTIONS_LAYOUT_TEMPLATE: &str = r#"# Project Layout
+
+Current local Punk layout:
+
+- `.punk/README.md` - thin project entrypoint.
+- `.punk/project.toml` - setup metadata, not runtime authority.
+- `.punk/instructions/` - local human and agent instructions.
+- `.punk/memory/` - tracked durable Level 0 project memory.
+
+Runtime and derived stores are not created by init unless an explicit later
+slice activates them.
+
+Generated views, if present later, are rebuildable views over source artifacts.
+"#;
+
+const INSTRUCTIONS_INIT_TEMPLATE: &str = r#"# Init
+
+`punk init <project-id>` initializes the current directory in place.
+
+It does not create a new subdirectory named `<project-id>`.
+
+Default greenfield init writes compact Level 0 project memory and thin
+instruction entrypoints.
+
+`punk init <project-id> --mode brownfield` writes an advisory brownfield entry
+scaffold. It does not scan the repository, reconstruct project truth, generate
+contracts, write gate decisions, or create proof.
+"#;
+
+const INSTRUCTIONS_MODULES_TEMPLATE: &str = r#"# Modules
+
+Modules add domain-specific guidance and assessments.
+
+A module can add its own instruction subtree later:
+
+```text
+.punk/instructions/modules/<module-id>/INDEX.md
+.punk/instructions/modules/<module-id>/pages/*.md
+```
+
+Modules may assess, collect receipts, and render inspect hints.
+
+Modules may not write final decisions, bypass scope, create hidden truth
+stores, or activate external side effects by documentation alone.
+"#;
+
+const INSTRUCTIONS_AUTHORITY_TEMPLATE: &str = r#"# Authority
+
+Instruction pages help humans and agents navigate the project.
+
+They do not replace contracts, receipts, gate decisions, proofpacks, or
+canonical project memory.
+
+Live work state is recorded in `.punk/memory/STATUS.md`.
+
+Only future `gate` behavior may write final decisions.
+
+Derived instruction indexes and HTML views are advisory and rebuildable.
+"#;
+
+const INSTRUCTION_MODULES_README_TEMPLATE: &str = r#"# Module Instructions
+
+Module instruction trees live here after a module is explicitly added.
+
+No module is active just because this directory exists.
+
+Each module subtree should stay small:
+
+- `INDEX.md` for the module table of contents.
+- `pages/` for focused instructions.
+- no hidden truth store.
+- no external side effects by documentation alone.
+"#;
+
 const BROWNFIELD_RECONSTRUCTION_README_TEMPLATE: &str = r#"# Brownfield Reconstruction Workspace
 
 This directory is the advisory workspace for future brownfield reconstruction artifacts.
@@ -396,6 +526,8 @@ Current active behavior is Dogfooding Level 0 compact manual project memory.
 
 Tracked durable project memory lives under `.punk/memory/`.
 
+Local instructions start at `.punk/instructions/INDEX.md`.
+
 Authoritative live work state for this project is `.punk/memory/STATUS.md`.
 
 Runtime and derived stores such as runtime, cache, events, contracts, runs, evals, decisions, proofs, indexes, and views are not active yet.
@@ -408,6 +540,8 @@ This directory is the Punk project root marker.
 Current active behavior is Dogfooding Level 0 brownfield entry scaffold.
 
 Tracked durable project memory lives under `.punk/memory/`.
+
+Local instructions start at `.punk/instructions/INDEX.md`.
 
 Authoritative live work state for this project is `.punk/memory/STATUS.md`.
 
@@ -448,6 +582,12 @@ live_work_state = ".punk/memory/STATUS.md"
 layout = "compact"
 root = ".punk/memory"
 
+[instructions]
+root = ".punk/instructions"
+index = ".punk/instructions/INDEX.md"
+page_index_view = ".punk/views/instructions/page-index.json"
+views_active = false
+
 [runtime]
 active = false
 root = ".punk/runtime"
@@ -468,6 +608,7 @@ const PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
     "writes only greenfield Level 0 compact project-memory scaffold files under .punk/memory",
     "records project_id and entry_mode = greenfield in the scaffold",
     "creates .punk as a project root marker and .punk/memory as tracked durable memory",
+    "creates thin local instruction entrypoints under .punk/instructions",
     "does not create root-level work, knowledge, docs/adr, or publishing directories",
     "does not implement brownfield reconstruction or grayfield reconciliation",
     "does not create contracts, run receipts, gate artifacts, proofpacks, or acceptance claims",
@@ -488,6 +629,7 @@ const BROWNFIELD_PROJECT_INIT_BOUNDARY_NOTES: &[&str] = &[
     "records project_id and entry_mode = brownfield in the scaffold",
     "records reconstruction_status = not_started and authority = advisory_candidates_only",
     "creates .punk as a project root marker and .punk/memory as tracked durable memory",
+    "creates thin local instruction entrypoints under .punk/instructions",
     "creates empty reconstruction placeholders for source corpus, claims, unknowns, contradictions, and contract readiness",
     "does not create root-level work, knowledge, docs/adr, or publishing directories",
     "does not scan the repository or infer project knowledge",
@@ -503,6 +645,266 @@ const BROWNFIELD_PROJECT_INIT_DEFERRED_NOTES: &[&str] = &[
     "contract writer, receipt writer, gate writer, proof writer, and proofpack writer remain inactive",
     "all future reconstructed claims remain advisory candidates until reviewed",
 ];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InstructionPageIndexNode {
+    id: String,
+    title: String,
+    kind: String,
+    status: String,
+    authority: String,
+    source_ref: String,
+    module_id: String,
+    children: Vec<String>,
+}
+
+impl InstructionPageIndexNode {
+    pub fn new(
+        id: impl Into<String>,
+        title: impl Into<String>,
+        kind: impl Into<String>,
+        status: impl Into<String>,
+        authority: impl Into<String>,
+        source_ref: impl Into<String>,
+        module_id: impl Into<String>,
+        children: &[&str],
+    ) -> Self {
+        Self {
+            id: id.into(),
+            title: title.into(),
+            kind: kind.into(),
+            status: status.into(),
+            authority: authority.into(),
+            source_ref: source_ref.into(),
+            module_id: module_id.into(),
+            children: children.iter().map(|child| (*child).to_owned()).collect(),
+        }
+    }
+
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn kind(&self) -> &str {
+        &self.kind
+    }
+
+    pub fn status(&self) -> &str {
+        &self.status
+    }
+
+    pub fn authority(&self) -> &str {
+        &self.authority
+    }
+
+    pub fn source_ref(&self) -> &str {
+        &self.source_ref
+    }
+
+    pub fn module_id(&self) -> &str {
+        &self.module_id
+    }
+
+    pub fn children(&self) -> &[String] {
+        &self.children
+    }
+}
+
+pub fn default_instruction_page_index_nodes() -> Vec<InstructionPageIndexNode> {
+    vec![
+        InstructionPageIndexNode::new(
+            "punk.instructions",
+            "Punk Instructions",
+            "instruction-index",
+            "active",
+            "advisory",
+            INSTRUCTIONS_INDEX_PATH,
+            "core",
+            &[
+                "punk.instructions.getting-started",
+                "punk.instructions.layout",
+                "punk.instructions.init",
+                "punk.instructions.modules",
+                "punk.instructions.authority",
+            ],
+        ),
+        InstructionPageIndexNode::new(
+            "punk.instructions.getting-started",
+            "Getting Started",
+            "instruction-page",
+            "active",
+            "advisory",
+            ".punk/instructions/pages/getting-started.md",
+            "core",
+            &[],
+        ),
+        InstructionPageIndexNode::new(
+            "punk.instructions.layout",
+            "Project Layout",
+            "instruction-page",
+            "active",
+            "advisory",
+            ".punk/instructions/pages/layout.md",
+            "core",
+            &[],
+        ),
+        InstructionPageIndexNode::new(
+            "punk.instructions.init",
+            "Init",
+            "instruction-page",
+            "active",
+            "advisory",
+            ".punk/instructions/pages/init.md",
+            "core",
+            &[],
+        ),
+        InstructionPageIndexNode::new(
+            "punk.instructions.modules",
+            "Modules",
+            "instruction-page",
+            "active",
+            "advisory",
+            ".punk/instructions/pages/modules.md",
+            "core",
+            &[],
+        ),
+        InstructionPageIndexNode::new(
+            "punk.instructions.authority",
+            "Authority",
+            "instruction-page",
+            "active",
+            "advisory",
+            ".punk/instructions/pages/authority.md",
+            "core",
+            &[],
+        ),
+        InstructionPageIndexNode::new(
+            "punk.instructions.modules.index",
+            "Module Instructions",
+            "module-instruction-root",
+            "parked",
+            "advisory",
+            ".punk/instructions/modules/README.md",
+            "module-host",
+            &[],
+        ),
+    ]
+}
+
+pub fn render_instruction_page_index_json(nodes: &[InstructionPageIndexNode]) -> String {
+    let mut output = String::new();
+    output.push_str("{\n");
+    instruction_page_index_write_json_field(
+        &mut output,
+        1,
+        "schema_version",
+        INSTRUCTION_PAGE_INDEX_SCHEMA_VERSION,
+        true,
+    );
+    instruction_page_index_write_json_field(&mut output, 1, "authority", "advisory", true);
+    instruction_page_index_write_json_field(&mut output, 1, "source_root", INSTRUCTIONS_ROOT, true);
+    instruction_page_index_write_json_field(
+        &mut output,
+        1,
+        "view_ref",
+        INSTRUCTION_PAGE_INDEX_VIEW_PATH,
+        true,
+    );
+    instruction_page_index_write_json_field(
+        &mut output,
+        1,
+        "generated_from",
+        "source_instruction_pages",
+        true,
+    );
+    output.push_str("  \"nodes\": [\n");
+    for (index, node) in nodes.iter().enumerate() {
+        output.push_str("    {\n");
+        instruction_page_index_write_json_field(&mut output, 3, "id", node.id(), true);
+        instruction_page_index_write_json_field(&mut output, 3, "title", node.title(), true);
+        instruction_page_index_write_json_field(&mut output, 3, "kind", node.kind(), true);
+        instruction_page_index_write_json_field(&mut output, 3, "status", node.status(), true);
+        instruction_page_index_write_json_field(
+            &mut output,
+            3,
+            "authority",
+            node.authority(),
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            3,
+            "source_ref",
+            node.source_ref(),
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            3,
+            "module_id",
+            node.module_id(),
+            true,
+        );
+        output.push_str("      \"children\": [");
+        for (child_index, child) in node.children().iter().enumerate() {
+            if child_index > 0 {
+                output.push_str(", ");
+            }
+            instruction_page_index_push_json_string(&mut output, child);
+        }
+        output.push_str("]\n");
+        output.push_str("    }");
+        if index + 1 != nodes.len() {
+            output.push(',');
+        }
+        output.push('\n');
+    }
+    output.push_str("  ]\n");
+    output.push_str("}\n");
+    output
+}
+
+fn instruction_page_index_write_json_field(
+    output: &mut String,
+    indent: usize,
+    key: &str,
+    value: &str,
+    trailing_comma: bool,
+) {
+    output.push_str(&"  ".repeat(indent));
+    instruction_page_index_push_json_string(output, key);
+    output.push_str(": ");
+    instruction_page_index_push_json_string(output, value);
+    if trailing_comma {
+        output.push(',');
+    }
+    output.push('\n');
+}
+
+fn instruction_page_index_push_json_string(output: &mut String, value: &str) {
+    output.push('"');
+    for value_char in value.chars() {
+        match value_char {
+            '\\' => output.push_str("\\\\"),
+            '"' => output.push_str("\\\""),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            '\u{08}' => output.push_str("\\b"),
+            '\u{0C}' => output.push_str("\\f"),
+            value_char if value_char.is_control() => {
+                write!(output, "\\u{:04x}", value_char as u32)
+                    .expect("writing to String should succeed");
+            }
+            value_char => output.push(value_char),
+        }
+    }
+    output.push('"');
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectId(String);
@@ -3368,6 +3770,9 @@ enum ProjectInitTemplate {
 const GREENFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::Directory(".punk"),
     ProjectInitEntry::Directory(MEMORY_ROOT),
+    ProjectInitEntry::Directory(INSTRUCTIONS_ROOT),
+    ProjectInitEntry::Directory(INSTRUCTION_PAGES_ROOT),
+    ProjectInitEntry::Directory(INSTRUCTION_MODULES_ROOT),
     ProjectInitEntry::Directory(".punk/memory/goals"),
     ProjectInitEntry::Directory(".punk/memory/reports"),
     ProjectInitEntry::Directory(".punk/memory/knowledge"),
@@ -3386,6 +3791,31 @@ const GREENFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
         ".punk/memory/knowledge/ideas/README.md",
         IDEAS_README_TEMPLATE,
     ),
+    ProjectInitEntry::File(INSTRUCTIONS_INDEX_PATH, INSTRUCTIONS_INDEX_TEMPLATE),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/getting-started.md",
+        INSTRUCTIONS_GETTING_STARTED_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/layout.md",
+        INSTRUCTIONS_LAYOUT_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/init.md",
+        INSTRUCTIONS_INIT_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/modules.md",
+        INSTRUCTIONS_MODULES_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/authority.md",
+        INSTRUCTIONS_AUTHORITY_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/modules/README.md",
+        INSTRUCTION_MODULES_README_TEMPLATE,
+    ),
     ProjectInitEntry::GeneratedFile(".punk/README.md", ProjectInitTemplate::PunkReadme),
     ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
 ];
@@ -3393,6 +3823,9 @@ const GREENFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
 const BROWNFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::Directory(".punk"),
     ProjectInitEntry::Directory(MEMORY_ROOT),
+    ProjectInitEntry::Directory(INSTRUCTIONS_ROOT),
+    ProjectInitEntry::Directory(INSTRUCTION_PAGES_ROOT),
+    ProjectInitEntry::Directory(INSTRUCTION_MODULES_ROOT),
     ProjectInitEntry::Directory(".punk/memory/goals"),
     ProjectInitEntry::Directory(".punk/memory/reports"),
     ProjectInitEntry::Directory(".punk/memory/reconstruction"),
@@ -3421,6 +3854,31 @@ const BROWNFIELD_PROJECT_INIT_ENTRIES: &[ProjectInitEntry] = &[
     ProjectInitEntry::File(
         ".punk/memory/reconstruction/contract-readiness.md",
         CONTRACT_READINESS_TEMPLATE,
+    ),
+    ProjectInitEntry::File(INSTRUCTIONS_INDEX_PATH, INSTRUCTIONS_INDEX_TEMPLATE),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/getting-started.md",
+        INSTRUCTIONS_GETTING_STARTED_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/layout.md",
+        INSTRUCTIONS_LAYOUT_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/init.md",
+        INSTRUCTIONS_INIT_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/modules.md",
+        INSTRUCTIONS_MODULES_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/pages/authority.md",
+        INSTRUCTIONS_AUTHORITY_TEMPLATE,
+    ),
+    ProjectInitEntry::File(
+        ".punk/instructions/modules/README.md",
+        INSTRUCTION_MODULES_README_TEMPLATE,
     ),
     ProjectInitEntry::GeneratedFile(".punk/README.md", ProjectInitTemplate::PunkReadme),
     ProjectInitEntry::GeneratedFile(".punk/project.toml", ProjectInitTemplate::PunkProjectToml),
@@ -3764,10 +4222,12 @@ fn create_init_file(
 #[cfg(test)]
 mod tests {
     use super::{
-        init_level0_project, init_project, ProjectId, ProjectIdError, ProjectInitArtifactKind,
+        default_instruction_page_index_nodes, init_level0_project, init_project,
+        render_instruction_page_index_json, ProjectId, ProjectIdError, ProjectInitArtifactKind,
         ProjectInitArtifactStatus, ProjectInitEntryMode, BROWNFIELD_BASELINE_GOAL_PATH,
-        INITIAL_GOAL_PATH, PROJECT_INIT_BROWNFIELD_ENTRY_MODE, PROJECT_INIT_ENTRY_MODE,
-        SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS, STATUS_PATH,
+        INITIAL_GOAL_PATH, INSTRUCTIONS_INDEX_PATH, INSTRUCTION_PAGE_INDEX_SCHEMA_VERSION,
+        INSTRUCTION_PAGE_INDEX_VIEW_PATH, PROJECT_INIT_BROWNFIELD_ENTRY_MODE,
+        PROJECT_INIT_ENTRY_MODE, SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS, STATUS_PATH,
     };
     use super::{
         source_corpus_manifest_claim_field_allowed, source_corpus_manifest_render_canonical_bytes,
@@ -3798,6 +4258,29 @@ mod tests {
     static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     #[test]
+    fn instruction_page_index_model_is_deterministic_and_advisory() {
+        let nodes = default_instruction_page_index_nodes();
+        let rendered = render_instruction_page_index_json(&nodes);
+        let rendered_again = render_instruction_page_index_json(&nodes);
+
+        assert_eq!(rendered, rendered_again);
+        assert!(rendered.contains(&format!(
+            "\"schema_version\": \"{INSTRUCTION_PAGE_INDEX_SCHEMA_VERSION}\""
+        )));
+        assert!(rendered.contains("\"authority\": \"advisory\""));
+        assert!(rendered.contains("\"generated_from\": \"source_instruction_pages\""));
+        assert!(rendered.contains(&format!(
+            "\"view_ref\": \"{INSTRUCTION_PAGE_INDEX_VIEW_PATH}\""
+        )));
+        assert!(rendered.contains("\"source_ref\": \".punk/instructions/INDEX.md\""));
+        assert!(rendered.contains("\"source_ref\": \".punk/instructions/pages/init.md\""));
+        assert!(rendered.contains("\"module_id\": \"module-host\""));
+        assert!(rendered.contains("\"status\": \"parked\""));
+        assert!(!rendered.contains("raw_prompt"));
+        assert!(!rendered.contains("transcript"));
+    }
+
+    #[test]
     fn init_creates_level0_manual_memory_scaffold() {
         let root = unique_temp_path();
         fs::create_dir_all(&root).expect("temp root should be created");
@@ -3822,6 +4305,15 @@ mod tests {
             .is_file());
         assert!(root.join(".punk/README.md").is_file());
         assert!(root.join(".punk/project.toml").is_file());
+        assert!(root.join(INSTRUCTIONS_INDEX_PATH).is_file());
+        assert!(root
+            .join(".punk/instructions/pages/getting-started.md")
+            .is_file());
+        assert!(root.join(".punk/instructions/pages/layout.md").is_file());
+        assert!(root.join(".punk/instructions/pages/init.md").is_file());
+        assert!(root.join(".punk/instructions/pages/modules.md").is_file());
+        assert!(root.join(".punk/instructions/pages/authority.md").is_file());
+        assert!(root.join(".punk/instructions/modules/README.md").is_file());
         assert!(!root.join("work").exists());
         assert!(!root.join("knowledge").exists());
         assert!(!root.join("docs").exists());
@@ -3849,6 +4341,16 @@ mod tests {
         assert!(goal.contains("id: goal_initial_project_setup"));
         assert!(goal.contains("project_id: \"weekend-project\""));
         assert!(goal.contains("entry_mode: greenfield"));
+        assert!(goal.contains("- \".punk/instructions/**\""));
+        let punk_readme =
+            fs::read_to_string(root.join(".punk/README.md")).expect("readme should be readable");
+        assert!(punk_readme.contains("Local instructions start at `.punk/instructions/INDEX.md`."));
+        let instruction_index = fs::read_to_string(root.join(INSTRUCTIONS_INDEX_PATH))
+            .expect("instruction index should be readable");
+        assert!(instruction_index.contains("# Punk Instructions"));
+        assert!(instruction_index.contains("[Getting started](pages/getting-started.md)"));
+        assert!(instruction_index.contains(".punk/views/instructions/page-index.json"));
+        assert!(instruction_index.contains("rebuildable and advisory"));
         let project_marker = fs::read_to_string(root.join(".punk/project.toml"))
             .expect("project marker should be readable");
         assert!(project_marker.contains("schema_version = \"punk.project.v0.1\""));
@@ -3859,6 +4361,12 @@ mod tests {
         assert!(project_marker.contains("[memory]"));
         assert!(project_marker.contains("layout = \"compact\""));
         assert!(project_marker.contains("root = \".punk/memory\""));
+        assert!(project_marker.contains("[instructions]"));
+        assert!(project_marker.contains("root = \".punk/instructions\""));
+        assert!(project_marker.contains("index = \".punk/instructions/INDEX.md\""));
+        assert!(project_marker
+            .contains("page_index_view = \".punk/views/instructions/page-index.json\""));
+        assert!(project_marker.contains("views_active = false"));
         assert!(project_marker.contains("[runtime]"));
         assert!(project_marker.contains("active = false"));
         assert!(project_marker.contains("root = \".punk/runtime\""));
@@ -3906,6 +4414,9 @@ mod tests {
         assert!(root.join(".punk/memory/reconstruction").is_dir());
         assert!(root.join(".punk/README.md").is_file());
         assert!(root.join(".punk/project.toml").is_file());
+        assert!(root.join(INSTRUCTIONS_INDEX_PATH).is_file());
+        assert!(root.join(".punk/instructions/pages/init.md").is_file());
+        assert!(root.join(".punk/instructions/modules/README.md").is_file());
         assert!(!root.join("work").exists());
         assert!(!root.join("knowledge").exists());
         assert!(!root.join("docs").exists());
@@ -4109,6 +4620,7 @@ mod tests {
         assert!(!root.join(BROWNFIELD_BASELINE_GOAL_PATH).exists());
         assert!(!root.join(".punk/memory/reports").exists());
         assert!(!root.join(".punk/memory/reconstruction").exists());
+        assert!(!root.join(INSTRUCTIONS_INDEX_PATH).exists());
         assert!(!root.join(".punk/README.md").exists());
         assert!(!root.join(".punk/project.toml").exists());
 
@@ -4164,6 +4676,7 @@ mod tests {
             .join(".punk/memory/knowledge/research/README.md")
             .exists());
         assert!(!root.join(".punk/memory/knowledge/ideas/README.md").exists());
+        assert!(!root.join(INSTRUCTIONS_INDEX_PATH).exists());
         assert!(!root.join(".punk/README.md").exists());
         assert!(!root.join(".punk/project.toml").exists());
 
@@ -4193,6 +4706,7 @@ mod tests {
         assert!(!root.join(".punk/memory/reports/README.md").exists());
         assert!(!root.join(".punk/memory/adr/README.md").exists());
         assert!(!root.join(".punk/memory/knowledge").exists());
+        assert!(!root.join(INSTRUCTIONS_INDEX_PATH).exists());
         assert!(!root.join(".punk/README.md").exists());
         assert!(!root.join(".punk/project.toml").exists());
 
@@ -4229,7 +4743,40 @@ mod tests {
         assert!(!root.join(INITIAL_GOAL_PATH).exists());
         assert!(!root.join(".punk/memory/knowledge").exists());
         assert!(!root.join(".punk/memory/adr").exists());
+        assert!(!root.join(".punk/instructions/pages/init.md").exists());
         assert!(!root.join(".punk/README.md").exists());
+        assert!(!root.join(".punk/project.toml").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_instruction_conflict_is_atomic_noop() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk/instructions"))
+            .expect("instructions dir should be created");
+        fs::write(root.join(INSTRUCTIONS_INDEX_PATH), "custom instructions\n")
+            .expect("custom instruction index should be written");
+        let project_id = ProjectId::parse("weekend-project").expect("project id should parse");
+
+        let report = init_level0_project(&root, project_id);
+
+        assert!(report.blocked());
+        assert_eq!(report.result_label(), "blocked");
+        assert!(report.artifacts().iter().any(|artifact| {
+            artifact.repo_relative_path() == INSTRUCTIONS_INDEX_PATH
+                && artifact.kind() == ProjectInitArtifactKind::File
+                && artifact.status() == ProjectInitArtifactStatus::Conflict
+        }));
+        assert_eq!(
+            fs::read_to_string(root.join(INSTRUCTIONS_INDEX_PATH))
+                .expect("instruction index should remain readable"),
+            "custom instructions\n"
+        );
+        assert!(!root.join(STATUS_PATH).exists());
+        assert!(!root.join(INITIAL_GOAL_PATH).exists());
+        assert!(!root.join(".punk/instructions/pages/init.md").exists());
+        assert!(!root.join(".punk/instructions/modules/README.md").exists());
         assert!(!root.join(".punk/project.toml").exists());
 
         let _ = fs::remove_dir_all(root);

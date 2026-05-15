@@ -46,11 +46,11 @@ Runtime automation has one narrow active library slice: `punk-events` can append
 
 Run it from the target project root. It initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 
-It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory under `.punk/memory/`, writes `.punk` marker/setup files, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
+It records `project_id` and `entry_mode = greenfield`, writes repo-tracked starter memory under `.punk/memory/`, writes `.punk` marker/setup files, creates thin local instruction entrypoints under `.punk/instructions/`, and does not activate brownfield reconstruction, grayfield reconciliation, runtime storage, contracts, gates, proofs, Writer behavior, or network analysis.
 
 `punk init <project-id> --mode brownfield` is active only as a brownfield entry scaffold for an existing project.
 
-It records `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, then creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/`.
+It records `entry_mode = brownfield`, `reconstruction_status = not_started`, and `authority = advisory_candidates_only`, then creates empty advisory reconstruction placeholders under `.punk/memory/reconstruction/` plus the same thin local instruction entrypoints under `.punk/instructions/`.
 
 It does not scan the repository, infer intent, summarize code, generate contracts/specs, accept claims, write runtime state, or prove anything.
 
@@ -127,6 +127,7 @@ The following may be documented or parked, but they are not current operator sur
 - active proofpack writing
 - `.punk/` runtime storage beyond the narrow local event-log writer slice, including work, runs, evals, decisions, or proofs
 - persisted flow state beyond local event evidence
+- generated instruction views beyond source `.punk/instructions/` pages
 - gate decision writer
 - acceptance claim writer
 - PubPunk publishing automation

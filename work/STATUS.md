@@ -6,7 +6,7 @@ authority: canonical
 owner: vitaly
 ledger_version: work-ledger.v0.1
 dogfooding_level: 0
-updated_at: 2026-05-13
+updated_at: 2026-05-15
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
 current_focus: "Pause after brownfield manifest writer first slice v0.1"
 selected_next: "work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md"
@@ -20,6 +20,8 @@ last_validated_commit: "0f013f6"
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
 - Current focus: pause after brownfield manifest writer first slice v0.1.
 - Selected next: `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`
+- Side-track completion note: maintainer/user selected a bounded R2 implementation slice after the PageIndex instruction-navigation research. `work/goals/goal_add_punk_instruction_page_index_scaffold_v0_1.md` is now recorded as done with thin `.punk/instructions/` source pages created by greenfield and brownfield `punk init`, a deterministic advisory instruction page-index model, smoke coverage, CLI coverage, and current-status docs. It added no generated `.punk/views/` writer, PageIndex dependency, Python runtime, LLM call, OCR, MCP, vector DB, hidden truth store, module host activation, PubPunk runtime, provider adapter, bot, GitHub API call, external side effect, gate decision writer, proofpack writer, or acceptance claim behavior. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`; next proposed instruction slice is a separate rebuildable `.punk/views/instructions/page-index.json` writer policy/model, while the broader zero-manual publishing path still needs runtime state, receipts, policy, and gate/proof integration first.
+- Side-track research note: maintainer/user selected a bounded R2 instruction-navigation research pass using `VectifyAI/PageIndex` as an external reference. `work/goals/goal_research_punk_instruction_page_index_v0_1.md` is now recorded as done with advisory research/idea/work-ledger artifacts only. The selected direction is a PageIndex-style `.punk` instruction hierarchy: thin entrypoints, focused source pages, module instruction subtrees, and derived/rebuildable page-index views. It added no Rust code, active CLI command, `punk init` behavior, `.punk` runtime write, module host behavior, PubPunk activation, adapter behavior, PageIndex dependency, Python runtime, LLM call, OCR, MCP, vector DB, cloud sync, hidden truth store, external publication, bot, GitHub API call, PR automation, gate decision writer, proofpack writer, or acceptance claim behavior. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`; next proposed implementation slice is a deterministic instruction page-index model plus thin `.punk/instructions/INDEX.md` scaffolding.
 - Strategic correction note: manual Community Lab publication/digest work is no longer the product automation path. `work/goals/goal_start_runtime_automation_spine_v0_1.md` is now recorded as done with the first narrow Runtime Automation Spine slice: a local-only `punk-events` writer that appends caller-provided flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. It added smoke coverage and current-status docs for the narrow active event writer, and added no external side effects, PubPunk runtime, CommunityPunk runtime, provider adapters, GitHub API behavior, Telegram/Discord behavior, bot runtime, autonomous PR creation, live publishing, raw transcript storage, DAO, token, funding, cloud sync, persisted flow state, gate decision writer, proofpack runtime storage, or acceptance claim writer. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`; recommended next code slice is persisted local flow state plus replay-backed `punk flow inspect`.
 - Side-track publication note: Punk Community Lab Cycle 0 GitHub Discussions post was manually published at https://github.com/heurema/punk/discussions/47 and recorded in `publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md`. This added a public narrative publication receipt, work report, and status note only; it added no runtime behavior, CLI behavior, bot, adapter, GitHub API call, automatic issue creation, raw transcript archive, roadmap voting, CommunityPunk runtime, Topic Graph runtime, DAO, token, funding, or product-doc promotion. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`; next human action is to run the manual cycle 0 signal window, then prepare a maintainer digest after 7-14 days or 10 useful signals.
 - Side-track completion note: maintainer/user explicitly selected a bounded GitHub Discussions Community Lab cycle 0 launch draft. `work/goals/goal_prepare_github_discussions_community_lab_cycle_0_v0_1.md` is now recorded as done with advisory ops/public-draft/work-ledger artifacts only. It added no runtime behavior, CLI behavior, bot, adapter, GitHub API call, raw chat storage, raw transcript archive, automatic issue/goal creation, DAO, token, funding, CommunityPunk runtime, Topic Graph runtime, or docs/product promotion. At draft-prep time, no publication receipt was created because nothing had been published. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`.
@@ -145,6 +147,8 @@ last_validated_commit: "0f013f6"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-05-15 | Added Punk instruction page-index scaffold v0.1 | `work/goals/goal_add_punk_instruction_page_index_scaffold_v0_1.md`, `work/reports/2026-05-15-punk-instruction-page-index-scaffold-v0-1.md`, `crates/punk-project/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `crates/punk-cli/src/main.rs` |
+| 2026-05-15 | Researched Punk instruction page index v0.1 | `work/goals/goal_research_punk_instruction_page_index_v0_1.md`, `knowledge/research/2026-05-15-page-index-instruction-navigation.md`, `knowledge/ideas/2026-05-15-punk-instruction-page-index.md`, `work/reports/2026-05-15-punk-instruction-page-index-research-v0-1.md` |
 | 2026-05-13 | Started Runtime Automation Spine v0.1 | `work/goals/goal_start_runtime_automation_spine_v0_1.md`, `work/reports/2026-05-13-runtime-automation-spine-v0-1.md`, `crates/punk-events/src/lib.rs`, `crates/punk-eval/src/lib.rs`, `docs/product/CRATE-STATUS.md` |
 | 2026-05-13 | Recorded Community Lab Cycle 0 GitHub Discussions publication receipt | `publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md`, `work/reports/2026-05-13-community-lab-cycle-0-publication-receipt.md`, `work/STATUS.md`, https://github.com/heurema/punk/discussions/47 |
 | 2026-05-09 | Prepared GitHub Discussions Community Lab cycle 0 launch draft v0.1 | `work/goals/goal_prepare_github_discussions_community_lab_cycle_0_v0_1.md`, `knowledge/ops/2026-05-09-community-lab-cycle-0-github-discussions-runbook.md`, `publishing/posts/2026-05-09-community-lab-cycle-0-github-discussions-start-here.md`, `publishing/channels/github-discussions-community-lab.md`, `work/reports/2026-05-09-github-discussions-community-lab-cycle-0-prep-v0-1.md` |
@@ -357,7 +361,7 @@ last_validated_commit: "0f013f6"
 
 ## Validation
 
-- Last checked: 2026-05-13
+- Last checked: 2026-05-15
 - Command: `python3 scripts/check_research_gate.py`
 - Command: `python3 scripts/check_work_ledger.py`
 - Command: `cargo fmt --check`
@@ -365,10 +369,11 @@ last_validated_commit: "0f013f6"
 - Command: `cargo test --workspace`
 - Command: `cargo run -q -p punk-cli -- eval run smoke`
 - Command: `git diff --check`
-- Command: `scripts/check.sh docs-governance --files crates/punk-events/src/lib.rs crates/punk-eval/src/lib.rs crates/punk-cli/src/main.rs README.md docs/product/START-HERE.md docs/product/CRATE-STATUS.md docs/product/PROJECT-MEMORY.md work/STATUS.md work/goals/goal_start_runtime_automation_spine_v0_1.md work/reports/2026-05-13-runtime-automation-spine-v0-1.md --report work/reports/2026-05-13-runtime-automation-spine-v0-1.md`
+- Command: `scripts/check.sh docs-governance --files crates/punk-project/src/lib.rs crates/punk-eval/src/lib.rs crates/punk-cli/src/main.rs README.md docs/product/START-HERE.md docs/product/ROADMAP.md docs/product/CRATE-STATUS.md docs/product/ARCHITECTURE.md docs/product/PROJECT-MEMORY.md knowledge/research/2026-05-15-page-index-instruction-navigation.md knowledge/ideas/2026-05-15-punk-instruction-page-index.md work/STATUS.md work/goals/goal_research_punk_instruction_page_index_v0_1.md work/reports/2026-05-15-punk-instruction-page-index-research-v0-1.md work/goals/goal_add_punk_instruction_page_index_scaffold_v0_1.md work/reports/2026-05-15-punk-instruction-page-index-scaffold-v0-1.md --report work/reports/2026-05-15-punk-instruction-page-index-scaffold-v0-1.md`
 - Result: `PASS`
 - Notes:
-  - Runtime Automation Spine v0.1 added only a narrow local `punk-events` writer for `.punk/events/flow.jsonl` under an explicit initialized project root.
-  - Event records remain evidence, not decision authority or project truth.
-  - No external side effects, PubPunk runtime, CommunityPunk runtime, provider adapters, GitHub API behavior, Telegram/Discord behavior, bot runtime, autonomous PR creation, live publishing, raw transcript storage, DAO, token, funding, cloud sync, persisted flow state, gate decision writer, proofpack runtime storage, or acceptance claim writer was activated.
+  - Instruction Page Index Scaffold v0.1 added only thin `.punk/instructions/` source pages and a deterministic advisory page-index model.
+  - Generated `.punk/views/` instruction views remain inactive and are not written by init.
+  - Docs governance passed with 4 existing duplicate-definition warnings in `docs/product/ARCHITECTURE.md`.
+  - No PageIndex dependency, Python runtime, LLM call, OCR, MCP, vector DB, hidden truth store, external side effect, module host activation, PubPunk runtime, provider adapter, bot, GitHub API call, gate decision writer, proofpack writer, or acceptance claim writer was activated.
   - Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`.
