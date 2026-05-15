@@ -1,5 +1,6 @@
 //! Project identity and Level 0 manual project-memory initialization.
 
+use std::env;
 use std::fmt::Write as _;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
@@ -30,6 +31,11 @@ pub const INSTRUCTIONS_INDEX_PATH: &str = ".punk/instructions/INDEX.md";
 pub const INSTRUCTION_PAGES_ROOT: &str = ".punk/instructions/pages";
 pub const INSTRUCTION_MODULES_ROOT: &str = ".punk/instructions/modules";
 pub const INSTRUCTION_PAGE_INDEX_VIEW_PATH: &str = ".punk/views/instructions/page-index.json";
+pub const PUBLISHING_LOCATE_SCHEMA_VERSION: &str = "punk.publishing.locate.v0.1";
+pub const PUBLISHING_BINDING_PATH: &str = ".punk/publishing.toml";
+pub const PUBLISHING_LOCAL_POINTER_PATH: &str = ".punk/publishing.local.toml";
+pub const PUBLISHING_BINDING_SCHEMA_VERSION: &str = "punk.publishing.binding.v1";
+pub const PUBLISHING_LOCAL_SCHEMA_VERSION: &str = "punk.publishing.local.v1";
 
 fn work_status_template(project_id: &ProjectId) -> String {
     format!(
@@ -1203,6 +1209,403 @@ impl ProjectInitReport {
 
         output.trim_end().to_owned()
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PublishingLocateStatus {
+    Located,
+    Blocked,
+}
+
+impl PublishingLocateStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Located => "located",
+            Self::Blocked => "blocked",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PublishingLocateBlockerCode {
+    ProjectRootInvalid,
+    BindingMissing,
+    BindingUnreadable,
+    BindingInvalid,
+    LocalPointerMissing,
+    LocalPointerUnreadable,
+    LocalPointerInvalid,
+    WorkspaceRefMismatch,
+    WorkspaceRootMissing,
+    WorkspaceRootInvalid,
+    WorkspaceRootUnavailable,
+}
+
+impl PublishingLocateBlockerCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ProjectRootInvalid => "project_root_invalid",
+            Self::BindingMissing => "binding_missing",
+            Self::BindingUnreadable => "binding_unreadable",
+            Self::BindingInvalid => "binding_invalid",
+            Self::LocalPointerMissing => "local_pointer_missing",
+            Self::LocalPointerUnreadable => "local_pointer_unreadable",
+            Self::LocalPointerInvalid => "local_pointer_invalid",
+            Self::WorkspaceRefMismatch => "workspace_ref_mismatch",
+            Self::WorkspaceRootMissing => "workspace_root_missing",
+            Self::WorkspaceRootInvalid => "workspace_root_invalid",
+            Self::WorkspaceRootUnavailable => "workspace_root_unavailable",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublishingLocateBlocker {
+    code: PublishingLocateBlockerCode,
+    message: String,
+}
+
+impl PublishingLocateBlocker {
+    fn new(code: PublishingLocateBlockerCode, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+        }
+    }
+
+    pub fn code(&self) -> PublishingLocateBlockerCode {
+        self.code
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PublishingBindingConfig {
+    schema_version: String,
+    project_id: String,
+    workspace_ref: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PublishingLocalConfig {
+    schema_version: String,
+    workspace_ref: Option<String>,
+    workspace_root_raw: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublishingLocateReport {
+    project_root: PathBuf,
+    binding: Option<PublishingBindingConfig>,
+    local: Option<PublishingLocalConfig>,
+    workspace_root: Option<PathBuf>,
+    workspace_exists: bool,
+    blocker: Option<PublishingLocateBlocker>,
+}
+
+impl PublishingLocateReport {
+    pub fn project_root(&self) -> &Path {
+        &self.project_root
+    }
+
+    pub fn status(&self) -> PublishingLocateStatus {
+        if self.blocker.is_some() {
+            PublishingLocateStatus::Blocked
+        } else {
+            PublishingLocateStatus::Located
+        }
+    }
+
+    pub fn exit_code(&self) -> u8 {
+        if self.blocker.is_some() {
+            1
+        } else {
+            0
+        }
+    }
+
+    pub fn blocker(&self) -> Option<&PublishingLocateBlocker> {
+        self.blocker.as_ref()
+    }
+
+    pub fn project_id(&self) -> Option<&str> {
+        self.binding
+            .as_ref()
+            .map(|binding| binding.project_id.as_str())
+    }
+
+    pub fn workspace_ref(&self) -> Option<&str> {
+        self.binding
+            .as_ref()
+            .map(|binding| binding.workspace_ref.as_str())
+    }
+
+    pub fn workspace_root(&self) -> Option<&Path> {
+        self.workspace_root.as_deref()
+    }
+
+    pub fn workspace_exists(&self) -> bool {
+        self.workspace_exists
+    }
+
+    pub fn render_human(&self) -> String {
+        let mut output = String::new();
+        writeln!(&mut output, "punk publishing locate").expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "schema_version: {PUBLISHING_LOCATE_SCHEMA_VERSION}"
+        )
+        .expect("writing to String should succeed");
+        writeln!(&mut output, "mode: local-publishing-workspace-resolver")
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "status: {}", self.status().as_str())
+            .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "project_root: {}",
+            self.project_root().display()
+        )
+        .expect("writing to String should succeed");
+        writeln!(&mut output, "binding_ref: {PUBLISHING_BINDING_PATH}")
+            .expect("writing to String should succeed");
+        writeln!(&mut output, "local_ref: {PUBLISHING_LOCAL_POINTER_PATH}")
+            .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "binding_schema_version: {}",
+            self.binding
+                .as_ref()
+                .map(|binding| binding.schema_version.as_str())
+                .unwrap_or("<missing>")
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "local_schema_version: {}",
+            self.local
+                .as_ref()
+                .map(|local| local.schema_version.as_str())
+                .unwrap_or("<missing>")
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "project_id: {}",
+            self.project_id().unwrap_or("<unknown>")
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "workspace_ref: {}",
+            self.workspace_ref().unwrap_or("<unknown>")
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "workspace_root_source: {}",
+            self.local
+                .as_ref()
+                .map(|local| local.workspace_root_raw.as_str())
+                .unwrap_or("<missing>")
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "workspace_root: {}",
+            self.workspace_root()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| "<unresolved>".to_owned())
+        )
+        .expect("writing to String should succeed");
+        writeln!(&mut output, "workspace_exists: {}", self.workspace_exists())
+            .expect("writing to String should succeed");
+        if let Some(blocker) = self.blocker() {
+            writeln!(&mut output, "blocker_code: {}", blocker.code().as_str())
+                .expect("writing to String should succeed");
+            writeln!(&mut output, "blocker: {}", blocker.message())
+                .expect("writing to String should succeed");
+        }
+        writeln!(&mut output, "notes:").expect("writing to String should succeed");
+        writeln!(&mut output, "  - reads local publishing config only")
+            .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "  - .punk/publishing.local.toml is local-only pointer state, not project truth"
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "  - no files are created, modified, or published"
+        )
+        .expect("writing to String should succeed");
+        writeln!(
+            &mut output,
+            "  - no browser, network API, credential, token, adapter, bot, or external publish action is invoked"
+        )
+        .expect("writing to String should succeed");
+        output.trim_end().to_owned()
+    }
+
+    pub fn render_json(&self) -> String {
+        let mut output = String::new();
+        output.push_str("{\n");
+        instruction_page_index_write_json_field(
+            &mut output,
+            1,
+            "schema_version",
+            PUBLISHING_LOCATE_SCHEMA_VERSION,
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            1,
+            "mode",
+            "local-publishing-workspace-resolver",
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            1,
+            "status",
+            self.status().as_str(),
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            1,
+            "project_root",
+            &self.project_root().display().to_string(),
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            1,
+            "binding_ref",
+            PUBLISHING_BINDING_PATH,
+            true,
+        );
+        instruction_page_index_write_json_field(
+            &mut output,
+            1,
+            "local_ref",
+            PUBLISHING_LOCAL_POINTER_PATH,
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "binding_schema_version",
+            self.binding
+                .as_ref()
+                .map(|binding| binding.schema_version.as_str()),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "local_schema_version",
+            self.local
+                .as_ref()
+                .map(|local| local.schema_version.as_str()),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "project_id",
+            self.project_id(),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "workspace_ref",
+            self.workspace_ref(),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "local_workspace_ref",
+            self.local
+                .as_ref()
+                .and_then(|local| local.workspace_ref.as_deref()),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "workspace_root_source",
+            self.local
+                .as_ref()
+                .map(|local| local.workspace_root_raw.as_str()),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "workspace_root",
+            self.workspace_root()
+                .as_ref()
+                .map(|path| path.display().to_string())
+                .as_deref(),
+            true,
+        );
+        output.push_str("  \"workspace_exists\": ");
+        output.push_str(if self.workspace_exists() {
+            "true"
+        } else {
+            "false"
+        });
+        output.push_str(",\n");
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "blocker_code",
+            self.blocker().map(|blocker| blocker.code().as_str()),
+            true,
+        );
+        publishing_locate_write_optional_json_field(
+            &mut output,
+            "blocker",
+            self.blocker().map(PublishingLocateBlocker::message),
+            true,
+        );
+        output.push_str("  \"writes_files\": false,\n");
+        output.push_str("  \"external_side_effects\": false,\n");
+        output.push_str("  \"notes\": [\n");
+        let notes = [
+            "reads local publishing config only",
+            ".punk/publishing.local.toml is local-only pointer state, not project truth",
+            "no files are created, modified, or published",
+            "no browser, network API, credential, token, adapter, bot, or external publish action is invoked",
+        ];
+        for (index, note) in notes.iter().enumerate() {
+            output.push_str("    ");
+            instruction_page_index_push_json_string(&mut output, note);
+            if index + 1 != notes.len() {
+                output.push(',');
+            }
+            output.push('\n');
+        }
+        output.push_str("  ]\n");
+        output.push_str("}\n");
+        output
+    }
+}
+
+fn publishing_locate_write_optional_json_field(
+    output: &mut String,
+    key: &str,
+    value: Option<&str>,
+    trailing_comma: bool,
+) {
+    output.push_str("  ");
+    instruction_page_index_push_json_string(output, key);
+    output.push_str(": ");
+    match value {
+        Some(value) => instruction_page_index_push_json_string(output, value),
+        None => output.push_str("null"),
+    }
+    if trailing_comma {
+        output.push(',');
+    }
+    output.push('\n');
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3950,6 +4353,413 @@ pub fn init_project(
     }
 }
 
+pub fn locate_publishing_workspace(project_root: impl AsRef<Path>) -> PublishingLocateReport {
+    let project_root = project_root.as_ref().to_path_buf();
+    let mut report = PublishingLocateReport {
+        project_root: project_root.clone(),
+        binding: None,
+        local: None,
+        workspace_root: None,
+        workspace_exists: false,
+        blocker: None,
+    };
+
+    match fs::metadata(&project_root) {
+        Ok(metadata) if metadata.is_dir() => {}
+        Ok(_) => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::ProjectRootInvalid,
+                "project root exists but is not a directory",
+            ));
+            return report;
+        }
+        Err(error) => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::ProjectRootInvalid,
+                format!("project root must already exist: {error}"),
+            ));
+            return report;
+        }
+    }
+
+    let binding = match read_publishing_binding(&project_root) {
+        Ok(binding) => binding,
+        Err(blocker) => {
+            report.blocker = Some(blocker);
+            return report;
+        }
+    };
+    report.binding = Some(binding.clone());
+
+    let local = match read_publishing_local_pointer(&project_root) {
+        Ok(local) => local,
+        Err(blocker) => {
+            report.blocker = Some(blocker);
+            return report;
+        }
+    };
+    report.local = Some(local.clone());
+
+    if let Some(local_workspace_ref) = local.workspace_ref.as_deref() {
+        if local_workspace_ref != binding.workspace_ref {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::WorkspaceRefMismatch,
+                format!(
+                    "local workspace_ref does not match binding: {local_workspace_ref} != {}",
+                    binding.workspace_ref
+                ),
+            ));
+            return report;
+        }
+    }
+
+    let workspace_root = match resolve_local_workspace_root(&local.workspace_root_raw) {
+        Ok(workspace_root) => workspace_root,
+        Err(message) => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::WorkspaceRootInvalid,
+                message,
+            ));
+            return report;
+        }
+    };
+    report.workspace_root = Some(workspace_root.clone());
+
+    match fs::symlink_metadata(&workspace_root) {
+        Ok(metadata) if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() => {
+            report.workspace_exists = true;
+        }
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::WorkspaceRootUnavailable,
+                "workspace root is a symlink; publishing workspace symlinks are not accepted",
+            ));
+        }
+        Ok(_) => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::WorkspaceRootUnavailable,
+                "workspace root exists but is not a directory",
+            ));
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::WorkspaceRootUnavailable,
+                "workspace root does not exist on this host",
+            ));
+        }
+        Err(error) => {
+            report.blocker = Some(PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::WorkspaceRootUnavailable,
+                format!("could not inspect workspace root: {error}"),
+            ));
+        }
+    }
+
+    report
+}
+
+fn read_publishing_binding(
+    project_root: &Path,
+) -> Result<PublishingBindingConfig, PublishingLocateBlocker> {
+    let path = project_root.join(PUBLISHING_BINDING_PATH);
+    let text = read_plain_config_file(
+        &path,
+        PublishingLocateBlockerCode::BindingMissing,
+        PublishingLocateBlockerCode::BindingUnreadable,
+        PUBLISHING_BINDING_PATH,
+    )?;
+    let values = parse_top_level_toml_strings(&text).map_err(|message| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+    })?;
+
+    let schema_version = required_config_value(&values, "schema_version").map_err(|message| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+    })?;
+    if schema_version != PUBLISHING_BINDING_SCHEMA_VERSION {
+        return Err(PublishingLocateBlocker::new(
+            PublishingLocateBlockerCode::BindingInvalid,
+            format!(
+                "unsupported binding schema_version: {schema_version}; expected {PUBLISHING_BINDING_SCHEMA_VERSION}"
+            ),
+        ));
+    }
+
+    if optional_config_value(&values, "workspace_root").is_some() {
+        return Err(PublishingLocateBlocker::new(
+            PublishingLocateBlockerCode::BindingInvalid,
+            "committed binding must not contain a workspace_root host path",
+        ));
+    }
+
+    let project_id = required_non_empty_config_value(&values, "project_id").map_err(|message| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+    })?;
+    let workspace_ref =
+        required_non_empty_config_value(&values, "workspace_ref").map_err(|message| {
+            PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+        })?;
+    validate_publishing_workspace_ref(&workspace_ref).map_err(|message| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+    })?;
+
+    Ok(PublishingBindingConfig {
+        schema_version,
+        project_id,
+        workspace_ref,
+    })
+}
+
+fn read_publishing_local_pointer(
+    project_root: &Path,
+) -> Result<PublishingLocalConfig, PublishingLocateBlocker> {
+    let path = project_root.join(PUBLISHING_LOCAL_POINTER_PATH);
+    let text = read_plain_config_file(
+        &path,
+        PublishingLocateBlockerCode::LocalPointerMissing,
+        PublishingLocateBlockerCode::LocalPointerUnreadable,
+        PUBLISHING_LOCAL_POINTER_PATH,
+    )?;
+    let values = parse_top_level_toml_strings(&text).map_err(|message| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::LocalPointerInvalid, message)
+    })?;
+
+    let schema_version = required_config_value(&values, "schema_version").map_err(|message| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::LocalPointerInvalid, message)
+    })?;
+    if schema_version != PUBLISHING_LOCAL_SCHEMA_VERSION {
+        return Err(PublishingLocateBlocker::new(
+            PublishingLocateBlockerCode::LocalPointerInvalid,
+            format!(
+                "unsupported local schema_version: {schema_version}; expected {PUBLISHING_LOCAL_SCHEMA_VERSION}"
+            ),
+        ));
+    }
+
+    let workspace_ref = optional_config_value(&values, "workspace_ref");
+    if let Some(workspace_ref) = workspace_ref.as_deref() {
+        validate_publishing_workspace_ref(workspace_ref).map_err(|message| {
+            PublishingLocateBlocker::new(PublishingLocateBlockerCode::LocalPointerInvalid, message)
+        })?;
+    }
+    let workspace_root_raw =
+        required_non_empty_config_value(&values, "workspace_root").map_err(|message| {
+            let code = if message.contains("missing") {
+                PublishingLocateBlockerCode::WorkspaceRootMissing
+            } else {
+                PublishingLocateBlockerCode::LocalPointerInvalid
+            };
+            PublishingLocateBlocker::new(code, message)
+        })?;
+
+    Ok(PublishingLocalConfig {
+        schema_version,
+        workspace_ref,
+        workspace_root_raw,
+    })
+}
+
+fn read_plain_config_file(
+    path: &Path,
+    missing_code: PublishingLocateBlockerCode,
+    unreadable_code: PublishingLocateBlockerCode,
+    display_ref: &str,
+) -> Result<String, PublishingLocateBlocker> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_file() && !metadata.file_type().is_symlink() => {}
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(PublishingLocateBlocker::new(
+                unreadable_code,
+                format!("{display_ref} is a symlink; expected a plain file"),
+            ));
+        }
+        Ok(_) => {
+            return Err(PublishingLocateBlocker::new(
+                unreadable_code,
+                format!("{display_ref} exists but is not a plain file"),
+            ));
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Err(PublishingLocateBlocker::new(
+                missing_code,
+                format!("{display_ref} is missing"),
+            ));
+        }
+        Err(error) => {
+            return Err(PublishingLocateBlocker::new(
+                unreadable_code,
+                format!("could not inspect {display_ref}: {error}"),
+            ));
+        }
+    }
+
+    fs::read_to_string(path).map_err(|error| {
+        PublishingLocateBlocker::new(
+            unreadable_code,
+            format!("could not read {display_ref}: {error}"),
+        )
+    })
+}
+
+fn parse_top_level_toml_strings(text: &str) -> Result<Vec<(String, String)>, String> {
+    let mut section = String::new();
+    let mut values: Vec<(String, String)> = Vec::new();
+
+    for (line_index, raw_line) in text.lines().enumerate() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') && line.ends_with(']') {
+            section = line.to_owned();
+            continue;
+        }
+        if !section.is_empty() {
+            continue;
+        }
+
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key.is_empty() {
+            return Err(format!("invalid empty key on line {}", line_index + 1));
+        }
+        if !publishing_locate_config_key_is_relevant(key) {
+            continue;
+        }
+        if values.iter().any(|(existing_key, _)| existing_key == key) {
+            return Err(format!("duplicate top-level key `{key}`"));
+        }
+        let value = parse_toml_string_literal(value.trim()).map_err(|message| {
+            format!(
+                "invalid string value for key `{key}` on line {}: {message}",
+                line_index + 1
+            )
+        })?;
+        values.push((key.to_owned(), value));
+    }
+
+    Ok(values)
+}
+
+fn publishing_locate_config_key_is_relevant(key: &str) -> bool {
+    matches!(
+        key,
+        "schema_version" | "project_id" | "workspace_ref" | "workspace_root"
+    )
+}
+
+fn parse_toml_string_literal(value: &str) -> Result<String, &'static str> {
+    if !value.starts_with('"') {
+        return Err("expected quoted string");
+    }
+    let mut output = String::new();
+    let mut chars = value[1..].chars();
+    while let Some(value_char) = chars.next() {
+        match value_char {
+            '"' => {
+                let trailing = chars.as_str().trim();
+                if trailing.is_empty() {
+                    return Ok(output);
+                }
+                return Err("unexpected trailing content after string");
+            }
+            '\\' => {
+                let Some(escaped) = chars.next() else {
+                    return Err("unterminated escape");
+                };
+                match escaped {
+                    '"' => output.push('"'),
+                    '\\' => output.push('\\'),
+                    'n' => output.push('\n'),
+                    'r' => output.push('\r'),
+                    't' => output.push('\t'),
+                    'b' => output.push('\u{08}'),
+                    'f' => output.push('\u{0C}'),
+                    _ => return Err("unsupported escape"),
+                }
+            }
+            value_char => output.push(value_char),
+        }
+    }
+    Err("unterminated string")
+}
+
+fn required_config_value(values: &[(String, String)], key: &str) -> Result<String, String> {
+    optional_config_value(values, key).ok_or_else(|| format!("missing required key `{key}`"))
+}
+
+fn required_non_empty_config_value(
+    values: &[(String, String)],
+    key: &str,
+) -> Result<String, String> {
+    let value = required_config_value(values, key)?;
+    if value.trim().is_empty() {
+        return Err(format!("key `{key}` must not be empty"));
+    }
+    if value.trim() != value {
+        return Err(format!(
+            "key `{key}` must not contain leading or trailing whitespace"
+        ));
+    }
+    Ok(value)
+}
+
+fn optional_config_value(values: &[(String, String)], key: &str) -> Option<String> {
+    values
+        .iter()
+        .find(|(value_key, _)| value_key == key)
+        .map(|(_, value)| value.clone())
+}
+
+fn validate_publishing_workspace_ref(value: &str) -> Result<(), String> {
+    if value.trim().is_empty() {
+        return Err("workspace_ref must not be empty".to_owned());
+    }
+    if value.trim() != value {
+        return Err("workspace_ref must not contain leading or trailing whitespace".to_owned());
+    }
+    if value.chars().any(char::is_whitespace) {
+        return Err("workspace_ref must not contain whitespace".to_owned());
+    }
+    if !value.starts_with("punk-publishing://") {
+        return Err("workspace_ref must start with punk-publishing://".to_owned());
+    }
+    Ok(())
+}
+
+fn resolve_local_workspace_root(raw: &str) -> Result<PathBuf, String> {
+    if raw.trim().is_empty() {
+        return Err("workspace_root must not be empty".to_owned());
+    }
+    if raw.trim() != raw {
+        return Err("workspace_root must not contain leading or trailing whitespace".to_owned());
+    }
+    if raw.contains('\0') {
+        return Err("workspace_root must not contain NUL bytes".to_owned());
+    }
+    if raw == "~" {
+        return env::var_os("HOME")
+            .map(PathBuf::from)
+            .ok_or_else(|| "HOME is unavailable for ~ expansion".to_owned());
+    }
+    if let Some(suffix) = raw.strip_prefix("~/") {
+        let Some(home) = env::var_os("HOME").map(PathBuf::from) else {
+            return Err("HOME is unavailable for ~/ expansion".to_owned());
+        };
+        return Ok(home.join(suffix));
+    }
+    if raw.starts_with('~') {
+        return Err("workspace_root supports only ~ or ~/ home expansion".to_owned());
+    }
+
+    let path = PathBuf::from(raw);
+    if !path.is_absolute() {
+        return Err("workspace_root must be absolute or start with ~/".to_owned());
+    }
+    Ok(path)
+}
+
 fn render_init_template(
     template: ProjectInitTemplate,
     project_id: &ProjectId,
@@ -4223,11 +5033,13 @@ fn create_init_file(
 mod tests {
     use super::{
         default_instruction_page_index_nodes, init_level0_project, init_project,
-        render_instruction_page_index_json, ProjectId, ProjectIdError, ProjectInitArtifactKind,
-        ProjectInitArtifactStatus, ProjectInitEntryMode, BROWNFIELD_BASELINE_GOAL_PATH,
+        locate_publishing_workspace, render_instruction_page_index_json, ProjectId, ProjectIdError,
+        ProjectInitArtifactKind, ProjectInitArtifactStatus, ProjectInitEntryMode,
+        PublishingLocateBlockerCode, PublishingLocateStatus, BROWNFIELD_BASELINE_GOAL_PATH,
         INITIAL_GOAL_PATH, INSTRUCTIONS_INDEX_PATH, INSTRUCTION_PAGE_INDEX_SCHEMA_VERSION,
         INSTRUCTION_PAGE_INDEX_VIEW_PATH, PROJECT_INIT_BROWNFIELD_ENTRY_MODE,
-        PROJECT_INIT_ENTRY_MODE, SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS, STATUS_PATH,
+        PROJECT_INIT_ENTRY_MODE, PUBLISHING_BINDING_PATH, PUBLISHING_LOCAL_POINTER_PATH,
+        PUBLISHING_LOCATE_SCHEMA_VERSION, SOURCE_CORPUS_FORBIDDEN_CLAIM_FIELDS, STATUS_PATH,
     };
     use super::{
         source_corpus_manifest_claim_field_allowed, source_corpus_manifest_render_canonical_bytes,
@@ -4278,6 +5090,135 @@ mod tests {
         assert!(rendered.contains("\"status\": \"parked\""));
         assert!(!rendered.contains("raw_prompt"));
         assert!(!rendered.contains("transcript"));
+    }
+
+    #[test]
+    fn publishing_locate_resolves_valid_local_pointer_without_writes() {
+        let root = unique_temp_path();
+        let workspace = root.join("external-workspace");
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        fs::create_dir_all(&workspace).expect("workspace dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+        write_publishing_local_pointer(
+            &root,
+            "punk-publishing://project/goalrail",
+            &workspace.display().to_string(),
+        );
+
+        let before_files = count_regular_files(&root);
+        let report = locate_publishing_workspace(&root);
+        let after_files = count_regular_files(&root);
+        let rendered = report.render_human();
+        let rendered_json = report.render_json();
+
+        assert_eq!(report.status(), PublishingLocateStatus::Located);
+        assert_eq!(report.exit_code(), 0);
+        assert_eq!(report.project_id(), Some("goalrail"));
+        assert_eq!(
+            report.workspace_ref(),
+            Some("punk-publishing://project/goalrail")
+        );
+        assert_eq!(report.workspace_root(), Some(workspace.as_path()));
+        assert!(report.workspace_exists());
+        assert_eq!(before_files, after_files);
+        assert!(rendered.contains("punk publishing locate"));
+        assert!(rendered.contains("mode: local-publishing-workspace-resolver"));
+        assert!(rendered.contains("status: located"));
+        assert!(rendered.contains("workspace_exists: true"));
+        assert!(rendered.contains("no files are created, modified, or published"));
+        assert!(rendered.contains("no browser, network API, credential, token, adapter, bot"));
+        assert!(rendered_json.contains(&format!(
+            "\"schema_version\": \"{PUBLISHING_LOCATE_SCHEMA_VERSION}\""
+        )));
+        assert!(rendered_json.contains("\"status\": \"located\""));
+        assert!(rendered_json.contains("\"writes_files\": false"));
+        assert!(rendered_json.contains("\"external_side_effects\": false"));
+        assert!(rendered_json.contains("\"blocker_code\": null"));
+        assert!(!rendered_json.contains("secret"));
+        assert!(!rendered_json.contains("token_value"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn publishing_locate_blocks_without_local_pointer() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+
+        let report = locate_publishing_workspace(&root);
+        let blocker = report
+            .blocker()
+            .expect("missing local pointer should block");
+
+        assert_eq!(report.status(), PublishingLocateStatus::Blocked);
+        assert_eq!(report.exit_code(), 1);
+        assert_eq!(
+            blocker.code(),
+            PublishingLocateBlockerCode::LocalPointerMissing
+        );
+        assert_eq!(report.workspace_root(), None);
+        assert!(!report.workspace_exists());
+        assert!(report.render_json().contains("\"status\": \"blocked\""));
+        assert!(report
+            .render_json()
+            .contains("\"blocker_code\": \"local_pointer_missing\""));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn publishing_locate_blocks_workspace_ref_mismatch() {
+        let root = unique_temp_path();
+        let workspace = root.join("external-workspace");
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        fs::create_dir_all(&workspace).expect("workspace dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+        write_publishing_local_pointer(
+            &root,
+            "punk-publishing://project/other",
+            &workspace.display().to_string(),
+        );
+
+        let report = locate_publishing_workspace(&root);
+        let blocker = report.blocker().expect("mismatch should block");
+
+        assert_eq!(report.status(), PublishingLocateStatus::Blocked);
+        assert_eq!(
+            blocker.code(),
+            PublishingLocateBlockerCode::WorkspaceRefMismatch
+        );
+        assert_eq!(report.workspace_root(), None);
+        assert!(report
+            .render_human()
+            .contains("local workspace_ref does not match binding"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn publishing_locate_rejects_host_path_in_committed_binding() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        fs::write(
+            root.join(PUBLISHING_BINDING_PATH),
+            r#"schema_version = "punk.publishing.binding.v1"
+project_id = "goalrail"
+workspace_ref = "punk-publishing://project/goalrail"
+workspace_root = "/tmp/not-allowed"
+"#,
+        )
+        .expect("binding should be written");
+
+        let report = locate_publishing_workspace(&root);
+        let blocker = report.blocker().expect("host path in binding should block");
+
+        assert_eq!(blocker.code(), PublishingLocateBlockerCode::BindingInvalid);
+        assert!(blocker
+            .message()
+            .contains("committed binding must not contain a workspace_root host path"));
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
@@ -5921,6 +6862,55 @@ mod tests {
         fs::remove_dir_all(&root).expect("test root should clean up");
 
         result
+    }
+
+    fn write_publishing_binding(root: &std::path::Path, project_id: &str, workspace_ref: &str) {
+        fs::write(
+            root.join(PUBLISHING_BINDING_PATH),
+            format!(
+                r#"schema_version = "punk.publishing.binding.v1"
+project_id = "{project_id}"
+workspace_ref = "{workspace_ref}"
+
+[workspace]
+workspace_ref_kind = "logical"
+"#
+            ),
+        )
+        .expect("publishing binding should be written");
+    }
+
+    fn write_publishing_local_pointer(
+        root: &std::path::Path,
+        workspace_ref: &str,
+        workspace_root: &str,
+    ) {
+        fs::write(
+            root.join(PUBLISHING_LOCAL_POINTER_PATH),
+            format!(
+                r#"schema_version = "punk.publishing.local.v1"
+workspace_ref = "{workspace_ref}"
+workspace_root = "{workspace_root}"
+"#
+            ),
+        )
+        .expect("local publishing pointer should be written");
+    }
+
+    fn count_regular_files(root: &std::path::Path) -> usize {
+        let mut count = 0;
+        let mut stack = vec![root.to_path_buf()];
+        while let Some(path) = stack.pop() {
+            let metadata = fs::symlink_metadata(&path).expect("test path should be inspectable");
+            if metadata.file_type().is_dir() {
+                for entry in fs::read_dir(&path).expect("test dir should be readable") {
+                    stack.push(entry.expect("test dir entry should be readable").path());
+                }
+            } else if metadata.file_type().is_file() {
+                count += 1;
+            }
+        }
+        count
     }
 
     fn unique_temp_path() -> std::path::PathBuf {

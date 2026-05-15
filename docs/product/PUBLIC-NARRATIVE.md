@@ -58,6 +58,12 @@ It will eventually:
 
 For now, the repo owns the content structure and humans update it manually.
 
+The active `punk publishing locate` command is only a local workspace resolver.
+It may locate an external local publishing workspace from a repo binding and
+local-only pointer file, but it does not publish, draft, open browsers, call
+APIs, read credentials, create receipts, or make any external surface project
+truth.
+
 ## Storage
 
 Repo-tracked public artifacts live under:

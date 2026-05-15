@@ -83,6 +83,8 @@ IMPLEMENTED_PUNK_CLI_COMMANDS = {
     "punk init <project-id>",
     "punk init <project-id> --mode brownfield",
     "punk flow inspect",
+    "punk publishing locate",
+    "punk publishing locate [--project-root <path>] [--json]",
     "punk eval run smoke",
     "punk eval run smoke --format json",
 }
