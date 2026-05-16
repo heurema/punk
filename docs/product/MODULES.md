@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-20
+updated_at: 2026-05-16
 review_after: 2026-07-20
 canonical_for:
   - module-boundaries
@@ -75,6 +75,12 @@ PubPunk is the future content-engineering module.
 It is parked for now.
 
 Current public narrative data lives under `publishing/`.
+
+The PubPunk boundary is defined in `docs/modules/pubpunk.md` and
+`evals/specs/pubpunk-module-boundary.v0.1.md`. Publishing inventory, drafting,
+planning, receipt creation, and publish behavior must stay behind that module
+boundary and must not be added as active-core publishing subcommands before
+Module Host promotion.
 
 When activated, PubPunk must connect to:
 
