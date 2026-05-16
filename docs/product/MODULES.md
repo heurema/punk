@@ -68,9 +68,10 @@ The first module-host code slice is incubating only: `punk-module-host`
 defines a pure invocation envelope, advisory assessment wrapper, and future
 receipt field, side-effect request, policy gate preflight, and side-effect
 receipt writer preflight, active behavior, file IO plan, and target/storage
-policy readiness models. It is not a plugin runtime, module runner, CLI
-surface, receipt writer, event writer, policy engine invoker, gate invoker,
-adapter, publisher, PR creator, or gate/proof authority.
+policy readiness, and host path observation models. It is not a plugin
+runtime, module runner, CLI surface, receipt writer, event writer, host path
+resolver, policy engine invoker, gate invoker, adapter, publisher, PR creator,
+or gate/proof authority.
 
 ## First module strategy
 
