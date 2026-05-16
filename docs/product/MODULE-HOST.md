@@ -30,15 +30,16 @@ The current code slices are narrower: `punk-module-host` defines a pure
 invocation envelope preflight, advisory assessment wrapper, local-only module
 receipt proposal model, and local-only side-effect request proposal model for
 module models, plus local-only policy gate and side-effect receipt writer
-preflight models, plus a side-effect receipt writer active behavior model. It
+preflight models, a side-effect receipt writer active behavior model, and a
+side-effect receipt writer file IO plan model. It
 can model future receipt field coverage, future external action preconditions,
 future policy evidence readiness, future receipt writer readiness, and future
-receipt writer outcomes, but it does not create or write receipts and does not
-perform side effects. It does not load plugins, invoke modules, expose CLI
-behavior, read or write files, persist operation evidence, mutate event logs,
-invoke policy engines, invoke gate, call APIs, read credentials, invoke
-adapters, publish, comment, create pull requests, write gate decisions, write
-proofpacks, or claim acceptance.
+receipt writer outcomes and file IO plans, but it does not create or write
+receipts and does not perform side effects. It does not load plugins, invoke
+modules, expose CLI behavior, read or write files, persist operation evidence,
+mutate event logs, invoke policy engines, invoke gate, call APIs, read
+credentials, invoke adapters, publish, comment, create pull requests, write
+gate decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -161,6 +162,18 @@ error-visible steps. It does not create or write receipts, persist operation
 evidence, mutate event logs, read or write files, invoke adapters, invoke
 policy engines, invoke gate, publish, comment, create pull requests, call APIs,
 read credentials, write proofpacks, write gate decisions, or claim acceptance.
+
+The current side-effect receipt writer file IO plan model is pure/no-IO
+advisory evidence. It consumes ready planned-only receipt writer active
+behavior plus an explicit target path ref, write policy, idempotency basis,
+temp/atomic policy, failure visibility, and boundary notes. It models storage
+refs, receipt target refs, target path refs, create-new/idempotency policy,
+rollback/error visibility, and operation-evidence persistence visibility before
+any local write can be considered. It does not create or write receipts,
+persist operation evidence, mutate event logs, read or write files, invoke
+adapters, invoke policy engines, invoke gate, publish, comment, create pull
+requests, call APIs, read credentials, write proofpacks, write gate decisions,
+or claim acceptance.
 
 ## Wasm status
 

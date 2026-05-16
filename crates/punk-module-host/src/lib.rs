@@ -20,6 +20,8 @@ pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_SCHEMA_VERSION: &str 
     "punk.module_host.side_effect_receipt_writer_preflight.v0.1";
 pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_ACTIVE_BEHAVIOR_SCHEMA_VERSION: &str =
     "punk.module_host.side_effect_receipt_writer_active_behavior.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FILE_IO_PLAN_SCHEMA_VERSION: &str =
+    "punk.module_host.side_effect_receipt_writer_file_io_plan.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -1790,6 +1792,431 @@ impl ModuleSideEffectReceiptWriterActiveBehavior {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterFileIoPlanStatus {
+    Ready,
+    FileIoBlocked,
+}
+
+impl ModuleSideEffectReceiptWriterFileIoPlanStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::FileIoBlocked => "file_io_blocked",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterFileIoPlanBlocker {
+    ActiveBehaviorBlocked,
+    ActiveBehaviorNotPlannedOnly,
+    MissingReceiptWriteSelection,
+    MissingTargetPathRef,
+    UnsafeTargetPathRef,
+    MissingErrorRollbackVisibility,
+    MissingBoundaryNotes,
+}
+
+impl ModuleSideEffectReceiptWriterFileIoPlanBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ActiveBehaviorBlocked => "active_behavior_blocked",
+            Self::ActiveBehaviorNotPlannedOnly => "active_behavior_not_planned_only",
+            Self::MissingReceiptWriteSelection => "missing_receipt_write_selection",
+            Self::MissingTargetPathRef => "missing_target_path_ref",
+            Self::UnsafeTargetPathRef => "unsafe_target_path_ref",
+            Self::MissingErrorRollbackVisibility => "missing_error_rollback_visibility",
+            Self::MissingBoundaryNotes => "missing_boundary_notes",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterWritePolicy {
+    AppendOnlyCreateNew,
+    IdempotentIfMatching,
+    FailIfExists,
+}
+
+impl ModuleSideEffectReceiptWriterWritePolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AppendOnlyCreateNew => "append_only_create_new",
+            Self::IdempotentIfMatching => "idempotent_if_matching",
+            Self::FailIfExists => "fail_if_exists",
+        }
+    }
+
+    pub fn supports_idempotency(self) -> bool {
+        self == Self::IdempotentIfMatching
+    }
+
+    pub fn allows_silent_overwrite(self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterIdempotencyBasis {
+    ReceiptTargetRef,
+    ReceiptTargetAndPayloadRefs,
+    OperationEvidenceRef,
+}
+
+impl ModuleSideEffectReceiptWriterIdempotencyBasis {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReceiptTargetRef => "receipt_target_ref",
+            Self::ReceiptTargetAndPayloadRefs => "receipt_target_and_payload_refs",
+            Self::OperationEvidenceRef => "operation_evidence_ref",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterTempAtomicPolicy {
+    AtomicSiblingTemp,
+    ExplicitNonAtomic,
+    FailClosedIfAtomicUnavailable,
+}
+
+impl ModuleSideEffectReceiptWriterTempAtomicPolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AtomicSiblingTemp => "atomic_sibling_temp",
+            Self::ExplicitNonAtomic => "explicit_non_atomic",
+            Self::FailClosedIfAtomicUnavailable => "fail_closed_if_atomic_unavailable",
+        }
+    }
+
+    pub fn prefers_atomic_move(self) -> bool {
+        matches!(
+            self,
+            Self::AtomicSiblingTemp | Self::FailClosedIfAtomicUnavailable
+        )
+    }
+
+    pub fn fails_closed_when_atomic_unavailable(self) -> bool {
+        self == Self::FailClosedIfAtomicUnavailable
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterFileIoFailureVisibility {
+    StorageRootMissing,
+    StorageRootDisallowed,
+    TargetPathInvalid,
+    ParentDirectoryMissing,
+    ExistingTargetMatching,
+    ExistingTargetDifferent,
+    TempWriteDenied,
+    TempWriteFailed,
+    FlushOrSyncFailed,
+    AtomicMoveUnsupported,
+    AtomicMoveFailed,
+    CleanupFailed,
+    PartialReceiptAmbiguous,
+    OperationEvidencePersistenceFailed,
+}
+
+impl ModuleSideEffectReceiptWriterFileIoFailureVisibility {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::StorageRootMissing => "storage_root_missing",
+            Self::StorageRootDisallowed => "storage_root_disallowed",
+            Self::TargetPathInvalid => "target_path_invalid",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ExistingTargetMatching => "existing_target_matching",
+            Self::ExistingTargetDifferent => "existing_target_different",
+            Self::TempWriteDenied => "temp_write_denied",
+            Self::TempWriteFailed => "temp_write_failed",
+            Self::FlushOrSyncFailed => "flush_or_sync_failed",
+            Self::AtomicMoveUnsupported => "atomic_move_unsupported",
+            Self::AtomicMoveFailed => "atomic_move_failed",
+            Self::CleanupFailed => "cleanup_failed",
+            Self::PartialReceiptAmbiguous => "partial_receipt_ambiguous",
+            Self::OperationEvidencePersistenceFailed => "operation_evidence_persistence_failed",
+        }
+    }
+
+    pub fn is_conflict_related(self) -> bool {
+        self == Self::ExistingTargetDifferent
+    }
+
+    pub fn is_rollback_related(self) -> bool {
+        matches!(self, Self::CleanupFailed | Self::PartialReceiptAmbiguous)
+    }
+
+    pub fn is_operation_evidence_related(self) -> bool {
+        self == Self::OperationEvidencePersistenceFailed
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterFileIoPlanBoundaryFlags {
+    pub models_file_io_plan: bool,
+    pub models_explicit_storage_ref: bool,
+    pub models_receipt_target_ref: bool,
+    pub models_target_path_ref: bool,
+    pub models_write_policy: bool,
+    pub models_idempotency_basis: bool,
+    pub models_temp_atomic_policy: bool,
+    pub models_error_rollback_visibility: bool,
+    pub models_operation_evidence_persistence_visibility: bool,
+    pub creates_receipt: bool,
+    pub writes_receipt: bool,
+    pub reads_files: bool,
+    pub writes_files: bool,
+    pub writes_event_log: bool,
+    pub persists_operation_evidence: bool,
+    pub invokes_adapter: bool,
+    pub invokes_policy_engine: bool,
+    pub invokes_gate: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub creates_acceptance_claim: bool,
+    pub target_path_is_authority: bool,
+    pub evidence_only: bool,
+    pub separates_file_io_plan_from_receipt_availability: bool,
+}
+
+impl ModuleSideEffectReceiptWriterFileIoPlanBoundaryFlags {
+    pub const fn pure_plan() -> Self {
+        Self {
+            models_file_io_plan: true,
+            models_explicit_storage_ref: true,
+            models_receipt_target_ref: true,
+            models_target_path_ref: true,
+            models_write_policy: true,
+            models_idempotency_basis: true,
+            models_temp_atomic_policy: true,
+            models_error_rollback_visibility: true,
+            models_operation_evidence_persistence_visibility: true,
+            creates_receipt: false,
+            writes_receipt: false,
+            reads_files: false,
+            writes_files: false,
+            writes_event_log: false,
+            persists_operation_evidence: false,
+            invokes_adapter: false,
+            invokes_policy_engine: false,
+            invokes_gate: false,
+            calls_external_apis: false,
+            opens_browser: false,
+            reads_credentials: false,
+            writes_gate_decision: false,
+            writes_proofpack: false,
+            publishes: false,
+            comments: false,
+            creates_pull_request: false,
+            creates_acceptance_claim: false,
+            target_path_is_authority: false,
+            evidence_only: true,
+            separates_file_io_plan_from_receipt_availability: true,
+        }
+    }
+
+    pub fn all_side_effect_flags_false(self) -> bool {
+        !self.creates_receipt
+            && !self.writes_receipt
+            && !self.reads_files
+            && !self.writes_files
+            && !self.writes_event_log
+            && !self.persists_operation_evidence
+            && !self.invokes_adapter
+            && !self.invokes_policy_engine
+            && !self.invokes_gate
+            && !self.calls_external_apis
+            && !self.opens_browser
+            && !self.reads_credentials
+            && !self.writes_gate_decision
+            && !self.writes_proofpack
+            && !self.publishes
+            && !self.comments
+            && !self.creates_pull_request
+            && !self.creates_acceptance_claim
+    }
+}
+
+pub const MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_FILE_IO_PLAN_BOUNDARY_FLAGS:
+    ModuleSideEffectReceiptWriterFileIoPlanBoundaryFlags =
+    ModuleSideEffectReceiptWriterFileIoPlanBoundaryFlags::pure_plan();
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterFileIoPlan {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub preflight_id: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub target_path_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub write_policy: ModuleSideEffectReceiptWriterWritePolicy,
+    pub idempotency_basis: ModuleSideEffectReceiptWriterIdempotencyBasis,
+    pub temp_atomic_policy: ModuleSideEffectReceiptWriterTempAtomicPolicy,
+    pub planned_steps: Vec<ModuleSideEffectReceiptWriterModeledStep>,
+    pub failure_visibility: Vec<ModuleSideEffectReceiptWriterFileIoFailureVisibility>,
+    pub blockers: Vec<ModuleSideEffectReceiptWriterFileIoPlanBlocker>,
+    pub boundary_notes: Vec<String>,
+    pub boundary_flags: ModuleSideEffectReceiptWriterFileIoPlanBoundaryFlags,
+}
+
+impl ModuleSideEffectReceiptWriterFileIoPlan {
+    pub fn file_io_status(&self) -> ModuleSideEffectReceiptWriterFileIoPlanStatus {
+        if self.blockers.is_empty() {
+            ModuleSideEffectReceiptWriterFileIoPlanStatus::Ready
+        } else {
+            ModuleSideEffectReceiptWriterFileIoPlanStatus::FileIoBlocked
+        }
+    }
+
+    pub fn has_blockers(&self) -> bool {
+        !self.blockers.is_empty()
+    }
+
+    pub fn is_file_io_ready(&self) -> bool {
+        self.status == ModuleHostStatus::Ready
+            && self.file_io_status() == ModuleSideEffectReceiptWriterFileIoPlanStatus::Ready
+    }
+
+    pub fn plans_step(&self, step: ModuleSideEffectReceiptWriterModeledStep) -> bool {
+        self.planned_steps.contains(&step)
+    }
+
+    pub fn selects_receipt_write(&self) -> bool {
+        self.plans_step(ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite)
+    }
+
+    pub fn tracks_failure(
+        &self,
+        failure: ModuleSideEffectReceiptWriterFileIoFailureVisibility,
+    ) -> bool {
+        self.failure_visibility.contains(&failure)
+    }
+
+    pub fn tracks_conflict_visibility(&self) -> bool {
+        self.failure_visibility
+            .iter()
+            .any(|failure| failure.is_conflict_related())
+    }
+
+    pub fn tracks_rollback_visibility(&self) -> bool {
+        self.failure_visibility
+            .iter()
+            .any(|failure| failure.is_rollback_related())
+    }
+
+    pub fn tracks_operation_evidence_persistence_visibility(&self) -> bool {
+        self.failure_visibility
+            .iter()
+            .any(|failure| failure.is_operation_evidence_related())
+    }
+
+    pub fn operation_outcome(&self) -> ModuleSideEffectReceiptWriterOutcome {
+        if self.is_file_io_ready() {
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        } else {
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        }
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary_flags.evidence_only
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary_flags.reads_files || self.boundary_flags.writes_files
+    }
+
+    pub fn writes_receipt(&self) -> bool {
+        self.boundary_flags.writes_receipt
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary_flags.persists_operation_evidence
+    }
+
+    pub fn target_path_is_authority(&self) -> bool {
+        self.boundary_flags.target_path_is_authority
+    }
+}
+
+pub fn plan_module_side_effect_receipt_writer_file_io(
+    active_behavior: &ModuleSideEffectReceiptWriterActiveBehavior,
+    target_path_ref: impl Into<String>,
+    write_policy: ModuleSideEffectReceiptWriterWritePolicy,
+    idempotency_basis: ModuleSideEffectReceiptWriterIdempotencyBasis,
+    temp_atomic_policy: ModuleSideEffectReceiptWriterTempAtomicPolicy,
+    failure_visibility: Vec<ModuleSideEffectReceiptWriterFileIoFailureVisibility>,
+    boundary_notes: Vec<String>,
+) -> ModuleSideEffectReceiptWriterFileIoPlan {
+    let target_path_ref = target_path_ref.into();
+    let blockers = receipt_writer_file_io_plan_blockers(
+        active_behavior,
+        target_path_ref.as_str(),
+        &failure_visibility,
+        &boundary_notes,
+    );
+    let status = if blockers.is_empty() {
+        ModuleHostStatus::Ready
+    } else {
+        ModuleHostStatus::Blocked
+    };
+
+    ModuleSideEffectReceiptWriterFileIoPlan {
+        schema_version: MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FILE_IO_PLAN_SCHEMA_VERSION,
+        status,
+        authority: ModuleHostAuthority::Advisory,
+        module_id: active_behavior.module_id.clone(),
+        module_version: active_behavior.module_version.clone(),
+        contract_ref: active_behavior.contract_ref.clone(),
+        run_ref: active_behavior.run_ref.clone(),
+        project_ref: active_behavior.project_ref.clone(),
+        requested_operation: active_behavior.requested_operation.clone(),
+        request_id: active_behavior.request_id.clone(),
+        kind: active_behavior.kind,
+        preflight_id: active_behavior.preflight_id.clone(),
+        receipt_target_ref: active_behavior.receipt_target_ref.clone(),
+        storage_ref: active_behavior.storage_ref.clone(),
+        target_path_ref,
+        operation_evidence_ref: active_behavior.operation_evidence_ref.clone(),
+        idempotency_ref: active_behavior.idempotency_ref.clone(),
+        rollback_ref: active_behavior.rollback_ref.clone(),
+        error_ref: active_behavior.error_ref.clone(),
+        adapter_invocation_receipt_ref: active_behavior.adapter_invocation_receipt_ref.clone(),
+        payload_ref: active_behavior.payload_ref.clone(),
+        write_policy,
+        idempotency_basis,
+        temp_atomic_policy,
+        planned_steps: active_behavior.selected_steps.clone(),
+        failure_visibility,
+        blockers,
+        boundary_notes,
+        boundary_flags: MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_FILE_IO_PLAN_BOUNDARY_FLAGS,
+    }
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -2749,6 +3176,47 @@ fn receipt_writer_step_status(
     }
 }
 
+fn receipt_writer_file_io_plan_blockers(
+    active_behavior: &ModuleSideEffectReceiptWriterActiveBehavior,
+    target_path_ref: &str,
+    failure_visibility: &[ModuleSideEffectReceiptWriterFileIoFailureVisibility],
+    boundary_notes: &[String],
+) -> Vec<ModuleSideEffectReceiptWriterFileIoPlanBlocker> {
+    let mut blockers = Vec::new();
+
+    if active_behavior.status != ModuleHostStatus::Ready || active_behavior.has_blockers() {
+        blockers.push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::ActiveBehaviorBlocked);
+    }
+
+    if active_behavior.outcome != ModuleSideEffectReceiptWriterOutcome::PlannedOnly {
+        blockers.push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::ActiveBehaviorNotPlannedOnly);
+    }
+
+    if !active_behavior
+        .selected_steps
+        .contains(&ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite)
+    {
+        blockers.push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingReceiptWriteSelection);
+    }
+
+    if target_path_ref.trim().is_empty() {
+        blockers.push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingTargetPathRef);
+    } else if !is_safe_ref(target_path_ref) {
+        blockers.push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::UnsafeTargetPathRef);
+    }
+
+    if failure_visibility.is_empty() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingErrorRollbackVisibility);
+    }
+
+    if boundary_notes.is_empty() {
+        blockers.push(ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingBoundaryNotes);
+    }
+
+    blockers
+}
+
 fn push_required_receipt_writer_ref_finding(
     findings: &mut Vec<ModuleHostFinding>,
     value: &str,
@@ -2828,7 +3296,8 @@ fn is_safe_ref(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        model_module_side_effect_receipt_writer_active_behavior, preflight_module_invocation,
+        model_module_side_effect_receipt_writer_active_behavior,
+        plan_module_side_effect_receipt_writer_file_io, preflight_module_invocation,
         preflight_module_policy_gate, preflight_module_side_effect_receipt_writer,
         propose_module_assessment_receipt, propose_module_side_effect_request,
         wrap_module_assessment, ModuleCapabilityGrant, ModuleHostFindingCode, ModuleHostStatus,
@@ -2836,11 +3305,15 @@ mod tests {
         ModuleOutputStatus, ModuleOutputSummary, ModulePolicyGatePreflightBoundaryFlags,
         ModulePolicyGatePreflightDraft, ModulePolicyGatePreflightRequirement, ModulePrivacyPolicy,
         ModuleReceiptProposalField, ModuleSideEffectKind, ModuleSideEffectPrecondition,
-        ModuleSideEffectReceiptWriterModeledStep, ModuleSideEffectReceiptWriterObservation,
-        ModuleSideEffectReceiptWriterOutcome, ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+        ModuleSideEffectReceiptWriterFileIoFailureVisibility,
+        ModuleSideEffectReceiptWriterFileIoPlanBlocker,
+        ModuleSideEffectReceiptWriterIdempotencyBasis, ModuleSideEffectReceiptWriterModeledStep,
+        ModuleSideEffectReceiptWriterObservation, ModuleSideEffectReceiptWriterOutcome,
+        ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
         ModuleSideEffectReceiptWriterPreflightDraft,
-        ModuleSideEffectReceiptWriterPreflightRequirement, ModuleSideEffectRequestBoundaryFlags,
-        ModuleSideEffectRequestDraft,
+        ModuleSideEffectReceiptWriterPreflightRequirement,
+        ModuleSideEffectReceiptWriterTempAtomicPolicy, ModuleSideEffectReceiptWriterWritePolicy,
+        ModuleSideEffectRequestBoundaryFlags, ModuleSideEffectRequestDraft,
     };
 
     fn valid_invocation() -> ModuleInvocationEnvelope {
@@ -2965,6 +3438,14 @@ mod tests {
         preflight_module_side_effect_receipt_writer(
             &ready_policy_gate_preflight(),
             &side_effect_receipt_writer_preflight_draft(),
+        )
+    }
+
+    fn ready_side_effect_receipt_writer_active_behavior(
+    ) -> super::ModuleSideEffectReceiptWriterActiveBehavior {
+        model_module_side_effect_receipt_writer_active_behavior(
+            &ready_side_effect_receipt_writer_preflight(),
+            None,
         )
     }
 
@@ -3638,5 +4119,164 @@ mod tests {
                 == ModuleHostFindingCode::MissingSideEffectReceiptWriterActiveBehaviorPreflightRequirement
         }));
         assert!(model.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_file_io_plan_records_explicit_targets_without_writing() {
+        let active_behavior = ready_side_effect_receipt_writer_active_behavior();
+        let plan = plan_module_side_effect_receipt_writer_file_io(
+            &active_behavior,
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json",
+            ModuleSideEffectReceiptWriterWritePolicy::IdempotentIfMatching,
+            ModuleSideEffectReceiptWriterIdempotencyBasis::ReceiptTargetAndPayloadRefs,
+            ModuleSideEffectReceiptWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::StorageRootMissing,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::TargetPathInvalid,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::AtomicMoveFailed,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::CleanupFailed,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::OperationEvidencePersistenceFailed,
+            ],
+            vec![
+                "File IO plan models explicit targets and policies without touching the filesystem."
+                    .to_owned(),
+            ],
+        );
+
+        assert_eq!(
+            plan.schema_version,
+            super::MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FILE_IO_PLAN_SCHEMA_VERSION
+        );
+        assert_eq!(plan.status, ModuleHostStatus::Ready);
+        assert_eq!(plan.file_io_status().as_str(), "ready");
+        assert!(plan.is_file_io_ready());
+        assert_eq!(
+            plan.receipt_target_ref,
+            "work/module-receipts/pubpunk-publish-community-lab.md"
+        );
+        assert_eq!(plan.storage_ref, ".punk/runs/pubpunk-publish-community-lab");
+        assert_eq!(
+            plan.target_path_ref,
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json"
+        );
+        assert!(plan.selects_receipt_write());
+        assert!(plan.tracks_conflict_visibility());
+        assert!(plan.tracks_rollback_visibility());
+        assert!(plan.tracks_operation_evidence_persistence_visibility());
+        assert_eq!(
+            plan.operation_outcome(),
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        );
+        assert!(plan.boundary_flags.all_side_effect_flags_false());
+        assert!(plan.is_evidence_only());
+        assert!(!plan.touches_filesystem());
+        assert!(!plan.writes_receipt());
+        assert!(!plan.persists_operation_evidence());
+        assert!(!plan.target_path_is_authority());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_file_io_plan_exposes_write_and_atomic_policy() {
+        let active_behavior = ready_side_effect_receipt_writer_active_behavior();
+        let plan = plan_module_side_effect_receipt_writer_file_io(
+            &active_behavior,
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json",
+            ModuleSideEffectReceiptWriterWritePolicy::IdempotentIfMatching,
+            ModuleSideEffectReceiptWriterIdempotencyBasis::ReceiptTargetAndPayloadRefs,
+            ModuleSideEffectReceiptWriterTempAtomicPolicy::FailClosedIfAtomicUnavailable,
+            vec![
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetMatching,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::PartialReceiptAmbiguous,
+            ],
+            vec!["Idempotency and conflict handling are modeled only.".to_owned()],
+        );
+
+        assert_eq!(plan.write_policy.as_str(), "idempotent_if_matching");
+        assert!(plan.write_policy.supports_idempotency());
+        assert!(!plan.write_policy.allows_silent_overwrite());
+        assert_eq!(
+            plan.idempotency_basis.as_str(),
+            "receipt_target_and_payload_refs"
+        );
+        assert_eq!(
+            plan.temp_atomic_policy.as_str(),
+            "fail_closed_if_atomic_unavailable"
+        );
+        assert!(plan.temp_atomic_policy.prefers_atomic_move());
+        assert!(plan
+            .temp_atomic_policy
+            .fails_closed_when_atomic_unavailable());
+        assert!(plan.tracks_failure(
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent,
+        ));
+        assert_eq!(
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent.as_str(),
+            "existing_target_different"
+        );
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_file_io_plan_blocks_incomplete_plan() {
+        let active_behavior = ready_side_effect_receipt_writer_active_behavior();
+        let plan = plan_module_side_effect_receipt_writer_file_io(
+            &active_behavior,
+            "",
+            ModuleSideEffectReceiptWriterWritePolicy::FailIfExists,
+            ModuleSideEffectReceiptWriterIdempotencyBasis::ReceiptTargetRef,
+            ModuleSideEffectReceiptWriterTempAtomicPolicy::ExplicitNonAtomic,
+            vec![],
+            vec![],
+        );
+
+        assert_eq!(plan.status, ModuleHostStatus::Blocked);
+        assert_eq!(plan.file_io_status().as_str(), "file_io_blocked");
+        assert!(plan.has_blockers());
+        assert!(plan
+            .blockers
+            .contains(&ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingTargetPathRef));
+        assert!(plan.blockers.contains(
+            &ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingErrorRollbackVisibility,
+        ));
+        assert!(plan
+            .blockers
+            .contains(&ModuleSideEffectReceiptWriterFileIoPlanBlocker::MissingBoundaryNotes));
+        assert_eq!(
+            plan.operation_outcome(),
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        );
+        assert!(plan.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_file_io_plan_blocks_non_planned_active_behavior() {
+        let preflight = ready_side_effect_receipt_writer_preflight();
+        let written_behavior = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::target_missing_written()),
+        );
+        let plan = plan_module_side_effect_receipt_writer_file_io(
+            &written_behavior,
+            "../receipt.json",
+            ModuleSideEffectReceiptWriterWritePolicy::AppendOnlyCreateNew,
+            ModuleSideEffectReceiptWriterIdempotencyBasis::OperationEvidenceRef,
+            ModuleSideEffectReceiptWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![ModuleSideEffectReceiptWriterFileIoFailureVisibility::TempWriteFailed],
+            vec!["Unsafe target path is blocked before any IO.".to_owned()],
+        );
+
+        assert_eq!(plan.status, ModuleHostStatus::Blocked);
+        assert!(plan.blockers.contains(
+            &ModuleSideEffectReceiptWriterFileIoPlanBlocker::ActiveBehaviorNotPlannedOnly,
+        ));
+        assert!(plan
+            .blockers
+            .contains(&ModuleSideEffectReceiptWriterFileIoPlanBlocker::UnsafeTargetPathRef));
+        assert_eq!(
+            ModuleSideEffectReceiptWriterFileIoPlanBlocker::ActiveBehaviorNotPlannedOnly.as_str(),
+            "active_behavior_not_planned_only"
+        );
+        assert!(plan.boundary_flags.all_side_effect_flags_false());
     }
 }
