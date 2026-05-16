@@ -16,6 +16,8 @@ pub const MODULE_HOST_SIDE_EFFECT_REQUEST_PROPOSAL_SCHEMA_VERSION: &str =
     "punk.module_host.side_effect_request_proposal.v0.1";
 pub const MODULE_HOST_POLICY_GATE_PREFLIGHT_SCHEMA_VERSION: &str =
     "punk.module_host.policy_gate_preflight.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_SCHEMA_VERSION: &str =
+    "punk.module_host.side_effect_receipt_writer_preflight.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -416,6 +418,24 @@ pub enum ModuleHostFindingCode {
     PolicyGatePayloadRefMismatch,
     MissingPolicyGateRequestPrecondition,
     PolicyGatePreflightHasSideEffects,
+    PolicyGatePreflightBlocked,
+    MissingSideEffectReceiptWriterPreflightId,
+    MissingSideEffectReceiptPolicyGatePreflightRef,
+    MissingSideEffectReceiptTargetRef,
+    MissingSideEffectReceiptStorageRef,
+    MissingSideEffectReceiptOperationEvidenceRef,
+    MissingSideEffectReceiptIdempotencyRef,
+    MissingSideEffectReceiptRollbackRef,
+    MissingSideEffectReceiptErrorRef,
+    MissingSideEffectReceiptAdapterInvocationReceiptRef,
+    MissingSideEffectReceiptPayloadRef,
+    UnsafeSideEffectReceiptWriterRef,
+    MissingSideEffectReceiptPolicyGateRequirement,
+    SideEffectReceiptPolicyGatePreflightRefMismatch,
+    SideEffectReceiptTargetRefMismatch,
+    SideEffectReceiptAdapterInvocationReceiptRefMismatch,
+    SideEffectReceiptPayloadRefMismatch,
+    SideEffectReceiptWriterPreflightHasSideEffects,
 }
 
 impl ModuleHostFindingCode {
@@ -474,6 +494,42 @@ impl ModuleHostFindingCode {
                 "missing_policy_gate_request_precondition"
             }
             Self::PolicyGatePreflightHasSideEffects => "policy_gate_preflight_has_side_effects",
+            Self::PolicyGatePreflightBlocked => "policy_gate_preflight_blocked",
+            Self::MissingSideEffectReceiptWriterPreflightId => {
+                "missing_side_effect_receipt_writer_preflight_id"
+            }
+            Self::MissingSideEffectReceiptPolicyGatePreflightRef => {
+                "missing_side_effect_receipt_policy_gate_preflight_ref"
+            }
+            Self::MissingSideEffectReceiptTargetRef => "missing_side_effect_receipt_target_ref",
+            Self::MissingSideEffectReceiptStorageRef => "missing_side_effect_receipt_storage_ref",
+            Self::MissingSideEffectReceiptOperationEvidenceRef => {
+                "missing_side_effect_receipt_operation_evidence_ref"
+            }
+            Self::MissingSideEffectReceiptIdempotencyRef => {
+                "missing_side_effect_receipt_idempotency_ref"
+            }
+            Self::MissingSideEffectReceiptRollbackRef => "missing_side_effect_receipt_rollback_ref",
+            Self::MissingSideEffectReceiptErrorRef => "missing_side_effect_receipt_error_ref",
+            Self::MissingSideEffectReceiptAdapterInvocationReceiptRef => {
+                "missing_side_effect_receipt_adapter_invocation_receipt_ref"
+            }
+            Self::MissingSideEffectReceiptPayloadRef => "missing_side_effect_receipt_payload_ref",
+            Self::UnsafeSideEffectReceiptWriterRef => "unsafe_side_effect_receipt_writer_ref",
+            Self::MissingSideEffectReceiptPolicyGateRequirement => {
+                "missing_side_effect_receipt_policy_gate_requirement"
+            }
+            Self::SideEffectReceiptPolicyGatePreflightRefMismatch => {
+                "side_effect_receipt_policy_gate_preflight_ref_mismatch"
+            }
+            Self::SideEffectReceiptTargetRefMismatch => "side_effect_receipt_target_ref_mismatch",
+            Self::SideEffectReceiptAdapterInvocationReceiptRefMismatch => {
+                "side_effect_receipt_adapter_invocation_receipt_ref_mismatch"
+            }
+            Self::SideEffectReceiptPayloadRefMismatch => "side_effect_receipt_payload_ref_mismatch",
+            Self::SideEffectReceiptWriterPreflightHasSideEffects => {
+                "side_effect_receipt_writer_preflight_has_side_effects"
+            }
         }
     }
 }
@@ -1100,6 +1156,239 @@ impl ModulePolicyGatePreflight {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterPreflightRequirement {
+    ReadyPolicyGatePreflight,
+    PolicyGatePreflightRef,
+    ReceiptTargetRef,
+    StorageRef,
+    OperationEvidenceRef,
+    IdempotencyRef,
+    RollbackRef,
+    ErrorRef,
+    AdapterInvocationReceiptRef,
+    PayloadRef,
+}
+
+impl ModuleSideEffectReceiptWriterPreflightRequirement {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReadyPolicyGatePreflight => "ready_policy_gate_preflight",
+            Self::PolicyGatePreflightRef => "policy_gate_preflight_ref",
+            Self::ReceiptTargetRef => "receipt_target_ref",
+            Self::StorageRef => "storage_ref",
+            Self::OperationEvidenceRef => "operation_evidence_ref",
+            Self::IdempotencyRef => "idempotency_ref",
+            Self::RollbackRef => "rollback_ref",
+            Self::ErrorRef => "error_ref",
+            Self::AdapterInvocationReceiptRef => "adapter_invocation_receipt_ref",
+            Self::PayloadRef => "payload_ref",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterPreflightBoundaryFlags {
+    pub creates_receipt: bool,
+    pub writes_receipt: bool,
+    pub writes_event_log: bool,
+    pub reads_files: bool,
+    pub writes_files: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub invokes_adapter: bool,
+    pub invokes_policy_engine: bool,
+    pub invokes_gate: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub performs_external_side_effect: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub creates_acceptance_claim: bool,
+}
+
+impl ModuleSideEffectReceiptWriterPreflightBoundaryFlags {
+    pub const fn pure_preflight() -> Self {
+        Self {
+            creates_receipt: false,
+            writes_receipt: false,
+            writes_event_log: false,
+            reads_files: false,
+            writes_files: false,
+            calls_external_apis: false,
+            opens_browser: false,
+            reads_credentials: false,
+            invokes_adapter: false,
+            invokes_policy_engine: false,
+            invokes_gate: false,
+            writes_gate_decision: false,
+            writes_proofpack: false,
+            performs_external_side_effect: false,
+            publishes: false,
+            comments: false,
+            creates_pull_request: false,
+            creates_acceptance_claim: false,
+        }
+    }
+
+    pub fn all_side_effect_flags_false(self) -> bool {
+        !self.creates_receipt
+            && !self.writes_receipt
+            && !self.writes_event_log
+            && !self.reads_files
+            && !self.writes_files
+            && !self.calls_external_apis
+            && !self.opens_browser
+            && !self.reads_credentials
+            && !self.invokes_adapter
+            && !self.invokes_policy_engine
+            && !self.invokes_gate
+            && !self.writes_gate_decision
+            && !self.writes_proofpack
+            && !self.performs_external_side_effect
+            && !self.publishes
+            && !self.comments
+            && !self.creates_pull_request
+            && !self.creates_acceptance_claim
+    }
+}
+
+pub const MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_BOUNDARY_FLAGS:
+    ModuleSideEffectReceiptWriterPreflightBoundaryFlags =
+    ModuleSideEffectReceiptWriterPreflightBoundaryFlags::pure_preflight();
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterPreflightDraft {
+    pub preflight_id: String,
+    pub policy_gate_preflight_ref: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub boundary_flags: ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+}
+
+impl ModuleSideEffectReceiptWriterPreflightDraft {
+    pub fn new(preflight_id: impl Into<String>) -> Self {
+        Self {
+            preflight_id: preflight_id.into(),
+            policy_gate_preflight_ref: String::new(),
+            receipt_target_ref: String::new(),
+            storage_ref: String::new(),
+            operation_evidence_ref: String::new(),
+            idempotency_ref: String::new(),
+            rollback_ref: String::new(),
+            error_ref: String::new(),
+            adapter_invocation_receipt_ref: String::new(),
+            payload_ref: String::new(),
+            boundary_flags: ModuleSideEffectReceiptWriterPreflightBoundaryFlags::pure_preflight(),
+        }
+    }
+
+    pub fn with_policy_gate_preflight_ref(
+        mut self,
+        policy_gate_preflight_ref: impl Into<String>,
+    ) -> Self {
+        self.policy_gate_preflight_ref = policy_gate_preflight_ref.into();
+        self
+    }
+
+    pub fn with_receipt_target_ref(mut self, receipt_target_ref: impl Into<String>) -> Self {
+        self.receipt_target_ref = receipt_target_ref.into();
+        self
+    }
+
+    pub fn with_storage_ref(mut self, storage_ref: impl Into<String>) -> Self {
+        self.storage_ref = storage_ref.into();
+        self
+    }
+
+    pub fn with_operation_evidence_ref(
+        mut self,
+        operation_evidence_ref: impl Into<String>,
+    ) -> Self {
+        self.operation_evidence_ref = operation_evidence_ref.into();
+        self
+    }
+
+    pub fn with_idempotency_ref(mut self, idempotency_ref: impl Into<String>) -> Self {
+        self.idempotency_ref = idempotency_ref.into();
+        self
+    }
+
+    pub fn with_rollback_ref(mut self, rollback_ref: impl Into<String>) -> Self {
+        self.rollback_ref = rollback_ref.into();
+        self
+    }
+
+    pub fn with_error_ref(mut self, error_ref: impl Into<String>) -> Self {
+        self.error_ref = error_ref.into();
+        self
+    }
+
+    pub fn with_adapter_invocation_receipt_ref(
+        mut self,
+        adapter_invocation_receipt_ref: impl Into<String>,
+    ) -> Self {
+        self.adapter_invocation_receipt_ref = adapter_invocation_receipt_ref.into();
+        self
+    }
+
+    pub fn with_payload_ref(mut self, payload_ref: impl Into<String>) -> Self {
+        self.payload_ref = payload_ref.into();
+        self
+    }
+
+    pub fn with_boundary_flags(
+        mut self,
+        boundary_flags: ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+    ) -> Self {
+        self.boundary_flags = boundary_flags;
+        self
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterPreflight {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub preflight_id: String,
+    pub policy_gate_preflight_ref: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub required_requirements: Vec<ModuleSideEffectReceiptWriterPreflightRequirement>,
+    pub covered_requirements: Vec<ModuleSideEffectReceiptWriterPreflightRequirement>,
+    pub findings: Vec<ModuleHostFinding>,
+    pub boundary_flags: ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+}
+
+impl ModuleSideEffectReceiptWriterPreflight {
+    pub fn has_blockers(&self) -> bool {
+        !self.findings.is_empty()
+    }
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -1460,6 +1749,184 @@ pub fn preflight_module_policy_gate(
     }
 }
 
+pub fn preflight_module_side_effect_receipt_writer(
+    policy_gate_preflight: &ModulePolicyGatePreflight,
+    draft: &ModuleSideEffectReceiptWriterPreflightDraft,
+) -> ModuleSideEffectReceiptWriterPreflight {
+    let mut findings = Vec::new();
+    let required_requirements = default_side_effect_receipt_writer_preflight_requirements();
+
+    if policy_gate_preflight.status != ModuleHostStatus::Ready
+        || policy_gate_preflight.has_blockers()
+    {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::PolicyGatePreflightBlocked,
+            "policy gate preflight must be ready before receipt writer preflight can be modeled",
+        ));
+    }
+
+    for requirement in &policy_gate_preflight.required_requirements {
+        if !policy_gate_preflight
+            .covered_requirements
+            .contains(requirement)
+        {
+            findings.push(ModuleHostFinding::new(
+                ModuleHostFindingCode::MissingSideEffectReceiptPolicyGateRequirement,
+                "policy gate preflight must cover all required requirements",
+            ));
+            break;
+        }
+    }
+
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.preflight_id.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptWriterPreflightId,
+        "side-effect receipt writer preflight id is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.policy_gate_preflight_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptPolicyGatePreflightRef,
+        "policy gate preflight ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.receipt_target_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptTargetRef,
+        "side-effect receipt target ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.storage_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptStorageRef,
+        "side-effect receipt storage ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.operation_evidence_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptOperationEvidenceRef,
+        "side-effect receipt operation evidence ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.idempotency_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptIdempotencyRef,
+        "side-effect receipt idempotency ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.rollback_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptRollbackRef,
+        "side-effect receipt rollback ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.error_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptErrorRef,
+        "side-effect receipt error ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.adapter_invocation_receipt_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptAdapterInvocationReceiptRef,
+        "side-effect receipt adapter invocation receipt ref is required",
+    );
+    push_required_receipt_writer_ref_finding(
+        &mut findings,
+        draft.payload_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptPayloadRef,
+        "side-effect receipt payload ref is required",
+    );
+
+    if !draft.policy_gate_preflight_ref.trim().is_empty()
+        && draft.policy_gate_preflight_ref != policy_gate_preflight.preflight_id
+    {
+        findings.push(ModuleHostFinding::for_input_ref(
+            ModuleHostFindingCode::SideEffectReceiptPolicyGatePreflightRefMismatch,
+            draft.policy_gate_preflight_ref.clone(),
+            "receipt writer policy gate preflight ref must match the policy gate preflight id",
+        ));
+    }
+
+    if !draft.receipt_target_ref.trim().is_empty()
+        && draft.receipt_target_ref != policy_gate_preflight.side_effect_receipt_proposal_ref
+    {
+        findings.push(ModuleHostFinding::for_input_ref(
+            ModuleHostFindingCode::SideEffectReceiptTargetRefMismatch,
+            draft.receipt_target_ref.clone(),
+            "receipt writer target ref must match the policy gate side-effect receipt proposal ref",
+        ));
+    }
+
+    if !draft.adapter_invocation_receipt_ref.trim().is_empty()
+        && draft.adapter_invocation_receipt_ref
+            != policy_gate_preflight.adapter_invocation_receipt_ref
+    {
+        findings.push(ModuleHostFinding::for_input_ref(
+            ModuleHostFindingCode::SideEffectReceiptAdapterInvocationReceiptRefMismatch,
+            draft.adapter_invocation_receipt_ref.clone(),
+            "receipt writer adapter invocation receipt ref must match the policy gate ref",
+        ));
+    }
+
+    if !draft.payload_ref.trim().is_empty()
+        && draft.payload_ref != policy_gate_preflight.payload_ref
+    {
+        findings.push(ModuleHostFinding::for_input_ref(
+            ModuleHostFindingCode::SideEffectReceiptPayloadRefMismatch,
+            draft.payload_ref.clone(),
+            "receipt writer payload ref must match the policy gate payload ref",
+        ));
+    }
+
+    if !draft.boundary_flags.all_side_effect_flags_false() {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::SideEffectReceiptWriterPreflightHasSideEffects,
+            "side-effect receipt writer preflight must not write receipts or perform side effects",
+        ));
+    }
+
+    let status = if findings.is_empty() {
+        ModuleHostStatus::Ready
+    } else {
+        ModuleHostStatus::Blocked
+    };
+    let covered_requirements = if status == ModuleHostStatus::Ready {
+        required_requirements.clone()
+    } else {
+        Vec::new()
+    };
+
+    ModuleSideEffectReceiptWriterPreflight {
+        schema_version: MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_SCHEMA_VERSION,
+        status,
+        authority: ModuleHostAuthority::Advisory,
+        module_id: policy_gate_preflight.module_id.clone(),
+        module_version: policy_gate_preflight.module_version.clone(),
+        contract_ref: policy_gate_preflight.contract_ref.clone(),
+        run_ref: policy_gate_preflight.run_ref.clone(),
+        project_ref: policy_gate_preflight.project_ref.clone(),
+        requested_operation: policy_gate_preflight.requested_operation.clone(),
+        request_id: policy_gate_preflight.request_id.clone(),
+        kind: policy_gate_preflight.kind,
+        preflight_id: draft.preflight_id.clone(),
+        policy_gate_preflight_ref: draft.policy_gate_preflight_ref.clone(),
+        receipt_target_ref: draft.receipt_target_ref.clone(),
+        storage_ref: draft.storage_ref.clone(),
+        operation_evidence_ref: draft.operation_evidence_ref.clone(),
+        idempotency_ref: draft.idempotency_ref.clone(),
+        rollback_ref: draft.rollback_ref.clone(),
+        error_ref: draft.error_ref.clone(),
+        adapter_invocation_receipt_ref: draft.adapter_invocation_receipt_ref.clone(),
+        payload_ref: draft.payload_ref.clone(),
+        required_requirements,
+        covered_requirements,
+        findings,
+        boundary_flags: MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_BOUNDARY_FLAGS,
+    }
+}
+
 pub fn wrap_module_assessment(
     invocation: &ModuleInvocationEnvelope,
     output: &ModuleOutputSummary,
@@ -1644,6 +2111,39 @@ fn default_policy_gate_preflight_requirements() -> Vec<ModulePolicyGatePreflight
     ]
 }
 
+fn default_side_effect_receipt_writer_preflight_requirements(
+) -> Vec<ModuleSideEffectReceiptWriterPreflightRequirement> {
+    vec![
+        ModuleSideEffectReceiptWriterPreflightRequirement::ReadyPolicyGatePreflight,
+        ModuleSideEffectReceiptWriterPreflightRequirement::PolicyGatePreflightRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::ReceiptTargetRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::StorageRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::OperationEvidenceRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::IdempotencyRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::RollbackRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::ErrorRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::AdapterInvocationReceiptRef,
+        ModuleSideEffectReceiptWriterPreflightRequirement::PayloadRef,
+    ]
+}
+
+fn push_required_receipt_writer_ref_finding(
+    findings: &mut Vec<ModuleHostFinding>,
+    value: &str,
+    missing_code: ModuleHostFindingCode,
+    missing_message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(ModuleHostFinding::new(missing_code, missing_message));
+    } else if !is_safe_ref(value) {
+        findings.push(ModuleHostFinding::for_input_ref(
+            ModuleHostFindingCode::UnsafeSideEffectReceiptWriterRef,
+            value.to_owned(),
+            "side-effect receipt writer refs must be explicit repo-relative refs",
+        ));
+    }
+}
+
 fn push_required_policy_gate_ref_finding(
     findings: &mut Vec<ModuleHostFinding>,
     value: &str,
@@ -1707,13 +2207,17 @@ fn is_safe_ref(value: &str) -> bool {
 mod tests {
     use super::{
         preflight_module_invocation, preflight_module_policy_gate,
-        propose_module_assessment_receipt, propose_module_side_effect_request,
-        wrap_module_assessment, ModuleCapabilityGrant, ModuleHostFindingCode, ModuleHostStatus,
-        ModuleInvocationEnvelope, ModuleOutputAuthority, ModuleOutputBoundaryFlags,
-        ModuleOutputStatus, ModuleOutputSummary, ModulePolicyGatePreflightBoundaryFlags,
-        ModulePolicyGatePreflightDraft, ModulePolicyGatePreflightRequirement, ModulePrivacyPolicy,
-        ModuleReceiptProposalField, ModuleSideEffectKind, ModuleSideEffectPrecondition,
-        ModuleSideEffectRequestBoundaryFlags, ModuleSideEffectRequestDraft,
+        preflight_module_side_effect_receipt_writer, propose_module_assessment_receipt,
+        propose_module_side_effect_request, wrap_module_assessment, ModuleCapabilityGrant,
+        ModuleHostFindingCode, ModuleHostStatus, ModuleInvocationEnvelope, ModuleOutputAuthority,
+        ModuleOutputBoundaryFlags, ModuleOutputStatus, ModuleOutputSummary,
+        ModulePolicyGatePreflightBoundaryFlags, ModulePolicyGatePreflightDraft,
+        ModulePolicyGatePreflightRequirement, ModulePrivacyPolicy, ModuleReceiptProposalField,
+        ModuleSideEffectKind, ModuleSideEffectPrecondition,
+        ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+        ModuleSideEffectReceiptWriterPreflightDraft,
+        ModuleSideEffectReceiptWriterPreflightRequirement, ModuleSideEffectRequestBoundaryFlags,
+        ModuleSideEffectRequestDraft,
     };
 
     fn valid_invocation() -> ModuleInvocationEnvelope {
@@ -1807,6 +2311,30 @@ mod tests {
         .with_proof_requirement_ref(
             "work/module-proof-requirements/pubpunk-publish-community-lab.md",
         )
+    }
+
+    fn ready_policy_gate_preflight() -> super::ModulePolicyGatePreflight {
+        let (_, _, side_effect_proposal) = ready_side_effect_proposal();
+        preflight_module_policy_gate(&side_effect_proposal, &policy_gate_preflight_draft())
+    }
+
+    fn side_effect_receipt_writer_preflight_draft() -> ModuleSideEffectReceiptWriterPreflightDraft {
+        ModuleSideEffectReceiptWriterPreflightDraft::new(
+            "work/module-receipt-writer/pubpunk-publish-community-lab.md",
+        )
+        .with_policy_gate_preflight_ref("work/module-policy-gate/pubpunk-publish-community-lab.md")
+        .with_receipt_target_ref("work/module-receipts/pubpunk-publish-community-lab.md")
+        .with_storage_ref(".punk/runs/pubpunk-publish-community-lab")
+        .with_operation_evidence_ref(
+            "work/module-operation-evidence/pubpunk-publish-community-lab.md",
+        )
+        .with_idempotency_ref("work/module-idempotency/pubpunk-publish-community-lab.md")
+        .with_rollback_ref("work/module-rollback/pubpunk-publish-community-lab.md")
+        .with_error_ref("work/module-errors/pubpunk-publish-community-lab.md")
+        .with_adapter_invocation_receipt_ref(
+            "work/module-receipts/github-discussions-invocation.md",
+        )
+        .with_payload_ref("publishing/posts/community-lab.md")
     }
 
     #[test]
@@ -2217,6 +2745,132 @@ mod tests {
         assert_eq!(preflight.status, ModuleHostStatus::Blocked);
         assert!(preflight.findings.iter().any(|finding| {
             finding.code == ModuleHostFindingCode::PolicyGatePreflightHasSideEffects
+        }));
+        assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_preflight_accepts_ready_policy_gate_and_safe_refs() {
+        let policy_gate_preflight = ready_policy_gate_preflight();
+        let preflight = preflight_module_side_effect_receipt_writer(
+            &policy_gate_preflight,
+            &side_effect_receipt_writer_preflight_draft(),
+        );
+
+        assert_eq!(preflight.status, ModuleHostStatus::Ready);
+        assert!(!preflight.has_blockers());
+        assert_eq!(preflight.kind, ModuleSideEffectKind::Publish);
+        assert!(preflight
+            .covered_requirements
+            .contains(&ModuleSideEffectReceiptWriterPreflightRequirement::StorageRef));
+        assert!(preflight
+            .covered_requirements
+            .contains(&ModuleSideEffectReceiptWriterPreflightRequirement::IdempotencyRef));
+        assert!(preflight
+            .covered_requirements
+            .contains(&ModuleSideEffectReceiptWriterPreflightRequirement::RollbackRef));
+        assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_preflight_blocks_blocked_policy_gate() {
+        let (_, _, side_effect_proposal) = ready_side_effect_proposal();
+        let blocked_policy_gate_draft = policy_gate_preflight_draft()
+            .with_gate_input_ref("../work/module-gate-inputs/pubpunk.md");
+        let policy_gate_preflight =
+            preflight_module_policy_gate(&side_effect_proposal, &blocked_policy_gate_draft);
+        let preflight = preflight_module_side_effect_receipt_writer(
+            &policy_gate_preflight,
+            &side_effect_receipt_writer_preflight_draft(),
+        );
+
+        assert_eq!(preflight.status, ModuleHostStatus::Blocked);
+        assert!(preflight
+            .findings
+            .iter()
+            .any(|finding| finding.code == ModuleHostFindingCode::PolicyGatePreflightBlocked));
+        assert!(preflight.covered_requirements.is_empty());
+        assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_preflight_blocks_missing_policy_gate_requirement() {
+        let mut policy_gate_preflight = ready_policy_gate_preflight();
+        policy_gate_preflight
+            .covered_requirements
+            .retain(|requirement| *requirement != ModulePolicyGatePreflightRequirement::PayloadRef);
+        let preflight = preflight_module_side_effect_receipt_writer(
+            &policy_gate_preflight,
+            &side_effect_receipt_writer_preflight_draft(),
+        );
+
+        assert_eq!(preflight.status, ModuleHostStatus::Blocked);
+        assert!(preflight.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::MissingSideEffectReceiptPolicyGateRequirement
+        }));
+        assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_preflight_blocks_unsafe_refs() {
+        let policy_gate_preflight = ready_policy_gate_preflight();
+        let draft = side_effect_receipt_writer_preflight_draft()
+            .with_operation_evidence_ref("../work/module-operation-evidence/pubpunk.md");
+        let preflight = preflight_module_side_effect_receipt_writer(&policy_gate_preflight, &draft);
+
+        assert_eq!(preflight.status, ModuleHostStatus::Blocked);
+        assert!(
+            preflight
+                .findings
+                .iter()
+                .any(|finding| finding.code
+                    == ModuleHostFindingCode::UnsafeSideEffectReceiptWriterRef)
+        );
+        assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_preflight_blocks_mismatched_link_refs() {
+        let policy_gate_preflight = ready_policy_gate_preflight();
+        let draft = side_effect_receipt_writer_preflight_draft()
+            .with_policy_gate_preflight_ref("work/module-policy-gate/other.md")
+            .with_receipt_target_ref("work/module-receipts/other.md")
+            .with_adapter_invocation_receipt_ref("work/module-receipts/other-adapter.md")
+            .with_payload_ref("publishing/posts/other.md");
+        let preflight = preflight_module_side_effect_receipt_writer(&policy_gate_preflight, &draft);
+
+        assert_eq!(preflight.status, ModuleHostStatus::Blocked);
+        assert!(preflight.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::SideEffectReceiptPolicyGatePreflightRefMismatch
+        }));
+        assert!(preflight.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::SideEffectReceiptTargetRefMismatch
+        }));
+        assert!(preflight.findings.iter().any(|finding| {
+            finding.code
+                == ModuleHostFindingCode::SideEffectReceiptAdapterInvocationReceiptRefMismatch
+        }));
+        assert!(preflight.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::SideEffectReceiptPayloadRefMismatch
+        }));
+        assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_preflight_blocks_side_effect_flags() {
+        let policy_gate_preflight = ready_policy_gate_preflight();
+        let draft = side_effect_receipt_writer_preflight_draft().with_boundary_flags(
+            ModuleSideEffectReceiptWriterPreflightBoundaryFlags {
+                writes_receipt: true,
+                writes_event_log: true,
+                ..ModuleSideEffectReceiptWriterPreflightBoundaryFlags::pure_preflight()
+            },
+        );
+        let preflight = preflight_module_side_effect_receipt_writer(&policy_gate_preflight, &draft);
+
+        assert_eq!(preflight.status, ModuleHostStatus::Blocked);
+        assert!(preflight.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::SideEffectReceiptWriterPreflightHasSideEffects
         }));
         assert!(preflight.boundary_flags.all_side_effect_flags_false());
     }

@@ -29,13 +29,14 @@ The Module Host runtime is not active core yet. It remains parked until Phase 6.
 The current code slices are narrower: `punk-module-host` defines a pure
 invocation envelope preflight, advisory assessment wrapper, local-only module
 receipt proposal model, and local-only side-effect request proposal model for
-module models, plus a local-only policy gate preflight model. It can model
-future receipt field coverage, future external action preconditions, and future
-policy evidence readiness, but it does not create or write receipts and does
-not perform side effects. It does not load plugins, invoke modules, expose CLI
-behavior, read or write files, mutate event logs, invoke policy engines, invoke
-gate, call APIs, read credentials, invoke adapters, publish, comment, create
-pull requests, write gate decisions, write proofpacks, or claim acceptance.
+module models, plus local-only policy gate and side-effect receipt writer
+preflight models. It can model future receipt field coverage, future external
+action preconditions, future policy evidence readiness, and future receipt
+writer readiness, but it does not create or write receipts and does not perform
+side effects. It does not load plugins, invoke modules, expose CLI behavior,
+read or write files, mutate event logs, invoke policy engines, invoke gate,
+call APIs, read credentials, invoke adapters, publish, comment, create pull
+requests, write gate decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -139,6 +140,15 @@ It does not invoke a policy engine, invoke gate, approve work, write gate
 decisions, write proofpacks, invoke adapters, publish, comment, create pull
 requests, write receipts, mutate event logs, call APIs, read credentials, or
 claim acceptance.
+
+The current side-effect receipt writer preflight model is pure/no-IO advisory
+evidence. It consumes a ready policy gate preflight plus explicit receipt
+target, storage, operation evidence, idempotency, rollback, error, adapter
+invocation receipt, and payload refs before a future local receipt writer can
+be considered. It does not create or write receipts, mutate event logs, read or
+write files, invoke adapters, invoke policy engines, invoke gate, publish,
+comment, create pull requests, call APIs, read credentials, write proofpacks,
+write gate decisions, or claim acceptance.
 
 ## Wasm status
 
