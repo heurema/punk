@@ -27,12 +27,14 @@ The Module Host is the future Punk-owned boundary for invoking domain modules wh
 The Module Host runtime is not active core yet. It remains parked until Phase 6.
 
 The current code slices are narrower: `punk-module-host` defines a pure
-invocation envelope preflight, advisory assessment wrapper, and local-only
-module receipt proposal model for module models. It can model future receipt
-field coverage, but it does not create or write receipts. It does not load
-plugins, invoke modules, expose CLI behavior, read or write files, mutate event
-logs, call APIs, read credentials, invoke adapters, publish, write gate
-decisions, write proofpacks, or claim acceptance.
+invocation envelope preflight, advisory assessment wrapper, local-only module
+receipt proposal model, and local-only side-effect request proposal model for
+module models. It can model future receipt field coverage and future external
+action preconditions, but it does not create or write receipts and does not
+perform side effects. It does not load plugins, invoke modules, expose CLI
+behavior, read or write files, mutate event logs, call APIs, read credentials,
+invoke adapters, publish, comment, create pull requests, write gate decisions,
+write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -119,6 +121,14 @@ invocation and assessment envelope match, parses known expected receipt fields,
 and reports advisory coverage for a future host-approved module receipt. It
 does not write receipts, mutate event logs, invoke modules or adapters, call
 APIs, write gate decisions, write proofpacks, or claim acceptance.
+
+The current side-effect request proposal model is also pure/no-IO. It checks
+that a ready receipt proposal covers side-effect and host-validation fields,
+requires safe refs for intent, policy, payload, adapter, and receipt-proposal
+preconditions, and reports advisory readiness for a future external action. It
+does not invoke adapters, publish, comment, create pull requests, write
+receipts, mutate event logs, call APIs, read credentials, write gate decisions,
+write proofpacks, or claim acceptance.
 
 ## Wasm status
 
