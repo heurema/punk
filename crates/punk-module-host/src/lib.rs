@@ -22,6 +22,8 @@ pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_ACTIVE_BEHAVIOR_SCHEMA_VERSION:
     "punk.module_host.side_effect_receipt_writer_active_behavior.v0.1";
 pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FILE_IO_PLAN_SCHEMA_VERSION: &str =
     "punk.module_host.side_effect_receipt_writer_file_io_plan.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_SCHEMA_VERSION: &str =
+    "punk.module_host.side_effect_receipt_writer_target_storage_policy.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -2217,6 +2219,521 @@ pub fn plan_module_side_effect_receipt_writer_file_io(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterTargetStoragePolicyStatus {
+    Ready,
+    Blocked,
+}
+
+impl ModuleSideEffectReceiptWriterTargetStoragePolicyStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Blocked => "blocked",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker {
+    FileIoPlanBlocked,
+    StorageRefMissing,
+    StorageRefUnsafe,
+    ReceiptTargetRefMissing,
+    ReceiptTargetRefUnsafe,
+    TargetPathRefMissing,
+    TargetPathRefUnsafe,
+    RefsNotSeparated,
+    StorageRootPolicyMissing,
+    ReceiptTargetPolicyMissing,
+    TargetPathDerivationPolicyMissing,
+    PathEncodingPolicyMissing,
+    ParentDirectoryPolicyMissing,
+    SymlinkPolicyMissing,
+    TraversalPolicyMissing,
+    StorageRootEscapePolicyMissing,
+    RedactionPolicyMissing,
+    IdempotencyConflictPolicyMissing,
+    TempAtomicPolicyMissing,
+    OperationEvidencePersistencePolicyMissing,
+    UnsafePolicyRef,
+    StorageRootVisibilityMissing,
+    TargetPathVisibilityMissing,
+    ParentDirectoryVisibilityMissing,
+    ConflictVisibilityMissing,
+    RollbackVisibilityMissing,
+    OperationEvidencePersistenceVisibilityMissing,
+    BoundaryNotesMissing,
+}
+
+impl ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::FileIoPlanBlocked => "file_io_plan_blocked",
+            Self::StorageRefMissing => "storage_ref_missing",
+            Self::StorageRefUnsafe => "storage_ref_unsafe",
+            Self::ReceiptTargetRefMissing => "receipt_target_ref_missing",
+            Self::ReceiptTargetRefUnsafe => "receipt_target_ref_unsafe",
+            Self::TargetPathRefMissing => "target_path_ref_missing",
+            Self::TargetPathRefUnsafe => "target_path_ref_unsafe",
+            Self::RefsNotSeparated => "refs_not_separated",
+            Self::StorageRootPolicyMissing => "storage_root_policy_missing",
+            Self::ReceiptTargetPolicyMissing => "receipt_target_policy_missing",
+            Self::TargetPathDerivationPolicyMissing => "target_path_derivation_policy_missing",
+            Self::PathEncodingPolicyMissing => "path_encoding_policy_missing",
+            Self::ParentDirectoryPolicyMissing => "parent_directory_policy_missing",
+            Self::SymlinkPolicyMissing => "symlink_policy_missing",
+            Self::TraversalPolicyMissing => "traversal_policy_missing",
+            Self::StorageRootEscapePolicyMissing => "storage_root_escape_policy_missing",
+            Self::RedactionPolicyMissing => "redaction_policy_missing",
+            Self::IdempotencyConflictPolicyMissing => "idempotency_conflict_policy_missing",
+            Self::TempAtomicPolicyMissing => "temp_atomic_policy_missing",
+            Self::OperationEvidencePersistencePolicyMissing => {
+                "operation_evidence_persistence_policy_missing"
+            }
+            Self::UnsafePolicyRef => "unsafe_policy_ref",
+            Self::StorageRootVisibilityMissing => "storage_root_visibility_missing",
+            Self::TargetPathVisibilityMissing => "target_path_visibility_missing",
+            Self::ParentDirectoryVisibilityMissing => "parent_directory_visibility_missing",
+            Self::ConflictVisibilityMissing => "conflict_visibility_missing",
+            Self::RollbackVisibilityMissing => "rollback_visibility_missing",
+            Self::OperationEvidencePersistenceVisibilityMissing => {
+                "operation_evidence_persistence_visibility_missing"
+            }
+            Self::BoundaryNotesMissing => "boundary_notes_missing",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterTargetStoragePolicyRefs {
+    pub storage_root_selection: Option<String>,
+    pub receipt_target: Option<String>,
+    pub target_path_derivation: Option<String>,
+    pub path_encoding: Option<String>,
+    pub parent_directory: Option<String>,
+    pub symlink: Option<String>,
+    pub traversal: Option<String>,
+    pub storage_root_escape: Option<String>,
+    pub redaction: Option<String>,
+    pub idempotency_conflict: Option<String>,
+    pub temp_atomic: Option<String>,
+    pub operation_evidence_persistence: Option<String>,
+}
+
+impl ModuleSideEffectReceiptWriterTargetStoragePolicyRefs {
+    pub fn new(
+        storage_root_selection: Option<String>,
+        receipt_target: Option<String>,
+        target_path_derivation: Option<String>,
+        path_encoding: Option<String>,
+        parent_directory: Option<String>,
+        symlink: Option<String>,
+        traversal: Option<String>,
+        storage_root_escape: Option<String>,
+        redaction: Option<String>,
+        idempotency_conflict: Option<String>,
+        temp_atomic: Option<String>,
+        operation_evidence_persistence: Option<String>,
+    ) -> Self {
+        Self {
+            storage_root_selection,
+            receipt_target,
+            target_path_derivation,
+            path_encoding,
+            parent_directory,
+            symlink,
+            traversal,
+            storage_root_escape,
+            redaction,
+            idempotency_conflict,
+            temp_atomic,
+            operation_evidence_persistence,
+        }
+    }
+
+    pub fn all_selected(
+        storage_root_selection: impl Into<String>,
+        receipt_target: impl Into<String>,
+        target_path_derivation: impl Into<String>,
+        path_encoding: impl Into<String>,
+        parent_directory: impl Into<String>,
+        symlink: impl Into<String>,
+        traversal: impl Into<String>,
+        storage_root_escape: impl Into<String>,
+        redaction: impl Into<String>,
+        idempotency_conflict: impl Into<String>,
+        temp_atomic: impl Into<String>,
+        operation_evidence_persistence: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            Some(storage_root_selection.into()),
+            Some(receipt_target.into()),
+            Some(target_path_derivation.into()),
+            Some(path_encoding.into()),
+            Some(parent_directory.into()),
+            Some(symlink.into()),
+            Some(traversal.into()),
+            Some(storage_root_escape.into()),
+            Some(redaction.into()),
+            Some(idempotency_conflict.into()),
+            Some(temp_atomic.into()),
+            Some(operation_evidence_persistence.into()),
+        )
+    }
+
+    pub fn has_storage_root_selection_policy(&self) -> bool {
+        self.storage_root_selection.is_some()
+    }
+
+    pub fn has_receipt_target_policy(&self) -> bool {
+        self.receipt_target.is_some()
+    }
+
+    pub fn has_target_path_derivation_policy(&self) -> bool {
+        self.target_path_derivation.is_some()
+    }
+
+    pub fn has_path_encoding_policy(&self) -> bool {
+        self.path_encoding.is_some()
+    }
+
+    pub fn has_parent_directory_policy(&self) -> bool {
+        self.parent_directory.is_some()
+    }
+
+    pub fn has_symlink_policy(&self) -> bool {
+        self.symlink.is_some()
+    }
+
+    pub fn has_traversal_policy(&self) -> bool {
+        self.traversal.is_some()
+    }
+
+    pub fn has_storage_root_escape_policy(&self) -> bool {
+        self.storage_root_escape.is_some()
+    }
+
+    pub fn has_redaction_policy(&self) -> bool {
+        self.redaction.is_some()
+    }
+
+    pub fn has_idempotency_conflict_policy(&self) -> bool {
+        self.idempotency_conflict.is_some()
+    }
+
+    pub fn has_temp_atomic_policy(&self) -> bool {
+        self.temp_atomic.is_some()
+    }
+
+    pub fn has_operation_evidence_persistence_policy(&self) -> bool {
+        self.operation_evidence_persistence.is_some()
+    }
+
+    pub fn all_required_selected(&self) -> bool {
+        self.has_storage_root_selection_policy()
+            && self.has_receipt_target_policy()
+            && self.has_target_path_derivation_policy()
+            && self.has_path_encoding_policy()
+            && self.has_parent_directory_policy()
+            && self.has_symlink_policy()
+            && self.has_traversal_policy()
+            && self.has_storage_root_escape_policy()
+            && self.has_redaction_policy()
+            && self.has_idempotency_conflict_policy()
+            && self.has_temp_atomic_policy()
+            && self.has_operation_evidence_persistence_policy()
+    }
+
+    pub fn has_unsafe_policy_ref(&self) -> bool {
+        [
+            self.storage_root_selection.as_ref(),
+            self.receipt_target.as_ref(),
+            self.target_path_derivation.as_ref(),
+            self.path_encoding.as_ref(),
+            self.parent_directory.as_ref(),
+            self.symlink.as_ref(),
+            self.traversal.as_ref(),
+            self.storage_root_escape.as_ref(),
+            self.redaction.as_ref(),
+            self.idempotency_conflict.as_ref(),
+            self.temp_atomic.as_ref(),
+            self.operation_evidence_persistence.as_ref(),
+        ]
+        .into_iter()
+        .flatten()
+        .any(|policy_ref| !is_safe_ref(policy_ref))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterTargetStoragePolicyBoundaryFlags {
+    pub models_target_storage_policy: bool,
+    pub requires_ready_file_io_plan: bool,
+    pub requires_explicit_storage_ref: bool,
+    pub requires_explicit_receipt_target_ref: bool,
+    pub requires_explicit_target_path_ref: bool,
+    pub requires_selected_policy_refs: bool,
+    pub keeps_storage_receipt_target_path_and_policy_refs_separate: bool,
+    pub blockers_fail_closed: bool,
+    pub policy_refs_are_operational_evidence: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+    pub reads_files: bool,
+    pub writes_files: bool,
+    pub creates_receipt: bool,
+    pub writes_receipt: bool,
+    pub writes_event_log: bool,
+    pub persists_operation_evidence: bool,
+    pub invokes_adapter: bool,
+    pub invokes_policy_engine: bool,
+    pub invokes_gate: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub creates_acceptance_claim: bool,
+    pub storage_ref_is_authority: bool,
+    pub receipt_target_ref_is_authority: bool,
+    pub target_path_ref_is_authority: bool,
+    pub policy_refs_are_authority: bool,
+    pub uses_current_working_directory_as_authority: bool,
+    pub uses_global_config_as_authority: bool,
+    pub uses_ide_state_as_authority: bool,
+    pub uses_executor_memory_as_authority: bool,
+}
+
+impl ModuleSideEffectReceiptWriterTargetStoragePolicyBoundaryFlags {
+    pub const fn pure_model() -> Self {
+        Self {
+            models_target_storage_policy: true,
+            requires_ready_file_io_plan: true,
+            requires_explicit_storage_ref: true,
+            requires_explicit_receipt_target_ref: true,
+            requires_explicit_target_path_ref: true,
+            requires_selected_policy_refs: true,
+            keeps_storage_receipt_target_path_and_policy_refs_separate: true,
+            blockers_fail_closed: true,
+            policy_refs_are_operational_evidence: true,
+            evidence_only: true,
+            setup_neutral: true,
+            reads_files: false,
+            writes_files: false,
+            creates_receipt: false,
+            writes_receipt: false,
+            writes_event_log: false,
+            persists_operation_evidence: false,
+            invokes_adapter: false,
+            invokes_policy_engine: false,
+            invokes_gate: false,
+            calls_external_apis: false,
+            opens_browser: false,
+            reads_credentials: false,
+            writes_gate_decision: false,
+            writes_proofpack: false,
+            publishes: false,
+            comments: false,
+            creates_pull_request: false,
+            creates_acceptance_claim: false,
+            storage_ref_is_authority: false,
+            receipt_target_ref_is_authority: false,
+            target_path_ref_is_authority: false,
+            policy_refs_are_authority: false,
+            uses_current_working_directory_as_authority: false,
+            uses_global_config_as_authority: false,
+            uses_ide_state_as_authority: false,
+            uses_executor_memory_as_authority: false,
+        }
+    }
+
+    pub fn all_side_effect_flags_false(self) -> bool {
+        !self.reads_files
+            && !self.writes_files
+            && !self.creates_receipt
+            && !self.writes_receipt
+            && !self.writes_event_log
+            && !self.persists_operation_evidence
+            && !self.invokes_adapter
+            && !self.invokes_policy_engine
+            && !self.invokes_gate
+            && !self.calls_external_apis
+            && !self.opens_browser
+            && !self.reads_credentials
+            && !self.writes_gate_decision
+            && !self.writes_proofpack
+            && !self.publishes
+            && !self.comments
+            && !self.creates_pull_request
+            && !self.creates_acceptance_claim
+    }
+}
+
+pub const MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_BOUNDARY_FLAGS:
+    ModuleSideEffectReceiptWriterTargetStoragePolicyBoundaryFlags =
+    ModuleSideEffectReceiptWriterTargetStoragePolicyBoundaryFlags::pure_model();
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterTargetStoragePolicyModel {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub policy_status: ModuleSideEffectReceiptWriterTargetStoragePolicyStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub preflight_id: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub target_path_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub write_policy: ModuleSideEffectReceiptWriterWritePolicy,
+    pub idempotency_basis: ModuleSideEffectReceiptWriterIdempotencyBasis,
+    pub temp_atomic_policy: ModuleSideEffectReceiptWriterTempAtomicPolicy,
+    pub policy_refs: ModuleSideEffectReceiptWriterTargetStoragePolicyRefs,
+    pub blockers: Vec<ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker>,
+    pub boundary_notes: Vec<String>,
+    pub boundary_flags: ModuleSideEffectReceiptWriterTargetStoragePolicyBoundaryFlags,
+}
+
+impl ModuleSideEffectReceiptWriterTargetStoragePolicyModel {
+    pub fn is_ready(&self) -> bool {
+        self.status == ModuleHostStatus::Ready
+            && self.policy_status == ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Ready
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status == ModuleHostStatus::Blocked
+            || self.policy_status == ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Blocked
+    }
+
+    pub fn has_blocker(
+        &self,
+        blocker: ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker,
+    ) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn refs_are_separated(&self) -> bool {
+        self.storage_ref != self.receipt_target_ref
+            && self.storage_ref != self.target_path_ref
+            && self.receipt_target_ref != self.target_path_ref
+    }
+
+    pub fn operation_outcome(&self) -> ModuleSideEffectReceiptWriterOutcome {
+        if self.is_ready() {
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        } else {
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        }
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary_flags.evidence_only
+    }
+
+    pub fn policy_refs_are_operational_evidence(&self) -> bool {
+        self.boundary_flags.policy_refs_are_operational_evidence
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary_flags.reads_files || self.boundary_flags.writes_files
+    }
+
+    pub fn writes_receipt(&self) -> bool {
+        self.boundary_flags.writes_receipt
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary_flags.persists_operation_evidence
+    }
+
+    pub fn invokes_adapter(&self) -> bool {
+        self.boundary_flags.invokes_adapter
+    }
+
+    pub fn target_path_ref_is_authority(&self) -> bool {
+        self.boundary_flags.target_path_ref_is_authority
+    }
+
+    pub fn policy_refs_are_authority(&self) -> bool {
+        self.boundary_flags.policy_refs_are_authority
+    }
+}
+
+pub fn model_module_side_effect_receipt_writer_target_storage_policy(
+    file_io_plan: &ModuleSideEffectReceiptWriterFileIoPlan,
+    policy_refs: ModuleSideEffectReceiptWriterTargetStoragePolicyRefs,
+    boundary_notes: Vec<String>,
+) -> ModuleSideEffectReceiptWriterTargetStoragePolicyModel {
+    let blockers =
+        receipt_writer_target_storage_policy_blockers(file_io_plan, &policy_refs, &boundary_notes);
+    let policy_status = if blockers.is_empty() {
+        ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Ready
+    } else {
+        ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Blocked
+    };
+    let status = if policy_status == ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Ready {
+        ModuleHostStatus::Ready
+    } else {
+        ModuleHostStatus::Blocked
+    };
+
+    ModuleSideEffectReceiptWriterTargetStoragePolicyModel {
+        schema_version: MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_SCHEMA_VERSION,
+        status,
+        policy_status,
+        authority: ModuleHostAuthority::Advisory,
+        module_id: file_io_plan.module_id.clone(),
+        module_version: file_io_plan.module_version.clone(),
+        contract_ref: file_io_plan.contract_ref.clone(),
+        run_ref: file_io_plan.run_ref.clone(),
+        project_ref: file_io_plan.project_ref.clone(),
+        requested_operation: file_io_plan.requested_operation.clone(),
+        request_id: file_io_plan.request_id.clone(),
+        kind: file_io_plan.kind,
+        preflight_id: file_io_plan.preflight_id.clone(),
+        receipt_target_ref: file_io_plan.receipt_target_ref.clone(),
+        storage_ref: file_io_plan.storage_ref.clone(),
+        target_path_ref: file_io_plan.target_path_ref.clone(),
+        operation_evidence_ref: file_io_plan.operation_evidence_ref.clone(),
+        idempotency_ref: file_io_plan.idempotency_ref.clone(),
+        rollback_ref: file_io_plan.rollback_ref.clone(),
+        error_ref: file_io_plan.error_ref.clone(),
+        adapter_invocation_receipt_ref: file_io_plan.adapter_invocation_receipt_ref.clone(),
+        payload_ref: file_io_plan.payload_ref.clone(),
+        write_policy: file_io_plan.write_policy,
+        idempotency_basis: file_io_plan.idempotency_basis,
+        temp_atomic_policy: file_io_plan.temp_atomic_policy,
+        policy_refs,
+        blockers,
+        boundary_notes,
+        boundary_flags:
+            MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_BOUNDARY_FLAGS,
+    }
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -3217,6 +3734,170 @@ fn receipt_writer_file_io_plan_blockers(
     blockers
 }
 
+fn receipt_writer_target_storage_policy_blockers(
+    file_io_plan: &ModuleSideEffectReceiptWriterFileIoPlan,
+    policy_refs: &ModuleSideEffectReceiptWriterTargetStoragePolicyRefs,
+    boundary_notes: &[String],
+) -> Vec<ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker> {
+    let mut blockers = Vec::new();
+
+    if !file_io_plan.is_file_io_ready() || file_io_plan.has_blockers() {
+        blockers.push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::FileIoPlanBlocked);
+    }
+
+    if file_io_plan.storage_ref.trim().is_empty() {
+        blockers.push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRefMissing);
+    } else if !is_safe_ref(&file_io_plan.storage_ref) {
+        blockers.push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRefUnsafe);
+    }
+
+    if file_io_plan.receipt_target_ref.trim().is_empty() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ReceiptTargetRefMissing);
+    } else if !is_safe_ref(&file_io_plan.receipt_target_ref) {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ReceiptTargetRefUnsafe);
+    }
+
+    if file_io_plan.target_path_ref.trim().is_empty() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TargetPathRefMissing);
+    } else if !is_safe_ref(&file_io_plan.target_path_ref) {
+        blockers.push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TargetPathRefUnsafe);
+    }
+
+    if file_io_plan.storage_ref == file_io_plan.receipt_target_ref
+        || file_io_plan.storage_ref == file_io_plan.target_path_ref
+        || file_io_plan.receipt_target_ref == file_io_plan.target_path_ref
+    {
+        blockers.push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::RefsNotSeparated);
+    }
+
+    if !policy_refs.has_storage_root_selection_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRootPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_receipt_target_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ReceiptTargetPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_target_path_derivation_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TargetPathDerivationPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_path_encoding_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::PathEncodingPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_parent_directory_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ParentDirectoryPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_symlink_policy() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::SymlinkPolicyMissing);
+    }
+
+    if !policy_refs.has_traversal_policy() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TraversalPolicyMissing);
+    }
+
+    if !policy_refs.has_storage_root_escape_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRootEscapePolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_redaction_policy() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::RedactionPolicyMissing);
+    }
+
+    if !policy_refs.has_idempotency_conflict_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::IdempotencyConflictPolicyMissing,
+        );
+    }
+
+    if !policy_refs.has_temp_atomic_policy() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TempAtomicPolicyMissing);
+    }
+
+    if !policy_refs.has_operation_evidence_persistence_policy() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::OperationEvidencePersistencePolicyMissing,
+        );
+    }
+
+    if policy_refs.has_unsafe_policy_ref() {
+        blockers.push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::UnsafePolicyRef);
+    }
+
+    if !file_io_plan
+        .tracks_failure(ModuleSideEffectReceiptWriterFileIoFailureVisibility::StorageRootMissing)
+        && !file_io_plan.tracks_failure(
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::StorageRootDisallowed,
+        )
+    {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRootVisibilityMissing,
+        );
+    }
+
+    if !file_io_plan
+        .tracks_failure(ModuleSideEffectReceiptWriterFileIoFailureVisibility::TargetPathInvalid)
+    {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TargetPathVisibilityMissing,
+        );
+    }
+
+    if !file_io_plan.tracks_failure(
+        ModuleSideEffectReceiptWriterFileIoFailureVisibility::ParentDirectoryMissing,
+    ) {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ParentDirectoryVisibilityMissing,
+        );
+    }
+
+    if !file_io_plan.tracks_conflict_visibility() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ConflictVisibilityMissing,
+        );
+    }
+
+    if !file_io_plan.tracks_rollback_visibility() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::RollbackVisibilityMissing,
+        );
+    }
+
+    if !file_io_plan.tracks_operation_evidence_persistence_visibility() {
+        blockers.push(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::OperationEvidencePersistenceVisibilityMissing,
+        );
+    }
+
+    if boundary_notes.is_empty() {
+        blockers
+            .push(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::BoundaryNotesMissing);
+    }
+
+    blockers
+}
+
 fn push_required_receipt_writer_ref_finding(
     findings: &mut Vec<ModuleHostFinding>,
     value: &str,
@@ -3297,6 +3978,7 @@ fn is_safe_ref(value: &str) -> bool {
 mod tests {
     use super::{
         model_module_side_effect_receipt_writer_active_behavior,
+        model_module_side_effect_receipt_writer_target_storage_policy,
         plan_module_side_effect_receipt_writer_file_io, preflight_module_invocation,
         preflight_module_policy_gate, preflight_module_side_effect_receipt_writer,
         propose_module_assessment_receipt, propose_module_side_effect_request,
@@ -3312,8 +3994,12 @@ mod tests {
         ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
         ModuleSideEffectReceiptWriterPreflightDraft,
         ModuleSideEffectReceiptWriterPreflightRequirement,
+        ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker,
+        ModuleSideEffectReceiptWriterTargetStoragePolicyRefs,
+        ModuleSideEffectReceiptWriterTargetStoragePolicyStatus,
         ModuleSideEffectReceiptWriterTempAtomicPolicy, ModuleSideEffectReceiptWriterWritePolicy,
         ModuleSideEffectRequestBoundaryFlags, ModuleSideEffectRequestDraft,
+        MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_SCHEMA_VERSION,
     };
 
     fn valid_invocation() -> ModuleInvocationEnvelope {
@@ -3446,6 +4132,43 @@ mod tests {
         model_module_side_effect_receipt_writer_active_behavior(
             &ready_side_effect_receipt_writer_preflight(),
             None,
+        )
+    }
+
+    fn ready_side_effect_receipt_writer_file_io_plan(
+    ) -> super::ModuleSideEffectReceiptWriterFileIoPlan {
+        plan_module_side_effect_receipt_writer_file_io(
+            &ready_side_effect_receipt_writer_active_behavior(),
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json",
+            ModuleSideEffectReceiptWriterWritePolicy::IdempotentIfMatching,
+            ModuleSideEffectReceiptWriterIdempotencyBasis::ReceiptTargetAndPayloadRefs,
+            ModuleSideEffectReceiptWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::StorageRootMissing,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::TargetPathInvalid,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::ParentDirectoryMissing,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::CleanupFailed,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::OperationEvidencePersistenceFailed,
+            ],
+            vec!["File IO plan is explicit and side-effect-free.".to_owned()],
+        )
+    }
+
+    fn ready_target_storage_policy_refs() -> ModuleSideEffectReceiptWriterTargetStoragePolicyRefs {
+        ModuleSideEffectReceiptWriterTargetStoragePolicyRefs::all_selected(
+            "policies/module-host/storage-root-selection.v0.1",
+            "policies/module-host/receipt-target.v0.1",
+            "policies/module-host/target-path-derivation.v0.1",
+            "policies/module-host/path-encoding.v0.1",
+            "policies/module-host/parent-directory.v0.1",
+            "policies/module-host/symlink.v0.1",
+            "policies/module-host/traversal.v0.1",
+            "policies/module-host/storage-root-escape.v0.1",
+            "policies/module-host/redaction.v0.1",
+            "policies/module-host/idempotency-conflict.v0.1",
+            "policies/module-host/temp-atomic.v0.1",
+            "policies/module-host/operation-evidence-persistence.v0.1",
         )
     }
 
@@ -4278,5 +5001,180 @@ mod tests {
             "active_behavior_not_planned_only"
         );
         assert!(plan.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_target_storage_policy_model_ready_with_explicit_policy_refs() {
+        let file_io_plan = ready_side_effect_receipt_writer_file_io_plan();
+        let model = model_module_side_effect_receipt_writer_target_storage_policy(
+            &file_io_plan,
+            ready_target_storage_policy_refs(),
+            vec!["Target/storage policy remains operational evidence only.".to_owned()],
+        );
+
+        assert_eq!(
+            model.schema_version,
+            MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_SCHEMA_VERSION
+        );
+        assert_eq!(model.status, ModuleHostStatus::Ready);
+        assert_eq!(
+            model.policy_status,
+            ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Ready
+        );
+        assert!(model.is_ready());
+        assert!(!model.is_blocked());
+        assert_eq!(
+            model.receipt_target_ref,
+            "work/module-receipts/pubpunk-publish-community-lab.md"
+        );
+        assert_eq!(
+            model.storage_ref,
+            ".punk/runs/pubpunk-publish-community-lab"
+        );
+        assert_eq!(
+            model.target_path_ref,
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json"
+        );
+        assert!(model.refs_are_separated());
+        assert!(model.policy_refs.all_required_selected());
+        assert!(model.blockers.is_empty());
+        assert!(model.blockers_fail_closed());
+        assert_eq!(
+            model.operation_outcome(),
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        );
+        assert!(model.boundary_flags.models_target_storage_policy);
+        assert!(model.boundary_flags.requires_ready_file_io_plan);
+        assert!(model.boundary_flags.requires_selected_policy_refs);
+        assert!(
+            model
+                .boundary_flags
+                .keeps_storage_receipt_target_path_and_policy_refs_separate
+        );
+        assert!(model.boundary_flags.all_side_effect_flags_false());
+        assert!(model.is_evidence_only());
+        assert!(model.policy_refs_are_operational_evidence());
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_receipt());
+        assert!(!model.persists_operation_evidence());
+        assert!(!model.invokes_adapter());
+        assert!(!model.target_path_ref_is_authority());
+        assert!(!model.policy_refs_are_authority());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_target_storage_policy_model_blocks_missing_policy_refs() {
+        let file_io_plan = ready_side_effect_receipt_writer_file_io_plan();
+        let model = model_module_side_effect_receipt_writer_target_storage_policy(
+            &file_io_plan,
+            ModuleSideEffectReceiptWriterTargetStoragePolicyRefs::new(
+                None, None, None, None, None, None, None, None, None, None, None, None,
+            ),
+            vec![],
+        );
+
+        assert_eq!(model.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            model.policy_status,
+            ModuleSideEffectReceiptWriterTargetStoragePolicyStatus::Blocked
+        );
+        assert!(model.is_blocked());
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRootPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ReceiptTargetPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TargetPathDerivationPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::PathEncodingPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::IdempotencyConflictPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TempAtomicPolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::OperationEvidencePersistencePolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::BoundaryNotesMissing
+        ));
+        assert!(model.blockers_fail_closed());
+        assert_eq!(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRootPolicyMissing
+                .as_str(),
+            "storage_root_policy_missing"
+        );
+        assert_eq!(
+            model.operation_outcome(),
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        );
+        assert!(model.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_target_storage_policy_model_fails_closed_on_unsafe_plan() {
+        let active_behavior = ready_side_effect_receipt_writer_active_behavior();
+        let unsafe_file_io_plan = plan_module_side_effect_receipt_writer_file_io(
+            &active_behavior,
+            ".punk/runs/pubpunk-publish-community-lab/../receipt.json",
+            ModuleSideEffectReceiptWriterWritePolicy::IdempotentIfMatching,
+            ModuleSideEffectReceiptWriterIdempotencyBasis::ReceiptTargetAndPayloadRefs,
+            ModuleSideEffectReceiptWriterTempAtomicPolicy::AtomicSiblingTemp,
+            vec![
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::TargetPathInvalid,
+                ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent,
+            ],
+            vec!["Unsafe target path remains model data only.".to_owned()],
+        );
+        let policy_refs = ModuleSideEffectReceiptWriterTargetStoragePolicyRefs::new(
+            Some("/unsafe/policy".to_owned()),
+            Some("policies/module-host/receipt-target.v0.1".to_owned()),
+            None,
+            Some("policies/module-host/path-encoding.v0.1".to_owned()),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("policies/module-host/temp-atomic.v0.1".to_owned()),
+            None,
+        );
+        let model = model_module_side_effect_receipt_writer_target_storage_policy(
+            &unsafe_file_io_plan,
+            policy_refs,
+            vec!["Unsafe policy refs fail closed before IO.".to_owned()],
+        );
+
+        assert_eq!(model.status, ModuleHostStatus::Blocked);
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::FileIoPlanBlocked
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::TargetPathRefUnsafe
+        ));
+        assert!(model
+            .has_blocker(ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::UnsafePolicyRef));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::StorageRootVisibilityMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::ParentDirectoryVisibilityMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::RollbackVisibilityMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker::OperationEvidencePersistenceVisibilityMissing
+        ));
+        assert!(model.blockers_fail_closed());
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_receipt());
+        assert!(!model.persists_operation_evidence());
     }
 }
