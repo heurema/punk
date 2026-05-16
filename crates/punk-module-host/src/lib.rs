@@ -28,6 +28,8 @@ pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_HOST_PATH_OBSERVATION_SCHEMA_VE
     "punk.module_host.side_effect_receipt_writer_host_path_observation.v0.1";
 pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_CONCRETE_PATH_STORAGE_POLICY_SCHEMA_VERSION: &str =
     "punk.module_host.side_effect_receipt_writer_concrete_path_storage_policy.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_SCHEMA_VERSION:
+    &str = "punk.module_host.side_effect_receipt_writer_operation_evidence_persistence.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -3496,6 +3498,371 @@ pub fn model_module_side_effect_receipt_writer_concrete_path_storage_policy(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus {
+    Ready,
+    Blocked,
+}
+
+impl ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Blocked => "blocked",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker {
+    ConcretePathStoragePolicyBlocked,
+    PolicyRefsNotSelected,
+    OperationEvidencePersistencePolicyMissing,
+    OperationEvidenceRefMissing,
+    OperationEvidenceRefUnsafe,
+    IdempotencyRefMissing,
+    IdempotencyRefUnsafe,
+    RollbackRefMissing,
+    RollbackRefUnsafe,
+    ErrorRefMissing,
+    ErrorRefUnsafe,
+    RefsNotSeparated,
+    ConcretePathPolicyImpliesReceiptAvailability,
+    BoundaryNotesMissing,
+}
+
+impl ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ConcretePathStoragePolicyBlocked => "concrete_path_storage_policy_blocked",
+            Self::PolicyRefsNotSelected => "policy_refs_not_selected",
+            Self::OperationEvidencePersistencePolicyMissing => {
+                "operation_evidence_persistence_policy_missing"
+            }
+            Self::OperationEvidenceRefMissing => "operation_evidence_ref_missing",
+            Self::OperationEvidenceRefUnsafe => "operation_evidence_ref_unsafe",
+            Self::IdempotencyRefMissing => "idempotency_ref_missing",
+            Self::IdempotencyRefUnsafe => "idempotency_ref_unsafe",
+            Self::RollbackRefMissing => "rollback_ref_missing",
+            Self::RollbackRefUnsafe => "rollback_ref_unsafe",
+            Self::ErrorRefMissing => "error_ref_missing",
+            Self::ErrorRefUnsafe => "error_ref_unsafe",
+            Self::RefsNotSeparated => "refs_not_separated",
+            Self::ConcretePathPolicyImpliesReceiptAvailability => {
+                "concrete_path_policy_implies_receipt_availability"
+            }
+            Self::BoundaryNotesMissing => "boundary_notes_missing",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterOperationEvidencePersistenceBoundaryFlags {
+    pub models_operation_evidence_persistence: bool,
+    pub requires_ready_concrete_path_storage_policy: bool,
+    pub requires_operation_evidence_ref: bool,
+    pub requires_idempotency_ref: bool,
+    pub requires_error_rollback_refs: bool,
+    pub requires_operation_evidence_persistence_policy: bool,
+    pub keeps_operation_evidence_refs_separate: bool,
+    pub blockers_fail_closed: bool,
+    pub operation_evidence_is_non_authoritative: bool,
+    pub operation_evidence_persistence_implies_receipt_availability: bool,
+    pub evidence_only: bool,
+    pub setup_neutral: bool,
+    pub reads_files: bool,
+    pub writes_files: bool,
+    pub inspects_filesystem: bool,
+    pub resolves_host_paths: bool,
+    pub canonicalizes_host_paths: bool,
+    pub creates_receipt: bool,
+    pub writes_receipt: bool,
+    pub writes_event_log: bool,
+    pub persists_operation_evidence: bool,
+    pub invokes_adapter: bool,
+    pub invokes_policy_engine: bool,
+    pub invokes_gate: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub creates_acceptance_claim: bool,
+    pub operation_evidence_ref_is_authority: bool,
+    pub idempotency_ref_is_authority: bool,
+    pub rollback_ref_is_authority: bool,
+    pub error_ref_is_authority: bool,
+    pub uses_current_working_directory_as_authority: bool,
+    pub uses_global_config_as_authority: bool,
+    pub uses_ide_state_as_authority: bool,
+    pub uses_executor_memory_as_authority: bool,
+}
+
+impl ModuleSideEffectReceiptWriterOperationEvidencePersistenceBoundaryFlags {
+    pub const fn pure_model() -> Self {
+        Self {
+            models_operation_evidence_persistence: true,
+            requires_ready_concrete_path_storage_policy: true,
+            requires_operation_evidence_ref: true,
+            requires_idempotency_ref: true,
+            requires_error_rollback_refs: true,
+            requires_operation_evidence_persistence_policy: true,
+            keeps_operation_evidence_refs_separate: true,
+            blockers_fail_closed: true,
+            operation_evidence_is_non_authoritative: true,
+            operation_evidence_persistence_implies_receipt_availability: false,
+            evidence_only: true,
+            setup_neutral: true,
+            reads_files: false,
+            writes_files: false,
+            inspects_filesystem: false,
+            resolves_host_paths: false,
+            canonicalizes_host_paths: false,
+            creates_receipt: false,
+            writes_receipt: false,
+            writes_event_log: false,
+            persists_operation_evidence: false,
+            invokes_adapter: false,
+            invokes_policy_engine: false,
+            invokes_gate: false,
+            calls_external_apis: false,
+            opens_browser: false,
+            reads_credentials: false,
+            writes_gate_decision: false,
+            writes_proofpack: false,
+            publishes: false,
+            comments: false,
+            creates_pull_request: false,
+            creates_acceptance_claim: false,
+            operation_evidence_ref_is_authority: false,
+            idempotency_ref_is_authority: false,
+            rollback_ref_is_authority: false,
+            error_ref_is_authority: false,
+            uses_current_working_directory_as_authority: false,
+            uses_global_config_as_authority: false,
+            uses_ide_state_as_authority: false,
+            uses_executor_memory_as_authority: false,
+        }
+    }
+
+    pub fn all_side_effect_flags_false(self) -> bool {
+        !self.reads_files
+            && !self.writes_files
+            && !self.inspects_filesystem
+            && !self.resolves_host_paths
+            && !self.canonicalizes_host_paths
+            && !self.creates_receipt
+            && !self.writes_receipt
+            && !self.writes_event_log
+            && !self.persists_operation_evidence
+            && !self.invokes_adapter
+            && !self.invokes_policy_engine
+            && !self.invokes_gate
+            && !self.calls_external_apis
+            && !self.opens_browser
+            && !self.reads_credentials
+            && !self.writes_gate_decision
+            && !self.writes_proofpack
+            && !self.publishes
+            && !self.comments
+            && !self.creates_pull_request
+            && !self.creates_acceptance_claim
+    }
+}
+
+pub const MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_BOUNDARY_FLAGS:
+    ModuleSideEffectReceiptWriterOperationEvidencePersistenceBoundaryFlags =
+    ModuleSideEffectReceiptWriterOperationEvidencePersistenceBoundaryFlags::pure_model();
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterOperationEvidencePersistenceModel {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub persistence_status: ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub preflight_id: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub target_path_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub write_policy: ModuleSideEffectReceiptWriterWritePolicy,
+    pub idempotency_basis: ModuleSideEffectReceiptWriterIdempotencyBasis,
+    pub temp_atomic_policy: ModuleSideEffectReceiptWriterTempAtomicPolicy,
+    pub policy_refs: ModuleSideEffectReceiptWriterTargetStoragePolicyRefs,
+    pub host_path_kind: ModuleSideEffectReceiptWriterHostPathKind,
+    pub host_path_ref: Option<String>,
+    pub host_path_redacted: bool,
+    pub operation_evidence_record_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub blockers: Vec<ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker>,
+    pub boundary_notes: Vec<String>,
+    pub boundary_flags: ModuleSideEffectReceiptWriterOperationEvidencePersistenceBoundaryFlags,
+}
+
+impl ModuleSideEffectReceiptWriterOperationEvidencePersistenceModel {
+    pub fn is_ready(&self) -> bool {
+        self.status == ModuleHostStatus::Ready
+            && self.persistence_status
+                == ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Ready
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status == ModuleHostStatus::Blocked
+            || self.persistence_status
+                == ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Blocked
+    }
+
+    pub fn has_blocker(
+        &self,
+        blocker: ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker,
+    ) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn refs_are_separated(&self) -> bool {
+        refs_are_pairwise_separated(&[
+            self.storage_ref.as_str(),
+            self.receipt_target_ref.as_str(),
+            self.target_path_ref.as_str(),
+            self.operation_evidence_ref.as_str(),
+            self.idempotency_ref.as_str(),
+            self.rollback_ref.as_str(),
+            self.error_ref.as_str(),
+        ])
+    }
+
+    pub fn operation_outcome(&self) -> ModuleSideEffectReceiptWriterOutcome {
+        if self.is_ready() {
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        } else {
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        }
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary_flags.evidence_only
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary_flags.reads_files
+            || self.boundary_flags.writes_files
+            || self.boundary_flags.inspects_filesystem
+            || self.boundary_flags.resolves_host_paths
+            || self.boundary_flags.canonicalizes_host_paths
+    }
+
+    pub fn writes_receipt(&self) -> bool {
+        self.boundary_flags.writes_receipt
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary_flags.persists_operation_evidence
+    }
+
+    pub fn invokes_adapter(&self) -> bool {
+        self.boundary_flags.invokes_adapter
+    }
+
+    pub fn operation_evidence_ref_is_authority(&self) -> bool {
+        self.boundary_flags.operation_evidence_ref_is_authority
+    }
+
+    pub fn operation_evidence_available(&self) -> bool {
+        self.boundary_flags
+            .operation_evidence_persistence_implies_receipt_availability
+    }
+
+    pub fn implies_receipt_availability(&self) -> bool {
+        self.boundary_flags
+            .operation_evidence_persistence_implies_receipt_availability
+    }
+}
+
+pub fn model_module_side_effect_receipt_writer_operation_evidence_persistence(
+    concrete_path_policy: &ModuleSideEffectReceiptWriterConcretePathStoragePolicyModel,
+    boundary_notes: Vec<String>,
+) -> ModuleSideEffectReceiptWriterOperationEvidencePersistenceModel {
+    let blockers = receipt_writer_operation_evidence_persistence_blockers(
+        concrete_path_policy,
+        &boundary_notes,
+    );
+    let persistence_status = if blockers.is_empty() {
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Ready
+    } else {
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Blocked
+    };
+    let status = if persistence_status
+        == ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Ready
+    {
+        ModuleHostStatus::Ready
+    } else {
+        ModuleHostStatus::Blocked
+    };
+
+    ModuleSideEffectReceiptWriterOperationEvidencePersistenceModel {
+        schema_version:
+            MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_SCHEMA_VERSION,
+        status,
+        persistence_status,
+        authority: ModuleHostAuthority::Advisory,
+        module_id: concrete_path_policy.module_id.clone(),
+        module_version: concrete_path_policy.module_version.clone(),
+        contract_ref: concrete_path_policy.contract_ref.clone(),
+        run_ref: concrete_path_policy.run_ref.clone(),
+        project_ref: concrete_path_policy.project_ref.clone(),
+        requested_operation: concrete_path_policy.requested_operation.clone(),
+        request_id: concrete_path_policy.request_id.clone(),
+        kind: concrete_path_policy.kind,
+        preflight_id: concrete_path_policy.preflight_id.clone(),
+        receipt_target_ref: concrete_path_policy.receipt_target_ref.clone(),
+        storage_ref: concrete_path_policy.storage_ref.clone(),
+        target_path_ref: concrete_path_policy.target_path_ref.clone(),
+        operation_evidence_ref: concrete_path_policy.operation_evidence_ref.clone(),
+        idempotency_ref: concrete_path_policy.idempotency_ref.clone(),
+        rollback_ref: concrete_path_policy.rollback_ref.clone(),
+        error_ref: concrete_path_policy.error_ref.clone(),
+        adapter_invocation_receipt_ref: concrete_path_policy
+            .adapter_invocation_receipt_ref
+            .clone(),
+        payload_ref: concrete_path_policy.payload_ref.clone(),
+        write_policy: concrete_path_policy.write_policy,
+        idempotency_basis: concrete_path_policy.idempotency_basis,
+        temp_atomic_policy: concrete_path_policy.temp_atomic_policy,
+        policy_refs: concrete_path_policy.policy_refs.clone(),
+        host_path_kind: concrete_path_policy.host_path_kind,
+        host_path_ref: concrete_path_policy.host_path_ref.clone(),
+        host_path_redacted: concrete_path_policy.host_path_redacted,
+        operation_evidence_record_status: ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+        blockers,
+        boundary_notes,
+        boundary_flags:
+            MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_BOUNDARY_FLAGS,
+    }
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -4913,6 +5280,131 @@ fn push_unique_concrete_path_storage_policy_blocker(
     }
 }
 
+fn receipt_writer_operation_evidence_persistence_blockers(
+    concrete_path_policy: &ModuleSideEffectReceiptWriterConcretePathStoragePolicyModel,
+    boundary_notes: &[String],
+) -> Vec<ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker> {
+    let mut blockers = Vec::new();
+
+    if !concrete_path_policy.is_ready() || concrete_path_policy.is_blocked() {
+        push_unique_operation_evidence_persistence_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::ConcretePathStoragePolicyBlocked,
+        );
+    }
+
+    if !concrete_path_policy.policy_refs.all_required_selected() {
+        push_unique_operation_evidence_persistence_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::PolicyRefsNotSelected,
+        );
+    }
+
+    if !concrete_path_policy
+        .policy_refs
+        .has_operation_evidence_persistence_policy()
+    {
+        push_unique_operation_evidence_persistence_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::OperationEvidencePersistencePolicyMissing,
+        );
+    }
+
+    push_required_operation_evidence_persistence_ref_blocker(
+        &mut blockers,
+        concrete_path_policy.operation_evidence_ref.as_str(),
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::OperationEvidenceRefMissing,
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::OperationEvidenceRefUnsafe,
+    );
+    push_required_operation_evidence_persistence_ref_blocker(
+        &mut blockers,
+        concrete_path_policy.idempotency_ref.as_str(),
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::IdempotencyRefMissing,
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::IdempotencyRefUnsafe,
+    );
+    push_required_operation_evidence_persistence_ref_blocker(
+        &mut blockers,
+        concrete_path_policy.rollback_ref.as_str(),
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::RollbackRefMissing,
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::RollbackRefUnsafe,
+    );
+    push_required_operation_evidence_persistence_ref_blocker(
+        &mut blockers,
+        concrete_path_policy.error_ref.as_str(),
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::ErrorRefMissing,
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::ErrorRefUnsafe,
+    );
+
+    if !refs_are_pairwise_separated(&[
+        concrete_path_policy.storage_ref.as_str(),
+        concrete_path_policy.receipt_target_ref.as_str(),
+        concrete_path_policy.target_path_ref.as_str(),
+        concrete_path_policy.operation_evidence_ref.as_str(),
+        concrete_path_policy.idempotency_ref.as_str(),
+        concrete_path_policy.rollback_ref.as_str(),
+        concrete_path_policy.error_ref.as_str(),
+    ]) {
+        push_unique_operation_evidence_persistence_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::RefsNotSeparated,
+        );
+    }
+
+    if concrete_path_policy.implies_receipt_availability() {
+        push_unique_operation_evidence_persistence_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::ConcretePathPolicyImpliesReceiptAvailability,
+        );
+    }
+
+    if boundary_notes.is_empty() {
+        push_unique_operation_evidence_persistence_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::BoundaryNotesMissing,
+        );
+    }
+
+    blockers
+}
+
+fn push_required_operation_evidence_persistence_ref_blocker(
+    blockers: &mut Vec<ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker>,
+    value: &str,
+    missing: ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker,
+    unsafe_ref: ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker,
+) {
+    if value.trim().is_empty() {
+        push_unique_operation_evidence_persistence_blocker(blockers, missing);
+    } else if !is_safe_ref(value) {
+        push_unique_operation_evidence_persistence_blocker(blockers, unsafe_ref);
+    }
+}
+
+fn push_unique_operation_evidence_persistence_blocker(
+    blockers: &mut Vec<ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker>,
+    blocker: ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn refs_are_pairwise_separated(refs: &[&str]) -> bool {
+    for (index, left) in refs.iter().enumerate() {
+        if left.trim().is_empty() {
+            continue;
+        }
+        if refs[index + 1..]
+            .iter()
+            .any(|right| !right.trim().is_empty() && left == right)
+        {
+            return false;
+        }
+    }
+
+    true
+}
+
 fn push_required_receipt_writer_ref_finding(
     findings: &mut Vec<ModuleHostFinding>,
     value: &str,
@@ -4995,6 +5487,7 @@ mod tests {
         model_module_side_effect_receipt_writer_active_behavior,
         model_module_side_effect_receipt_writer_concrete_path_storage_policy,
         model_module_side_effect_receipt_writer_host_path_observation,
+        model_module_side_effect_receipt_writer_operation_evidence_persistence,
         model_module_side_effect_receipt_writer_target_storage_policy,
         plan_module_side_effect_receipt_writer_file_io, preflight_module_invocation,
         preflight_module_policy_gate, preflight_module_side_effect_receipt_writer,
@@ -5011,8 +5504,10 @@ mod tests {
         ModuleSideEffectReceiptWriterHostPathObservationBlocker,
         ModuleSideEffectReceiptWriterHostPathObservationStatus,
         ModuleSideEffectReceiptWriterIdempotencyBasis, ModuleSideEffectReceiptWriterModeledStep,
-        ModuleSideEffectReceiptWriterObservation, ModuleSideEffectReceiptWriterOutcome,
-        ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+        ModuleSideEffectReceiptWriterObservation,
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker,
+        ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus,
+        ModuleSideEffectReceiptWriterOutcome, ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
         ModuleSideEffectReceiptWriterPreflightDraft,
         ModuleSideEffectReceiptWriterPreflightRequirement,
         ModuleSideEffectReceiptWriterTargetStoragePolicyBlocker,
@@ -5022,6 +5517,7 @@ mod tests {
         ModuleSideEffectRequestBoundaryFlags, ModuleSideEffectRequestDraft,
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_CONCRETE_PATH_STORAGE_POLICY_SCHEMA_VERSION,
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_HOST_PATH_OBSERVATION_SCHEMA_VERSION,
+        MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_SCHEMA_VERSION,
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_SCHEMA_VERSION,
     };
 
@@ -5213,6 +5709,15 @@ mod tests {
             true,
             vec![],
             vec!["Host path observation remains redacted evidence only.".to_owned()],
+        )
+    }
+
+    fn ready_concrete_path_storage_policy_model(
+    ) -> super::ModuleSideEffectReceiptWriterConcretePathStoragePolicyModel {
+        model_module_side_effect_receipt_writer_concrete_path_storage_policy(
+            &ready_target_storage_policy_model(),
+            &ready_host_path_observation_model(),
+            vec!["Concrete path/storage policy remains operational evidence only.".to_owned()],
         )
     }
 
@@ -6563,6 +7068,179 @@ mod tests {
             ModuleSideEffectReceiptWriterConcretePathStoragePolicyBlocker::TargetStoragePolicyBlocked
                 .as_str(),
             "target_storage_policy_blocked"
+        );
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_receipt());
+        assert!(!model.persists_operation_evidence());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_operation_evidence_persistence_model_ready_with_explicit_refs() {
+        let concrete_path_policy = ready_concrete_path_storage_policy_model();
+        let model = model_module_side_effect_receipt_writer_operation_evidence_persistence(
+            &concrete_path_policy,
+            vec![
+                "Operation evidence persistence readiness remains operational evidence only."
+                    .to_owned(),
+            ],
+        );
+
+        assert_eq!(
+            model.schema_version,
+            MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_SCHEMA_VERSION
+        );
+        assert_eq!(model.status, ModuleHostStatus::Ready);
+        assert_eq!(
+            model.persistence_status,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Ready
+        );
+        assert!(model.is_ready());
+        assert!(!model.is_blocked());
+        assert_eq!(
+            model.operation_evidence_ref,
+            "work/module-operation-evidence/pubpunk-publish-community-lab.md"
+        );
+        assert_eq!(
+            model.idempotency_ref,
+            "work/module-idempotency/pubpunk-publish-community-lab.md"
+        );
+        assert_eq!(
+            model.rollback_ref,
+            "work/module-rollback/pubpunk-publish-community-lab.md"
+        );
+        assert_eq!(
+            model.error_ref,
+            "work/module-errors/pubpunk-publish-community-lab.md"
+        );
+        assert_eq!(
+            model.operation_evidence_record_status.as_str(),
+            "not_attempted"
+        );
+        assert!(model.refs_are_separated());
+        assert!(model
+            .policy_refs
+            .has_operation_evidence_persistence_policy());
+        assert!(model.blockers.is_empty());
+        assert!(model.blockers_fail_closed());
+        assert_eq!(
+            model.operation_outcome(),
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        );
+        assert!(model.boundary_flags.models_operation_evidence_persistence);
+        assert!(
+            model
+                .boundary_flags
+                .requires_ready_concrete_path_storage_policy
+        );
+        assert!(model.boundary_flags.requires_operation_evidence_ref);
+        assert!(model.boundary_flags.requires_idempotency_ref);
+        assert!(model.boundary_flags.requires_error_rollback_refs);
+        assert!(
+            model
+                .boundary_flags
+                .requires_operation_evidence_persistence_policy
+        );
+        assert!(model.boundary_flags.operation_evidence_is_non_authoritative);
+        assert!(model.boundary_flags.all_side_effect_flags_false());
+        assert!(model.is_evidence_only());
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_receipt());
+        assert!(!model.persists_operation_evidence());
+        assert!(!model.invokes_adapter());
+        assert!(!model.operation_evidence_ref_is_authority());
+        assert!(!model.operation_evidence_available());
+        assert!(!model.implies_receipt_availability());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_operation_evidence_persistence_model_blocks_missing_or_unsafe_refs(
+    ) {
+        let mut concrete_path_policy = ready_concrete_path_storage_policy_model();
+        concrete_path_policy.operation_evidence_ref = "/private/tmp/evidence.json".to_owned();
+        concrete_path_policy.idempotency_ref.clear();
+        concrete_path_policy.rollback_ref = "../rollback.md".to_owned();
+        concrete_path_policy.error_ref = concrete_path_policy.receipt_target_ref.clone();
+        let model = model_module_side_effect_receipt_writer_operation_evidence_persistence(
+            &concrete_path_policy,
+            vec!["Unsafe operation evidence refs block persistence readiness.".to_owned()],
+        );
+
+        assert_eq!(model.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            model.persistence_status,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Blocked
+        );
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::OperationEvidenceRefUnsafe
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::IdempotencyRefMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::RollbackRefUnsafe
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::RefsNotSeparated
+        ));
+        assert!(model.blockers_fail_closed());
+        assert_eq!(
+            model.operation_outcome(),
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        );
+        assert!(!model.touches_filesystem());
+        assert!(!model.writes_receipt());
+        assert!(!model.persists_operation_evidence());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_operation_evidence_persistence_model_blocks_unready_policy_inputs(
+    ) {
+        let target_storage_policy = ready_target_storage_policy_model();
+        let blocked_host_path_observation =
+            model_module_side_effect_receipt_writer_host_path_observation(
+                &target_storage_policy,
+                ModuleSideEffectReceiptWriterHostPathKind::Unavailable,
+                None,
+                true,
+                vec![],
+                vec![],
+            );
+        let mut concrete_path_policy =
+            model_module_side_effect_receipt_writer_concrete_path_storage_policy(
+                &target_storage_policy,
+                &blocked_host_path_observation,
+                vec!["Blocked host path keeps concrete policy blocked.".to_owned()],
+            );
+        concrete_path_policy
+            .policy_refs
+            .operation_evidence_persistence = None;
+        let model = model_module_side_effect_receipt_writer_operation_evidence_persistence(
+            &concrete_path_policy,
+            vec![],
+        );
+
+        assert_eq!(model.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            model.persistence_status,
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus::Blocked
+        );
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::ConcretePathStoragePolicyBlocked
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::PolicyRefsNotSelected
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::OperationEvidencePersistencePolicyMissing
+        ));
+        assert!(model.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::BoundaryNotesMissing
+        ));
+        assert!(model.blockers_fail_closed());
+        assert_eq!(
+            ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker::ConcretePathStoragePolicyBlocked
+                .as_str(),
+            "concrete_path_storage_policy_blocked"
         );
         assert!(!model.touches_filesystem());
         assert!(!model.writes_receipt());
