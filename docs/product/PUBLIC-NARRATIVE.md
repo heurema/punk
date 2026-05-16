@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-04-24
+updated_at: 2026-05-16
 review_after: 2026-07-20
 canonical_for:
   - public-narrative-plane
@@ -63,6 +63,10 @@ It may locate an external local publishing workspace from a repo binding and
 local-only pointer file, but it does not publish, draft, open browsers, call
 APIs, read credentials, create receipts, or make any external surface project
 truth.
+It must not be extended into publishing inventory, drafting, planning, receipt
+creation, or publish behavior inside active core. Those behaviors belong to a
+future PubPunk module boundary after Module Host and side-effect policy are
+selected.
 
 ## Storage
 

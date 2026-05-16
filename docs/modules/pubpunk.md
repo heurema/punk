@@ -28,6 +28,11 @@ PubPunk is not active.
 
 There is no automation in the new `punk` core yet.
 
+The existing `punk publishing locate` resolver is a transitional core locator
+only. It must not be used as precedent for adding publishing inventory,
+drafting, planning, receipt creation, or publish behavior to `punk-project`,
+`punk-cli`, or any active-core crate. Those behaviors are PubPunk/module work.
+
 However, the public artifact structure exists from day zero under:
 
 ```text
