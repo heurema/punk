@@ -31,17 +31,17 @@ invocation envelope preflight, advisory assessment wrapper, local-only module
 receipt proposal model, and local-only side-effect request proposal model for
 module models, plus local-only policy gate and side-effect receipt writer
 preflight models, a side-effect receipt writer active behavior model, and a
-side-effect receipt writer file IO plan model, and a target/storage policy
-readiness model. It
+side-effect receipt writer file IO plan model, a target/storage policy
+readiness model, and a host path observation model. It
 can model future receipt field coverage, future external action preconditions,
 future policy evidence readiness, future receipt writer readiness, and future
-receipt writer outcomes, file IO plans, and target/storage policy readiness,
-but it does not create or write receipts and does not perform side effects. It
-does not load plugins, invoke modules, expose CLI behavior, read or write
-files, persist operation evidence, mutate event logs, invoke policy engines,
-invoke gate, call APIs, read credentials, invoke adapters, publish, comment,
-create pull requests, write gate decisions, write proofpacks, or claim
-acceptance.
+receipt writer outcomes, file IO plans, target/storage policy readiness, and
+host path observations, but it does not create or write receipts and does not
+perform side effects. It does not load plugins, invoke modules, expose CLI
+behavior, resolve or canonicalize host paths, read or write files, persist
+operation evidence, mutate event logs, invoke policy engines, invoke gate, call
+APIs, read credentials, invoke adapters, publish, comment, create pull
+requests, write gate decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -189,6 +189,19 @@ write receipts, persist operation evidence, mutate event logs, invoke adapters,
 invoke policy engines, invoke gate, publish, comment, create pull requests,
 call APIs, read credentials, write proofpacks, write gate decisions, or claim
 acceptance.
+
+The current side-effect receipt writer host path observation model is
+pure/no-IO advisory evidence. It consumes a ready target/storage policy model
+plus an explicit host path kind, optional redacted host path ref, redaction
+state, explicit observation blockers, and boundary notes. It models
+storage-root-relative, runtime-relative, absolute, or unavailable host path
+observations plus parent-directory, symlink, canonicalization, traversal,
+storage-root escape, unsafe-ref, missing-ref, and redaction blockers before
+any local write can be considered. It does not resolve or canonicalize host
+paths, inspect the filesystem, read or write files, create or write receipts,
+persist operation evidence, mutate event logs, invoke adapters, invoke policy
+engines, invoke gate, publish, comment, create pull requests, call APIs, read
+credentials, write proofpacks, write gate decisions, or claim acceptance.
 
 ## Wasm status
 
