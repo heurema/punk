@@ -12,6 +12,8 @@ pub const MODULE_HOST_ASSESSMENT_ENVELOPE_SCHEMA_VERSION: &str =
     "punk.module_host.assessment_envelope.v0.1";
 pub const MODULE_HOST_RECEIPT_PROPOSAL_SCHEMA_VERSION: &str =
     "punk.module_host.receipt_proposal.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_REQUEST_PROPOSAL_SCHEMA_VERSION: &str =
+    "punk.module_host.side_effect_request_proposal.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -386,6 +388,18 @@ pub enum ModuleHostFindingCode {
     AssessmentEnvelopeBlocked,
     AssessmentEnvelopeRefMismatch,
     UnknownExpectedReceiptField,
+    ReceiptProposalBlocked,
+    ReceiptProposalRefMismatch,
+    MissingSideEffectRequestId,
+    MissingSideEffectTargetRef,
+    MissingSideEffectIntentRef,
+    MissingSideEffectPolicyRef,
+    MissingSideEffectReceiptProposalRef,
+    MissingSideEffectAdapterRef,
+    MissingSideEffectPayloadRef,
+    UnsafeSideEffectRequestRef,
+    MissingSideEffectReceiptCoverage,
+    SideEffectRequestHasSideEffects,
 }
 
 impl ModuleHostFindingCode {
@@ -408,6 +422,18 @@ impl ModuleHostFindingCode {
             Self::AssessmentEnvelopeBlocked => "assessment_envelope_blocked",
             Self::AssessmentEnvelopeRefMismatch => "assessment_envelope_ref_mismatch",
             Self::UnknownExpectedReceiptField => "unknown_expected_receipt_field",
+            Self::ReceiptProposalBlocked => "receipt_proposal_blocked",
+            Self::ReceiptProposalRefMismatch => "receipt_proposal_ref_mismatch",
+            Self::MissingSideEffectRequestId => "missing_side_effect_request_id",
+            Self::MissingSideEffectTargetRef => "missing_side_effect_target_ref",
+            Self::MissingSideEffectIntentRef => "missing_side_effect_intent_ref",
+            Self::MissingSideEffectPolicyRef => "missing_side_effect_policy_ref",
+            Self::MissingSideEffectReceiptProposalRef => "missing_side_effect_receipt_proposal_ref",
+            Self::MissingSideEffectAdapterRef => "missing_side_effect_adapter_ref",
+            Self::MissingSideEffectPayloadRef => "missing_side_effect_payload_ref",
+            Self::UnsafeSideEffectRequestRef => "unsafe_side_effect_request_ref",
+            Self::MissingSideEffectReceiptCoverage => "missing_side_effect_receipt_coverage",
+            Self::SideEffectRequestHasSideEffects => "side_effect_request_has_side_effects",
         }
     }
 }
@@ -637,6 +663,206 @@ impl ModuleAssessmentReceiptProposal {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectKind {
+    Publish,
+    Comment,
+    CreatePullRequest,
+}
+
+impl ModuleSideEffectKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Publish => "publish",
+            Self::Comment => "comment",
+            Self::CreatePullRequest => "create_pull_request",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectPrecondition {
+    HostPolicyRef,
+    ReadyReceiptProposal,
+    SideEffectReceiptCoverage,
+    AdapterInvocationReceipt,
+    SafePayloadRef,
+    GateOrPolicyApproval,
+}
+
+impl ModuleSideEffectPrecondition {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::HostPolicyRef => "host_policy_ref",
+            Self::ReadyReceiptProposal => "ready_receipt_proposal",
+            Self::SideEffectReceiptCoverage => "side_effect_receipt_coverage",
+            Self::AdapterInvocationReceipt => "adapter_invocation_receipt",
+            Self::SafePayloadRef => "safe_payload_ref",
+            Self::GateOrPolicyApproval => "gate_or_policy_approval",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectRequestBoundaryFlags {
+    pub performs_external_side_effect: bool,
+    pub invokes_adapter: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub writes_receipt: bool,
+    pub writes_event_log: bool,
+    pub reads_files: bool,
+    pub writes_files: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub creates_acceptance_claim: bool,
+}
+
+impl ModuleSideEffectRequestBoundaryFlags {
+    pub const fn pure_proposal() -> Self {
+        Self {
+            performs_external_side_effect: false,
+            invokes_adapter: false,
+            publishes: false,
+            comments: false,
+            creates_pull_request: false,
+            writes_receipt: false,
+            writes_event_log: false,
+            reads_files: false,
+            writes_files: false,
+            calls_external_apis: false,
+            opens_browser: false,
+            reads_credentials: false,
+            writes_gate_decision: false,
+            writes_proofpack: false,
+            creates_acceptance_claim: false,
+        }
+    }
+
+    pub fn all_side_effect_flags_false(self) -> bool {
+        !self.performs_external_side_effect
+            && !self.invokes_adapter
+            && !self.publishes
+            && !self.comments
+            && !self.creates_pull_request
+            && !self.writes_receipt
+            && !self.writes_event_log
+            && !self.reads_files
+            && !self.writes_files
+            && !self.calls_external_apis
+            && !self.opens_browser
+            && !self.reads_credentials
+            && !self.writes_gate_decision
+            && !self.writes_proofpack
+            && !self.creates_acceptance_claim
+    }
+}
+
+pub const MODULE_HOST_PURE_SIDE_EFFECT_REQUEST_BOUNDARY_FLAGS:
+    ModuleSideEffectRequestBoundaryFlags = ModuleSideEffectRequestBoundaryFlags::pure_proposal();
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectRequestDraft {
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub target_ref: String,
+    pub intent_ref: String,
+    pub policy_ref: String,
+    pub receipt_proposal_ref: String,
+    pub adapter_ref: String,
+    pub payload_ref: String,
+    pub boundary_flags: ModuleSideEffectRequestBoundaryFlags,
+}
+
+impl ModuleSideEffectRequestDraft {
+    pub fn new(request_id: impl Into<String>, kind: ModuleSideEffectKind) -> Self {
+        Self {
+            request_id: request_id.into(),
+            kind,
+            target_ref: String::new(),
+            intent_ref: String::new(),
+            policy_ref: String::new(),
+            receipt_proposal_ref: String::new(),
+            adapter_ref: String::new(),
+            payload_ref: String::new(),
+            boundary_flags: ModuleSideEffectRequestBoundaryFlags::pure_proposal(),
+        }
+    }
+
+    pub fn with_target_ref(mut self, target_ref: impl Into<String>) -> Self {
+        self.target_ref = target_ref.into();
+        self
+    }
+
+    pub fn with_intent_ref(mut self, intent_ref: impl Into<String>) -> Self {
+        self.intent_ref = intent_ref.into();
+        self
+    }
+
+    pub fn with_policy_ref(mut self, policy_ref: impl Into<String>) -> Self {
+        self.policy_ref = policy_ref.into();
+        self
+    }
+
+    pub fn with_receipt_proposal_ref(mut self, receipt_proposal_ref: impl Into<String>) -> Self {
+        self.receipt_proposal_ref = receipt_proposal_ref.into();
+        self
+    }
+
+    pub fn with_adapter_ref(mut self, adapter_ref: impl Into<String>) -> Self {
+        self.adapter_ref = adapter_ref.into();
+        self
+    }
+
+    pub fn with_payload_ref(mut self, payload_ref: impl Into<String>) -> Self {
+        self.payload_ref = payload_ref.into();
+        self
+    }
+
+    pub fn with_boundary_flags(
+        mut self,
+        boundary_flags: ModuleSideEffectRequestBoundaryFlags,
+    ) -> Self {
+        self.boundary_flags = boundary_flags;
+        self
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectRequestProposal {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub target_ref: String,
+    pub intent_ref: String,
+    pub policy_ref: String,
+    pub receipt_proposal_ref: String,
+    pub adapter_ref: String,
+    pub payload_ref: String,
+    pub required_preconditions: Vec<ModuleSideEffectPrecondition>,
+    pub covered_preconditions: Vec<ModuleSideEffectPrecondition>,
+    pub findings: Vec<ModuleHostFinding>,
+    pub boundary_flags: ModuleSideEffectRequestBoundaryFlags,
+}
+
+impl ModuleSideEffectRequestProposal {
+    pub fn has_blockers(&self) -> bool {
+        !self.findings.is_empty()
+    }
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -731,6 +957,127 @@ pub fn propose_module_assessment_receipt(
         covered_fields,
         findings,
         boundary_flags: MODULE_HOST_PURE_RECEIPT_PROPOSAL_BOUNDARY_FLAGS,
+    }
+}
+
+pub fn propose_module_side_effect_request(
+    invocation: &ModuleInvocationEnvelope,
+    receipt_proposal: &ModuleAssessmentReceiptProposal,
+    request: &ModuleSideEffectRequestDraft,
+) -> ModuleSideEffectRequestProposal {
+    let mut findings = invocation_findings(invocation);
+    let required_preconditions = default_side_effect_preconditions();
+
+    if receipt_proposal.status != ModuleHostStatus::Ready || receipt_proposal.has_blockers() {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::ReceiptProposalBlocked,
+            "receipt proposal must be ready before a side-effect request can be modeled",
+        ));
+    }
+
+    if !invocation_matches_receipt_proposal(invocation, receipt_proposal) {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::ReceiptProposalRefMismatch,
+            "receipt proposal refs must match the invocation refs",
+        ));
+    }
+
+    if !receipt_proposal
+        .covered_fields
+        .contains(&ModuleReceiptProposalField::SideEffects)
+        || !receipt_proposal
+            .covered_fields
+            .contains(&ModuleReceiptProposalField::HostValidation)
+    {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::MissingSideEffectReceiptCoverage,
+            "receipt proposal must cover side_effects and host_validation fields",
+        ));
+    }
+
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.request_id.as_str(),
+        ModuleHostFindingCode::MissingSideEffectRequestId,
+        "side-effect request id is required",
+    );
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.target_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectTargetRef,
+        "side-effect target ref is required",
+    );
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.intent_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectIntentRef,
+        "side-effect intent ref is required",
+    );
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.policy_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectPolicyRef,
+        "side-effect policy ref is required",
+    );
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.receipt_proposal_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectReceiptProposalRef,
+        "side-effect receipt proposal ref is required",
+    );
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.adapter_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectAdapterRef,
+        "side-effect adapter ref is required",
+    );
+    push_required_safe_ref_finding(
+        &mut findings,
+        request.payload_ref.as_str(),
+        ModuleHostFindingCode::MissingSideEffectPayloadRef,
+        "side-effect payload ref is required",
+    );
+
+    if !request.boundary_flags.all_side_effect_flags_false() {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::SideEffectRequestHasSideEffects,
+            "side-effect request proposal must not perform the side effect",
+        ));
+    }
+
+    let status = if findings.is_empty() {
+        ModuleHostStatus::Ready
+    } else {
+        ModuleHostStatus::Blocked
+    };
+    let covered_preconditions = if status == ModuleHostStatus::Ready {
+        required_preconditions.clone()
+    } else {
+        Vec::new()
+    };
+
+    ModuleSideEffectRequestProposal {
+        schema_version: MODULE_HOST_SIDE_EFFECT_REQUEST_PROPOSAL_SCHEMA_VERSION,
+        status,
+        authority: ModuleHostAuthority::Advisory,
+        module_id: invocation.module_id.clone(),
+        module_version: invocation.module_version.clone(),
+        contract_ref: invocation.contract_ref.clone(),
+        run_ref: invocation.run_ref.clone(),
+        project_ref: invocation.project_ref.clone(),
+        requested_operation: invocation.requested_operation.clone(),
+        request_id: request.request_id.clone(),
+        kind: request.kind,
+        target_ref: request.target_ref.clone(),
+        intent_ref: request.intent_ref.clone(),
+        policy_ref: request.policy_ref.clone(),
+        receipt_proposal_ref: request.receipt_proposal_ref.clone(),
+        adapter_ref: request.adapter_ref.clone(),
+        payload_ref: request.payload_ref.clone(),
+        required_preconditions,
+        covered_preconditions,
+        findings,
+        boundary_flags: MODULE_HOST_PURE_SIDE_EFFECT_REQUEST_BOUNDARY_FLAGS,
     }
 }
 
@@ -883,6 +1230,46 @@ fn invocation_matches_envelope(
         && invocation.requested_operation == envelope.requested_operation
 }
 
+fn invocation_matches_receipt_proposal(
+    invocation: &ModuleInvocationEnvelope,
+    proposal: &ModuleAssessmentReceiptProposal,
+) -> bool {
+    invocation.module_id == proposal.module_id
+        && invocation.module_version == proposal.module_version
+        && invocation.contract_ref == proposal.contract_ref
+        && invocation.run_ref == proposal.run_ref
+        && invocation.project_ref == proposal.project_ref
+        && invocation.requested_operation == proposal.requested_operation
+}
+
+fn default_side_effect_preconditions() -> Vec<ModuleSideEffectPrecondition> {
+    vec![
+        ModuleSideEffectPrecondition::HostPolicyRef,
+        ModuleSideEffectPrecondition::ReadyReceiptProposal,
+        ModuleSideEffectPrecondition::SideEffectReceiptCoverage,
+        ModuleSideEffectPrecondition::AdapterInvocationReceipt,
+        ModuleSideEffectPrecondition::SafePayloadRef,
+        ModuleSideEffectPrecondition::GateOrPolicyApproval,
+    ]
+}
+
+fn push_required_safe_ref_finding(
+    findings: &mut Vec<ModuleHostFinding>,
+    value: &str,
+    missing_code: ModuleHostFindingCode,
+    missing_message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(ModuleHostFinding::new(missing_code, missing_message));
+    } else if !is_safe_ref(value) {
+        findings.push(ModuleHostFinding::for_input_ref(
+            ModuleHostFindingCode::UnsafeSideEffectRequestRef,
+            value.to_owned(),
+            "side-effect request refs must be explicit repo-relative refs",
+        ));
+    }
+}
+
 fn push_required_finding(
     findings: &mut Vec<ModuleHostFinding>,
     value: &str,
@@ -911,10 +1298,12 @@ fn is_safe_ref(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        preflight_module_invocation, propose_module_assessment_receipt, wrap_module_assessment,
-        ModuleCapabilityGrant, ModuleHostFindingCode, ModuleHostStatus, ModuleInvocationEnvelope,
-        ModuleOutputAuthority, ModuleOutputBoundaryFlags, ModuleOutputStatus, ModuleOutputSummary,
-        ModulePrivacyPolicy, ModuleReceiptProposalField,
+        preflight_module_invocation, propose_module_assessment_receipt,
+        propose_module_side_effect_request, wrap_module_assessment, ModuleCapabilityGrant,
+        ModuleHostFindingCode, ModuleHostStatus, ModuleInvocationEnvelope, ModuleOutputAuthority,
+        ModuleOutputBoundaryFlags, ModuleOutputStatus, ModuleOutputSummary, ModulePrivacyPolicy,
+        ModuleReceiptProposalField, ModuleSideEffectKind, ModuleSideEffectPrecondition,
+        ModuleSideEffectRequestBoundaryFlags, ModuleSideEffectRequestDraft,
     };
 
     fn valid_invocation() -> ModuleInvocationEnvelope {
@@ -953,6 +1342,29 @@ mod tests {
             2,
             ModuleOutputBoundaryFlags::side_effect_free(),
         )
+    }
+
+    fn ready_receipt_proposal() -> (
+        ModuleInvocationEnvelope,
+        super::ModuleAssessmentReceiptProposal,
+    ) {
+        let invocation = valid_invocation();
+        let envelope = wrap_module_assessment(&invocation, &advisory_output());
+        let proposal = propose_module_assessment_receipt(&invocation, &envelope);
+        (invocation, proposal)
+    }
+
+    fn side_effect_request() -> ModuleSideEffectRequestDraft {
+        ModuleSideEffectRequestDraft::new(
+            "work/module-side-effects/pubpunk-publish-community-lab.md",
+            ModuleSideEffectKind::Publish,
+        )
+        .with_target_ref("publishing/channels/github-discussions-community-lab.md")
+        .with_intent_ref("work/goals/goal_pubpunk_publish_cycle_0.md")
+        .with_policy_ref("docs/modules/pubpunk.md")
+        .with_receipt_proposal_ref("work/module-receipts/pubpunk-publish-community-lab.md")
+        .with_adapter_ref("adapters/github-discussions")
+        .with_payload_ref("publishing/posts/community-lab.md")
     }
 
     #[test]
@@ -1139,6 +1551,121 @@ mod tests {
             .findings
             .iter()
             .any(|finding| finding.code == ModuleHostFindingCode::UnknownExpectedReceiptField));
+        assert!(proposal.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_request_proposal_accepts_ready_receipt_and_safe_refs() {
+        let (invocation, receipt_proposal) = ready_receipt_proposal();
+        let proposal = propose_module_side_effect_request(
+            &invocation,
+            &receipt_proposal,
+            &side_effect_request(),
+        );
+
+        assert_eq!(proposal.status, ModuleHostStatus::Ready);
+        assert!(!proposal.has_blockers());
+        assert_eq!(proposal.kind, ModuleSideEffectKind::Publish);
+        assert!(proposal
+            .covered_preconditions
+            .contains(&ModuleSideEffectPrecondition::AdapterInvocationReceipt));
+        assert!(proposal
+            .covered_preconditions
+            .contains(&ModuleSideEffectPrecondition::GateOrPolicyApproval));
+        assert!(proposal.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_request_proposal_blocks_blocked_receipt_proposal() {
+        let invocation =
+            valid_invocation().with_expected_receipt_fields(vec!["module_id", "raw_body"]);
+        let envelope = wrap_module_assessment(&invocation, &advisory_output());
+        let receipt_proposal = propose_module_assessment_receipt(&invocation, &envelope);
+        let proposal = propose_module_side_effect_request(
+            &invocation,
+            &receipt_proposal,
+            &side_effect_request(),
+        );
+
+        assert_eq!(proposal.status, ModuleHostStatus::Blocked);
+        assert!(proposal
+            .findings
+            .iter()
+            .any(|finding| finding.code == ModuleHostFindingCode::ReceiptProposalBlocked));
+        assert!(proposal.covered_preconditions.is_empty());
+        assert!(proposal.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_request_proposal_blocks_receipt_ref_mismatch() {
+        let (invocation, mut receipt_proposal) = ready_receipt_proposal();
+        receipt_proposal.project_ref = "project/other".to_owned();
+        let proposal = propose_module_side_effect_request(
+            &invocation,
+            &receipt_proposal,
+            &side_effect_request(),
+        );
+
+        assert_eq!(proposal.status, ModuleHostStatus::Blocked);
+        assert!(proposal
+            .findings
+            .iter()
+            .any(|finding| finding.code == ModuleHostFindingCode::ReceiptProposalRefMismatch));
+        assert!(proposal.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_request_proposal_blocks_missing_side_effect_receipt_coverage() {
+        let invocation = valid_invocation().with_expected_receipt_fields(vec![
+            "module_id",
+            "module_version",
+            "host_validation",
+        ]);
+        let envelope = wrap_module_assessment(&invocation, &advisory_output());
+        let receipt_proposal = propose_module_assessment_receipt(&invocation, &envelope);
+        let proposal = propose_module_side_effect_request(
+            &invocation,
+            &receipt_proposal,
+            &side_effect_request(),
+        );
+
+        assert_eq!(receipt_proposal.status, ModuleHostStatus::Ready);
+        assert_eq!(proposal.status, ModuleHostStatus::Blocked);
+        assert!(proposal.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::MissingSideEffectReceiptCoverage
+        }));
+        assert!(proposal.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_request_proposal_blocks_unsafe_refs() {
+        let (invocation, receipt_proposal) = ready_receipt_proposal();
+        let request = side_effect_request().with_target_ref("https://github.com/heurema/punk");
+        let proposal = propose_module_side_effect_request(&invocation, &receipt_proposal, &request);
+
+        assert_eq!(proposal.status, ModuleHostStatus::Blocked);
+        assert!(proposal
+            .findings
+            .iter()
+            .any(|finding| finding.code == ModuleHostFindingCode::UnsafeSideEffectRequestRef));
+        assert!(proposal.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_request_proposal_blocks_performed_side_effect_flags() {
+        let (invocation, receipt_proposal) = ready_receipt_proposal();
+        let request =
+            side_effect_request().with_boundary_flags(ModuleSideEffectRequestBoundaryFlags {
+                publishes: true,
+                calls_external_apis: true,
+                ..ModuleSideEffectRequestBoundaryFlags::pure_proposal()
+            });
+        let proposal = propose_module_side_effect_request(&invocation, &receipt_proposal, &request);
+
+        assert_eq!(proposal.status, ModuleHostStatus::Blocked);
+        assert!(proposal.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::SideEffectRequestHasSideEffects
+        }));
         assert!(proposal.boundary_flags.all_side_effect_flags_false());
     }
 }
