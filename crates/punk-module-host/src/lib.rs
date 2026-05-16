@@ -18,6 +18,8 @@ pub const MODULE_HOST_POLICY_GATE_PREFLIGHT_SCHEMA_VERSION: &str =
     "punk.module_host.policy_gate_preflight.v0.1";
 pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_SCHEMA_VERSION: &str =
     "punk.module_host.side_effect_receipt_writer_preflight.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_ACTIVE_BEHAVIOR_SCHEMA_VERSION: &str =
+    "punk.module_host.side_effect_receipt_writer_active_behavior.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -436,6 +438,8 @@ pub enum ModuleHostFindingCode {
     SideEffectReceiptAdapterInvocationReceiptRefMismatch,
     SideEffectReceiptPayloadRefMismatch,
     SideEffectReceiptWriterPreflightHasSideEffects,
+    SideEffectReceiptWriterPreflightBlocked,
+    MissingSideEffectReceiptWriterActiveBehaviorPreflightRequirement,
 }
 
 impl ModuleHostFindingCode {
@@ -529,6 +533,12 @@ impl ModuleHostFindingCode {
             Self::SideEffectReceiptPayloadRefMismatch => "side_effect_receipt_payload_ref_mismatch",
             Self::SideEffectReceiptWriterPreflightHasSideEffects => {
                 "side_effect_receipt_writer_preflight_has_side_effects"
+            }
+            Self::SideEffectReceiptWriterPreflightBlocked => {
+                "side_effect_receipt_writer_preflight_blocked"
+            }
+            Self::MissingSideEffectReceiptWriterActiveBehaviorPreflightRequirement => {
+                "missing_side_effect_receipt_writer_active_behavior_preflight_requirement"
             }
         }
     }
@@ -1389,6 +1399,397 @@ impl ModuleSideEffectReceiptWriterPreflight {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterModeledStep {
+    ReceiptTargetCheck,
+    ReceiptWrite,
+    OperationEvidenceRecord,
+    RollbackVisibility,
+    ErrorVisibility,
+}
+
+impl ModuleSideEffectReceiptWriterModeledStep {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReceiptTargetCheck => "receipt_target_check",
+            Self::ReceiptWrite => "receipt_write",
+            Self::OperationEvidenceRecord => "operation_evidence_record",
+            Self::RollbackVisibility => "rollback_visibility",
+            Self::ErrorVisibility => "error_visibility",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterStepStatus {
+    NotSelected,
+    NotAttempted,
+    Completed,
+    Failed,
+    Skipped,
+}
+
+impl ModuleSideEffectReceiptWriterStepStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotSelected => "not_selected",
+            Self::NotAttempted => "not_attempted",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Skipped => "skipped",
+        }
+    }
+
+    pub fn is_attempted(self) -> bool {
+        matches!(self, Self::Completed | Self::Failed)
+    }
+
+    pub fn is_completed(self) -> bool {
+        self == Self::Completed
+    }
+
+    pub fn is_failed(self) -> bool {
+        self == Self::Failed
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterOutcome {
+    PlannedOnly,
+    PreflightFailed,
+    Written,
+    Idempotent,
+    Conflict,
+    WriteFailed,
+    PartialOrAmbiguous,
+}
+
+impl ModuleSideEffectReceiptWriterOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PlannedOnly => "planned_only",
+            Self::PreflightFailed => "preflight_failed",
+            Self::Written => "written",
+            Self::Idempotent => "idempotent",
+            Self::Conflict => "conflict",
+            Self::WriteFailed => "write_failed",
+            Self::PartialOrAmbiguous => "partial_or_ambiguous",
+        }
+    }
+
+    pub fn is_terminal_success(self) -> bool {
+        matches!(self, Self::Written | Self::Idempotent)
+    }
+
+    pub fn is_failed(self) -> bool {
+        matches!(
+            self,
+            Self::PreflightFailed | Self::Conflict | Self::WriteFailed | Self::PartialOrAmbiguous
+        )
+    }
+
+    pub fn needs_error_visibility(self) -> bool {
+        matches!(
+            self,
+            Self::Conflict | Self::WriteFailed | Self::PartialOrAmbiguous
+        )
+    }
+
+    pub fn needs_rollback_visibility(self) -> bool {
+        matches!(self, Self::WriteFailed | Self::PartialOrAmbiguous)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterObservedTargetState {
+    NotChecked,
+    Missing,
+    ExistsMatching,
+    ExistsDifferent,
+    AmbiguousPartial,
+}
+
+impl ModuleSideEffectReceiptWriterObservedTargetState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotChecked => "not_checked",
+            Self::Missing => "missing",
+            Self::ExistsMatching => "exists_matching",
+            Self::ExistsDifferent => "exists_different",
+            Self::AmbiguousPartial => "ambiguous_partial",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterObservedWriteResult {
+    NotAttempted,
+    Written,
+    WriteFailed,
+    PartialOrAmbiguous,
+}
+
+impl ModuleSideEffectReceiptWriterObservedWriteResult {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotAttempted => "not_attempted",
+            Self::Written => "written",
+            Self::WriteFailed => "write_failed",
+            Self::PartialOrAmbiguous => "partial_or_ambiguous",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterObservation {
+    pub target_state: ModuleSideEffectReceiptWriterObservedTargetState,
+    pub write_result: ModuleSideEffectReceiptWriterObservedWriteResult,
+    pub operation_evidence_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub rollback_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub error_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub boundary_notes: Vec<String>,
+}
+
+impl ModuleSideEffectReceiptWriterObservation {
+    pub fn new(
+        target_state: ModuleSideEffectReceiptWriterObservedTargetState,
+        write_result: ModuleSideEffectReceiptWriterObservedWriteResult,
+        operation_evidence_status: ModuleSideEffectReceiptWriterStepStatus,
+        rollback_status: ModuleSideEffectReceiptWriterStepStatus,
+        error_status: ModuleSideEffectReceiptWriterStepStatus,
+        boundary_notes: Vec<String>,
+    ) -> Self {
+        Self {
+            target_state,
+            write_result,
+            operation_evidence_status,
+            rollback_status,
+            error_status,
+            boundary_notes,
+        }
+    }
+
+    pub fn target_missing_written() -> Self {
+        Self::new(
+            ModuleSideEffectReceiptWriterObservedTargetState::Missing,
+            ModuleSideEffectReceiptWriterObservedWriteResult::Written,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Skipped,
+            ModuleSideEffectReceiptWriterStepStatus::Skipped,
+            vec!["Receipt writer active behavior observation is modeled only.".to_owned()],
+        )
+    }
+
+    pub fn target_exists_matching() -> Self {
+        Self::new(
+            ModuleSideEffectReceiptWriterObservedTargetState::ExistsMatching,
+            ModuleSideEffectReceiptWriterObservedWriteResult::NotAttempted,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Skipped,
+            ModuleSideEffectReceiptWriterStepStatus::Skipped,
+            vec!["Idempotent receipt writer observation is modeled only.".to_owned()],
+        )
+    }
+
+    pub fn target_exists_different() -> Self {
+        Self::new(
+            ModuleSideEffectReceiptWriterObservedTargetState::ExistsDifferent,
+            ModuleSideEffectReceiptWriterObservedWriteResult::NotAttempted,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Skipped,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            vec!["Conflicting receipt writer observation is modeled only.".to_owned()],
+        )
+    }
+
+    pub fn write_failed() -> Self {
+        Self::new(
+            ModuleSideEffectReceiptWriterObservedTargetState::Missing,
+            ModuleSideEffectReceiptWriterObservedWriteResult::WriteFailed,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            vec!["Failed receipt writer observation is modeled only.".to_owned()],
+        )
+    }
+
+    pub fn partial_or_ambiguous() -> Self {
+        Self::new(
+            ModuleSideEffectReceiptWriterObservedTargetState::AmbiguousPartial,
+            ModuleSideEffectReceiptWriterObservedWriteResult::PartialOrAmbiguous,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            ModuleSideEffectReceiptWriterStepStatus::Completed,
+            vec!["Partial receipt writer observation is modeled only.".to_owned()],
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterActiveBehaviorBoundaryFlags {
+    pub models_active_behavior: bool,
+    pub models_selected_steps: bool,
+    pub models_observed_outcome: bool,
+    pub models_error_rollback_visibility: bool,
+    pub creates_receipt: bool,
+    pub writes_receipt: bool,
+    pub writes_event_log: bool,
+    pub reads_files: bool,
+    pub writes_files: bool,
+    pub persists_operation_evidence: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub invokes_adapter: bool,
+    pub invokes_policy_engine: bool,
+    pub invokes_gate: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub performs_external_side_effect: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub creates_acceptance_claim: bool,
+    pub evidence_only: bool,
+}
+
+impl ModuleSideEffectReceiptWriterActiveBehaviorBoundaryFlags {
+    pub const fn pure_model() -> Self {
+        Self {
+            models_active_behavior: true,
+            models_selected_steps: true,
+            models_observed_outcome: true,
+            models_error_rollback_visibility: true,
+            creates_receipt: false,
+            writes_receipt: false,
+            writes_event_log: false,
+            reads_files: false,
+            writes_files: false,
+            persists_operation_evidence: false,
+            calls_external_apis: false,
+            opens_browser: false,
+            reads_credentials: false,
+            invokes_adapter: false,
+            invokes_policy_engine: false,
+            invokes_gate: false,
+            writes_gate_decision: false,
+            writes_proofpack: false,
+            performs_external_side_effect: false,
+            publishes: false,
+            comments: false,
+            creates_pull_request: false,
+            creates_acceptance_claim: false,
+            evidence_only: true,
+        }
+    }
+
+    pub fn all_side_effect_flags_false(self) -> bool {
+        !self.creates_receipt
+            && !self.writes_receipt
+            && !self.writes_event_log
+            && !self.reads_files
+            && !self.writes_files
+            && !self.persists_operation_evidence
+            && !self.calls_external_apis
+            && !self.opens_browser
+            && !self.reads_credentials
+            && !self.invokes_adapter
+            && !self.invokes_policy_engine
+            && !self.invokes_gate
+            && !self.writes_gate_decision
+            && !self.writes_proofpack
+            && !self.performs_external_side_effect
+            && !self.publishes
+            && !self.comments
+            && !self.creates_pull_request
+            && !self.creates_acceptance_claim
+    }
+}
+
+pub const MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_ACTIVE_BEHAVIOR_BOUNDARY_FLAGS:
+    ModuleSideEffectReceiptWriterActiveBehaviorBoundaryFlags =
+    ModuleSideEffectReceiptWriterActiveBehaviorBoundaryFlags::pure_model();
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterActiveBehavior {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub preflight_id: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub outcome: ModuleSideEffectReceiptWriterOutcome,
+    pub selected_steps: Vec<ModuleSideEffectReceiptWriterModeledStep>,
+    pub attempted_steps: Vec<ModuleSideEffectReceiptWriterModeledStep>,
+    pub completed_steps: Vec<ModuleSideEffectReceiptWriterModeledStep>,
+    pub failed_steps: Vec<ModuleSideEffectReceiptWriterModeledStep>,
+    pub operation_evidence_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub rollback_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub error_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub observation: Option<ModuleSideEffectReceiptWriterObservation>,
+    pub findings: Vec<ModuleHostFinding>,
+    pub boundary_flags: ModuleSideEffectReceiptWriterActiveBehaviorBoundaryFlags,
+}
+
+impl ModuleSideEffectReceiptWriterActiveBehavior {
+    pub fn has_blockers(&self) -> bool {
+        !self.findings.is_empty()
+    }
+
+    pub fn is_evidence_only(&self) -> bool {
+        self.boundary_flags.evidence_only
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.outcome == ModuleSideEffectReceiptWriterOutcome::Conflict
+    }
+
+    pub fn has_write_failure(&self) -> bool {
+        self.outcome == ModuleSideEffectReceiptWriterOutcome::WriteFailed
+    }
+
+    pub fn has_partial_or_ambiguous_state(&self) -> bool {
+        self.outcome == ModuleSideEffectReceiptWriterOutcome::PartialOrAmbiguous
+    }
+
+    pub fn rollback_visible(&self) -> bool {
+        self.rollback_status == ModuleSideEffectReceiptWriterStepStatus::Completed
+    }
+
+    pub fn error_visible(&self) -> bool {
+        self.error_status == ModuleSideEffectReceiptWriterStepStatus::Completed
+    }
+
+    pub fn selected_step_was_attempted(
+        &self,
+        step: ModuleSideEffectReceiptWriterModeledStep,
+    ) -> bool {
+        self.attempted_steps.contains(&step)
+    }
+
+    pub fn selected_step_completed(&self, step: ModuleSideEffectReceiptWriterModeledStep) -> bool {
+        self.completed_steps.contains(&step)
+    }
+
+    pub fn selected_step_failed(&self, step: ModuleSideEffectReceiptWriterModeledStep) -> bool {
+        self.failed_steps.contains(&step)
+    }
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -1927,6 +2328,113 @@ pub fn preflight_module_side_effect_receipt_writer(
     }
 }
 
+pub fn model_module_side_effect_receipt_writer_active_behavior(
+    preflight: &ModuleSideEffectReceiptWriterPreflight,
+    observation: Option<&ModuleSideEffectReceiptWriterObservation>,
+) -> ModuleSideEffectReceiptWriterActiveBehavior {
+    let mut findings = Vec::new();
+
+    if preflight.status != ModuleHostStatus::Ready || preflight.has_blockers() {
+        findings.push(ModuleHostFinding::new(
+            ModuleHostFindingCode::SideEffectReceiptWriterPreflightBlocked,
+            "side-effect receipt writer preflight must be ready before active behavior can be modeled",
+        ));
+    }
+
+    for requirement in &preflight.required_requirements {
+        if !preflight.covered_requirements.contains(requirement) {
+            findings.push(ModuleHostFinding::new(
+                ModuleHostFindingCode::MissingSideEffectReceiptWriterActiveBehaviorPreflightRequirement,
+                "side-effect receipt writer preflight must cover all required requirements",
+            ));
+            break;
+        }
+    }
+
+    let status = if findings.is_empty() {
+        ModuleHostStatus::Ready
+    } else {
+        ModuleHostStatus::Blocked
+    };
+    let outcome = if status == ModuleHostStatus::Ready {
+        receipt_writer_active_behavior_outcome(observation)
+    } else {
+        ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+    };
+    let selected_steps = if status == ModuleHostStatus::Ready {
+        default_side_effect_receipt_writer_modeled_steps()
+    } else {
+        Vec::new()
+    };
+    let attempted_steps = receipt_writer_steps_with_status(
+        &selected_steps,
+        outcome,
+        observation,
+        ModuleSideEffectReceiptWriterStepStatus::is_attempted,
+    );
+    let completed_steps = receipt_writer_steps_with_status(
+        &selected_steps,
+        outcome,
+        observation,
+        ModuleSideEffectReceiptWriterStepStatus::is_completed,
+    );
+    let failed_steps = receipt_writer_steps_with_status(
+        &selected_steps,
+        outcome,
+        observation,
+        ModuleSideEffectReceiptWriterStepStatus::is_failed,
+    );
+    let operation_evidence_status = receipt_writer_step_status(
+        outcome,
+        observation,
+        ModuleSideEffectReceiptWriterModeledStep::OperationEvidenceRecord,
+    );
+    let rollback_status = receipt_writer_step_status(
+        outcome,
+        observation,
+        ModuleSideEffectReceiptWriterModeledStep::RollbackVisibility,
+    );
+    let error_status = receipt_writer_step_status(
+        outcome,
+        observation,
+        ModuleSideEffectReceiptWriterModeledStep::ErrorVisibility,
+    );
+
+    ModuleSideEffectReceiptWriterActiveBehavior {
+        schema_version: MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_ACTIVE_BEHAVIOR_SCHEMA_VERSION,
+        status,
+        authority: ModuleHostAuthority::Advisory,
+        module_id: preflight.module_id.clone(),
+        module_version: preflight.module_version.clone(),
+        contract_ref: preflight.contract_ref.clone(),
+        run_ref: preflight.run_ref.clone(),
+        project_ref: preflight.project_ref.clone(),
+        requested_operation: preflight.requested_operation.clone(),
+        request_id: preflight.request_id.clone(),
+        kind: preflight.kind,
+        preflight_id: preflight.preflight_id.clone(),
+        receipt_target_ref: preflight.receipt_target_ref.clone(),
+        storage_ref: preflight.storage_ref.clone(),
+        operation_evidence_ref: preflight.operation_evidence_ref.clone(),
+        idempotency_ref: preflight.idempotency_ref.clone(),
+        rollback_ref: preflight.rollback_ref.clone(),
+        error_ref: preflight.error_ref.clone(),
+        adapter_invocation_receipt_ref: preflight.adapter_invocation_receipt_ref.clone(),
+        payload_ref: preflight.payload_ref.clone(),
+        outcome,
+        selected_steps,
+        attempted_steps,
+        completed_steps,
+        failed_steps,
+        operation_evidence_status,
+        rollback_status,
+        error_status,
+        observation: observation.cloned(),
+        findings,
+        boundary_flags: MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_ACTIVE_BEHAVIOR_BOUNDARY_FLAGS,
+    }
+}
+
 pub fn wrap_module_assessment(
     invocation: &ModuleInvocationEnvelope,
     output: &ModuleOutputSummary,
@@ -2127,6 +2635,120 @@ fn default_side_effect_receipt_writer_preflight_requirements(
     ]
 }
 
+fn default_side_effect_receipt_writer_modeled_steps(
+) -> Vec<ModuleSideEffectReceiptWriterModeledStep> {
+    vec![
+        ModuleSideEffectReceiptWriterModeledStep::ReceiptTargetCheck,
+        ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite,
+        ModuleSideEffectReceiptWriterModeledStep::OperationEvidenceRecord,
+        ModuleSideEffectReceiptWriterModeledStep::RollbackVisibility,
+        ModuleSideEffectReceiptWriterModeledStep::ErrorVisibility,
+    ]
+}
+
+fn receipt_writer_active_behavior_outcome(
+    observation: Option<&ModuleSideEffectReceiptWriterObservation>,
+) -> ModuleSideEffectReceiptWriterOutcome {
+    let Some(observation) = observation else {
+        return ModuleSideEffectReceiptWriterOutcome::PlannedOnly;
+    };
+
+    if observation.target_state
+        == ModuleSideEffectReceiptWriterObservedTargetState::AmbiguousPartial
+        || observation.write_result
+            == ModuleSideEffectReceiptWriterObservedWriteResult::PartialOrAmbiguous
+    {
+        return ModuleSideEffectReceiptWriterOutcome::PartialOrAmbiguous;
+    }
+
+    if observation.target_state == ModuleSideEffectReceiptWriterObservedTargetState::ExistsDifferent
+    {
+        return ModuleSideEffectReceiptWriterOutcome::Conflict;
+    }
+
+    if observation.target_state == ModuleSideEffectReceiptWriterObservedTargetState::ExistsMatching
+    {
+        return ModuleSideEffectReceiptWriterOutcome::Idempotent;
+    }
+
+    if observation.write_result == ModuleSideEffectReceiptWriterObservedWriteResult::WriteFailed {
+        return ModuleSideEffectReceiptWriterOutcome::WriteFailed;
+    }
+
+    if observation.write_result == ModuleSideEffectReceiptWriterObservedWriteResult::Written {
+        return ModuleSideEffectReceiptWriterOutcome::Written;
+    }
+
+    ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+}
+
+fn receipt_writer_steps_with_status(
+    selected_steps: &[ModuleSideEffectReceiptWriterModeledStep],
+    outcome: ModuleSideEffectReceiptWriterOutcome,
+    observation: Option<&ModuleSideEffectReceiptWriterObservation>,
+    predicate: fn(ModuleSideEffectReceiptWriterStepStatus) -> bool,
+) -> Vec<ModuleSideEffectReceiptWriterModeledStep> {
+    selected_steps
+        .iter()
+        .copied()
+        .filter(|step| predicate(receipt_writer_step_status(outcome, observation, *step)))
+        .collect()
+}
+
+fn receipt_writer_step_status(
+    outcome: ModuleSideEffectReceiptWriterOutcome,
+    observation: Option<&ModuleSideEffectReceiptWriterObservation>,
+    step: ModuleSideEffectReceiptWriterModeledStep,
+) -> ModuleSideEffectReceiptWriterStepStatus {
+    if outcome == ModuleSideEffectReceiptWriterOutcome::PreflightFailed {
+        return ModuleSideEffectReceiptWriterStepStatus::NotSelected;
+    }
+
+    let Some(observation) = observation else {
+        return ModuleSideEffectReceiptWriterStepStatus::NotAttempted;
+    };
+
+    match step {
+        ModuleSideEffectReceiptWriterModeledStep::ReceiptTargetCheck => {
+            match observation.target_state {
+                ModuleSideEffectReceiptWriterObservedTargetState::NotChecked => {
+                    ModuleSideEffectReceiptWriterStepStatus::NotAttempted
+                }
+                ModuleSideEffectReceiptWriterObservedTargetState::AmbiguousPartial => {
+                    ModuleSideEffectReceiptWriterStepStatus::Failed
+                }
+                ModuleSideEffectReceiptWriterObservedTargetState::Missing
+                | ModuleSideEffectReceiptWriterObservedTargetState::ExistsMatching
+                | ModuleSideEffectReceiptWriterObservedTargetState::ExistsDifferent => {
+                    ModuleSideEffectReceiptWriterStepStatus::Completed
+                }
+            }
+        }
+        ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite => match outcome {
+            ModuleSideEffectReceiptWriterOutcome::Written => {
+                ModuleSideEffectReceiptWriterStepStatus::Completed
+            }
+            ModuleSideEffectReceiptWriterOutcome::WriteFailed
+            | ModuleSideEffectReceiptWriterOutcome::PartialOrAmbiguous => {
+                ModuleSideEffectReceiptWriterStepStatus::Failed
+            }
+            ModuleSideEffectReceiptWriterOutcome::Idempotent
+            | ModuleSideEffectReceiptWriterOutcome::Conflict => {
+                ModuleSideEffectReceiptWriterStepStatus::Skipped
+            }
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+            | ModuleSideEffectReceiptWriterOutcome::PreflightFailed => {
+                ModuleSideEffectReceiptWriterStepStatus::NotAttempted
+            }
+        },
+        ModuleSideEffectReceiptWriterModeledStep::OperationEvidenceRecord => {
+            observation.operation_evidence_status
+        }
+        ModuleSideEffectReceiptWriterModeledStep::RollbackVisibility => observation.rollback_status,
+        ModuleSideEffectReceiptWriterModeledStep::ErrorVisibility => observation.error_status,
+    }
+}
+
 fn push_required_receipt_writer_ref_finding(
     findings: &mut Vec<ModuleHostFinding>,
     value: &str,
@@ -2206,15 +2828,16 @@ fn is_safe_ref(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        preflight_module_invocation, preflight_module_policy_gate,
-        preflight_module_side_effect_receipt_writer, propose_module_assessment_receipt,
-        propose_module_side_effect_request, wrap_module_assessment, ModuleCapabilityGrant,
-        ModuleHostFindingCode, ModuleHostStatus, ModuleInvocationEnvelope, ModuleOutputAuthority,
-        ModuleOutputBoundaryFlags, ModuleOutputStatus, ModuleOutputSummary,
-        ModulePolicyGatePreflightBoundaryFlags, ModulePolicyGatePreflightDraft,
-        ModulePolicyGatePreflightRequirement, ModulePrivacyPolicy, ModuleReceiptProposalField,
-        ModuleSideEffectKind, ModuleSideEffectPrecondition,
-        ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
+        model_module_side_effect_receipt_writer_active_behavior, preflight_module_invocation,
+        preflight_module_policy_gate, preflight_module_side_effect_receipt_writer,
+        propose_module_assessment_receipt, propose_module_side_effect_request,
+        wrap_module_assessment, ModuleCapabilityGrant, ModuleHostFindingCode, ModuleHostStatus,
+        ModuleInvocationEnvelope, ModuleOutputAuthority, ModuleOutputBoundaryFlags,
+        ModuleOutputStatus, ModuleOutputSummary, ModulePolicyGatePreflightBoundaryFlags,
+        ModulePolicyGatePreflightDraft, ModulePolicyGatePreflightRequirement, ModulePrivacyPolicy,
+        ModuleReceiptProposalField, ModuleSideEffectKind, ModuleSideEffectPrecondition,
+        ModuleSideEffectReceiptWriterModeledStep, ModuleSideEffectReceiptWriterObservation,
+        ModuleSideEffectReceiptWriterOutcome, ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
         ModuleSideEffectReceiptWriterPreflightDraft,
         ModuleSideEffectReceiptWriterPreflightRequirement, ModuleSideEffectRequestBoundaryFlags,
         ModuleSideEffectRequestDraft,
@@ -2335,6 +2958,14 @@ mod tests {
             "work/module-receipts/github-discussions-invocation.md",
         )
         .with_payload_ref("publishing/posts/community-lab.md")
+    }
+
+    fn ready_side_effect_receipt_writer_preflight() -> super::ModuleSideEffectReceiptWriterPreflight
+    {
+        preflight_module_side_effect_receipt_writer(
+            &ready_policy_gate_preflight(),
+            &side_effect_receipt_writer_preflight_draft(),
+        )
     }
 
     #[test]
@@ -2873,5 +3504,139 @@ mod tests {
             finding.code == ModuleHostFindingCode::SideEffectReceiptWriterPreflightHasSideEffects
         }));
         assert!(preflight.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_active_behavior_plans_without_io() {
+        let preflight = ready_side_effect_receipt_writer_preflight();
+        let model = model_module_side_effect_receipt_writer_active_behavior(&preflight, None);
+
+        assert_eq!(model.status, ModuleHostStatus::Ready);
+        assert!(!model.has_blockers());
+        assert_eq!(
+            model.outcome,
+            ModuleSideEffectReceiptWriterOutcome::PlannedOnly
+        );
+        assert!(model
+            .selected_steps
+            .contains(&ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite));
+        assert!(model.attempted_steps.is_empty());
+        assert!(model.completed_steps.is_empty());
+        assert!(model.failed_steps.is_empty());
+        assert!(model.boundary_flags.models_active_behavior);
+        assert!(model.boundary_flags.evidence_only);
+        assert!(model.boundary_flags.all_side_effect_flags_false());
+        assert!(model.is_evidence_only());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_active_behavior_maps_writer_outcomes() {
+        let preflight = ready_side_effect_receipt_writer_preflight();
+
+        let written = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::target_missing_written()),
+        );
+        let idempotent = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::target_exists_matching()),
+        );
+        let conflict = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::target_exists_different()),
+        );
+        let write_failed = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::write_failed()),
+        );
+        let partial = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::partial_or_ambiguous()),
+        );
+
+        assert_eq!(
+            written.outcome,
+            ModuleSideEffectReceiptWriterOutcome::Written
+        );
+        assert!(
+            written.selected_step_completed(ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite)
+        );
+        assert_eq!(
+            idempotent.outcome,
+            ModuleSideEffectReceiptWriterOutcome::Idempotent
+        );
+        assert!(!idempotent
+            .selected_step_was_attempted(ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite));
+        assert_eq!(
+            conflict.outcome,
+            ModuleSideEffectReceiptWriterOutcome::Conflict
+        );
+        assert!(conflict.has_conflict());
+        assert!(conflict.error_visible());
+        assert_eq!(
+            write_failed.outcome,
+            ModuleSideEffectReceiptWriterOutcome::WriteFailed
+        );
+        assert!(write_failed.has_write_failure());
+        assert!(write_failed.rollback_visible());
+        assert!(write_failed.error_visible());
+        assert_eq!(
+            partial.outcome,
+            ModuleSideEffectReceiptWriterOutcome::PartialOrAmbiguous
+        );
+        assert!(partial.has_partial_or_ambiguous_state());
+        assert!(partial.rollback_visible());
+        assert!(partial.error_visible());
+        assert!(
+            partial.selected_step_failed(ModuleSideEffectReceiptWriterModeledStep::ReceiptWrite)
+        );
+        assert!(partial.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_active_behavior_blocks_blocked_preflight() {
+        let mut preflight = ready_side_effect_receipt_writer_preflight();
+        preflight.status = ModuleHostStatus::Blocked;
+        preflight.findings.push(super::ModuleHostFinding::new(
+            ModuleHostFindingCode::PolicyGatePreflightBlocked,
+            "test blocked preflight",
+        ));
+
+        let model = model_module_side_effect_receipt_writer_active_behavior(
+            &preflight,
+            Some(&ModuleSideEffectReceiptWriterObservation::target_missing_written()),
+        );
+
+        assert_eq!(model.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            model.outcome,
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        );
+        assert!(model.findings.iter().any(|finding| {
+            finding.code == ModuleHostFindingCode::SideEffectReceiptWriterPreflightBlocked
+        }));
+        assert!(model.selected_steps.is_empty());
+        assert!(model.boundary_flags.all_side_effect_flags_false());
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_active_behavior_blocks_missing_preflight_requirement() {
+        let mut preflight = ready_side_effect_receipt_writer_preflight();
+        preflight.covered_requirements.retain(|requirement| {
+            *requirement != ModuleSideEffectReceiptWriterPreflightRequirement::StorageRef
+        });
+
+        let model = model_module_side_effect_receipt_writer_active_behavior(&preflight, None);
+
+        assert_eq!(model.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            model.outcome,
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        );
+        assert!(model.findings.iter().any(|finding| {
+            finding.code
+                == ModuleHostFindingCode::MissingSideEffectReceiptWriterActiveBehaviorPreflightRequirement
+        }));
+        assert!(model.boundary_flags.all_side_effect_flags_false());
     }
 }

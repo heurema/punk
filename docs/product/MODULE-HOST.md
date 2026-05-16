@@ -30,13 +30,15 @@ The current code slices are narrower: `punk-module-host` defines a pure
 invocation envelope preflight, advisory assessment wrapper, local-only module
 receipt proposal model, and local-only side-effect request proposal model for
 module models, plus local-only policy gate and side-effect receipt writer
-preflight models. It can model future receipt field coverage, future external
-action preconditions, future policy evidence readiness, and future receipt
-writer readiness, but it does not create or write receipts and does not perform
-side effects. It does not load plugins, invoke modules, expose CLI behavior,
-read or write files, mutate event logs, invoke policy engines, invoke gate,
-call APIs, read credentials, invoke adapters, publish, comment, create pull
-requests, write gate decisions, write proofpacks, or claim acceptance.
+preflight models, plus a side-effect receipt writer active behavior model. It
+can model future receipt field coverage, future external action preconditions,
+future policy evidence readiness, future receipt writer readiness, and future
+receipt writer outcomes, but it does not create or write receipts and does not
+perform side effects. It does not load plugins, invoke modules, expose CLI
+behavior, read or write files, persist operation evidence, mutate event logs,
+invoke policy engines, invoke gate, call APIs, read credentials, invoke
+adapters, publish, comment, create pull requests, write gate decisions, write
+proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -149,6 +151,16 @@ be considered. It does not create or write receipts, mutate event logs, read or
 write files, invoke adapters, invoke policy engines, invoke gate, publish,
 comment, create pull requests, call APIs, read credentials, write proofpacks,
 write gate decisions, or claim acceptance.
+
+The current side-effect receipt writer active behavior model is also
+pure/no-IO advisory evidence. It consumes a ready receipt writer preflight and
+explicit observation data, then models planned-only, written, idempotent,
+conflict, write-failed, partial-or-ambiguous, and preflight-failed outcomes
+with selected, attempted, completed, failed, rollback-visible, and
+error-visible steps. It does not create or write receipts, persist operation
+evidence, mutate event logs, read or write files, invoke adapters, invoke
+policy engines, invoke gate, publish, comment, create pull requests, call APIs,
+read credentials, write proofpacks, write gate decisions, or claim acceptance.
 
 ## Wasm status
 
