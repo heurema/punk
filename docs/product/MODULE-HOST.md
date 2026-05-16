@@ -18,13 +18,20 @@ superseded_by: null
 
 # Module Host
 
-Status: parked
+Status: incubating envelope / runtime parked
 
 ## Purpose
 
 The Module Host is the future Punk-owned boundary for invoking domain modules while preserving the shared lifecycle, laws, receipts, assessments, gate decisions, and proofpacks.
 
-The Module Host is not active core yet. It is parked until Phase 6.
+The Module Host runtime is not active core yet. It remains parked until Phase 6.
+
+The current code slice is narrower: `punk-module-host` defines a pure
+invocation envelope preflight and advisory assessment wrapper for module
+models. It does not load plugins, invoke modules, expose CLI behavior, read or
+write files, create receipts, mutate event logs, call APIs, read credentials,
+invoke adapters, publish, write gate decisions, write proofpacks, or claim
+acceptance.
 
 ## Boundary rule
 
@@ -56,11 +63,11 @@ Future implementation candidates include:
 - Extism-style Wasm plugins
 - another host/runtime boundary discovered during R2 research
 
-No candidate is selected by this parked document.
+No plugin runtime candidate is selected by this document.
 
-## Host responsibilities
+## Future host responsibilities
 
-The host owns the boundary:
+The future runtime host owns the boundary:
 
 - load a module manifest
 - validate declared hooks
@@ -99,6 +106,12 @@ A module or plugin may emit:
 The host validates both before they can affect the run record.
 
 Neither artifact can close work, write a final decision, or become canonical project memory by itself.
+
+The current incubating envelope can wrap an already-produced advisory module
+assessment summary. It validates that the invocation is explicitly scoped, that
+capabilities remain denied except pure assessment of provided input, and that
+the wrapped module output does not report side effects or authority-bearing
+behavior.
 
 ## Wasm status
 
