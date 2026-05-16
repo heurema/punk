@@ -29,12 +29,13 @@ The Module Host runtime is not active core yet. It remains parked until Phase 6.
 The current code slices are narrower: `punk-module-host` defines a pure
 invocation envelope preflight, advisory assessment wrapper, local-only module
 receipt proposal model, and local-only side-effect request proposal model for
-module models. It can model future receipt field coverage and future external
-action preconditions, but it does not create or write receipts and does not
-perform side effects. It does not load plugins, invoke modules, expose CLI
-behavior, read or write files, mutate event logs, call APIs, read credentials,
-invoke adapters, publish, comment, create pull requests, write gate decisions,
-write proofpacks, or claim acceptance.
+module models, plus a local-only policy gate preflight model. It can model
+future receipt field coverage, future external action preconditions, and future
+policy evidence readiness, but it does not create or write receipts and does
+not perform side effects. It does not load plugins, invoke modules, expose CLI
+behavior, read or write files, mutate event logs, invoke policy engines, invoke
+gate, call APIs, read credentials, invoke adapters, publish, comment, create
+pull requests, write gate decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -129,6 +130,15 @@ preconditions, and reports advisory readiness for a future external action. It
 does not invoke adapters, publish, comment, create pull requests, write
 receipts, mutate event logs, call APIs, read credentials, write gate decisions,
 write proofpacks, or claim acceptance.
+
+The current policy gate preflight model is pure/no-IO advisory evidence. It
+checks that a ready side-effect request proposal has explicit policy,
+gate-input, side-effect receipt proposal, adapter invocation receipt, payload,
+and proof-requirement refs before a future external action can be considered.
+It does not invoke a policy engine, invoke gate, approve work, write gate
+decisions, write proofpacks, invoke adapters, publish, comment, create pull
+requests, write receipts, mutate event logs, call APIs, read credentials, or
+claim acceptance.
 
 ## Wasm status
 
