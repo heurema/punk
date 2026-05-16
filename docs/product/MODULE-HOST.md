@@ -32,16 +32,18 @@ receipt proposal model, and local-only side-effect request proposal model for
 module models, plus local-only policy gate and side-effect receipt writer
 preflight models, a side-effect receipt writer active behavior model, and a
 side-effect receipt writer file IO plan model, a target/storage policy
-readiness model, and a host path observation model. It
+readiness model, a host path observation model, and a concrete path/storage
+policy readiness model. It
 can model future receipt field coverage, future external action preconditions,
 future policy evidence readiness, future receipt writer readiness, and future
 receipt writer outcomes, file IO plans, target/storage policy readiness, and
-host path observations, but it does not create or write receipts and does not
-perform side effects. It does not load plugins, invoke modules, expose CLI
-behavior, resolve or canonicalize host paths, read or write files, persist
-operation evidence, mutate event logs, invoke policy engines, invoke gate, call
-APIs, read credentials, invoke adapters, publish, comment, create pull
-requests, write gate decisions, write proofpacks, or claim acceptance.
+host path observations, and concrete path/storage policy readiness, but it
+does not create or write receipts and does not perform side effects. It does
+not load plugins, invoke modules, expose CLI behavior, resolve or canonicalize
+host paths, read or write files, persist operation evidence, mutate event logs,
+invoke policy engines, invoke gate, call APIs, read credentials, invoke
+adapters, publish, comment, create pull requests, write gate decisions, write
+proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -202,6 +204,18 @@ paths, inspect the filesystem, read or write files, create or write receipts,
 persist operation evidence, mutate event logs, invoke adapters, invoke policy
 engines, invoke gate, publish, comment, create pull requests, call APIs, read
 credentials, write proofpacks, write gate decisions, or claim acceptance.
+
+The current side-effect receipt writer concrete path/storage policy model is
+pure/no-IO advisory evidence. It consumes a ready target/storage policy model
+plus a ready host path observation model, requires selected policy refs,
+separated storage/receipt-target/target-path/host-path refs, redacted sensitive
+host path observations, and boundary notes, then reports whether the future
+local receipt writer has enough concrete path/storage policy evidence to be
+considered. It does not resolve or canonicalize host paths, inspect the
+filesystem, read or write files, create or write receipts, persist operation
+evidence, mutate event logs, invoke adapters, invoke policy engines, invoke
+gate, publish, comment, create pull requests, call APIs, read credentials,
+write proofpacks, write gate decisions, or claim acceptance.
 
 ## Wasm status
 

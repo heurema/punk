@@ -67,11 +67,11 @@ A module becomes active only after passing module conformance evals.
 The first module-host code slice is incubating only: `punk-module-host`
 defines a pure invocation envelope, advisory assessment wrapper, and future
 receipt field, side-effect request, policy gate preflight, and side-effect
-receipt writer preflight, active behavior, file IO plan, and target/storage
-policy readiness, and host path observation models. It is not a plugin
-runtime, module runner, CLI surface, receipt writer, event writer, host path
-resolver, policy engine invoker, gate invoker, adapter, publisher, PR creator,
-or gate/proof authority.
+receipt writer preflight, active behavior, file IO plan, target/storage policy
+readiness, host path observation, and concrete path/storage policy readiness
+models. It is not a plugin runtime, module runner, CLI surface, receipt
+writer, event writer, host path resolver, policy engine invoker, gate invoker,
+adapter, publisher, PR creator, or gate/proof authority.
 
 ## First module strategy
 
