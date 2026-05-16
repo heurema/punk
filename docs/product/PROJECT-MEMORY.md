@@ -216,7 +216,7 @@ For user projects, `punk init <project-id>` uses the compact `.punk/memory/` lay
 
 `.punk/instructions/` is repo-tracked source guidance for local orientation and future module instruction trees. Its generated page-index view path is advisory and rebuildable; `punk init` does not create `.punk/views/`.
 
-`.punk/events/flow.jsonl` is active only for the narrow local `punk-events` writer slice under an explicit initialized project root. It is append-only event evidence, not project truth and not decision authority.
+`.punk/events/flow.jsonl` is active only for narrow local `punk-events` writer slices under an explicit initialized project root: caller-provided flow event drafts and receipt/evidence handoff events that link safe receipt and operation-evidence refs. It is append-only event evidence, not project truth and not decision authority; the handoff helper does not write receipt or operation-evidence artifacts.
 
 `.punk/runs/` is active only for the narrow local `punk-module-host` library write slices that write exact caller-provided receipt or operation-evidence bytes under explicit targets. It is not broad runtime storage, project truth, gate authority, proof authority, or external automation.
 
