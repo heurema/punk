@@ -1,6 +1,6 @@
 # PubPunk
 
-Status: parked
+Status: incubating model / runtime parked
 
 ## Purpose
 
@@ -8,9 +8,10 @@ PubPunk is the future content-engineering module for `punk`.
 
 It handles public narrative, content production, distribution, and metrics.
 
-This document defines the module boundary before any PubPunk runtime,
-inventory reader, draft planner, receipt writer, adapter, or external publish
-behavior is implemented.
+This document defines the module boundary before any PubPunk runtime, draft
+planner, receipt writer, adapter, or external publish behavior is implemented.
+The current code slice is limited to a side-effect-free inventory assessment
+model over caller-provided metadata.
 
 ## Scope
 
@@ -30,9 +31,15 @@ Future PubPunk may own:
 
 ## Current state
 
-PubPunk is not active.
+PubPunk is not active as runtime, CLI, adapter, or publisher.
 
 There is no automation in the new `punk` core yet.
+
+The first incubating PubPunk crate, `punk-mod-pub`, can assess explicit
+caller-provided publishing inventory metadata and receipt gaps as advisory
+module evidence only. It does not read files, write receipts, publish, call
+external APIs, read credentials, invoke adapters, write gate decisions, write
+proofpacks, or claim acceptance.
 
 The existing `punk publishing locate` resolver is a transitional core locator
 only. It must not be used as precedent for adding publishing inventory,
@@ -137,9 +144,9 @@ It may not:
 
 ## Initial activation boundary
 
-First activation should remain simple:
+First activation remains simple:
 
-- module-owned local inventory model;
+- module-owned local inventory assessment model over explicit metadata;
 - module-owned local draft/plan model;
 - module receipt and assessment shape;
 - no public CLI until Module Host promotion path is selected;

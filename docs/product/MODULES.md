@@ -72,7 +72,12 @@ Do not activate DevPunk or PubPunk until the core flow, eval, contract, gate, an
 
 PubPunk is the future content-engineering module.
 
-It is parked for now.
+Its runtime, CLI, adapters, and publishing behavior are parked for now.
+
+The first code slice is incubating only: `punk-mod-pub` provides a
+side-effect-free inventory assessment model over caller-provided publishing
+metadata. It is advisory evidence, not a publisher, not a receipt writer, not
+Module Host activation, and not project truth.
 
 Current public narrative data lives under `publishing/`.
 
