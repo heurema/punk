@@ -1,12 +1,12 @@
 //! Incubating Module Host envelope and local receipt-writer models.
 //!
 //! This crate defines a pure invocation and assessment envelope for module
-//! models plus the first local-only side-effect receipt writer slice. It does
+//! models plus the first local-only side-effect receipt writer slices. It does
 //! not load plugins, call modules, expose CLI behavior, invoke adapters, access
 //! credentials, publish externally, mutate event logs, write gate decisions,
-//! write proofpacks, or claim acceptance. The first active receipt writer slice
-//! writes exact caller-provided receipt bytes only to an explicit `.punk/runs`
-//! target under an explicit storage root.
+//! write proofpacks, or claim acceptance. The active receipt writer slices write
+//! exact caller-provided receipt or operation-evidence bytes only to explicit
+//! `.punk/runs` targets under an explicit storage root.
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const MODULE_HOST_INVOCATION_SCHEMA_VERSION: &str = "punk.module_host.invocation.v0.1";
@@ -34,6 +34,8 @@ pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_
     &str = "punk.module_host.side_effect_receipt_writer_operation_evidence_persistence.v0.1";
 pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION: &str =
     "punk.module_host.side_effect_receipt_writer_first_active_write_slice.v0.1";
+pub const MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_WRITE_SLICE_SCHEMA_VERSION:
+    &str = "punk.module_host.side_effect_receipt_writer_operation_evidence_write_slice.v0.1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleHostAuthority {
@@ -4395,6 +4397,834 @@ pub fn write_module_side_effect_receipt_first_active_slice(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker {
+    ReceiptWriterResultNotSuccessful,
+    OperationEvidenceRecordAlreadySelected,
+    MissingOperationEvidenceBytes,
+    MissingStorageRootRef,
+    MissingOperationEvidenceTargetRef,
+    UnsafeStorageRootRef,
+    UnsafeOperationEvidenceTargetRef,
+    OperationEvidenceTargetPathMismatch,
+    IdempotencyRefMissing,
+    IdempotencyRefUnsafe,
+    StorageRootPathMissing,
+    StorageRootPathRelative,
+    StorageRootPathUnavailable,
+    StorageRootNotDirectory,
+    StorageRootSymlink,
+    TargetPathInvalid,
+    TargetPathTraversal,
+    TargetPathEscapesStorageRoot,
+    TargetPathOutsidePunkRuns,
+    ParentDirectoryMissing,
+    ParentDirectoryNotDirectory,
+    ParentDirectorySymlink,
+    TargetSymlink,
+    TargetUnreadableOrAmbiguous,
+    ExistingTargetDifferent,
+    WriteFailed,
+    ExactByteReadbackMismatch,
+}
+
+impl ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReceiptWriterResultNotSuccessful => "receipt_writer_result_not_successful",
+            Self::OperationEvidenceRecordAlreadySelected => {
+                "operation_evidence_record_already_selected"
+            }
+            Self::MissingOperationEvidenceBytes => "missing_operation_evidence_bytes",
+            Self::MissingStorageRootRef => "missing_storage_root_ref",
+            Self::MissingOperationEvidenceTargetRef => "missing_operation_evidence_target_ref",
+            Self::UnsafeStorageRootRef => "unsafe_storage_root_ref",
+            Self::UnsafeOperationEvidenceTargetRef => "unsafe_operation_evidence_target_ref",
+            Self::OperationEvidenceTargetPathMismatch => "operation_evidence_target_path_mismatch",
+            Self::IdempotencyRefMissing => "idempotency_ref_missing",
+            Self::IdempotencyRefUnsafe => "idempotency_ref_unsafe",
+            Self::StorageRootPathMissing => "storage_root_path_missing",
+            Self::StorageRootPathRelative => "storage_root_path_relative",
+            Self::StorageRootPathUnavailable => "storage_root_path_unavailable",
+            Self::StorageRootNotDirectory => "storage_root_not_directory",
+            Self::StorageRootSymlink => "storage_root_symlink",
+            Self::TargetPathInvalid => "target_path_invalid",
+            Self::TargetPathTraversal => "target_path_traversal",
+            Self::TargetPathEscapesStorageRoot => "target_path_escapes_storage_root",
+            Self::TargetPathOutsidePunkRuns => "target_path_outside_punk_runs",
+            Self::ParentDirectoryMissing => "parent_directory_missing",
+            Self::ParentDirectoryNotDirectory => "parent_directory_not_directory",
+            Self::ParentDirectorySymlink => "parent_directory_symlink",
+            Self::TargetSymlink => "target_symlink",
+            Self::TargetUnreadableOrAmbiguous => "target_unreadable_or_ambiguous",
+            Self::ExistingTargetDifferent => "existing_target_different",
+            Self::WriteFailed => "write_failed",
+            Self::ExactByteReadbackMismatch => "exact_byte_readback_mismatch",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBoundary {
+    pub implements_operation_evidence_write_slice: bool,
+    pub requires_successful_receipt_writer_result: bool,
+    pub requires_explicit_storage_root_path: bool,
+    pub requires_explicit_punk_runs_operation_evidence_target_relative_path: bool,
+    pub writes_exact_operation_evidence_bytes: bool,
+    pub uses_create_new_no_overwrite: bool,
+    pub reads_filesystem: bool,
+    pub touches_filesystem: bool,
+    pub writes_files: bool,
+    pub writes_punk_runs: bool,
+    pub creates_receipt: bool,
+    pub writes_receipt: bool,
+    pub persists_operation_evidence: bool,
+    pub writes_event_log: bool,
+    pub invokes_adapter: bool,
+    pub invokes_policy_engine: bool,
+    pub invokes_gate: bool,
+    pub calls_external_apis: bool,
+    pub opens_browser: bool,
+    pub reads_credentials: bool,
+    pub publishes: bool,
+    pub comments: bool,
+    pub creates_pull_request: bool,
+    pub writes_gate_decision: bool,
+    pub writes_proofpack: bool,
+    pub creates_acceptance_claim: bool,
+    pub creates_parent_directories: bool,
+    pub resolves_host_paths: bool,
+    pub canonicalizes_host_paths: bool,
+    pub normalizes_host_paths: bool,
+    pub claims_platform_atomicity: bool,
+    pub claims_crash_durability: bool,
+    pub uses_current_working_directory_as_authority: bool,
+    pub uses_global_config_as_authority: bool,
+    pub uses_ide_state_as_authority: bool,
+    pub uses_executor_memory_as_authority: bool,
+    pub operation_evidence_target_path_is_authority: bool,
+    pub storage_root_path_is_authority: bool,
+    pub operation_evidence_is_non_authoritative: bool,
+    pub receipt_result_is_non_authoritative: bool,
+    pub setup_neutral: bool,
+}
+
+pub const fn module_side_effect_receipt_writer_operation_evidence_write_slice_boundary(
+) -> ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBoundary {
+    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBoundary {
+        implements_operation_evidence_write_slice: true,
+        requires_successful_receipt_writer_result: true,
+        requires_explicit_storage_root_path: true,
+        requires_explicit_punk_runs_operation_evidence_target_relative_path: true,
+        writes_exact_operation_evidence_bytes: true,
+        uses_create_new_no_overwrite: true,
+        reads_filesystem: true,
+        touches_filesystem: true,
+        writes_files: true,
+        writes_punk_runs: true,
+        creates_receipt: false,
+        writes_receipt: false,
+        persists_operation_evidence: true,
+        writes_event_log: false,
+        invokes_adapter: false,
+        invokes_policy_engine: false,
+        invokes_gate: false,
+        calls_external_apis: false,
+        opens_browser: false,
+        reads_credentials: false,
+        publishes: false,
+        comments: false,
+        creates_pull_request: false,
+        writes_gate_decision: false,
+        writes_proofpack: false,
+        creates_acceptance_claim: false,
+        creates_parent_directories: false,
+        resolves_host_paths: false,
+        canonicalizes_host_paths: false,
+        normalizes_host_paths: false,
+        claims_platform_atomicity: false,
+        claims_crash_durability: false,
+        uses_current_working_directory_as_authority: false,
+        uses_global_config_as_authority: false,
+        uses_ide_state_as_authority: false,
+        uses_executor_memory_as_authority: false,
+        operation_evidence_target_path_is_authority: false,
+        storage_root_path_is_authority: false,
+        operation_evidence_is_non_authoritative: true,
+        receipt_result_is_non_authoritative: true,
+        setup_neutral: true,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult {
+    pub schema_version: &'static str,
+    pub status: ModuleHostStatus,
+    pub authority: ModuleHostAuthority,
+    pub module_id: String,
+    pub module_version: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub requested_operation: String,
+    pub request_id: String,
+    pub kind: ModuleSideEffectKind,
+    pub preflight_id: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub target_path_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub receipt_writer_result_outcome: ModuleSideEffectReceiptWriterOutcome,
+    pub operation_evidence_outcome: ModuleSideEffectReceiptWriterOutcome,
+    pub receipt_write_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub operation_evidence_record_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub rollback_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub error_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub cleanup_status: ModuleSideEffectReceiptWriterStepStatus,
+    pub operation_evidence_byte_len: usize,
+    pub blockers: Vec<ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker>,
+    pub boundary_notes: Vec<String>,
+    pub boundary: ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBoundary,
+}
+
+impl ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult {
+    fn new(
+        receipt_write_result: &ModuleSideEffectReceiptWriterFirstActiveWriteSliceResult,
+        operation_evidence_outcome: ModuleSideEffectReceiptWriterOutcome,
+        operation_evidence_record_status: ModuleSideEffectReceiptWriterStepStatus,
+        blockers: Vec<ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker>,
+        boundary_notes: Vec<String>,
+        operation_evidence_byte_len: usize,
+    ) -> Self {
+        let status = if operation_evidence_outcome.is_terminal_success() && blockers.is_empty() {
+            ModuleHostStatus::Ready
+        } else {
+            ModuleHostStatus::Blocked
+        };
+
+        Self {
+            schema_version:
+                MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_WRITE_SLICE_SCHEMA_VERSION,
+            status,
+            authority: ModuleHostAuthority::Advisory,
+            module_id: receipt_write_result.module_id.clone(),
+            module_version: receipt_write_result.module_version.clone(),
+            contract_ref: receipt_write_result.contract_ref.clone(),
+            run_ref: receipt_write_result.run_ref.clone(),
+            project_ref: receipt_write_result.project_ref.clone(),
+            requested_operation: receipt_write_result.requested_operation.clone(),
+            request_id: receipt_write_result.request_id.clone(),
+            kind: receipt_write_result.kind,
+            preflight_id: receipt_write_result.preflight_id.clone(),
+            receipt_target_ref: receipt_write_result.receipt_target_ref.clone(),
+            storage_ref: receipt_write_result.storage_ref.clone(),
+            target_path_ref: receipt_write_result.target_path_ref.clone(),
+            operation_evidence_ref: receipt_write_result.operation_evidence_ref.clone(),
+            idempotency_ref: receipt_write_result.idempotency_ref.clone(),
+            rollback_ref: receipt_write_result.rollback_ref.clone(),
+            error_ref: receipt_write_result.error_ref.clone(),
+            adapter_invocation_receipt_ref: receipt_write_result
+                .adapter_invocation_receipt_ref
+                .clone(),
+            payload_ref: receipt_write_result.payload_ref.clone(),
+            receipt_writer_result_outcome: receipt_write_result.outcome,
+            operation_evidence_outcome,
+            receipt_write_status: receipt_write_result.receipt_write_status,
+            operation_evidence_record_status,
+            rollback_status: if operation_evidence_outcome.needs_rollback_visibility() {
+                ModuleSideEffectReceiptWriterStepStatus::Completed
+            } else {
+                ModuleSideEffectReceiptWriterStepStatus::Skipped
+            },
+            error_status: if operation_evidence_outcome.needs_error_visibility() {
+                ModuleSideEffectReceiptWriterStepStatus::Completed
+            } else {
+                ModuleSideEffectReceiptWriterStepStatus::Skipped
+            },
+            cleanup_status: ModuleSideEffectReceiptWriterStepStatus::NotSelected,
+            operation_evidence_byte_len,
+            blockers,
+            boundary_notes: receipt_writer_operation_evidence_write_slice_boundary_notes(
+                receipt_write_result,
+                boundary_notes,
+            ),
+            boundary: module_side_effect_receipt_writer_operation_evidence_write_slice_boundary(),
+        }
+    }
+
+    pub fn is_success(&self) -> bool {
+        self.operation_evidence_outcome.is_terminal_success() && self.blockers.is_empty()
+    }
+
+    pub fn has_blocker(
+        &self,
+        blocker: ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker,
+    ) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn represents_new_operation_evidence_write(&self) -> bool {
+        self.operation_evidence_outcome == ModuleSideEffectReceiptWriterOutcome::Written
+            && self.operation_evidence_record_status
+                == ModuleSideEffectReceiptWriterStepStatus::Completed
+    }
+
+    pub fn is_idempotent_existing_match(&self) -> bool {
+        self.operation_evidence_outcome == ModuleSideEffectReceiptWriterOutcome::Idempotent
+    }
+
+    pub fn has_conflict(&self) -> bool {
+        self.operation_evidence_outcome == ModuleSideEffectReceiptWriterOutcome::Conflict
+    }
+
+    pub fn has_partial_or_ambiguous_state(&self) -> bool {
+        self.operation_evidence_outcome == ModuleSideEffectReceiptWriterOutcome::PartialOrAmbiguous
+    }
+
+    pub fn writes_receipt(&self) -> bool {
+        self.boundary.writes_receipt
+    }
+
+    pub fn writes_punk_runs(&self) -> bool {
+        self.boundary.writes_punk_runs
+    }
+
+    pub fn reads_filesystem(&self) -> bool {
+        self.boundary.reads_filesystem
+    }
+
+    pub fn touches_filesystem(&self) -> bool {
+        self.boundary.touches_filesystem
+    }
+
+    pub fn persists_operation_evidence(&self) -> bool {
+        self.boundary.persists_operation_evidence
+    }
+
+    pub fn writes_event_log(&self) -> bool {
+        self.boundary.writes_event_log
+    }
+
+    pub fn invokes_adapter(&self) -> bool {
+        self.boundary.invokes_adapter
+    }
+
+    pub fn invokes_policy_engine(&self) -> bool {
+        self.boundary.invokes_policy_engine
+    }
+
+    pub fn invokes_gate(&self) -> bool {
+        self.boundary.invokes_gate
+    }
+
+    pub fn publishes(&self) -> bool {
+        self.boundary.publishes
+    }
+
+    pub fn comments(&self) -> bool {
+        self.boundary.comments
+    }
+
+    pub fn creates_pull_request(&self) -> bool {
+        self.boundary.creates_pull_request
+    }
+
+    pub fn writes_gate_decision(&self) -> bool {
+        self.boundary.writes_gate_decision
+    }
+
+    pub fn writes_proofpack(&self) -> bool {
+        self.boundary.writes_proofpack
+    }
+
+    pub fn creates_acceptance_claim(&self) -> bool {
+        self.boundary.creates_acceptance_claim
+    }
+
+    pub fn can_claim_acceptance_by_itself(&self) -> bool {
+        false
+    }
+}
+
+pub fn write_module_side_effect_receipt_writer_operation_evidence_first_active_slice(
+    receipt_write_result: &ModuleSideEffectReceiptWriterFirstActiveWriteSliceResult,
+    operation_evidence_bytes: &[u8],
+    storage_root_path: impl AsRef<std::path::Path>,
+    target_relative_path: impl AsRef<std::path::Path>,
+    boundary_notes: Vec<String>,
+) -> ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult {
+    let storage_root_path = storage_root_path.as_ref();
+    let target_relative_path = target_relative_path.as_ref();
+    let mut blockers = receipt_writer_operation_evidence_write_slice_precondition_blockers(
+        receipt_write_result,
+        operation_evidence_bytes,
+        storage_root_path,
+        target_relative_path,
+    );
+
+    if !blockers.is_empty() {
+        return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+            receipt_write_result,
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed,
+            ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+            blockers,
+            boundary_notes,
+            operation_evidence_bytes.len(),
+        );
+    }
+
+    let target_path = storage_root_path.join(target_relative_path);
+
+    match std::fs::symlink_metadata(&target_path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            blockers.push(
+                ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetSymlink,
+            );
+            return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                receipt_write_result,
+                ModuleSideEffectReceiptWriterOutcome::PreflightFailed,
+                ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+                blockers,
+                boundary_notes,
+                operation_evidence_bytes.len(),
+            );
+        }
+        Ok(_) => match std::fs::read(&target_path) {
+            Ok(existing_bytes) if existing_bytes == operation_evidence_bytes => {
+                return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                    receipt_write_result,
+                    ModuleSideEffectReceiptWriterOutcome::Idempotent,
+                    ModuleSideEffectReceiptWriterStepStatus::Skipped,
+                    blockers,
+                    boundary_notes,
+                    operation_evidence_bytes.len(),
+                );
+            }
+            Ok(_) => {
+                blockers.push(
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ExistingTargetDifferent,
+                );
+                return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                    receipt_write_result,
+                    ModuleSideEffectReceiptWriterOutcome::Conflict,
+                    ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+                    blockers,
+                    boundary_notes,
+                    operation_evidence_bytes.len(),
+                );
+            }
+            Err(_) => {
+                blockers.push(
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetUnreadableOrAmbiguous,
+                );
+                return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                    receipt_write_result,
+                    ModuleSideEffectReceiptWriterOutcome::PreflightFailed,
+                    ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+                    blockers,
+                    boundary_notes,
+                    operation_evidence_bytes.len(),
+                );
+            }
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => {
+            blockers.push(
+                ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetUnreadableOrAmbiguous,
+            );
+            return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                receipt_write_result,
+                ModuleSideEffectReceiptWriterOutcome::PreflightFailed,
+                ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+                blockers,
+                boundary_notes,
+                operation_evidence_bytes.len(),
+            );
+        }
+    }
+
+    if let Err(error) =
+        receipt_writer_first_active_write_exact_bytes(&target_path, operation_evidence_bytes)
+    {
+        if error.kind() == std::io::ErrorKind::AlreadyExists {
+            match std::fs::read(&target_path) {
+                Ok(existing_bytes) if existing_bytes == operation_evidence_bytes => {
+                    return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                        receipt_write_result,
+                        ModuleSideEffectReceiptWriterOutcome::Idempotent,
+                        ModuleSideEffectReceiptWriterStepStatus::Skipped,
+                        blockers,
+                        boundary_notes,
+                        operation_evidence_bytes.len(),
+                    );
+                }
+                Ok(_) => {
+                    blockers.push(
+                        ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ExistingTargetDifferent,
+                    );
+                    return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                        receipt_write_result,
+                        ModuleSideEffectReceiptWriterOutcome::Conflict,
+                        ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+                        blockers,
+                        boundary_notes,
+                        operation_evidence_bytes.len(),
+                    );
+                }
+                Err(_) => {
+                    blockers.push(
+                        ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetUnreadableOrAmbiguous,
+                    );
+                    return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                        receipt_write_result,
+                        ModuleSideEffectReceiptWriterOutcome::PreflightFailed,
+                        ModuleSideEffectReceiptWriterStepStatus::NotAttempted,
+                        blockers,
+                        boundary_notes,
+                        operation_evidence_bytes.len(),
+                    );
+                }
+            }
+        }
+
+        blockers.push(ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::WriteFailed);
+        return ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+            receipt_write_result,
+            ModuleSideEffectReceiptWriterOutcome::WriteFailed,
+            ModuleSideEffectReceiptWriterStepStatus::Failed,
+            blockers,
+            boundary_notes,
+            operation_evidence_bytes.len(),
+        );
+    }
+
+    match std::fs::read(&target_path) {
+        Ok(written_bytes) if written_bytes == operation_evidence_bytes => {
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                receipt_write_result,
+                ModuleSideEffectReceiptWriterOutcome::Written,
+                ModuleSideEffectReceiptWriterStepStatus::Completed,
+                blockers,
+                boundary_notes,
+                operation_evidence_bytes.len(),
+            )
+        }
+        Ok(_) | Err(_) => {
+            blockers.push(
+                ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ExactByteReadbackMismatch,
+            );
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceResult::new(
+                receipt_write_result,
+                ModuleSideEffectReceiptWriterOutcome::PartialOrAmbiguous,
+                ModuleSideEffectReceiptWriterStepStatus::Failed,
+                blockers,
+                boundary_notes,
+                operation_evidence_bytes.len(),
+            )
+        }
+    }
+}
+
+fn receipt_writer_operation_evidence_write_slice_precondition_blockers(
+    receipt_write_result: &ModuleSideEffectReceiptWriterFirstActiveWriteSliceResult,
+    operation_evidence_bytes: &[u8],
+    storage_root_path: &std::path::Path,
+    target_relative_path: &std::path::Path,
+) -> Vec<ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker> {
+    let mut blockers = Vec::new();
+
+    if !receipt_write_result.is_success() {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ReceiptWriterResultNotSuccessful,
+        );
+    }
+
+    if receipt_write_result.operation_evidence_record_status
+        != ModuleSideEffectReceiptWriterStepStatus::NotSelected
+    {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::OperationEvidenceRecordAlreadySelected,
+        );
+    }
+
+    if operation_evidence_bytes.is_empty() {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::MissingOperationEvidenceBytes,
+        );
+    }
+
+    if receipt_write_result.storage_ref.trim().is_empty() {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::MissingStorageRootRef,
+        );
+    } else if !is_safe_ref(&receipt_write_result.storage_ref) {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::UnsafeStorageRootRef,
+        );
+    }
+
+    if receipt_write_result
+        .operation_evidence_ref
+        .trim()
+        .is_empty()
+    {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::MissingOperationEvidenceTargetRef,
+        );
+    } else if !is_safe_ref(&receipt_write_result.operation_evidence_ref) {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::UnsafeOperationEvidenceTargetRef,
+        );
+    }
+
+    if receipt_write_result.idempotency_ref.trim().is_empty() {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::IdempotencyRefMissing,
+        );
+    } else if !is_safe_ref(&receipt_write_result.idempotency_ref) {
+        push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::IdempotencyRefUnsafe,
+        );
+    }
+
+    match target_relative_path.to_str() {
+        Some(target_relative_path_text)
+            if receipt_write_result.operation_evidence_ref.as_str()
+                != target_relative_path_text =>
+        {
+            push_unique_operation_evidence_write_blocker(
+                &mut blockers,
+                ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::OperationEvidenceTargetPathMismatch,
+            );
+        }
+        Some(_) => {}
+        None => push_unique_operation_evidence_write_blocker(
+            &mut blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathInvalid,
+        ),
+    }
+
+    receipt_writer_operation_evidence_write_slice_path_blockers(
+        storage_root_path,
+        target_relative_path,
+        &mut blockers,
+    );
+
+    blockers
+}
+
+fn receipt_writer_operation_evidence_write_slice_path_blockers(
+    storage_root_path: &std::path::Path,
+    target_relative_path: &std::path::Path,
+    blockers: &mut Vec<ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker>,
+) {
+    let storage_root_missing = storage_root_path.as_os_str().is_empty();
+    let storage_root_relative = !storage_root_path.is_absolute();
+
+    if storage_root_missing {
+        push_unique_operation_evidence_write_blocker(
+            blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::StorageRootPathMissing,
+        );
+    }
+
+    if storage_root_relative {
+        push_unique_operation_evidence_write_blocker(
+            blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::StorageRootPathRelative,
+        );
+    }
+
+    if !storage_root_missing && !storage_root_relative {
+        match std::fs::symlink_metadata(storage_root_path) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::StorageRootSymlink,
+                );
+            }
+            Ok(metadata) if !metadata.is_dir() => {
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::StorageRootNotDirectory,
+                );
+            }
+            Ok(_) => {}
+            Err(_) => {
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::StorageRootPathUnavailable,
+                );
+            }
+        }
+    }
+
+    let target_path_missing = target_relative_path.as_os_str().is_empty();
+    let target_path_absolute = target_relative_path.is_absolute();
+    let target_path_outside_punk_runs =
+        !receipt_writer_first_active_target_under_punk_runs(target_relative_path);
+    let mut target_path_has_traversal_or_invalid_component = false;
+
+    if target_path_missing {
+        push_unique_operation_evidence_write_blocker(
+            blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathInvalid,
+        );
+    }
+
+    if target_path_absolute {
+        push_unique_operation_evidence_write_blocker(
+            blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathEscapesStorageRoot,
+        );
+    }
+
+    if target_path_outside_punk_runs {
+        push_unique_operation_evidence_write_blocker(
+            blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathOutsidePunkRuns,
+        );
+    }
+
+    for component in target_relative_path.components() {
+        match component {
+            std::path::Component::Normal(_) => {}
+            std::path::Component::CurDir => {
+                target_path_has_traversal_or_invalid_component = true;
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathInvalid,
+                );
+            }
+            std::path::Component::ParentDir => {
+                target_path_has_traversal_or_invalid_component = true;
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathTraversal,
+                );
+            }
+            std::path::Component::RootDir | std::path::Component::Prefix(_) => {
+                target_path_has_traversal_or_invalid_component = true;
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathEscapesStorageRoot,
+                );
+            }
+        }
+    }
+
+    if storage_root_missing
+        || storage_root_relative
+        || target_path_missing
+        || target_path_absolute
+        || target_path_outside_punk_runs
+        || target_path_has_traversal_or_invalid_component
+    {
+        return;
+    }
+
+    receipt_writer_operation_evidence_write_slice_parent_path_blockers(
+        storage_root_path,
+        target_relative_path,
+        blockers,
+    );
+}
+
+fn receipt_writer_operation_evidence_write_slice_parent_path_blockers(
+    storage_root_path: &std::path::Path,
+    target_relative_path: &std::path::Path,
+    blockers: &mut Vec<ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker>,
+) {
+    let Some(parent_relative_path) = target_relative_path.parent() else {
+        push_unique_operation_evidence_write_blocker(
+            blockers,
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ParentDirectoryMissing,
+        );
+        return;
+    };
+
+    let mut current_parent = storage_root_path.to_path_buf();
+    for component in parent_relative_path.components() {
+        let std::path::Component::Normal(component) = component else {
+            return;
+        };
+
+        current_parent.push(component);
+        match std::fs::symlink_metadata(&current_parent) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ParentDirectorySymlink,
+                );
+                return;
+            }
+            Ok(metadata) if !metadata.is_dir() => {
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ParentDirectoryNotDirectory,
+                );
+                return;
+            }
+            Ok(_) => {}
+            Err(_) => {
+                push_unique_operation_evidence_write_blocker(
+                    blockers,
+                    ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ParentDirectoryMissing,
+                );
+                return;
+            }
+        }
+    }
+}
+
+fn push_unique_operation_evidence_write_blocker(
+    blockers: &mut Vec<ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker>,
+    blocker: ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
+fn receipt_writer_operation_evidence_write_slice_boundary_notes(
+    receipt_write_result: &ModuleSideEffectReceiptWriterFirstActiveWriteSliceResult,
+    boundary_notes: Vec<String>,
+) -> Vec<String> {
+    let mut notes = receipt_write_result.boundary_notes.clone();
+    notes.extend(boundary_notes);
+
+    if notes.is_empty() {
+        return vec![
+            "Module Host receipt writer operation-evidence write slice persists exact caller-provided operation evidence and does not authorize adapters, event-log writes, gate decisions, proofpacks, or acceptance claims."
+                .to_owned(),
+        ];
+    }
+
+    notes
+}
+
 pub fn preflight_module_invocation(input: &ModuleInvocationEnvelope) -> ModuleHostPreflight {
     let findings = invocation_findings(input);
     let status = if findings.is_empty() {
@@ -6318,10 +7148,12 @@ mod tests {
         model_module_side_effect_receipt_writer_operation_evidence_persistence,
         model_module_side_effect_receipt_writer_target_storage_policy,
         module_side_effect_receipt_writer_first_active_write_slice_boundary,
+        module_side_effect_receipt_writer_operation_evidence_write_slice_boundary,
         plan_module_side_effect_receipt_writer_file_io, preflight_module_invocation,
         preflight_module_policy_gate, preflight_module_side_effect_receipt_writer,
         propose_module_assessment_receipt, propose_module_side_effect_request,
         wrap_module_assessment, write_module_side_effect_receipt_first_active_slice,
+        write_module_side_effect_receipt_writer_operation_evidence_first_active_slice,
         ModuleCapabilityGrant, ModuleHostFindingCode, ModuleHostStatus, ModuleInvocationEnvelope,
         ModuleOutputAuthority, ModuleOutputBoundaryFlags, ModuleOutputStatus, ModuleOutputSummary,
         ModulePolicyGatePreflightBoundaryFlags, ModulePolicyGatePreflightDraft,
@@ -6339,6 +7171,7 @@ mod tests {
         ModuleSideEffectReceiptWriterObservation,
         ModuleSideEffectReceiptWriterOperationEvidencePersistenceBlocker,
         ModuleSideEffectReceiptWriterOperationEvidencePersistenceStatus,
+        ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker,
         ModuleSideEffectReceiptWriterOutcome, ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
         ModuleSideEffectReceiptWriterPreflightDraft,
         ModuleSideEffectReceiptWriterPreflightRequirement,
@@ -6351,6 +7184,7 @@ mod tests {
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION,
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_HOST_PATH_OBSERVATION_SCHEMA_VERSION,
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_PERSISTENCE_SCHEMA_VERSION,
+        MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_WRITE_SLICE_SCHEMA_VERSION,
         MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_TARGET_STORAGE_POLICY_SCHEMA_VERSION,
     };
     use std::fs;
@@ -6609,6 +7443,11 @@ mod tests {
 
     fn receipt_bytes() -> Vec<u8> {
         br#"{"schema_version":"punk.module_host.side_effect_receipt.v0.1","receipt_id":"module-receipt-001"}"#
+            .to_vec()
+    }
+
+    fn operation_evidence_bytes() -> Vec<u8> {
+        br#"{"schema_version":"punk.module_host.side_effect_receipt_writer.operation_evidence.v0.1","receipt_id":"module-receipt-001","operation_evidence_authority":"advisory"}"#
             .to_vec()
     }
 
@@ -8332,6 +9171,266 @@ mod tests {
         assert!(atomic_blocked.has_blocker(
             ModuleSideEffectReceiptWriterFirstActiveWriteSliceBlocker::UnsupportedTempAtomicPolicy
         ));
+
+        fs::remove_dir_all(storage_root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_operation_evidence_write_slice_writes_exact_evidence_bytes() {
+        let mut persistence = ready_first_active_receipt_write_persistence_model();
+        persistence.operation_evidence_ref =
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl".to_owned();
+        let storage_root = unique_temp_path();
+        let run_dir = storage_root.join(".punk/runs/pubpunk-publish-community-lab");
+        let receipt_relative =
+            std::path::Path::new(".punk/runs/pubpunk-publish-community-lab/receipt.json");
+        let evidence_relative = std::path::Path::new(
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl",
+        );
+        let evidence_path = storage_root.join(evidence_relative);
+        fs::create_dir_all(&run_dir).expect("test parent directory should be created");
+
+        let receipt_result = write_module_side_effect_receipt_first_active_slice(
+            &persistence,
+            &receipt_bytes(),
+            &storage_root,
+            receipt_relative,
+            vec!["Receipt write result feeds operation evidence persistence.".to_owned()],
+        );
+        let bytes = operation_evidence_bytes();
+        let evidence_result =
+            write_module_side_effect_receipt_writer_operation_evidence_first_active_slice(
+                &receipt_result,
+                &bytes,
+                &storage_root,
+                evidence_relative,
+                vec![
+                    "Operation evidence write test uses an explicit temporary .punk/runs target."
+                        .to_owned(),
+                ],
+            );
+        let written = fs::read(&evidence_path).expect("operation evidence should be written");
+        let boundary = module_side_effect_receipt_writer_operation_evidence_write_slice_boundary();
+        let forbidden_runtime_exists = storage_root.join(".punk/events").exists()
+            || storage_root.join(".punk/decisions").exists()
+            || storage_root.join(".punk/proofs").exists();
+
+        assert_eq!(
+            evidence_result.schema_version,
+            MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_OPERATION_EVIDENCE_WRITE_SLICE_SCHEMA_VERSION
+        );
+        assert!(boundary.implements_operation_evidence_write_slice);
+        assert!(boundary.requires_successful_receipt_writer_result);
+        assert!(boundary.requires_explicit_storage_root_path);
+        assert!(boundary.requires_explicit_punk_runs_operation_evidence_target_relative_path);
+        assert!(boundary.writes_exact_operation_evidence_bytes);
+        assert!(boundary.uses_create_new_no_overwrite);
+        assert!(boundary.reads_filesystem);
+        assert!(boundary.touches_filesystem);
+        assert!(boundary.writes_files);
+        assert!(boundary.writes_punk_runs);
+        assert!(!boundary.creates_receipt);
+        assert!(!boundary.writes_receipt);
+        assert!(boundary.persists_operation_evidence);
+        assert!(!boundary.writes_event_log);
+        assert!(!boundary.invokes_adapter);
+        assert!(!boundary.invokes_policy_engine);
+        assert!(!boundary.invokes_gate);
+        assert!(!boundary.calls_external_apis);
+        assert!(!boundary.opens_browser);
+        assert!(!boundary.reads_credentials);
+        assert!(!boundary.publishes);
+        assert!(!boundary.comments);
+        assert!(!boundary.creates_pull_request);
+        assert!(!boundary.writes_gate_decision);
+        assert!(!boundary.writes_proofpack);
+        assert!(!boundary.creates_acceptance_claim);
+        assert!(!boundary.creates_parent_directories);
+        assert!(!boundary.resolves_host_paths);
+        assert!(!boundary.canonicalizes_host_paths);
+        assert!(!boundary.normalizes_host_paths);
+        assert!(!boundary.claims_platform_atomicity);
+        assert!(!boundary.claims_crash_durability);
+        assert!(!boundary.uses_current_working_directory_as_authority);
+        assert!(!boundary.uses_global_config_as_authority);
+        assert!(!boundary.uses_ide_state_as_authority);
+        assert!(!boundary.uses_executor_memory_as_authority);
+        assert!(!boundary.operation_evidence_target_path_is_authority);
+        assert!(!boundary.storage_root_path_is_authority);
+        assert!(boundary.operation_evidence_is_non_authoritative);
+        assert!(boundary.receipt_result_is_non_authoritative);
+        assert!(boundary.setup_neutral);
+        assert_eq!(evidence_result.status, ModuleHostStatus::Ready);
+        assert_eq!(
+            evidence_result.receipt_writer_result_outcome,
+            ModuleSideEffectReceiptWriterOutcome::Written
+        );
+        assert_eq!(
+            evidence_result.operation_evidence_outcome,
+            ModuleSideEffectReceiptWriterOutcome::Written
+        );
+        assert_eq!(
+            evidence_result.operation_evidence_record_status,
+            super::ModuleSideEffectReceiptWriterStepStatus::Completed
+        );
+        assert_eq!(evidence_result.operation_evidence_byte_len, bytes.len());
+        assert_eq!(written, bytes);
+        assert!(evidence_result.is_success());
+        assert!(evidence_result.represents_new_operation_evidence_write());
+        assert!(evidence_result.blockers.is_empty());
+        assert!(evidence_result.blockers_fail_closed());
+        assert!(!evidence_result.writes_receipt());
+        assert!(evidence_result.writes_punk_runs());
+        assert!(evidence_result.reads_filesystem());
+        assert!(evidence_result.touches_filesystem());
+        assert!(evidence_result.persists_operation_evidence());
+        assert!(!evidence_result.writes_event_log());
+        assert!(!evidence_result.invokes_adapter());
+        assert!(!evidence_result.invokes_policy_engine());
+        assert!(!evidence_result.invokes_gate());
+        assert!(!evidence_result.publishes());
+        assert!(!evidence_result.comments());
+        assert!(!evidence_result.creates_pull_request());
+        assert!(!evidence_result.writes_gate_decision());
+        assert!(!evidence_result.writes_proofpack());
+        assert!(!evidence_result.creates_acceptance_claim());
+        assert!(!evidence_result.can_claim_acceptance_by_itself());
+        assert!(!forbidden_runtime_exists);
+
+        fs::remove_dir_all(storage_root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_operation_evidence_write_slice_handles_idempotent_and_conflict_targets(
+    ) {
+        let mut persistence = ready_first_active_receipt_write_persistence_model();
+        persistence.operation_evidence_ref =
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl".to_owned();
+        let storage_root = unique_temp_path();
+        let receipt_relative =
+            std::path::Path::new(".punk/runs/pubpunk-publish-community-lab/receipt.json");
+        let evidence_relative = std::path::Path::new(
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl",
+        );
+        let evidence_path = storage_root.join(evidence_relative);
+        fs::create_dir_all(storage_root.join(".punk/runs/pubpunk-publish-community-lab"))
+            .expect("test parent directory should be created");
+        let receipt_result = write_module_side_effect_receipt_first_active_slice(
+            &persistence,
+            &receipt_bytes(),
+            &storage_root,
+            receipt_relative,
+            vec![],
+        );
+        let bytes = operation_evidence_bytes();
+
+        fs::write(&evidence_path, &bytes)
+            .expect("matching operation evidence should be pre-created");
+        let idempotent =
+            write_module_side_effect_receipt_writer_operation_evidence_first_active_slice(
+                &receipt_result,
+                &bytes,
+                &storage_root,
+                evidence_relative,
+                vec![],
+            );
+        assert_eq!(
+            idempotent.operation_evidence_outcome,
+            ModuleSideEffectReceiptWriterOutcome::Idempotent
+        );
+        assert!(idempotent.is_success());
+        assert!(idempotent.is_idempotent_existing_match());
+        assert_eq!(
+            idempotent.operation_evidence_record_status,
+            super::ModuleSideEffectReceiptWriterStepStatus::Skipped
+        );
+
+        fs::write(&evidence_path, b"{\"different\":true}\n")
+            .expect("different operation evidence should be written");
+        let conflict =
+            write_module_side_effect_receipt_writer_operation_evidence_first_active_slice(
+                &receipt_result,
+                &bytes,
+                &storage_root,
+                evidence_relative,
+                vec![],
+            );
+        assert_eq!(conflict.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            conflict.operation_evidence_outcome,
+            ModuleSideEffectReceiptWriterOutcome::Conflict
+        );
+        assert!(conflict.has_conflict());
+        assert!(conflict.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ExistingTargetDifferent
+        ));
+        assert!(conflict.blockers_fail_closed());
+
+        fs::remove_dir_all(storage_root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn side_effect_receipt_writer_operation_evidence_write_slice_blocks_unsafe_or_unready_inputs() {
+        let mut persistence = ready_first_active_receipt_write_persistence_model();
+        persistence.operation_evidence_ref =
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl".to_owned();
+        let storage_root = unique_temp_path();
+        fs::create_dir_all(storage_root.join(".punk/runs/pubpunk-publish-community-lab"))
+            .expect("test parent directory should be created");
+        let receipt_result = write_module_side_effect_receipt_first_active_slice(
+            &persistence,
+            &receipt_bytes(),
+            &storage_root,
+            std::path::Path::new(".punk/runs/pubpunk-publish-community-lab/receipt.json"),
+            vec![],
+        );
+
+        let empty = write_module_side_effect_receipt_writer_operation_evidence_first_active_slice(
+            &receipt_result,
+            b"",
+            &storage_root,
+            std::path::Path::new("operation-evidence/outside.jsonl"),
+            vec![],
+        );
+        assert_eq!(empty.status, ModuleHostStatus::Blocked);
+        assert_eq!(
+            empty.operation_evidence_outcome,
+            ModuleSideEffectReceiptWriterOutcome::PreflightFailed
+        );
+        assert!(empty.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::MissingOperationEvidenceBytes
+        ));
+        assert!(empty.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::OperationEvidenceTargetPathMismatch
+        ));
+        assert!(empty.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::TargetPathOutsidePunkRuns
+        ));
+        assert!(!storage_root
+            .join("operation-evidence/outside.jsonl")
+            .exists());
+
+        let blocked_receipt_result = write_module_side_effect_receipt_first_active_slice(
+            &persistence,
+            &receipt_bytes(),
+            &storage_root,
+            std::path::Path::new("receipts/outside.json"),
+            vec![],
+        );
+        let blocked_evidence =
+            write_module_side_effect_receipt_writer_operation_evidence_first_active_slice(
+                &blocked_receipt_result,
+                &operation_evidence_bytes(),
+                &storage_root,
+                std::path::Path::new(
+                    ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl",
+                ),
+                vec![],
+            );
+        assert!(blocked_evidence.has_blocker(
+            ModuleSideEffectReceiptWriterOperationEvidenceWriteSliceBlocker::ReceiptWriterResultNotSuccessful
+        ));
+        assert!(blocked_evidence.blockers_fail_closed());
 
         fs::remove_dir_all(storage_root).expect("test root should be removed");
     }
