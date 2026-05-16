@@ -26,12 +26,13 @@ The Module Host is the future Punk-owned boundary for invoking domain modules wh
 
 The Module Host runtime is not active core yet. It remains parked until Phase 6.
 
-The current code slice is narrower: `punk-module-host` defines a pure
-invocation envelope preflight and advisory assessment wrapper for module
-models. It does not load plugins, invoke modules, expose CLI behavior, read or
-write files, create receipts, mutate event logs, call APIs, read credentials,
-invoke adapters, publish, write gate decisions, write proofpacks, or claim
-acceptance.
+The current code slices are narrower: `punk-module-host` defines a pure
+invocation envelope preflight, advisory assessment wrapper, and local-only
+module receipt proposal model for module models. It can model future receipt
+field coverage, but it does not create or write receipts. It does not load
+plugins, invoke modules, expose CLI behavior, read or write files, mutate event
+logs, call APIs, read credentials, invoke adapters, publish, write gate
+decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -112,6 +113,12 @@ assessment summary. It validates that the invocation is explicitly scoped, that
 capabilities remain denied except pure assessment of provided input, and that
 the wrapped module output does not report side effects or authority-bearing
 behavior.
+
+The current receipt proposal model is pure/no-IO. It checks that the
+invocation and assessment envelope match, parses known expected receipt fields,
+and reports advisory coverage for a future host-approved module receipt. It
+does not write receipts, mutate event logs, invoke modules or adapters, call
+APIs, write gate decisions, write proofpacks, or claim acceptance.
 
 ## Wasm status
 

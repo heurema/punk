@@ -65,9 +65,9 @@ parked -> incubating -> active
 A module becomes active only after passing module conformance evals.
 
 The first module-host code slice is incubating only: `punk-module-host`
-defines a pure invocation envelope and advisory assessment wrapper. It is not a
-plugin runtime, module runner, CLI surface, receipt writer, event writer,
-adapter, or gate/proof authority.
+defines a pure invocation envelope, advisory assessment wrapper, and future
+receipt field proposal model. It is not a plugin runtime, module runner, CLI
+surface, receipt writer, event writer, adapter, or gate/proof authority.
 
 ## First module strategy
 
