@@ -218,7 +218,9 @@ For user projects, `punk init <project-id>` uses the compact `.punk/memory/` lay
 
 `.punk/events/flow.jsonl` is active only for the narrow local `punk-events` writer slice under an explicit initialized project root. It is append-only event evidence, not project truth and not decision authority.
 
-`.punk/runtime/`, `.punk/cache/`, `.punk/events/` beyond that narrow flow event log, `.punk/runs/`, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
+`.punk/runs/` is active only for the narrow local `punk-module-host` library write slices that write exact caller-provided receipt or operation-evidence bytes under explicit targets. It is not broad runtime storage, project truth, gate authority, proof authority, or external automation.
+
+`.punk/runtime/`, `.punk/cache/`, `.punk/events/` beyond that narrow flow event log, `.punk/evals/`, `.punk/contracts/`, `.punk/decisions/`, `.punk/proofs/`, `.punk/indexes/`, and `.punk/views/` remain inactive future runtime or derived state unless a later bounded goal promotes them.
 
 ## Level 0 manual Work Ledger
 

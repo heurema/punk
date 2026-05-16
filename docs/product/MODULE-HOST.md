@@ -33,20 +33,21 @@ module models, plus local-only policy gate and side-effect receipt writer
 preflight models, a side-effect receipt writer active behavior model, and a
 side-effect receipt writer file IO plan model, a target/storage policy
 readiness model, a host path observation model, and a concrete path/storage
-policy readiness model, an operation-evidence persistence readiness model, and
-a first active local receipt write slice.
+policy readiness model, an operation-evidence persistence readiness model, a
+first active local receipt write slice, and a first active local
+operation-evidence write slice for receipt-writer results.
 It
 can model future receipt field coverage, future external action preconditions,
 future policy evidence readiness, future receipt writer readiness, and future
 receipt writer outcomes, file IO plans, target/storage policy readiness, and
 host path observations, concrete path/storage policy readiness, and
 operation-evidence persistence readiness, and can write exact caller-provided
-side-effect receipt bytes to an explicit caller-provided `.punk/runs` target.
+side-effect receipt bytes or operation-evidence bytes to explicit
+caller-provided `.punk/runs` targets.
 It does not load plugins, invoke modules, expose CLI behavior, resolve or
-canonicalize host paths, persist operation evidence, mutate event logs, invoke
-policy engines, invoke gate, call APIs, read credentials, invoke adapters,
-publish, comment, create pull requests, write gate decisions, write
-proofpacks, or claim acceptance.
+canonicalize host paths, mutate event logs, invoke policy engines, invoke
+gate, call APIs, read credentials, invoke adapters, publish, comment, create
+pull requests, write gate decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
@@ -244,6 +245,18 @@ invoke policy engines, invoke gate, call APIs, read credentials, publish,
 comment, create pull requests, write gate decisions, write proofpacks, or claim
 acceptance. The smoke coverage writes only under an explicit temporary project
 root.
+
+The current side-effect receipt writer operation-evidence write slice is also
+local-only file IO. It consumes a successful first active receipt-writer result,
+requires exact caller-provided operation-evidence bytes, an explicit absolute
+storage root, and an explicit target-relative path under `.punk/runs/`, writes
+with create-new/no-overwrite behavior, treats identical existing bytes as
+idempotent, blocks different existing bytes as conflicts, and records only
+non-authoritative operation evidence. It does not create parent directories,
+mutate event logs, invoke adapters, invoke policy engines, invoke gate, call
+APIs, read credentials, publish, comment, create pull requests, write gate
+decisions, write proofpacks, or claim acceptance. The smoke coverage writes
+only under an explicit temporary project root.
 
 ## Wasm status
 
