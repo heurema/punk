@@ -5,6 +5,8 @@
 //! deterministic JSONL output. It also exposes the first bounded local
 //! `.punk/events` writer slice for explicit project roots only, without CLI
 //! inspect behavior, replay/gate/proof integration, or external side effects.
+//! A narrow receipt/evidence handoff helper can append safe local refs to that
+//! same event log, but it does not write receipts or evidence artifacts.
 
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Cursor, Write};
@@ -46,6 +48,7 @@ pub enum EventKind {
     TransitionDenied,
     GuardEvaluated,
     InspectRead,
+    ReceiptEvidenceHandoff,
     EventReplayStarted,
     EventReplayCompleted,
 }
@@ -59,6 +62,7 @@ impl EventKind {
             Self::TransitionDenied => "transition_denied",
             Self::GuardEvaluated => "guard_evaluated",
             Self::InspectRead => "inspect_read",
+            Self::ReceiptEvidenceHandoff => "receipt_evidence_handoff",
             Self::EventReplayStarted => "event_replay_started",
             Self::EventReplayCompleted => "event_replay_completed",
         }
@@ -395,7 +399,13 @@ pub enum LocalEventLogError {
     MissingPunkProjectMarker,
     EventDirectoryConflict,
     EventLogPathConflict,
-    UnsafeArtifactRef { artifact_ref: String },
+    UnsafeArtifactRef {
+        artifact_ref: String,
+    },
+    ReceiptEvidenceRefsNotSeparated {
+        receipt_ref: String,
+        operation_evidence_ref: String,
+    },
     Io(io::Error),
     EventLog(EventLogError),
 }
@@ -444,6 +454,55 @@ pub fn append_local_flow_event(
     log.append(draft).map_err(LocalEventLogError::EventLog)
 }
 
+pub fn receipt_evidence_handoff_event_draft(
+    source: EventSource,
+    correlation: EventCorrelation,
+    receipt_ref: impl Into<String>,
+    operation_evidence_ref: impl Into<String>,
+) -> Result<EventDraft, LocalEventLogError> {
+    let receipt_ref = receipt_ref.into();
+    let operation_evidence_ref = operation_evidence_ref.into();
+
+    validate_event_artifact_ref(&receipt_ref)?;
+    validate_event_artifact_ref(&operation_evidence_ref)?;
+
+    if receipt_ref == operation_evidence_ref {
+        return Err(LocalEventLogError::ReceiptEvidenceRefsNotSeparated {
+            receipt_ref,
+            operation_evidence_ref,
+        });
+    }
+
+    Ok(EventDraft::new(
+        EventPhase::Inspect,
+        EventKind::ReceiptEvidenceHandoff,
+        source,
+        correlation,
+        EventResult::new(EventStatus::Succeeded),
+    )
+    .with_artifacts(
+        EventArtifacts::new()
+            .with_ref(receipt_ref)
+            .with_ref(operation_evidence_ref),
+    ))
+}
+
+pub fn append_local_receipt_evidence_handoff_event(
+    project_root: impl AsRef<Path>,
+    source: EventSource,
+    correlation: EventCorrelation,
+    receipt_ref: impl Into<String>,
+    operation_evidence_ref: impl Into<String>,
+) -> Result<EventRecord, LocalEventLogError> {
+    let draft = receipt_evidence_handoff_event_draft(
+        source,
+        correlation,
+        receipt_ref,
+        operation_evidence_ref,
+    )?;
+    append_local_flow_event(project_root, draft)
+}
+
 fn validate_project_root(project_root: &Path) -> Result<(), LocalEventLogError> {
     if !project_root.is_absolute() {
         return Err(LocalEventLogError::RelativeProjectRoot);
@@ -470,11 +529,17 @@ fn validate_project_root(project_root: &Path) -> Result<(), LocalEventLogError> 
 
 fn validate_event_artifact_refs(draft: &EventDraft) -> Result<(), LocalEventLogError> {
     for artifact_ref in &draft.artifacts.refs {
-        if !is_safe_event_artifact_ref(artifact_ref) {
-            return Err(LocalEventLogError::UnsafeArtifactRef {
-                artifact_ref: artifact_ref.clone(),
-            });
-        }
+        validate_event_artifact_ref(artifact_ref)?;
+    }
+
+    Ok(())
+}
+
+fn validate_event_artifact_ref(artifact_ref: &str) -> Result<(), LocalEventLogError> {
+    if !is_safe_event_artifact_ref(artifact_ref) {
+        return Err(LocalEventLogError::UnsafeArtifactRef {
+            artifact_ref: artifact_ref.to_owned(),
+        });
     }
 
     Ok(())
@@ -669,10 +734,11 @@ fn push_json_string(output: &mut String, value: &str) {
 #[cfg(test)]
 mod tests {
     use super::{
-        append_local_flow_event, create_new_file_event_log, schema_fixture, AppendOnlyEventLog,
-        EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase, EventResult,
-        EventSource, EventStatus, FlowTransitionRef, LocalEventLogError, MemoryEventLog,
-        LOCAL_FLOW_EVENT_LOG_REF,
+        append_local_flow_event, append_local_receipt_evidence_handoff_event,
+        create_new_file_event_log, receipt_evidence_handoff_event_draft, schema_fixture,
+        AppendOnlyEventLog, EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase,
+        EventResult, EventSource, EventStatus, FlowTransitionRef, LocalEventLogError,
+        MemoryEventLog, LOCAL_FLOW_EVENT_LOG_REF,
     };
     use std::fs;
     use std::io::Cursor;
@@ -870,6 +936,90 @@ mod tests {
         assert!(!temp_path.join(".punk/runs").exists());
         assert!(!temp_path.join(".punk/decisions").exists());
         assert!(!temp_path.join(".punk/proofs").exists());
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
+    fn local_receipt_evidence_handoff_appends_safe_refs_without_writing_runtime_artifacts() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+
+        let record = append_local_receipt_evidence_handoff_event(
+            &temp_path,
+            EventSource::new("punk-events", "receipt_evidence_handoff"),
+            EventCorrelation::new("flow_local_001")
+                .with_goal_ref("work/goals/goal_add_local_receipt_evidence_event_handoff_v0_1.md"),
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json",
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl",
+        )
+        .expect("receipt/evidence handoff append should succeed");
+
+        assert_eq!(record.sequence, 1);
+        assert_eq!(record.kind, EventKind::ReceiptEvidenceHandoff);
+        assert_eq!(record.result.status, EventStatus::Succeeded);
+        assert_eq!(
+            record.artifacts.refs,
+            vec![
+                ".punk/runs/pubpunk-publish-community-lab/receipt.json".to_owned(),
+                ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl".to_owned(),
+            ]
+        );
+
+        let rendered = fs::read_to_string(temp_path.join(LOCAL_FLOW_EVENT_LOG_REF))
+            .expect("local event log should be readable");
+        assert_eq!(rendered.lines().count(), 1);
+        assert!(rendered.contains("\"kind\":\"receipt_evidence_handoff\""));
+        assert!(rendered.contains("\".punk/runs/pubpunk-publish-community-lab/receipt.json\""));
+        assert!(rendered
+            .contains("\".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl\""));
+        assert!(!temp_path.join(".punk/runs").exists());
+        assert!(!temp_path.join(".punk/decisions").exists());
+        assert!(!temp_path.join(".punk/proofs").exists());
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
+    fn receipt_evidence_handoff_rejects_unsafe_or_collapsed_refs_before_creating_store() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+
+        let unsafe_error = append_local_receipt_evidence_handoff_event(
+            &temp_path,
+            EventSource::new("punk-events", "receipt_evidence_handoff"),
+            EventCorrelation::new("flow_local_001"),
+            "/tmp/private-receipt.json",
+            ".punk/runs/pubpunk-publish-community-lab/operation-evidence.jsonl",
+        )
+        .expect_err("absolute receipt refs should be rejected");
+
+        assert!(matches!(
+            unsafe_error,
+            LocalEventLogError::UnsafeArtifactRef { artifact_ref }
+                if artifact_ref == "/tmp/private-receipt.json"
+        ));
+        assert!(!temp_path.join(".punk/events").exists());
+
+        let collapsed_error = receipt_evidence_handoff_event_draft(
+            EventSource::new("punk-events", "receipt_evidence_handoff"),
+            EventCorrelation::new("flow_local_001"),
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json",
+            ".punk/runs/pubpunk-publish-community-lab/receipt.json",
+        )
+        .expect_err("receipt and operation evidence refs should stay distinct");
+
+        assert!(matches!(
+            collapsed_error,
+            LocalEventLogError::ReceiptEvidenceRefsNotSeparated {
+                receipt_ref,
+                operation_evidence_ref,
+            } if receipt_ref == ".punk/runs/pubpunk-publish-community-lab/receipt.json"
+                && operation_evidence_ref == ".punk/runs/pubpunk-publish-community-lab/receipt.json"
+        ));
+        assert!(!temp_path.join(".punk/events").exists());
 
         fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
     }
