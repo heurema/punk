@@ -98,6 +98,7 @@ dependencies = [
  "punk-flow",
  "punk-gate",
  "punk-mod-pub",
+ "punk-module-host",
  "punk-project",
  "punk-proof",
 ]
@@ -121,6 +122,10 @@ version = "0.1.0"
 
 [[package]]
 name = "punk-mod-pub"
+version = "0.1.0"
+
+[[package]]
+name = "punk-module-host"
 version = "0.1.0"
 
 [[package]]

@@ -12,6 +12,7 @@ members = [
   "crates/punk-gate",
   "crates/punk-proof",
   "crates/punk-project",
+  "crates/punk-module-host",
   "crates/punk-mod-pub",
 ]
 
