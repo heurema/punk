@@ -88,6 +88,23 @@ IMPLEMENTED_PUNK_CLI_COMMANDS = {
     "punk eval run smoke",
     "punk eval run smoke --format json",
 }
+ALLOWED_CORE_PUBLISHING_COMMANDS = {
+    "punk publishing locate",
+    "punk publishing locate [--project-root <path>] [--json]",
+}
+PUBLISHING_NEXT_SLICE_PHRASES = (
+    "next code slice",
+    "next proposed publishing slice",
+    "recommended next code slice",
+)
+PUBLISHING_MODULE_WORK_TERMS = (
+    "inventory",
+    "draft",
+    "plan",
+    "reader",
+    "receipt",
+    "publish",
+)
 ACTIVE_CLI_SURFACE_PATHS = ("README.md", "docs/product/")
 ACTIVE_CLI_CONTEXT_PHRASES = (
     "active cli surface",
@@ -685,6 +702,67 @@ def check_active_cli_surface(rel_path: str, text: str, issues: list[dict[str, ob
             future_context_lines -= 1
 
 
+def check_publishing_module_boundary(rel_path: str, text: str, issues: list[dict[str, object]]) -> None:
+    """Fail docs/work handoffs that route PubPunk module work into core CLI."""
+
+    if not rel_path.endswith(".md"):
+        return
+    if not rel_path.startswith(("README.md", "docs/product/", "docs/modules/", "work/")):
+        return
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        lowered = stripped.lower()
+        guarded_negative = has_any_phrase(lowered, NEGATING_CLI_GUARD_PHRASES) or any(
+            phrase in lowered
+            for phrase in (
+                "must not",
+                "forbidden",
+                "withdrawn",
+                "do not extend",
+                "not active",
+                "not implemented",
+                "remains parked",
+            )
+        )
+
+        for command in extract_punk_cli_commands(stripped):
+            if not command.startswith("punk publishing "):
+                continue
+            if command in ALLOWED_CORE_PUBLISHING_COMMANDS:
+                continue
+            if guarded_negative:
+                continue
+            add_issue(
+                issues,
+                "failure",
+                "DOC_PUBLISHING_MODULE_CORE_SURFACE_OVERCLAIM",
+                rel_path,
+                f"Publishing module work is being described as a core Punk CLI command before PubPunk/module-host promotion: `{command}`.",
+                command=command,
+                allowed_core_publishing_commands=sorted(ALLOWED_CORE_PUBLISHING_COMMANDS),
+                line=stripped,
+            )
+
+        if not any(phrase in lowered for phrase in PUBLISHING_NEXT_SLICE_PHRASES):
+            continue
+        if "publishing" not in lowered:
+            continue
+        if "pubpunk" in lowered or "module" in lowered or guarded_negative:
+            continue
+        if not any(term in lowered for term in PUBLISHING_MODULE_WORK_TERMS):
+            continue
+        add_issue(
+            issues,
+            "failure",
+            "DOC_PUBLISHING_NEXT_SLICE_NEEDS_MODULE_BOUNDARY",
+            rel_path,
+            "Publishing follow-up work must be routed through PubPunk/module-host boundary, not described as a core CLI/code slice.",
+            line=stripped,
+        )
+
+
 def check_review_window(rel_path: str, text: str, today: date, issues: list[dict[str, object]]) -> None:
     frontmatter = parse_frontmatter(text)
     if not frontmatter:
@@ -950,8 +1028,10 @@ def main() -> int:
 
     canonical_docs_checked: list[str] = []
     for rel_path in changed_files:
+        doc_path = repo / rel_path
+        if doc_path.exists() and doc_path.is_file():
+            check_publishing_module_boundary(rel_path, load_text(doc_path), issues)
         if is_active_cli_surface_doc(rel_path):
-            doc_path = repo / rel_path
             if doc_path.exists() and doc_path.is_file():
                 check_active_cli_surface(rel_path, load_text(doc_path), issues)
         if not is_canonical_doc(rel_path):

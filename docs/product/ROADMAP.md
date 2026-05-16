@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-15
+updated_at: 2026-05-16
 review_after: 2026-07-20
 canonical_for:
   - roadmap-phase-gates
@@ -357,14 +357,15 @@ Goal: prove the architecture is not code-only.
 
 Initial scope:
 
-- local-only publishing workspace location
-- draft-only
+- local-only publishing workspace location through the existing transitional `punk publishing locate` resolver only
+- draft-only behavior after PubPunk/module-host activation, not as active-core `punk publishing *` expansion
 - no external publishing side effects
 - style/fact-check receipts
 
 Exit criteria:
 
 - local resolver cannot publish, call APIs, read credentials, open browsers, or create receipts
+- no additional active-core `punk publishing *` command is added before PubPunk/module-host promotion
 - PubPunk follows the same lifecycle
 - no hidden external side effects
 

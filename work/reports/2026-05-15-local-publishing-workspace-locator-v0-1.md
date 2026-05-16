@@ -5,7 +5,7 @@ status: accepted
 authority: canonical
 owner: vitaly
 created_at: 2026-05-15
-updated_at: 2026-05-15
+updated_at: 2026-05-16
 goal_ref: work/goals/goal_add_local_publishing_workspace_locator_v0_1.md
 ---
 
@@ -155,8 +155,15 @@ doc_impact:
 - Acceptance claim writer
 - DAO, token, or funding behavior
 
-## Next code slice
+## 2026-05-16 Architectural correction
 
-Add a local publishing plan/draft inventory reader that lists candidate posts
-and required receipt gaps from the located workspace without publishing,
-calling APIs, reading credentials, or creating receipts.
+The original report ended with an unsafe next-slice suggestion for a local
+publishing plan/draft inventory reader. That suggestion is withdrawn.
+
+Root cause: the locator patch created a transitional `punk publishing locate`
+core CLI exception and then described the next publishing step as another code
+slice without saying it must move behind PubPunk/module-host boundaries.
+
+Corrected next step: define the PubPunk/module-host boundary for publishing
+inventory, drafting, planning, receipt creation, and future publish behavior
+before adding any more active-core publishing subcommands.

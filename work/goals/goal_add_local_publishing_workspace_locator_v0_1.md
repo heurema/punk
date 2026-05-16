@@ -7,7 +7,7 @@ module: "public-narrative"
 priority: P2
 authority: canonical
 created_at: 2026-05-15
-updated_at: 2026-05-15
+updated_at: 2026-05-16
 selected_at: 2026-05-15
 started_at: 2026-05-15
 completed_at: 2026-05-15
@@ -126,3 +126,13 @@ proofpacks, or make external surfaces project truth.
 
 Done with code, smoke coverage, CLI tests, docs/status, and work-report
 evidence.
+
+## 2026-05-16 Architectural correction
+
+The locator remains accepted as a transitional local resolver, but it must not
+be treated as precedent for putting PubPunk behavior into active core.
+
+The previous follow-up suggestion for a core publishing inventory reader is
+withdrawn. Publishing inventory, drafting, planning, receipt creation, and
+publish behavior belong behind a future PubPunk/module-host boundary, not in
+`punk-project`, `punk-cli`, or additional active-core publishing subcommands.

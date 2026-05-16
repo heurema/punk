@@ -43,7 +43,7 @@ Everything else in product docs should be read as target architecture, phase-gat
 
 Runtime automation has one narrow active library slice: `punk-events` can append flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. This is local-only event evidence, not a CLI transition runner, not external automation, and not decision authority.
 
-Publishing has one narrow active resolver surface: `punk publishing locate` reads `.punk/publishing.toml` plus local-only `.punk/publishing.local.toml`, validates the logical workspace binding, and reports the external local publishing workspace in human or JSON form. It creates no files, publishes nothing, opens no browser, calls no API, reads no credentials, and does not activate PubPunk automation.
+Publishing has one narrow active resolver surface: `punk publishing locate` reads `.punk/publishing.toml` plus local-only `.punk/publishing.local.toml`, validates the logical workspace binding, and reports the external local publishing workspace in human or JSON form. It creates no files, publishes nothing, opens no browser, calls no API, reads no credentials, and does not activate PubPunk automation. Do not extend this core CLI surface with inventory, drafting, planning, receipt, or publish behavior; that belongs behind a future PubPunk/module-host boundary.
 
 `punk init <project-id>` is the default greenfield Dogfooding Level 0 compact project-memory scaffold.
 

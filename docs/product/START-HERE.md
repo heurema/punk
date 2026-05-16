@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-15
+updated_at: 2026-05-16
 review_after: 2026-07-20
 canonical_for:
   - product-entry-path
@@ -100,6 +100,7 @@ It creates empty advisory reconstruction placeholders under `.punk/memory/recons
 Instruction page-index behavior is active only as a deterministic advisory model and source-page scaffold. `.punk/views/instructions/page-index.json` is named as a future rebuildable view path, but `punk init` does not create `.punk/views/` or generated instruction views.
 The first Runtime Automation Spine slice is active only as a `punk-events` library writer that appends flow event drafts to `.punk/events/flow.jsonl` under an explicit initialized project root. It is local-only event evidence, not decision authority and not external automation.
 The first publishing-related CLI slice is active only as `punk publishing locate`. It reads `.punk/publishing.toml` and local-only `.punk/publishing.local.toml`, validates the logical workspace binding, and reports the external local publishing workspace. It does not write files, publish, open browsers, call APIs, read credentials, activate adapters, or run PubPunk automation.
+Do not add inventory, drafting, planning, receipt, or publish behavior to active core or `punk-project` as a follow-up to this locator. That work belongs behind a future PubPunk/module-host boundary after the module host and side-effect policy are deliberately selected.
 The `.punk/runtime/` tree and runtime evidence directories beyond that narrow event-log slice remain inactive; init does not activate flow persistence, contracts, run receipts, gate artifacts, proofpacks, or acceptance claims.
 Brownfield reconstruction and grayfield reconciliation remain future modes.
 

@@ -1,3 +1,21 @@
+---
+id: docs_product_module_host
+kind: product-doc
+status: active
+authority: canonical
+owner: vitaly
+created_at: 2026-04-19
+updated_at: 2026-05-16
+review_after: 2026-07-20
+related_docs:
+  - docs/product/ARCHITECTURE.md
+  - docs/product/MODULES.md
+related_adrs:
+  - docs/adr/ADR-0010-defer-wasm-plugin-host.md
+supersedes: []
+superseded_by: null
+---
+
 # Module Host
 
 Status: parked
@@ -13,6 +31,11 @@ The Module Host is not active core yet. It is parked until Phase 6.
 A module is a Punk lifecycle participant.
 
 A plugin is only a possible future packaging or execution mechanism for a module.
+
+Domain module behavior must not be smuggled into active core as a convenience
+CLI command. If a future capability is module-owned, core may expose it only
+after the Module Host boundary, capability policy, receipts, conformance evals,
+and gate/proof handoff are deliberately promoted.
 
 Commands, modules, plugins, and adapters are mechanisms over the deeper primitives:
 

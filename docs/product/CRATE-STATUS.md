@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-15
+updated_at: 2026-05-16
 review_after: 2026-07-20
 canonical_for:
   - crate-status
@@ -98,6 +98,7 @@ It does not scan the repository, reconstruct knowledge, generate summaries, gene
 `punk publishing locate [--project-root <path>] [--json]` is current CLI behavior only for resolving a local publishing workspace binding.
 It reads `.punk/publishing.toml` and local-only `.punk/publishing.local.toml`, validates that the logical workspace refs match, expands an absolute or home-relative local workspace pointer, and reports located/blocked status.
 It does not write files, publish, open browsers, call APIs, read credentials, activate adapters, make external platforms source of truth, create receipts, or run PubPunk automation.
+This locator is a transitional exception, not a precedent for putting PubPunk behavior into `punk-project`, `punk-cli`, or active core. Publishing inventory, drafting, planning, receipt creation, and external publication remain module work behind future PubPunk/module-host promotion.
 
 ## Research intake crate stance
 
