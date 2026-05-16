@@ -69,10 +69,12 @@ defines a pure invocation envelope, advisory assessment wrapper, and future
 receipt field, side-effect request, policy gate preflight, and side-effect
 receipt writer preflight, active behavior, file IO plan, target/storage policy
 readiness, host path observation, and concrete path/storage policy readiness
-and operation-evidence persistence readiness models. It is not a plugin
-runtime, module runner, CLI surface, receipt writer, operation evidence writer,
-event writer, host path resolver, policy engine invoker, gate invoker, adapter,
-publisher, PR creator, or gate/proof authority.
+and operation-evidence persistence readiness models, plus the first local-only
+side-effect receipt writer write slice for exact caller-provided bytes under an
+explicit `.punk/runs` target. It is not a plugin runtime, module runner, CLI
+surface, operation evidence writer, event writer, host path resolver, policy
+engine invoker, gate invoker, adapter, publisher, PR creator, or gate/proof
+authority.
 
 ## First module strategy
 
