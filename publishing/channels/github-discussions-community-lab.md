@@ -1,20 +1,23 @@
 ---
 id: channel_github_discussions_community_lab
 name: "GitHub Discussions Community Lab"
-status: planned
+status: active
 authority: advisory
 owner: vitaly
 created_at: 2026-05-09
-updated_at: 2026-05-09
+updated_at: 2026-05-18
 channel_type: community-visor
 surface: GitHub Discussions
-external_url: null
+external_url: https://github.com/heurema/punk/discussions/47
 related_goals:
   - work/goals/goal_prepare_github_discussions_community_lab_cycle_0_v0_1.md
+  - work/goals/goal_reconcile_github_discussions_publication_metadata_v0_1.md
 related_ops:
   - knowledge/ops/2026-05-09-community-lab-cycle-0-github-discussions-runbook.md
 related_publication_drafts:
   - publishing/posts/2026-05-09-community-lab-cycle-0-github-discussions-start-here.md
+publication_refs:
+  - publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md
 supersedes: []
 superseded_by: null
 ---
@@ -27,9 +30,12 @@ GitHub Discussions.
 
 ## Status
 
-Planned/manual.
+Active/manual.
 
-Nothing has been published yet.
+The Community Lab Cycle 0 Start Here discussion was published manually.
+
+External URL:
+https://github.com/heurema/punk/discussions/47
 
 ## Purpose
 
@@ -52,15 +58,12 @@ Promotion requires maintainer review or a future gate.
 
 ## Publication receipt
 
-A publication receipt is required after manual launch.
+The manual launch receipt is recorded at:
 
-Expected receipt path after posting:
+`publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md`
 
-```text
-publishing/publications/YYYY-MM-DD-community-lab-cycle-0-github-discussions.md
-```
-
-Do not create the receipt before the post exists publicly.
+This receipt records the publication fact. It does not make GitHub Discussions
+project truth, roadmap authority, or acceptance authority.
 
 ## Moderation / privacy boundaries
 

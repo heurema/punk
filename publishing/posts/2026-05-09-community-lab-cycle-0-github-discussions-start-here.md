@@ -1,39 +1,43 @@
 ---
 id: post_2026_05_09_community_lab_cycle_0_github_discussions_start_here
 title: "Punk Community Lab Cycle 0: failures, cases, sources, ideas, and bounded contribution intent"
-status: draft
+status: published
 authority: advisory
 owner: vitaly
 created_at: 2026-05-09
-updated_at: 2026-05-09
+updated_at: 2026-05-18
 story_ref: null
 target_channels:
   - github-discussions-community-lab
-publication_refs: []
+publication_refs:
+  - publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md
 metrics_refs: []
 related_goals:
   - work/goals/goal_prepare_github_discussions_community_lab_cycle_0_v0_1.md
+  - work/goals/goal_reconcile_github_discussions_publication_metadata_v0_1.md
 related_knowledge:
   - knowledge/research/2026-05-09-community-driven-development-governance.md
   - knowledge/ops/2026-05-09-community-lab-cycle-0-launch-pack.md
   - knowledge/ops/2026-05-09-community-lab-cycle-0-github-discussions-runbook.md
 content_type: github_discussions_start_here
-published: false
-publication_receipt: null
+published: true
+publication_receipt: publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md
 ---
 
-# Punk Community Lab Cycle 0 GitHub Discussions Start Here Draft
+# Punk Community Lab Cycle 0 GitHub Discussions Start Here
 
-## Draft status
+## Publication status
 
-Status: draft.
+Status: published manually.
 
-Published: no.
+Published: yes.
 
-Publication receipt: none.
+Publication receipt:
+`publishing/publications/2026-05-13-community-lab-cycle-0-github-discussions.md`
 
-This file is ready-to-copy discussion copy for manual publication. It is not a
-publication receipt and does not prove anything was posted.
+This file preserves the source copy for the manual GitHub Discussions launch.
+It is not a publication receipt; the linked receipt is the publication
+evidence.
 
 ## Discussion title
 
@@ -126,14 +130,15 @@ run another cycle.
 - Agent contribution
 ```
 
-## Publication plan
+## Publication record
 
-Post manually in GitHub Discussions only after the maintainer confirms the
-repository surface and category.
+This post was published manually in GitHub Discussions as Community Lab Cycle 0.
 
-After posting, create a publication receipt in `publishing/publications/`.
+External URL:
+https://github.com/heurema/punk/discussions/47
 
-Do not create the receipt before publication.
+The receipt records the publication boundary. Discussion replies remain
+raw/advisory signals until manually summarized or routed into repo artifacts.
 
 ## Fact/claim checklist
 
@@ -146,4 +151,5 @@ Do not create the receipt before publication.
 - [x] Warns against secrets, private logs, customer data, sensitive code, and
   raw prompts.
 - [x] States no bot is currently active.
-- [x] States this is not yet published and no receipt exists.
+- [x] Links the manual publication receipt for the published GitHub
+  Discussions copy.
