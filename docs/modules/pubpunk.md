@@ -35,7 +35,7 @@ PubPunk is not active as runtime, CLI, adapter, or publisher.
 
 There is no automation in the new `punk` core yet.
 
-The first incubating PubPunk crate, `punk-mod-pub`, can assess explicit
+The first incubating PubPunk crate, `punk-mod-pubpunk`, can assess explicit
 caller-provided publishing inventory metadata and receipt gaps as advisory
 module evidence only. It does not read files, write receipts, publish, call
 external APIs, read credentials, invoke adapters, write gate decisions, write
@@ -65,6 +65,18 @@ proof refs, and source-of-truth boundaries.
 PubPunk may eventually inspect publishing workspace metadata and produce
 module receipts and assessments. Those outputs are advisory evidence until the
 host validates them and `gate` writes any final decision.
+
+## Workspace and instruction packet
+
+The first workspace/instruction packet is
+`docs/modules/pubpunk-workspace-instructions.md`.
+
+It selects split explicit refs: repo-native `publishing/` artifacts for Punk's
+own public narrative, plus explicit external workspace refs for
+project-specific publishing operations.
+
+This packet does not grant filesystem reads, create workspaces, publish,
+collect metrics, write receipts, invoke adapters, or activate runtime behavior.
 
 ## Future module inputs
 

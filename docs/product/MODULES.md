@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-16
+updated_at: 2026-05-19
 review_after: 2026-07-20
 canonical_for:
   - module-boundaries
@@ -38,7 +38,14 @@ Examples:
 
 ## Module rule
 
-A module can specialize work. It cannot own truth.
+Use this section to keep the module rule narrow: a module can specialize work.
+It cannot own truth.
+
+New module work must follow the Module Authoring Baseline in
+`docs/product/MODULE-AUTHORING.md` before implementation. The baseline defines
+shared module anatomy, workspace policy, instruction policy, Deliberation Budget
+usage, conformance packet expectations, and the DevPunk/PubPunk sequencing
+boundary without activating Module Host runtime.
 
 Modules may:
 
@@ -82,11 +89,13 @@ Do not activate DevPunk or PubPunk until the core flow, eval, contract, gate, an
 
 ## PubPunk
 
-PubPunk is the future content-engineering module.
+Use this section as the current PubPunk status checkpoint.
+
+PubPunk remains the future content-engineering module.
 
 Its runtime, CLI, adapters, and publishing behavior are parked for now.
 
-The first code slice is incubating only: `punk-mod-pub` provides a
+The first code slice is incubating only: `punk-mod-pubpunk` provides a
 side-effect-free inventory assessment model over caller-provided publishing
 metadata. It is advisory evidence, not a publisher, not a receipt writer, not
 Module Host activation, and not project truth.
@@ -111,7 +120,8 @@ It should not create a second content truth store.
 
 ## Plugin packaging rule
 
-A plugin is not a Punk lifecycle primitive.
+Use plugin packaging only as a future packaging or execution mechanism, not as
+a Punk lifecycle primitive.
 
 If plugins are introduced later, a plugin is only a packaging or execution mechanism for a module. The module still uses the universal lifecycle:
 

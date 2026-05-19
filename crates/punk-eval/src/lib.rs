@@ -49,7 +49,7 @@ use punk_gate::{
     GateBoundaryNote, GateContractRef, GateCreatedAt, GateDecision, GateDecisionId,
     GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
 };
-use punk_mod_pub::{
+use punk_mod_pubpunk::{
     assess_pubpunk_inventory, PubPunkAssessmentAuthority, PubPunkAssessmentStatus,
     PubPunkCapabilityGrant, PubPunkInventoryInput, PubPunkInventoryItemInput,
     PubPunkInventoryItemKind, PubPunkInventoryItemStatus,

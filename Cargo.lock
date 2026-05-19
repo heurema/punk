@@ -97,7 +97,7 @@ dependencies = [
  "punk-events",
  "punk-flow",
  "punk-gate",
- "punk-mod-pub",
+ "punk-mod-pubpunk",
  "punk-module-host",
  "punk-project",
  "punk-proof",
@@ -121,7 +121,7 @@ name = "punk-gate"
 version = "0.1.0"
 
 [[package]]
-name = "punk-mod-pub"
+name = "punk-mod-pubpunk"
 version = "0.1.0"
 
 [[package]]

@@ -47,7 +47,7 @@ Module Host has incubating library slices: `punk-module-host` can preflight a pu
 
 Publishing has one narrow active resolver surface: `punk publishing locate` reads `.punk/publishing.toml` plus local-only `.punk/publishing.local.toml`, validates the logical workspace binding, and reports the external local publishing workspace in human or JSON form. It creates no files, publishes nothing, opens no browser, calls no API, reads no credentials, and does not activate PubPunk automation. Do not extend this core CLI surface with inventory, drafting, planning, receipt, or publish behavior; that belongs behind a future PubPunk/module-host boundary.
 
-PubPunk has one incubating library slice: `punk-mod-pub` can assess caller-provided publishing inventory metadata and receipt gaps as advisory module evidence. It has no public CLI, performs no filesystem IO, creates no publication receipts, publishes nothing, invokes no adapters, writes no gate/proof authority, and does not make publishing workspaces project truth.
+PubPunk has one incubating library slice: `punk-mod-pubpunk` can assess caller-provided publishing inventory metadata and receipt gaps as advisory module evidence. It has no public CLI, performs no filesystem IO, creates no publication receipts, publishes nothing, invokes no adapters, writes no gate/proof authority, and does not make publishing workspaces project truth.
 
 `punk init <project-id>` is the default greenfield Dogfooding Level 0 compact project-memory scaffold.
 
