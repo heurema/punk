@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-20
-updated_at: 2026-05-18
+updated_at: 2026-05-19
 review_after: 2026-07-20
 canonical_for:
   - documentation-reading-order
@@ -76,6 +76,7 @@ For product and architecture work, read in this order:
 | Architecture boundaries | `docs/product/ARCHITECTURE.md` | `docs/adr/`, `docs/modules/`, `docs/adapters/` | Defines planes, boundaries, and truth ownership. |
 | Contract Schema Blueprint | `docs/product/CONTRACT-SCHEMA.md` | `docs/product/ARCHITECTURE.md`, `docs/product/ROADMAP.md`, `docs/product/CRATE-STATUS.md` | Defines the full target Contract shape and active/deferred/parked/future split; does not activate runtime storage, CLI, Writer, gate writers, or proof writers. |
 | Contract Context Pack boundary | `docs/product/ARCHITECTURE.md` | `docs/product/CONTRACT-TRACKER.md`, `docs/product/PROJECT-MEMORY.md`, `docs/adr/ADR-0016-contract-context-pack-boundary.md`, `evals/specs/context-pack-boundary.v0.1.md` | Defines context selection as advisory contract-linked evidence, not project truth or a lifecycle phase. |
+| Plot Intake boundary proposal | `docs/product/PLOT-INTAKE.md` | `docs/product/ARCHITECTURE.md`, `docs/product/CONTRACT-SCHEMA.md`, `knowledge/research/2026-05-19-plot-intake-boundary-prior-art.md`, `evals/specs/plot-intake-boundary.v0.1.md` | Draft upstream boundary inside `plot`; advisory contract-draft readiness, no runtime/CLI/module authority. |
 | Runner aid boundary | `docs/product/RUNNER-AIDS.md` | `docs/product/ARCHITECTURE.md`, `docs/product/PROJECT-MEMORY.md`, `knowledge/research/2026-05-18-gstack-workflow-prior-art.md`, `evals/specs/runner-aid-boundary.v0.1.md` | Advisory executor support; no runtime or acceptance authority. |
 | Review assessment boundary | `docs/product/REVIEW-ASSESSMENT.md` | `docs/product/ARCHITECTURE.md`, `docs/product/EVAL-PLANE.md`, `docs/product/RUNNER-AIDS.md`, `evals/specs/review-assessment-receipt.v0.1.md` | Advisory review evidence; only `gate` writes final decisions. |
 | Instruction source boundary | `docs/product/INSTRUCTION-SOURCES.md` | `docs/product/PROJECT-MEMORY.md`, `docs/product/ARCHITECTURE.md`, `docs/product/RUNNER-AIDS.md`, `evals/specs/instruction-source-freshness.v0.1.md` | Advisory source pages and generated views; no hidden project truth. |
