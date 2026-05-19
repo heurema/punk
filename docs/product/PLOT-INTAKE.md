@@ -93,34 +93,20 @@ gate decision != proofpack
 proofpack != acceptance authority
 ```
 
-## Minimal output shape
+## Intake artifact alignment
 
-A Plot Intake assessment should be able to represent:
+This section keeps Plot Intake aligned with the existing owners of contract,
+module, and project-memory concepts instead of redefining their schemas.
 
-- raw request reference;
-- intent candidate;
-- problem or business intent;
-- assumptions;
-- unknowns;
-- contradictions;
-- clarification questions;
-- smallest useful slice;
-- scope include;
-- scope exclude;
-- forbidden effects;
-- evidence plan;
-- receipt requirements candidate;
-- eval plan candidate;
-- routing recommendation;
-- routing alternatives;
-- routing rationale;
-- routing confidence;
-- contract draft readiness;
-- project-memory refs;
-- research refs;
-- doc impact candidate;
-- knowledge impact candidate;
-- open risks.
+Before contract drafting, a Plot Intake assessment may surface:
+
+| Area | Plot Intake may surface |
+|---|---|
+| Request and intent | Raw request reference, intent candidate, problem or business intent, assumptions, unknowns, contradictions, clarification questions. |
+| Scope and effects | Smallest useful slice, scope include, scope exclude, forbidden effects. |
+| Evidence and readiness | Evidence plan, receipt requirements candidate, eval plan candidate, contract draft readiness, open risks. |
+| Advisory routing | Routing recommendation, routing alternatives, routing rationale, routing confidence. |
+| Project memory | Project-memory refs, research refs, doc impact candidate, knowledge impact candidate. |
 
 ## Intake lenses
 
@@ -138,11 +124,12 @@ Plot Intake can use advisory lenses:
 
 These lenses are advisory. They do not decide.
 
-## Routing boundary
+## Advisory routing guidance
 
-A routing recommendation must be explainable and non-authoritative.
+When Plot Intake recommends a later domain lane, keep the recommendation
+explainable and non-authoritative.
 
-It should include:
+The routing note should include:
 
 - recommended route;
 - alternative routes considered;
