@@ -151,9 +151,53 @@ deliberation_packet:
     unresolved_questions:
       - "Final artifact name remains open."
     recommended_next_work: work/goals/goal_fixture_next.md
+  cost_accounting:
+    status: estimated
+    total_tokens: null
+    accepted_tokens: null
+    rejected_tokens: null
+    discarded_tokens: null
+    unknown_tokens: null
+    pass_costs:
+      - pass_id: pass_001
+        token_source: unavailable
+        input_tokens: null
+        output_tokens: null
+        total_tokens: null
+        outcome: partly_selected
+        outcome_note: "Contributed to the selected boundary direction."
+      - pass_id: pass_002
+        token_source: unavailable
+        input_tokens: null
+        output_tokens: null
+        total_tokens: null
+        outcome: rejected
+        outcome_note: "Useful disagreement, but final synthesis rejected this path."
   downstream_refs: []
   non_authority: true
 ```
+
+### DELIBERATION-013: token source is explicit
+
+A deliberation packet with cost accounting must mark token counts as
+provider-reported, estimated, or unavailable. Missing usage must not be recorded
+as zero.
+
+### DELIBERATION-014: accepted and rejected spend are separated
+
+When token accounting is available, a packet should separate accepted, rejected,
+discarded, and unknown token spend so rejected solution exploration remains
+visible.
+
+### DELIBERATION-015: cost accounting cannot expose hidden reasoning
+
+Cost accounting must not require chain-of-thought, private scratchpads, hidden
+model state, provider-local memory, or sensitive prompt content.
+
+### DELIBERATION-016: cost accounting is not authority
+
+High token spend, low token spend, accepted token spend, or discarded token
+spend must not be treated as proof of correctness, acceptance, or value.
 
 ## Non-goals
 

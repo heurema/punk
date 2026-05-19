@@ -13,6 +13,7 @@ canonical_for:
   - cross-model-advisory-pass-boundary
   - synthesis-vs-decision-boundary
   - token-spend-policy-boundary
+  - deliberation-cost-accounting-boundary
 related_docs:
   - docs/product/PUNK-LAWS.md
   - docs/product/ARCHITECTURE.md
@@ -125,6 +126,21 @@ deliberation_packet:
     rejected_points: []
     unresolved_questions: []
     recommended_next_work: null
+  cost_accounting:
+    status: estimated
+    total_tokens: null
+    accepted_tokens: null
+    rejected_tokens: null
+    discarded_tokens: null
+    unknown_tokens: null
+    pass_costs:
+      - pass_id: pass_codex
+        token_source: provider_reported | estimated | unavailable
+        input_tokens: null
+        output_tokens: null
+        total_tokens: null
+        outcome: selected | partly_selected | rejected | discarded | unknown
+        outcome_note: "Used for synthesis example."
   downstream_refs: []
   non_authority: true
 ```
@@ -135,6 +151,32 @@ At Dogfooding Level 0, a deliberation packet may live inline in a work report or
 as a separate repo-tracked report artifact. Do not create a new
 `work/deliberations/` tree, runtime store, or packet writer until a later
 bounded goal selects that storage shape.
+
+## Cost accounting
+
+Use cost accounting to record what the deliberation consumed and whether that
+spend affected the final synthesis.
+
+At Dogfooding Level 0, token counts may be provider-reported, manually
+estimated, or unavailable. Do not infer hidden chain-of-thought tokens, do not
+record private scratchpads, and do not treat missing token numbers as fake
+zero-cost work.
+
+Cost categories:
+
+| Category | Meaning |
+|---|---|
+| `accepted_tokens` | Tokens from passes whose output materially shaped selected synthesis points. |
+| `rejected_tokens` | Tokens from passes whose proposed solution was considered and explicitly rejected. |
+| `discarded_tokens` | Tokens spent on unusable, duplicate, off-scope, failed, or abandoned passes. |
+| `unknown_tokens` | Tokens spent where usage was not available or could not be estimated honestly. |
+
+These categories are accounting labels. They are not quality labels and do not
+create authority.
+
+When exact counts are unavailable, record `token_source: unavailable` and keep
+the qualitative outcome. A later implementation may add deterministic token
+collection, but this document only defines the reporting boundary.
 
 ## Independent pass guidance
 
@@ -170,6 +212,16 @@ Deliberation should preserve:
 
 Token spend is not proof of quality. It is only evidence that additional review
 attention was spent.
+
+Decision-cost records should preserve:
+
+- total known token spend;
+- token source, such as provider-reported, estimated, or unavailable;
+- pass-level outcome, such as selected, partly selected, rejected, discarded,
+  or unknown;
+- rejected or discarded rationale when relevant;
+- whether a useful result was produced;
+- what follow-up was avoided or created by the spend.
 
 The `standard` default for module work is guidance until packet storage,
 validators, and review flow are explicitly promoted. It must not freeze module
@@ -245,6 +297,7 @@ Deliberation Budget must not:
 Documented now:
 
 - token/time budget classes;
+- token-cost accounting boundary;
 - multi-perspective advisory pass boundary;
 - tension-map and synthesis requirements;
 - relationship to Plot Intake, Review Assessment, Runner Aids, modules, and
@@ -257,7 +310,7 @@ Not active now:
 - automatic agent teams;
 - prompt generation;
 - deliberation packet writer;
-- token accounting;
+- automatic token accounting;
 - CLI behavior;
 - module activation;
 - publishing behavior;

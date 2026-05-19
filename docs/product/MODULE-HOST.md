@@ -5,11 +5,12 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-16
+updated_at: 2026-05-19
 review_after: 2026-07-20
 related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/MODULES.md
+  - docs/product/MODULE-HOST-CONTRACT.md
 related_adrs:
   - docs/adr/ADR-0010-defer-wasm-plugin-host.md
 supersedes: []
@@ -51,7 +52,7 @@ pull requests, write gate decisions, write proofpacks, or claim acceptance.
 
 ## Boundary rule
 
-A module is a Punk lifecycle participant.
+Use this rule: a module is a Punk lifecycle participant.
 
 A plugin is only a possible future packaging or execution mechanism for a module.
 
@@ -70,7 +71,7 @@ Goal -> Contract -> Run -> Receipt -> ModuleAssessment -> DecisionObject -> Proo
 
 ## Runtime-agnostic rule
 
-The Module Host must stay runtime-agnostic until Phase 6 research chooses otherwise.
+Keep the Module Host runtime-agnostic until Phase 6 research chooses otherwise.
 
 Future implementation candidates include:
 
@@ -81,9 +82,20 @@ Future implementation candidates include:
 
 No plugin runtime candidate is selected by this document.
 
+## Contract stub
+
+Use `docs/product/MODULE-HOST-CONTRACT.md` as the docs/eval contract target for
+future module skeleton work while Module Host runtime remains parked.
+
+The stub defines host-scoped input bundles, deny-by-default capability
+envelopes, advisory outputs, side-effect request proposals, and the event-log
+boundary. It does not activate module loading, invocation, runtime
+capabilities, event writing, adapter invocation, publishing, metrics
+collection, or gate/proof behavior.
+
 ## Future host responsibilities
 
-The future runtime host owns the boundary:
+Use future host responsibilities to keep the host boundary explicit:
 
 - load a module manifest
 - validate declared hooks
@@ -114,7 +126,7 @@ Granting a capability later must be explicit, scoped, receipted, and covered by 
 
 ## Receipt and assessment rule
 
-A module or plugin may emit:
+Use this rule: a module or plugin may emit:
 
 - module receipt
 - module assessment

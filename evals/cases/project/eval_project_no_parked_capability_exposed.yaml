@@ -18,7 +18,7 @@ pre_state:
     - punk-module-host
     - punk-adapters
     - punk-mod-dev
-    - punk-mod-pub
+    - punk-mod-pubpunk
     - MCP integration
 expected_result:
   exit_code: 0
