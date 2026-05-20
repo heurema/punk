@@ -19,6 +19,7 @@ related_evals:
   - evals/specs/pubpunk-inventory-reader.v0.1.md
   - evals/specs/pubpunk-inventory-input-packet.v0.1.md
   - evals/specs/pubpunk-host-handoff.v0.1.md
+  - evals/specs/pubpunk-channel-connector-profile-resolution.v0.1.md
   - evals/specs/pubpunk-publish-request-packet.v0.1.md
   - evals/specs/pubpunk-publish-receipt-preflight.v0.1.md
   - evals/specs/pubpunk-publish-receipt-write-handoff.v0.1.md
@@ -110,6 +111,16 @@ model-chain check only. It does not invoke a module, load plugins, initialize a
 workspace, write receipts, publish, collect metrics, invoke adapters, or activate
 Module Host runtime.
 
+The current channel connector profile resolution packet can then select an API,
+browser, or manual connector path from explicit inventory assessment,
+candidate, channel, connector profile, API availability, browser policy,
+manual handoff, credential signal, payload, instruction, and allowed-source
+refs. It selects API first when available, browser automation only when API is
+unavailable and browser policy allows it, and manual handoff when automated
+paths are unavailable but manual fallback is allowed. It does not call APIs,
+open browsers, read credentials, invoke adapters, publish, collect metrics,
+write receipts, or activate PubPunk or Module Host runtime.
+
 The current publish request packet can then carry explicit candidate, channel,
 policy, adapter, payload, receipt, and host side-effect request refs into the
 existing Module Host side-effect request proposal and policy-gate preflight
@@ -165,6 +176,8 @@ Default grants:
   metadata refs to the reader model.
 - `assess_provided_inventory`, when a ready reader or work order passes an
   explicit input packet.
+- `resolve_connector_profile`, when a ready connector profile resolution packet
+  is selecting API, browser, or manual strategy from explicit channel metadata.
 - `request_external_publish`, only when a ready publish request packet is
   preparing explicit refs for future host side-effect policy or a ready publish
   receipt preflight packet is preparing explicit refs for future receipt-writer
@@ -200,7 +213,7 @@ Default denies:
 A later slice may request scoped filesystem read over explicit publishing refs.
 That request is not a grant in this packet.
 
-## Future channel connector guidance
+## Channel connector guidance
 
 Projects may post to several channels. PubPunk should keep each target channel
 separate and require an explicit connector profile before any automated
@@ -215,8 +228,10 @@ Connector selection order:
 4. Keep manual handoff available when automation is unsafe, blocked by platform
    policy, or not mature enough.
 
-This is future guidance only. It does not grant network, browser, credentials,
-adapter invocation, external publishing, metrics collection, or receipt writing.
+The current connector profile resolution packet turns this guidance into
+side-effect-free readiness evidence only. It does not grant network, browser,
+credentials, adapter invocation, external publishing, metrics collection, or
+receipt writing.
 
 ## Inventory reader checks
 
@@ -292,6 +307,35 @@ For the current code slice, the input packet blocks:
 These checks are advisory readiness checks only. They do not read the
 referenced files, create workspaces, collect token metrics, publish, or write
 receipts.
+
+## Connector profile resolution checks
+
+For the current code slice, the connector profile resolution packet blocks:
+
+- non-canonical module id;
+- workspace policy other than `split_explicit_refs`;
+- missing safe publishing workspace ref;
+- missing inventory assessment, candidate, channel, connector profile, API
+  availability, browser policy, manual handoff, credential signal, or payload
+  refs;
+- those refs not present in the allowed source refs;
+- missing or non-API-first strategy order;
+- missing required instruction refs;
+- unsafe instruction, allowed-source, workspace, packet, or token-cost refs;
+- missing `resolve_connector_profile` grant;
+- unsupported grants such as external publishing, adapter invocation, metrics
+  collection, credential reads, gate/proof behavior, direct event-log writes,
+  or acceptance claims;
+- raw post bodies, raw external payloads, secrets, or privacy policy that
+  allows raw/private payloads;
+- missing expected receipt fields, especially
+  `connector_profile_resolution`, `selected_connector_strategy`,
+  `credential_signal_ref`, and `manual_fallback`;
+- no allowed API, browser, or manual strategy from explicit signals.
+
+These checks are advisory readiness checks only. They select connector refs and
+strategy metadata for future handoffs. They do not call APIs, open browsers,
+read credentials, invoke adapters, publish, collect metrics, or write receipts.
 
 ## Publish request packet checks
 

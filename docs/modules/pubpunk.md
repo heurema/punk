@@ -11,13 +11,15 @@ It handles public narrative, content production, distribution, and metrics.
 This document defines the module boundary before any PubPunk runtime, draft
 planner, receipt writer, adapter, or external publish behavior is implemented.
 The current code slice is limited to a side-effect-free inventory reader model,
-inventory input packet, inventory assessment model, publish request packet, and
-publish receipt preflight packet, publish receipt write handoff packet, and
-publish operation evidence handoff packet, plus smoke evidence for wrapping
-advisory PubPunk outputs through existing
+inventory input packet, inventory assessment model, channel connector profile
+resolution packet, publish request packet, publish receipt preflight packet,
+publish receipt write handoff packet, publish operation evidence handoff
+packet, and publish receipt/evidence event handoff packet, plus smoke evidence
+for wrapping advisory PubPunk outputs through existing
 Module Host preflight, envelope, receipt proposal, side-effect request
 proposal, policy-gate preflight, side-effect receipt writer preflight, and
-first active local receipt writer and operation-evidence writer models.
+first active local receipt writer and operation-evidence writer models, and
+for appending a bounded receipt/evidence handoff event through `punk-events`.
 
 ## Scope
 
@@ -46,18 +48,25 @@ The first incubating PubPunk crate, `punk-mod-pubpunk`, can validate an
 explicit inventory reader input, build an explicit inventory input packet when
 that reader input is ready, assess caller-provided publishing inventory
 metadata and receipt gaps as advisory module evidence only, prepare an explicit
-publish request packet for a future host side-effect request, and prepare an
-explicit publish receipt preflight packet for the existing Module Host
-side-effect receipt writer preflight model. The reader model accepts explicit
-observed metadata refs and keeps them inside explicit allowed source refs. The
-input packet requires explicit workspace, instruction, source, capability,
-receipt-field, and optional token-cost refs before assessment. The publish
-request packet requires explicit candidate, channel, policy, adapter, payload,
-receipt, host side-effect request, and expected-receipt refs before it can
-project side-effect request refs. The publish receipt preflight packet requires
-explicit receipt target, storage, operation-evidence, idempotency, rollback,
-error, adapter invocation receipt, connector profile, channel, payload, and
-expected-receipt refs before it can project host receipt-writer preflight refs.
+channel connector profile resolution packet for selecting an API, browser, or
+manual connector path from explicit metadata, prepare an explicit publish
+request packet for a future host side-effect request, and prepare an explicit
+publish receipt preflight packet for the existing Module Host side-effect
+receipt writer preflight model. The reader model accepts explicit observed
+metadata refs and keeps them inside explicit allowed source refs. The input
+packet requires explicit workspace, instruction, source, capability,
+receipt-field, and optional token-cost refs before assessment. The connector
+profile resolution packet requires explicit inventory assessment, candidate,
+channel, connector profile, API availability, browser policy, manual handoff,
+credential signal, payload, allowed-source, instruction, expected-receipt,
+privacy, and optional token-cost refs before it can project selected connector
+refs. The publish request packet requires explicit candidate, channel, policy,
+adapter, payload, receipt, host side-effect request, and expected-receipt refs
+before it can project side-effect request refs. The publish receipt preflight
+packet requires explicit receipt target, storage, operation-evidence,
+idempotency, rollback, error, adapter invocation receipt, connector profile,
+channel, payload, and expected-receipt refs before it can project host
+receipt-writer preflight refs.
 The publish receipt write handoff packet requires explicit preflight, receipt
 writer model, target path, receipt bytes, operation-evidence, adapter
 invocation receipt, connector profile, channel, payload, and expected-receipt
@@ -70,8 +79,8 @@ rollback, error, adapter invocation receipt, connector profile, channel,
 payload, and expected-receipt refs before it can project handoff refs for the
 existing Module Host operation-evidence writer. These PubPunk models do not
 read files, write receipts, write operation evidence, publish, call external
-APIs, read credentials, invoke adapters, write gate decisions, write proofpacks,
-or claim acceptance.
+APIs, open browsers, read credentials, invoke adapters, write gate decisions,
+write proofpacks, or claim acceptance.
 
 The current `punk-eval` smoke evidence also proves the first host handoff chain:
 `PubPunkInventoryInputPacket` readiness, PubPunk inventory assessment, Module
@@ -86,6 +95,14 @@ payload, and receipt refs into the existing Module Host side-effect request
 proposal and policy-gate preflight models. This evidence does not publish,
 invoke adapters, run policy engines, invoke gate, write receipts, read draft
 bodies, or activate runtime behavior.
+
+The current smoke evidence also proves the first channel connector profile
+resolution: a ready PubPunk packet selects API first when an explicit API
+availability ref says it is available, falls back to browser automation only
+when API is unavailable and explicit browser policy allows it, and falls back
+to manual handoff when both automated paths are unavailable. This evidence does
+not call APIs, open browsers, read credentials, invoke adapters, publish,
+collect metrics, write receipts, or activate runtime behavior.
 
 The current smoke evidence also proves the first publish receipt preflight
 chain: a ready PubPunk packet projects explicit receipt target, storage,
@@ -235,6 +252,52 @@ This is not runtime invocation. It is deterministic model-chain evidence only.
 It does not add a module manifest, dynamic dispatch, public CLI, filesystem
 reader, workspace initializer, external publisher, metrics collector, receipt
 writer, gate writer, proofpack writer, or acceptance authority.
+
+## Current channel connector profile resolution packet
+
+The current side-effect-free channel connector profile resolution packet is:
+
+```text
+PubPunkChannelConnectorProfileResolutionPacket
+```
+
+It must provide:
+
+- module id and version;
+- contract ref;
+- run ref;
+- project ref;
+- `split_explicit_refs` workspace policy;
+- publishing workspace ref;
+- inventory assessment ref;
+- candidate content ref;
+- channel ref;
+- connector profile ref;
+- API availability ref;
+- browser automation policy ref;
+- manual handoff ref;
+- credential signal ref;
+- payload ref;
+- strategy order fixed to API before browser before manual for this slice;
+- allowed source refs covering inventory assessment, candidate, channel,
+  connector profile, API availability, browser policy, manual handoff,
+  credential signal, and payload refs;
+- instruction refs;
+- `resolve_connector_profile` capability;
+- metadata-only privacy policy;
+- expected receipt fields including `side_effects`, `host_validation`,
+  `connector_profile_resolution`, `selected_connector_strategy`, `channel_ref`,
+  `connector_profile_ref`, `credential_signal_ref`, and `manual_fallback`;
+- optional token-cost ref.
+
+When ready, the packet can project only
+`PubPunkResolvedChannelConnectorProfileRefs`. It selects the connector strategy
+from explicit caller-provided signals: API when available, browser automation
+only when API is unavailable and browser policy allows it, and manual handoff
+when the automated paths are unavailable but manual fallback is allowed. It
+does not call an API, open a browser, read credentials, invoke an adapter,
+publish externally, collect metrics, write receipts, read draft bodies, or
+activate PubPunk or Module Host runtime behavior.
 
 ## Current publish request packet
 
@@ -479,11 +542,11 @@ A future PubPunk invocation may return:
 These outputs must not be final decisions, proofpacks, accepted claims,
 roadmap decisions, or project truth by themselves.
 
-## Future channel connector strategy
+## Channel connector strategy
 
 Projects may publish into multiple channels. PubPunk should treat every
-project/channel pair as an explicit channel surface with its own future
-connector profile.
+project/channel pair as an explicit channel surface with its own connector
+profile.
 
 The preferred connector order is:
 
@@ -497,14 +560,15 @@ The preferred connector order is:
 4. Keep manual handoff as a valid fallback when credentials, platform policy,
    account safety, or implementation maturity blocks automation.
 
-Connector profiles are future PubPunk/module adapter surfaces. They must stay
-per-channel and per-project, must not be inferred from hidden local state, and
-must preserve source refs, target channel refs, credential boundaries, metrics
-refs, receipt refs, and side-effect policy separately.
+Connector profiles are PubPunk/module adapter surfaces, but current code only
+resolves profile refs and strategy choice from explicit metadata. They must
+stay per-channel and per-project, must not be inferred from hidden local state,
+and must preserve source refs, target channel refs, credential boundaries,
+metrics refs, receipt refs, and side-effect policy separately.
 
-This strategy does not activate connectors, browser automation, credentials,
-network calls, publishing, metrics collection, or adapter invocation in the
-current slice.
+This strategy and the current resolution model do not activate connectors,
+browser automation, credentials, network calls, publishing, metrics collection,
+or adapter invocation in the current slice.
 
 ## Capability boundary
 
@@ -513,6 +577,7 @@ Capabilities are denied by default.
 Candidate future capabilities must be granted separately:
 
 - read publishing workspace metadata;
+- resolve channel connector profile;
 - read specific draft files;
 - write local draft artifacts;
 - write local receipt proposals;
@@ -528,8 +593,10 @@ conformance evals before activation.
 
 In the current code, `read_workspace_metadata` is accepted only by
 `PubPunkInventoryReaderInput`, and `assess_provided_inventory` is accepted only
-by `PubPunkInventoryInputPacket`. `request_external_publish` is accepted only
-by `PubPunkPublishRequestPacket` and
+by `PubPunkInventoryInputPacket`. `resolve_connector_profile` is accepted only
+by `PubPunkChannelConnectorProfileResolutionPacket` as a side-effect-free
+selection grant over explicit API/browser/manual metadata.
+`request_external_publish` is accepted only by `PubPunkPublishRequestPacket` and
 `PubPunkPublishReceiptPreflightPacket` as request/preflight-model grants for
 future host side-effect policy. `request_publication_receipt_write` is accepted
 only by `PubPunkPublishReceiptWriteHandoffPacket` as a handoff grant to the
