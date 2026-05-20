@@ -76,11 +76,13 @@ When asked to run PubPunk work, an executor should:
 
 ## First PubPunk work boundary
 
-The existing `punk-mod-pubpunk` crate already contains a side-effect-free inventory
-assessment model over caller-provided publishing metadata.
+The existing `punk-mod-pubpunk` crate contains a side-effect-free inventory
+input packet and inventory assessment model over caller-provided publishing
+metadata.
 
-The next PubPunk implementation work should be selected against that existing
-boundary. It should not restart PubPunk from zero, add a public CLI, scan the
+The input packet must carry explicit workspace, instruction, source,
+capability, receipt-field, and optional token-cost refs before the assessment
+model runs. It should not restart PubPunk from zero, add a public CLI, scan the
 filesystem, generate drafts, publish externally, collect metrics, write
 receipts, or activate Module Host runtime.
 
@@ -144,6 +146,25 @@ pubpunk_assessment:
 ```
 
 This is an advisory shape, not an active schema or runtime receipt writer.
+
+## Input packet checks
+
+For the current code slice, the input packet blocks:
+
+- non-canonical module id;
+- workspace policy other than `split_explicit_refs`;
+- missing required instruction refs;
+- unsafe instruction, source, workspace, or token-cost refs;
+- item refs not present in the allowed source refs;
+- missing `assess_provided_inventory` grant;
+- unsupported grants such as publishing, metrics, adapter, credential, gate, or
+  proof behavior;
+- raw post bodies or privacy policy that allows raw/private payloads;
+- missing expected receipt fields.
+
+These checks are advisory readiness checks only. They do not read the
+referenced files, create workspaces, collect token metrics, publish, or write
+receipts.
 
 ## Non-goals
 

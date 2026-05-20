@@ -35,11 +35,13 @@ PubPunk is not active as runtime, CLI, adapter, or publisher.
 
 There is no automation in the new `punk` core yet.
 
-The first incubating PubPunk crate, `punk-mod-pubpunk`, can assess explicit
-caller-provided publishing inventory metadata and receipt gaps as advisory
-module evidence only. It does not read files, write receipts, publish, call
-external APIs, read credentials, invoke adapters, write gate decisions, write
-proofpacks, or claim acceptance.
+The first incubating PubPunk crate, `punk-mod-pubpunk`, can validate an explicit
+inventory input packet and then assess caller-provided publishing inventory
+metadata and receipt gaps as advisory module evidence only. The input packet
+requires explicit workspace, instruction, source, capability, receipt-field, and
+optional token-cost refs before assessment. It does not read files, write
+receipts, publish, call external APIs, read credentials, invoke adapters, write
+gate decisions, write proofpacks, or claim acceptance.
 
 The existing `punk publishing locate` resolver is a transitional core locator
 only. It must not be used as precedent for adding publishing inventory,
@@ -78,24 +80,36 @@ project-specific publishing operations.
 This packet does not grant filesystem reads, create workspaces, publish,
 collect metrics, write receipts, invoke adapters, or activate runtime behavior.
 
-## Future module inputs
+## Current module input packet
 
-A future PubPunk invocation should receive an explicit bounded input bundle:
+The current side-effect-free input packet is:
+
+```text
+PubPunkInventoryInputPacket
+```
+
+It must provide:
 
 - module id and version;
 - contract ref;
 - run ref;
 - project ref;
+- `split_explicit_refs` workspace policy;
 - publishing workspace ref;
-- requested operation;
 - allowed source refs;
+- instruction refs;
 - granted capabilities;
 - privacy and redaction policy;
 - expected receipt fields.
 
-The module must not discover hidden project truth, read credentials, infer
-scope from external platforms, or treat a publishing workspace as a second
-project memory store.
+The packet may carry a `token_cost_ref` as a metadata ref only. PubPunk does not
+collect token usage automatically in this slice.
+
+`PubPunkInventoryInputPacket` can convert to the existing
+`PubPunkInventoryInput` only when the packet assessment is ready. The module
+must not discover hidden project truth, read credentials, infer scope from
+external platforms, or treat a publishing workspace as a second project memory
+store.
 
 ## Future module outputs
 
