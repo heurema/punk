@@ -11,9 +11,10 @@ It handles public narrative, content production, distribution, and metrics.
 This document defines the module boundary before any PubPunk runtime, draft
 planner, receipt writer, adapter, or external publish behavior is implemented.
 The current code slice is limited to a side-effect-free inventory reader model,
-inventory input packet, inventory assessment model, and smoke evidence for
-wrapping that advisory assessment through existing Module Host preflight,
-envelope, and receipt proposal models.
+inventory input packet, inventory assessment model, publish request packet, and
+smoke evidence for wrapping advisory PubPunk outputs through existing Module
+Host preflight, envelope, receipt proposal, side-effect request proposal, and
+policy-gate preflight models.
 
 ## Scope
 
@@ -39,14 +40,17 @@ There is no automation in the new `punk` core yet.
 
 The first incubating PubPunk crate, `punk-mod-pubpunk`, can validate an explicit
 inventory reader input, build an explicit inventory input packet when that
-reader input is ready, and then assess caller-provided publishing inventory
-metadata and receipt gaps as advisory module evidence only. The reader model
-accepts explicit observed metadata refs and keeps them inside explicit allowed
-source refs. The input packet requires explicit workspace, instruction, source,
-capability, receipt-field, and optional token-cost refs before assessment. These
-models do not read files, write receipts, publish, call external APIs, read
-credentials, invoke adapters, write gate decisions, write proofpacks, or claim
-acceptance.
+reader input is ready, assess caller-provided publishing inventory metadata and
+receipt gaps as advisory module evidence only, and prepare an explicit publish
+request packet for a future host side-effect request. The reader model accepts
+explicit observed metadata refs and keeps them inside explicit allowed source
+refs. The input packet requires explicit workspace, instruction, source,
+capability, receipt-field, and optional token-cost refs before assessment. The
+publish request packet requires explicit candidate, channel, policy, adapter,
+payload, receipt, host side-effect request, and expected-receipt refs before it
+can project side-effect request refs. These models do not read files, write
+receipts, publish, call external APIs, read credentials, invoke adapters, write
+gate decisions, write proofpacks, or claim acceptance.
 
 The current `punk-eval` smoke evidence also proves the first host handoff chain:
 `PubPunkInventoryInputPacket` readiness, PubPunk inventory assessment, Module
@@ -54,6 +58,13 @@ Host invocation preflight, advisory envelope, and Module Host receipt proposal.
 This evidence does not invoke modules, load plugins, activate Module Host
 runtime, write receipts, publish, collect metrics, invoke adapters, or promote
 authority.
+
+The current smoke evidence also proves the first publish request packet chain:
+a ready PubPunk packet projects explicit candidate, channel, policy, adapter,
+payload, and receipt refs into the existing Module Host side-effect request
+proposal and policy-gate preflight models. This evidence does not publish,
+invoke adapters, run policy engines, invoke gate, write receipts, read draft
+bodies, or activate runtime behavior.
 
 The existing `punk publishing locate` resolver is a transitional core locator
 only. It must not be used as precedent for adding publishing inventory,
@@ -176,6 +187,45 @@ It does not add a module manifest, dynamic dispatch, public CLI, filesystem
 reader, workspace initializer, external publisher, metrics collector, receipt
 writer, gate writer, proofpack writer, or acceptance authority.
 
+## Current publish request packet
+
+The current side-effect-free publish request packet is:
+
+```text
+PubPunkPublishRequestPacket
+```
+
+It must provide:
+
+- module id and version;
+- contract ref;
+- run ref;
+- project ref;
+- `split_explicit_refs` workspace policy;
+- publishing workspace ref;
+- inventory assessment ref;
+- candidate content ref;
+- channel ref;
+- host side-effect request ref;
+- intent ref;
+- policy ref;
+- adapter ref;
+- payload ref;
+- receipt proposal ref;
+- allowed source refs covering candidate, channel, and payload refs;
+- instruction refs;
+- `request_external_publish` capability;
+- metadata-only privacy policy;
+- expected receipt fields including `side_effects` and `host_validation`;
+- optional token-cost ref.
+
+When ready, the packet can project only
+`PubPunkPublishSideEffectRequestRefs` for existing Module Host side-effect
+request and policy-gate preflight models. It does not write the side-effect
+request, invoke an adapter, publish externally, call a policy engine, invoke
+gate, write receipts, read draft bodies, collect metrics, or activate PubPunk
+or Module Host runtime behavior.
+
 ## Future module outputs
 
 A future PubPunk invocation may return:
@@ -210,8 +260,10 @@ conformance evals before activation.
 
 In the current code, `read_workspace_metadata` is accepted only by
 `PubPunkInventoryReaderInput`, and `assess_provided_inventory` is accepted only
-by `PubPunkInventoryInputPacket`. Neither grant activates filesystem IO,
-adapter behavior, publication, metrics collection, receipt writing, or authority
+by `PubPunkInventoryInputPacket`. `request_external_publish` is accepted only
+by `PubPunkPublishRequestPacket` as a request-model grant for future host
+side-effect policy. None of these grants activates filesystem IO, adapter
+behavior, publication, metrics collection, receipt writing, or authority
 promotion.
 
 ## Required conformance
