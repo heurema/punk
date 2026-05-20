@@ -72,6 +72,9 @@ When asked to run PubPunk work, an executor should:
 - keep repo-native `publishing/` refs separate from external workspace refs;
 - use caller-provided metadata by default;
 - list candidate refs, receipt refs, metrics refs, and gaps;
+- list target channels and any needed connector profile refs;
+- prefer official or documented channel APIs before browser automation when a
+  later work order grants publishing or metrics automation scope;
 - avoid reading draft bodies unless a later work order grants that scope;
 - avoid initializing a workspace unless a later work order grants that scope;
 - represent publishing, metrics, adapter, browser, network, and credential work
@@ -140,6 +143,24 @@ Default denies:
 
 A later slice may request scoped filesystem read over explicit publishing refs.
 That request is not a grant in this packet.
+
+## Future channel connector guidance
+
+Projects may post to several channels. PubPunk should keep each target channel
+separate and require an explicit connector profile before any automated
+publishing or metrics behavior is considered.
+
+Connector selection order:
+
+1. Prefer an official or documented channel API.
+2. Use a public/read-side API for metrics when that is the safe available path.
+3. Use browser automation only when API paths are unavailable or insufficient
+   and the work order grants browser, credential, and receipt scope.
+4. Keep manual handoff available when automation is unsafe, blocked by platform
+   policy, or not mature enough.
+
+This is future guidance only. It does not grant network, browser, credentials,
+adapter invocation, external publishing, metrics collection, or receipt writing.
 
 ## Inventory reader checks
 

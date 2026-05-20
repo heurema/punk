@@ -31,6 +31,7 @@ Future PubPunk may own:
 - manual or automated metrics snapshots
 - content retrospectives
 - growth loops
+- channel connector plans and readiness
 
 ## Current state
 
@@ -240,6 +241,33 @@ A future PubPunk invocation may return:
 
 These outputs must not be final decisions, proofpacks, accepted claims,
 roadmap decisions, or project truth by themselves.
+
+## Future channel connector strategy
+
+Projects may publish into multiple channels. PubPunk should treat every
+project/channel pair as an explicit channel surface with its own future
+connector profile.
+
+The preferred connector order is:
+
+1. Use an official or documented channel API when one exists and the work order
+   grants that channel scope.
+2. Use a public/read-side API for metrics when publishing APIs are unavailable
+   but metrics can be collected safely.
+3. Use browser automation only when an API path is unavailable or insufficient,
+   and only after explicit policy, credential, and receipt requirements are in
+   place.
+4. Keep manual handoff as a valid fallback when credentials, platform policy,
+   account safety, or implementation maturity blocks automation.
+
+Connector profiles are future PubPunk/module adapter surfaces. They must stay
+per-channel and per-project, must not be inferred from hidden local state, and
+must preserve source refs, target channel refs, credential boundaries, metrics
+refs, receipt refs, and side-effect policy separately.
+
+This strategy does not activate connectors, browser automation, credentials,
+network calls, publishing, metrics collection, or adapter invocation in the
+current slice.
 
 ## Capability boundary
 
