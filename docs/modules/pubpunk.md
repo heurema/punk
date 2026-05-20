@@ -12,10 +12,11 @@ This document defines the module boundary before any PubPunk runtime, draft
 planner, receipt writer, adapter, or external publish behavior is implemented.
 The current code slice is limited to a side-effect-free inventory reader model,
 inventory input packet, inventory assessment model, publish request packet, and
-publish receipt preflight packet, plus smoke evidence for wrapping advisory
-PubPunk outputs through existing Module Host preflight, envelope, receipt
-proposal, side-effect request proposal, policy-gate preflight, and side-effect
-receipt writer preflight models.
+publish receipt preflight packet, and publish receipt write handoff packet,
+plus smoke evidence for wrapping advisory PubPunk outputs through existing
+Module Host preflight, envelope, receipt proposal, side-effect request
+proposal, policy-gate preflight, side-effect receipt writer preflight, and
+first active local receipt writer models.
 
 ## Scope
 
@@ -56,9 +57,13 @@ project side-effect request refs. The publish receipt preflight packet requires
 explicit receipt target, storage, operation-evidence, idempotency, rollback,
 error, adapter invocation receipt, connector profile, channel, payload, and
 expected-receipt refs before it can project host receipt-writer preflight refs.
-These models do not read files, write receipts, publish, call external APIs,
-read credentials, invoke adapters, write gate decisions, write proofpacks, or
-claim acceptance.
+The publish receipt write handoff packet requires explicit preflight, receipt
+writer model, target path, receipt bytes, operation-evidence, adapter
+invocation receipt, connector profile, channel, payload, and expected-receipt
+refs before it can project handoff refs for the existing Module Host first
+active local receipt writer. These PubPunk models do not read files, write
+receipts, publish, call external APIs, read credentials, invoke adapters, write
+gate decisions, write proofpacks, or claim acceptance.
 
 The current `punk-eval` smoke evidence also proves the first host handoff chain:
 `PubPunkInventoryInputPacket` readiness, PubPunk inventory assessment, Module
@@ -81,6 +86,16 @@ connector profile, channel, and payload refs into the existing Module Host
 side-effect receipt writer preflight model. This evidence does not write
 receipts, invoke adapters, publish, run policy engines, invoke gate, read draft
 bodies, collect metrics, or activate runtime behavior.
+
+The current smoke evidence also proves the first publish receipt write handoff:
+a ready PubPunk packet projects explicit preflight, receipt writer, target path,
+receipt bytes, operation-evidence, adapter invocation receipt, connector,
+channel, and payload refs into the existing Module Host first active local
+receipt writer. The writer writes exact caller-provided bytes only to an
+explicit temporary `.punk/runs` target. This evidence does not invoke adapters,
+publish, run policy engines, invoke gate, mutate event logs, persist operation
+evidence, write proofpacks, claim acceptance, or activate PubPunk or Module Host
+runtime behavior.
 
 The existing `punk publishing locate` resolver is a transitional core locator
 only. It must not be used as precedent for adding publishing inventory,
@@ -287,6 +302,51 @@ persist operation evidence, invoke an adapter, publish externally, call a
 policy engine, invoke gate, read draft bodies, collect metrics, or activate
 PubPunk or Module Host runtime behavior.
 
+## Current publish receipt write handoff packet
+
+The current side-effect-free publish receipt write handoff packet is:
+
+```text
+PubPunkPublishReceiptWriteHandoffPacket
+```
+
+It must provide:
+
+- module id and version;
+- contract ref;
+- run ref;
+- project ref;
+- `split_explicit_refs` workspace policy;
+- publishing workspace ref;
+- publish receipt preflight ref;
+- receipt writer preflight, active-behavior, file-IO plan, target/storage
+  policy, host-path observation, concrete path/storage policy, and
+  operation-evidence persistence refs;
+- receipt target, storage, target path, and receipt bytes refs;
+- operation evidence, idempotency, rollback, and error refs;
+- adapter invocation receipt ref;
+- payload ref;
+- channel ref;
+- connector profile ref;
+- allowed source refs covering payload, channel, connector profile, adapter
+  invocation receipt, and receipt bytes refs;
+- instruction refs;
+- `request_publication_receipt_write` capability;
+- metadata-only privacy policy;
+- expected receipt fields including `side_effects`, `host_validation`,
+  `adapter_invocation_receipt`, `operation_evidence`, `publication_receipt`,
+  `receipt_bytes`, `receipt_target_path`, and `receipt_write_result`;
+- optional token-cost ref.
+
+When ready, the packet can project only
+`PubPunkPublishReceiptWriteHandoffRefs` for the existing Module Host first
+active local side-effect receipt writer. The PubPunk packet does not write a
+receipt, read receipt bytes, persist operation evidence, invoke an adapter,
+publish externally, call a policy engine, invoke gate, read draft bodies,
+collect metrics, or activate PubPunk or Module Host runtime behavior. The
+current smoke case uses the projected refs to call the already-existing Module
+Host writer against an explicit temporary `.punk/runs` target only.
+
 ## Future module outputs
 
 A future PubPunk invocation may return:
@@ -339,6 +399,7 @@ Candidate future capabilities must be granted separately:
 - read specific draft files;
 - write local draft artifacts;
 - write local receipt proposals;
+- request local publication receipt write handoff;
 - request external publishing through an adapter;
 - request metrics collection through an adapter.
 
@@ -351,9 +412,11 @@ In the current code, `read_workspace_metadata` is accepted only by
 by `PubPunkInventoryInputPacket`. `request_external_publish` is accepted only
 by `PubPunkPublishRequestPacket` and
 `PubPunkPublishReceiptPreflightPacket` as request/preflight-model grants for
-future host side-effect policy. None of these grants activates filesystem IO,
-adapter behavior, publication, metrics collection, receipt writing, or
-authority promotion.
+future host side-effect policy. `request_publication_receipt_write` is accepted
+only by `PubPunkPublishReceiptWriteHandoffPacket` as a handoff grant to the
+existing Module Host first active local receipt writer. None of these grants
+activates PubPunk runtime, adapter behavior, publication, metrics collection,
+operation-evidence persistence, gate/proof authority, or acceptance promotion.
 
 ## Required conformance
 
