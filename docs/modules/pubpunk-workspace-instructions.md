@@ -121,12 +121,13 @@ paths are unavailable but manual fallback is allowed. It does not call APIs,
 open browsers, read credentials, invoke adapters, publish, collect metrics,
 write receipts, or activate PubPunk or Module Host runtime.
 
-The current publish request packet can then carry explicit candidate, channel,
-policy, adapter, payload, receipt, and host side-effect request refs into the
-existing Module Host side-effect request proposal and policy-gate preflight
-models. This remains a request/preflight chain only. It does not publish, invoke
-adapters, run policy engines, invoke gate, write receipts, read draft bodies,
-collect metrics, or activate PubPunk or Module Host runtime.
+The current publish request packet can then carry explicit resolved connector,
+candidate, channel, policy, adapter, payload, receipt, and host side-effect
+request refs into the existing Module Host side-effect request proposal and
+policy-gate preflight models. This remains a request/preflight chain only. It
+does not publish, invoke adapters, run policy engines, invoke gate, write
+receipts, read draft bodies, collect metrics, or activate PubPunk or Module
+Host runtime.
 
 The current publish receipt preflight packet can then carry explicit receipt
 target, storage, operation-evidence, idempotency, rollback, error, adapter
@@ -344,9 +345,12 @@ For the current code slice, the publish request packet blocks:
 - non-canonical module id;
 - workspace policy other than `split_explicit_refs`;
 - missing safe publishing workspace ref;
-- missing inventory assessment, candidate, channel, side-effect request,
-  intent, policy, adapter, payload, or receipt proposal refs;
-- candidate, channel, or payload refs not present in the allowed source refs;
+- missing inventory assessment, candidate, channel, connector profile
+  resolution, connector profile, selected connector strategy, side-effect
+  request, intent, policy, adapter, payload, or receipt proposal refs;
+- candidate, channel, connector profile resolution, connector profile,
+  selected connector strategy, or payload refs not present in the allowed
+  source refs;
 - missing required instruction refs;
 - unsafe instruction, allowed-source, workspace, packet, or token-cost refs;
 - missing `request_external_publish` grant;
@@ -354,8 +358,9 @@ For the current code slice, the publish request packet blocks:
   credential reads, gate/proof behavior, direct event-log writes, or acceptance
   claims;
 - raw post bodies or privacy policy that allows raw/private payloads;
-- missing expected receipt fields, especially `side_effects` and
-  `host_validation`.
+- missing expected receipt fields, especially `side_effects`,
+  `host_validation`, `connector_profile_resolution`, `connector_profile_ref`,
+  and `selected_connector_strategy`.
 
 These checks are advisory readiness checks only. They prepare refs for existing
 Module Host side-effect request and policy-gate preflight models. They do not

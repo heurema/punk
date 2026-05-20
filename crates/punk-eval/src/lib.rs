@@ -663,10 +663,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk publish operation evidence handoff packet, PubPunk publish receipt/evidence event handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk publish operation evidence handoff packet, PubPunk publish receipt/evidence event handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk publish operation evidence handoff packet, PubPunk publish receipt/evidence event handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk publish operation evidence handoff packet, PubPunk publish receipt/evidence event handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -692,7 +692,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "PubPunk inventory assessment smoke case is module-owned, side-effect-free, no-IO, no-CLI, advisory-only, and does not publish, create receipts, read credentials, invoke adapters, or write gate/proof authority",
             "PubPunk connector profile resolution smoke case selects API first, browser automation only when policy allows it, and manual handoff as fallback from explicit refs without calling APIs, opening browsers, reading credentials, invoking adapters, publishing, collecting metrics, writing receipts, or activating runtime",
             "PubPunk host handoff smoke case chains input packet readiness, inventory assessment, module-host preflight, advisory envelope, and receipt proposal without invoking modules, reading files, writing receipts, publishing, collecting metrics, invoking adapters, or writing gate/proof authority",
-            "PubPunk publish request packet smoke case chains explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime",
+            "PubPunk publish request packet smoke case consumes resolved connector refs before chaining explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime",
             "PubPunk publish receipt preflight smoke case chains explicit receipt target, storage, operation-evidence, idempotency, rollback, error, adapter invocation receipt, connector, channel, and payload refs into existing Module Host side-effect receipt writer preflight without writing receipts, invoking adapters, publishing, reading credentials, or activating runtime",
             "PubPunk publish receipt write handoff smoke case chains explicit preflight, policy, target-path, receipt-bytes, operation-evidence, adapter invocation receipt, connector, channel, and payload refs into the existing Module Host receipt writer, which writes exact bytes only to a temporary .punk/runs target without invoking adapters, publishing, mutating event logs, writing gate/proof authority, or claiming acceptance",
             "PubPunk publish operation evidence handoff smoke case chains explicit receipt writer result, operation-evidence target-path, operation-evidence bytes, adapter invocation receipt, connector, channel, and payload refs into the existing Module Host operation-evidence writer, which writes exact evidence bytes only to a temporary .punk/runs target after a successful receipt write without invoking adapters, publishing, mutating event logs, writing gate/proof authority, or claiming acceptance",
@@ -1969,6 +1969,63 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
     };
     let pubpunk_assessment = assess_pubpunk_inventory(&inventory_input);
 
+    let connector_packet = PubPunkChannelConnectorProfileResolutionPacket::new(
+        "v0.1",
+        "contracts/pubpunk-publish-cycle-0",
+        "runs/pubpunk-connector-profile-resolution",
+        "project/punk",
+        "punk-publishing://project/punk",
+    )
+    .with_inventory_assessment_ref("work/module-assessments/pubpunk-inventory.md")
+    .with_candidate_ref("publishing/posts/community-lab.md")
+    .with_channel_ref("publishing/channels/github-discussions-community-lab.md")
+    .with_connector_profile_ref("publishing/connectors/github-discussions-community-lab.md")
+    .with_api_availability_ref("publishing/connectors/github-discussions-api.md")
+    .with_browser_automation_policy_ref(
+        "publishing/connectors/github-discussions-browser-policy.md",
+    )
+    .with_manual_handoff_ref("publishing/connectors/github-discussions-manual-handoff.md")
+    .with_credential_signal_ref("publishing/connectors/github-discussions-credential-signal.md")
+    .with_payload_ref("publishing/posts/community-lab.md")
+    .with_api_available(true)
+    .with_browser_allowed(true)
+    .with_manual_allowed(true)
+    .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
+    .with_allowed_source_refs(vec![
+        "work/module-assessments/pubpunk-inventory.md",
+        "publishing/posts/community-lab.md",
+        "publishing/channels/github-discussions-community-lab.md",
+        "publishing/connectors/github-discussions-community-lab.md",
+        "publishing/connectors/github-discussions-api.md",
+        "publishing/connectors/github-discussions-browser-policy.md",
+        "publishing/connectors/github-discussions-manual-handoff.md",
+        "publishing/connectors/github-discussions-credential-signal.md",
+    ])
+    .with_granted_capabilities(vec![PubPunkCapabilityGrant::ResolveConnectorProfile])
+    .with_expected_receipt_fields(vec![
+        "side_effects",
+        "host_validation",
+        "connector_profile_resolution",
+        "selected_connector_strategy",
+        "channel_ref",
+        "connector_profile_ref",
+        "credential_signal_ref",
+        "manual_fallback",
+    ])
+    .with_token_cost_ref("work/reports/pubpunk-connector-profile-resolution-token-cost.md");
+    let connector_assessment =
+        assess_pubpunk_channel_connector_profile_resolution_packet(&connector_packet);
+    let connector_refs = match connector_packet.try_into_connector_profile_resolution_refs() {
+        Ok(refs) => refs,
+        Err(_) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request",
+                "PubPunk publish request packet chains to host side-effect request",
+                "ready PubPunk connector profile resolution packet failed to build selected connector refs",
+            );
+        }
+    };
+
     let publish_packet = PubPunkPublishRequestPacket::new(
         "v0.1",
         "contracts/pubpunk-publish-cycle-0",
@@ -1979,6 +2036,13 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
     .with_inventory_assessment_ref("work/module-assessments/pubpunk-inventory.md")
     .with_candidate_ref("publishing/posts/community-lab.md")
     .with_channel_ref("publishing/channels/github-discussions-community-lab.md")
+    .with_connector_profile_resolution_ref(
+        "work/module-assessments/pubpunk-connector-profile-resolution.md",
+    )
+    .with_connector_profile_ref(connector_refs.connector_profile_ref.clone())
+    .with_selected_connector_strategy_ref(
+        "work/module-assessments/pubpunk-selected-connector-strategy.md",
+    )
     .with_side_effect_request_ref("work/module-side-effects/pubpunk-publish-community-lab.md")
     .with_intent_ref("work/goals/goal_pubpunk_publish_cycle_0.md")
     .with_policy_ref("docs/modules/pubpunk.md")
@@ -1989,6 +2053,9 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
     .with_allowed_source_refs(vec![
         "publishing/posts/community-lab.md",
         "publishing/channels/github-discussions-community-lab.md",
+        "work/module-assessments/pubpunk-connector-profile-resolution.md",
+        "publishing/connectors/github-discussions-community-lab.md",
+        "work/module-assessments/pubpunk-selected-connector-strategy.md",
     ])
     .with_granted_capabilities(vec![PubPunkCapabilityGrant::RequestExternalPublish])
     .with_expected_receipt_fields(vec![
@@ -1998,6 +2065,9 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
         "capability_grants",
         "side_effects",
         "host_validation",
+        "connector_profile_resolution",
+        "connector_profile_ref",
+        "selected_connector_strategy",
     ])
     .with_token_cost_ref("work/reports/pubpunk-publish-request-token-cost.md");
     let publish_packet_assessment = assess_pubpunk_publish_request_packet(&publish_packet);
@@ -2022,8 +2092,11 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
     )
     .with_input_refs(vec![
         "evals/specs/pubpunk-publish-request-packet.v0.1.md",
+        "evals/specs/pubpunk-channel-connector-profile-resolution.v0.1.md",
+        "work/module-assessments/pubpunk-connector-profile-resolution.md",
         "publishing/posts/community-lab.md",
         "publishing/channels/github-discussions-community-lab.md",
+        "publishing/connectors/github-discussions-community-lab.md",
     ])
     .with_granted_capabilities(vec![ModuleCapabilityGrant::AssessProvidedInput])
     .with_expected_receipt_fields(vec![
@@ -2077,6 +2150,9 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
 
     let ok = reader_assessment.status == PubPunkAssessmentStatus::Ready
         && pubpunk_assessment.status == PubPunkAssessmentStatus::Ready
+        && connector_assessment.status == PubPunkAssessmentStatus::Ready
+        && connector_assessment.selected_strategy == Some(PubPunkConnectorStrategy::Api)
+        && connector_refs.selected_strategy == PubPunkConnectorStrategy::Api
         && publish_packet_assessment.status == PubPunkAssessmentStatus::Ready
         && publish_packet_assessment.authority == PubPunkAssessmentAuthority::Advisory
         && !publish_packet_assessment.has_blockers()
@@ -2087,11 +2163,27 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
         && publish_packet_assessment.refs.candidate_ref == "publishing/posts/community-lab.md"
         && publish_packet_assessment.refs.channel_ref
             == "publishing/channels/github-discussions-community-lab.md"
+        && publish_packet_assessment
+            .refs
+            .connector_profile_resolution_ref
+            == "work/module-assessments/pubpunk-connector-profile-resolution.md"
+        && publish_packet_assessment.refs.connector_profile_ref
+            == "publishing/connectors/github-discussions-community-lab.md"
+        && publish_packet_assessment
+            .refs
+            .selected_connector_strategy_ref
+            == "work/module-assessments/pubpunk-selected-connector-strategy.md"
         && publish_packet_assessment.refs.side_effect_request_ref
             == "work/module-side-effects/pubpunk-publish-community-lab.md"
         && publish_packet_assessment.refs.token_cost_ref.as_deref()
             == Some("work/reports/pubpunk-publish-request-token-cost.md")
         && side_effect_refs.target_ref == "publishing/channels/github-discussions-community-lab.md"
+        && side_effect_refs.connector_profile_resolution_ref
+            == "work/module-assessments/pubpunk-connector-profile-resolution.md"
+        && side_effect_refs.connector_profile_ref
+            == "publishing/connectors/github-discussions-community-lab.md"
+        && side_effect_refs.selected_connector_strategy_ref
+            == "work/module-assessments/pubpunk-selected-connector-strategy.md"
         && side_effect_refs.payload_ref == "publishing/posts/community-lab.md"
         && preflight.status == ModuleHostStatus::Ready
         && envelope.status == ModuleHostStatus::Ready
@@ -2127,7 +2219,7 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
         SmokeEvalCaseResult::pass(
             "eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request",
             "PubPunk publish request packet chains to host side-effect request",
-            "PubPunk publish request packet projected explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate preflight models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime",
+            "PubPunk publish request packet consumed resolved connector refs and projected explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate preflight models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime",
         )
     } else {
         SmokeEvalCaseResult::fail(
@@ -2206,6 +2298,13 @@ fn eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_prefligh
     .with_inventory_assessment_ref("work/module-assessments/pubpunk-inventory.md")
     .with_candidate_ref("publishing/posts/community-lab.md")
     .with_channel_ref("publishing/channels/github-discussions-community-lab.md")
+    .with_connector_profile_resolution_ref(
+        "work/module-assessments/pubpunk-connector-profile-resolution.md",
+    )
+    .with_connector_profile_ref("publishing/connectors/github-discussions-community-lab.md")
+    .with_selected_connector_strategy_ref(
+        "work/module-assessments/pubpunk-selected-connector-strategy.md",
+    )
     .with_side_effect_request_ref("work/module-side-effects/pubpunk-publish-community-lab.md")
     .with_intent_ref("work/goals/goal_pubpunk_publish_cycle_0.md")
     .with_policy_ref("docs/modules/pubpunk.md")
@@ -2216,7 +2315,9 @@ fn eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_prefligh
     .with_allowed_source_refs(vec![
         "publishing/posts/community-lab.md",
         "publishing/channels/github-discussions-community-lab.md",
+        "work/module-assessments/pubpunk-connector-profile-resolution.md",
         "publishing/connectors/github-discussions-community-lab.md",
+        "work/module-assessments/pubpunk-selected-connector-strategy.md",
     ])
     .with_granted_capabilities(vec![PubPunkCapabilityGrant::RequestExternalPublish])
     .with_expected_receipt_fields(vec![
@@ -2226,6 +2327,9 @@ fn eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_prefligh
         "capability_grants",
         "side_effects",
         "host_validation",
+        "connector_profile_resolution",
+        "connector_profile_ref",
+        "selected_connector_strategy",
         "adapter_invocation_receipt",
         "operation_evidence",
         "publication_receipt",
@@ -13814,7 +13918,7 @@ mod tests {
             "PubPunk host handoff smoke case chains input packet readiness, inventory assessment, module-host preflight, advisory envelope, and receipt proposal without invoking modules, reading files, writing receipts, publishing, collecting metrics, invoking adapters, or writing gate/proof authority"
         ));
         assert!(rendered.contains(
-            "PubPunk publish request packet smoke case chains explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime"
+            "PubPunk publish request packet smoke case consumes resolved connector refs before chaining explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime"
         ));
         assert!(rendered.contains(
             "module-host invocation envelope smoke case wraps advisory module output only and does not load plugins, invoke modules, expose CLI behavior, read or write files, create receipts, mutate event logs, call APIs, read credentials, invoke adapters, publish, or write gate/proof authority"

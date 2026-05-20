@@ -61,6 +61,7 @@ channel, connector profile, API availability, browser policy, manual handoff,
 credential signal, payload, allowed-source, instruction, expected-receipt,
 privacy, and optional token-cost refs before it can project selected connector
 refs. The publish request packet requires explicit candidate, channel, policy,
+connector profile resolution, connector profile, selected connector strategy,
 adapter, payload, receipt, host side-effect request, and expected-receipt refs
 before it can project side-effect request refs. The publish receipt preflight
 packet requires explicit receipt target, storage, operation-evidence,
@@ -90,11 +91,11 @@ runtime, write receipts, publish, collect metrics, invoke adapters, or promote
 authority.
 
 The current smoke evidence also proves the first publish request packet chain:
-a ready PubPunk packet projects explicit candidate, channel, policy, adapter,
-payload, and receipt refs into the existing Module Host side-effect request
-proposal and policy-gate preflight models. This evidence does not publish,
-invoke adapters, run policy engines, invoke gate, write receipts, read draft
-bodies, or activate runtime behavior.
+a ready PubPunk packet consumes resolved connector refs before it projects
+explicit candidate, channel, policy, adapter, payload, and receipt refs into
+the existing Module Host side-effect request proposal and policy-gate preflight
+models. This evidence does not publish, invoke adapters, run policy engines,
+invoke gate, write receipts, read draft bodies, or activate runtime behavior.
 
 The current smoke evidence also proves the first channel connector profile
 resolution: a ready PubPunk packet selects API first when an explicit API
@@ -318,25 +319,32 @@ It must provide:
 - inventory assessment ref;
 - candidate content ref;
 - channel ref;
+- connector profile resolution ref;
+- connector profile ref;
+- selected connector strategy ref;
 - host side-effect request ref;
 - intent ref;
 - policy ref;
 - adapter ref;
 - payload ref;
 - receipt proposal ref;
-- allowed source refs covering candidate, channel, and payload refs;
+- allowed source refs covering candidate, channel, connector profile
+  resolution, connector profile, selected connector strategy, and payload refs;
 - instruction refs;
 - `request_external_publish` capability;
 - metadata-only privacy policy;
-- expected receipt fields including `side_effects` and `host_validation`;
+- expected receipt fields including `side_effects`, `host_validation`,
+  `connector_profile_resolution`, `connector_profile_ref`, and
+  `selected_connector_strategy`;
 - optional token-cost ref.
 
 When ready, the packet can project only
 `PubPunkPublishSideEffectRequestRefs` for existing Module Host side-effect
-request and policy-gate preflight models. It does not write the side-effect
-request, invoke an adapter, publish externally, call a policy engine, invoke
-gate, write receipts, read draft bodies, collect metrics, or activate PubPunk
-or Module Host runtime behavior.
+request and policy-gate preflight models. Direct adapter or payload refs are
+not enough to bypass the connector profile resolution boundary. The packet
+does not write the side-effect request, invoke an adapter, publish externally,
+call a policy engine, invoke gate, write receipts, read draft bodies, collect
+metrics, or activate PubPunk or Module Host runtime behavior.
 
 ## Current publish receipt preflight packet
 
