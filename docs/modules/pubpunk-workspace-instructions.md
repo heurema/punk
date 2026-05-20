@@ -150,13 +150,16 @@ operation evidence, write gate/proof authority, or claim acceptance.
 
 The current publish operation evidence handoff packet can then carry explicit
 publish receipt write handoff, receipt writer result, operation-evidence target
-path, operation-evidence bytes, adapter invocation receipt, connector profile,
-channel, and payload refs into the existing Module Host operation-evidence
-writer. PubPunk still does not read files, write receipts, or write operation
-evidence itself. The smoke evidence writes exact caller-provided evidence bytes
-only to an explicit temporary `.punk/runs` target through the already-existing
-host writer after a successful receipt write, and does not invoke adapters,
-publish, mutate event logs, write gate/proof authority, or claim acceptance.
+path, operation-evidence bytes, adapter invocation receipt, connector profile
+resolution, connector profile, selected connector strategy, channel, and payload
+refs into the existing Module Host operation-evidence writer. Direct adapter,
+channel, payload, or connector profile refs are not enough to bypass channel
+connector profile resolution. PubPunk still does not read files, write receipts,
+or write operation evidence itself. The smoke evidence writes exact
+caller-provided evidence bytes only to an explicit temporary `.punk/runs`
+target through the already-existing host writer after a successful receipt
+write, and does not invoke adapters, publish, mutate event logs, write
+gate/proof authority, or claim acceptance.
 
 The current publish receipt/evidence event handoff packet can then carry
 explicit publish operation evidence handoff, receipt writer result,

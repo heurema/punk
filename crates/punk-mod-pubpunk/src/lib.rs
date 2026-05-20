@@ -5360,7 +5360,9 @@ pub struct PubPunkPublishOperationEvidenceHandoffPacket {
     pub adapter_invocation_receipt_ref: String,
     pub payload_ref: String,
     pub channel_ref: String,
+    pub connector_profile_resolution_ref: String,
     pub connector_profile_ref: String,
+    pub selected_connector_strategy_ref: String,
     pub allowed_source_refs: Vec<String>,
     pub instruction_refs: Vec<String>,
     pub granted_capabilities: Vec<PubPunkCapabilityGrant>,
@@ -5401,7 +5403,9 @@ impl PubPunkPublishOperationEvidenceHandoffPacket {
             adapter_invocation_receipt_ref: String::new(),
             payload_ref: String::new(),
             channel_ref: String::new(),
+            connector_profile_resolution_ref: String::new(),
             connector_profile_ref: String::new(),
+            selected_connector_strategy_ref: String::new(),
             allowed_source_refs: Vec::new(),
             instruction_refs: Vec::new(),
             granted_capabilities: Vec::new(),
@@ -5520,8 +5524,24 @@ impl PubPunkPublishOperationEvidenceHandoffPacket {
         self
     }
 
+    pub fn with_connector_profile_resolution_ref(
+        mut self,
+        connector_profile_resolution_ref: impl Into<String>,
+    ) -> Self {
+        self.connector_profile_resolution_ref = connector_profile_resolution_ref.into();
+        self
+    }
+
     pub fn with_connector_profile_ref(mut self, connector_profile_ref: impl Into<String>) -> Self {
         self.connector_profile_ref = connector_profile_ref.into();
+        self
+    }
+
+    pub fn with_selected_connector_strategy_ref(
+        mut self,
+        selected_connector_strategy_ref: impl Into<String>,
+    ) -> Self {
+        self.selected_connector_strategy_ref = selected_connector_strategy_ref.into();
         self
     }
 
@@ -5591,6 +5611,10 @@ impl PubPunkPublishOperationEvidenceHandoffPacket {
             error_ref: self.error_ref.clone(),
             adapter_invocation_receipt_ref: self.adapter_invocation_receipt_ref.clone(),
             payload_ref: self.payload_ref.clone(),
+            channel_ref: self.channel_ref.clone(),
+            connector_profile_resolution_ref: self.connector_profile_resolution_ref.clone(),
+            connector_profile_ref: self.connector_profile_ref.clone(),
+            selected_connector_strategy_ref: self.selected_connector_strategy_ref.clone(),
         })
     }
 }
@@ -5612,6 +5636,10 @@ pub struct PubPunkPublishOperationEvidenceHandoffRefs {
     pub error_ref: String,
     pub adapter_invocation_receipt_ref: String,
     pub payload_ref: String,
+    pub channel_ref: String,
+    pub connector_profile_resolution_ref: String,
+    pub connector_profile_ref: String,
+    pub selected_connector_strategy_ref: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -5667,9 +5695,15 @@ pub enum PubPunkPublishOperationEvidenceHandoffPacketFindingCode {
     MissingChannelRef,
     UnsafeChannelRef,
     ChannelRefNotAllowed,
+    MissingConnectorProfileResolutionRef,
+    UnsafeConnectorProfileResolutionRef,
+    ConnectorProfileResolutionRefNotAllowed,
     MissingConnectorProfileRef,
     UnsafeConnectorProfileRef,
     ConnectorProfileRefNotAllowed,
+    MissingSelectedConnectorStrategyRef,
+    UnsafeSelectedConnectorStrategyRef,
+    SelectedConnectorStrategyRefNotAllowed,
     MissingInstructionRefs,
     MissingRequiredInstructionRef,
     UnsafeInstructionRef,
@@ -5752,9 +5786,21 @@ impl PubPunkPublishOperationEvidenceHandoffPacketFindingCode {
             Self::MissingChannelRef => "missing_channel_ref",
             Self::UnsafeChannelRef => "unsafe_channel_ref",
             Self::ChannelRefNotAllowed => "channel_ref_not_allowed",
+            Self::MissingConnectorProfileResolutionRef => {
+                "missing_connector_profile_resolution_ref"
+            }
+            Self::UnsafeConnectorProfileResolutionRef => "unsafe_connector_profile_resolution_ref",
+            Self::ConnectorProfileResolutionRefNotAllowed => {
+                "connector_profile_resolution_ref_not_allowed"
+            }
             Self::MissingConnectorProfileRef => "missing_connector_profile_ref",
             Self::UnsafeConnectorProfileRef => "unsafe_connector_profile_ref",
             Self::ConnectorProfileRefNotAllowed => "connector_profile_ref_not_allowed",
+            Self::MissingSelectedConnectorStrategyRef => "missing_selected_connector_strategy_ref",
+            Self::UnsafeSelectedConnectorStrategyRef => "unsafe_selected_connector_strategy_ref",
+            Self::SelectedConnectorStrategyRefNotAllowed => {
+                "selected_connector_strategy_ref_not_allowed"
+            }
             Self::MissingInstructionRefs => "missing_instruction_refs",
             Self::MissingRequiredInstructionRef => "missing_required_instruction_ref",
             Self::UnsafeInstructionRef => "unsafe_instruction_ref",
@@ -5844,7 +5890,9 @@ pub struct PubPunkPublishOperationEvidenceHandoffPacketRefs {
     pub adapter_invocation_receipt_ref: String,
     pub payload_ref: String,
     pub channel_ref: String,
+    pub connector_profile_resolution_ref: String,
     pub connector_profile_ref: String,
+    pub selected_connector_strategy_ref: String,
     pub token_cost_ref: Option<String>,
 }
 
@@ -6114,11 +6162,27 @@ pub fn assess_pubpunk_publish_operation_evidence_handoff_packet(
     );
     validate_publish_operation_evidence_handoff_ref(
         &mut findings,
+        packet.connector_profile_resolution_ref.as_str(),
+        PubPunkPublishOperationEvidenceHandoffPacketFindingCode::MissingConnectorProfileResolutionRef,
+        PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeConnectorProfileResolutionRef,
+        "connector profile resolution ref is required",
+        "connector profile resolution ref must be an explicit repo-relative ref",
+    );
+    validate_publish_operation_evidence_handoff_ref(
+        &mut findings,
         packet.connector_profile_ref.as_str(),
         PubPunkPublishOperationEvidenceHandoffPacketFindingCode::MissingConnectorProfileRef,
         PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeConnectorProfileRef,
         "connector profile ref is required",
         "connector profile ref must be an explicit repo-relative ref",
+    );
+    validate_publish_operation_evidence_handoff_ref(
+        &mut findings,
+        packet.selected_connector_strategy_ref.as_str(),
+        PubPunkPublishOperationEvidenceHandoffPacketFindingCode::MissingSelectedConnectorStrategyRef,
+        PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeSelectedConnectorStrategyRef,
+        "selected connector strategy ref is required",
+        "selected connector strategy ref must be an explicit repo-relative ref",
     );
 
     if packet.instruction_refs.is_empty() {
@@ -6190,9 +6254,19 @@ pub fn assess_pubpunk_publish_operation_evidence_handoff_packet(
             "channel ref must be included in allowed source refs",
         ),
         (
+            packet.connector_profile_resolution_ref.as_str(),
+            PubPunkPublishOperationEvidenceHandoffPacketFindingCode::ConnectorProfileResolutionRefNotAllowed,
+            "connector profile resolution ref must be included in allowed source refs",
+        ),
+        (
             packet.connector_profile_ref.as_str(),
             PubPunkPublishOperationEvidenceHandoffPacketFindingCode::ConnectorProfileRefNotAllowed,
             "connector profile ref must be included in allowed source refs",
+        ),
+        (
+            packet.selected_connector_strategy_ref.as_str(),
+            PubPunkPublishOperationEvidenceHandoffPacketFindingCode::SelectedConnectorStrategyRefNotAllowed,
+            "selected connector strategy ref must be included in allowed source refs",
         ),
         (
             packet.adapter_invocation_receipt_ref.as_str(),
@@ -6256,6 +6330,9 @@ pub fn assess_pubpunk_publish_operation_evidence_handoff_packet(
     for required_field in [
         "side_effects",
         "host_validation",
+        "connector_profile_resolution",
+        "connector_profile_ref",
+        "selected_connector_strategy",
         "adapter_invocation_receipt",
         "operation_evidence",
         "publication_receipt",
@@ -6336,7 +6413,9 @@ pub fn assess_pubpunk_publish_operation_evidence_handoff_packet(
             adapter_invocation_receipt_ref: packet.adapter_invocation_receipt_ref.clone(),
             payload_ref: packet.payload_ref.clone(),
             channel_ref: packet.channel_ref.clone(),
+            connector_profile_resolution_ref: packet.connector_profile_resolution_ref.clone(),
             connector_profile_ref: packet.connector_profile_ref.clone(),
+            selected_connector_strategy_ref: packet.selected_connector_strategy_ref.clone(),
             token_cost_ref: packet.token_cost_ref.clone(),
         },
     }
@@ -7934,14 +8013,22 @@ mod tests {
         )
         .with_payload_ref("publishing/posts/example.md")
         .with_channel_ref("publishing/channels/github-discussions.md")
+        .with_connector_profile_resolution_ref(
+            "work/module-assessments/pubpunk-connector-profile-resolution.md",
+        )
         .with_connector_profile_ref("publishing/connectors/github-discussions.md")
+        .with_selected_connector_strategy_ref(
+            "work/module-assessments/pubpunk-selected-connector-strategy.md",
+        )
         .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
         .with_allowed_source_refs(vec![
             "work/module-assessments/pubpunk-publish-receipt-write-handoff.md",
             "work/module-receipt-writer-results/pubpunk-publish-example.md",
             "publishing/posts/example.md",
             "publishing/channels/github-discussions.md",
+            "work/module-assessments/pubpunk-connector-profile-resolution.md",
             "publishing/connectors/github-discussions.md",
+            "work/module-assessments/pubpunk-selected-connector-strategy.md",
             "work/module-receipts/github-discussions-invocation.md",
             "work/module-receipt-bytes/pubpunk-publish-example.json",
             "work/module-operation-evidence-bytes/pubpunk-publish-example.jsonl",
@@ -7950,6 +8037,9 @@ mod tests {
         .with_expected_receipt_fields(vec![
             "side_effects",
             "host_validation",
+            "connector_profile_resolution",
+            "connector_profile_ref",
+            "selected_connector_strategy",
             "adapter_invocation_receipt",
             "operation_evidence",
             "publication_receipt",
@@ -9112,6 +9202,18 @@ mod tests {
             "work/module-operation-evidence-bytes/pubpunk-publish-example.jsonl"
         );
         assert_eq!(
+            assessment.refs.connector_profile_resolution_ref,
+            "work/module-assessments/pubpunk-connector-profile-resolution.md"
+        );
+        assert_eq!(
+            assessment.refs.connector_profile_ref,
+            "publishing/connectors/github-discussions.md"
+        );
+        assert_eq!(
+            assessment.refs.selected_connector_strategy_ref,
+            "work/module-assessments/pubpunk-selected-connector-strategy.md"
+        );
+        assert_eq!(
             assessment.refs.token_cost_ref.as_deref(),
             Some("work/reports/pubpunk-publish-operation-evidence-handoff-token-cost.md")
         );
@@ -9127,6 +9229,22 @@ mod tests {
         assert_eq!(
             handoff_refs.operation_evidence_target_path_ref,
             ".punk/runs/local-pubpunk-publish-request/operation-evidence.jsonl"
+        );
+        assert_eq!(
+            handoff_refs.channel_ref,
+            "publishing/channels/github-discussions.md"
+        );
+        assert_eq!(
+            handoff_refs.connector_profile_resolution_ref,
+            "work/module-assessments/pubpunk-connector-profile-resolution.md"
+        );
+        assert_eq!(
+            handoff_refs.connector_profile_ref,
+            "publishing/connectors/github-discussions.md"
+        );
+        assert_eq!(
+            handoff_refs.selected_connector_strategy_ref,
+            "work/module-assessments/pubpunk-selected-connector-strategy.md"
         );
         assert_eq!(handoff_refs.payload_ref, "publishing/posts/example.md");
     }
@@ -9152,6 +9270,9 @@ mod tests {
             && finding.ref_value.as_deref() == Some("operation_evidence_bytes")));
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::MissingRequiredExpectedReceiptField
+            && finding.ref_value.as_deref() == Some("connector_profile_resolution")));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::MissingRequiredExpectedReceiptField
             && finding.ref_value.as_deref() == Some("operation_evidence_write_result")));
         assert!(packet.try_into_operation_evidence_handoff_refs().is_err());
     }
@@ -9163,7 +9284,13 @@ mod tests {
             .with_publish_receipt_write_handoff_ref("work/module-assessments/not-allowed.md")
             .with_receipt_writer_result_ref("work/module-receipt-writer-results/not-allowed.md")
             .with_channel_ref("publishing/channels/not-allowed.md")
+            .with_connector_profile_resolution_ref(
+                "work/module-assessments/pubpunk-connector-profile-resolution-not-allowed.md",
+            )
             .with_connector_profile_ref("publishing/connectors/not-allowed.md")
+            .with_selected_connector_strategy_ref(
+                "work/module-assessments/pubpunk-selected-connector-strategy-not-allowed.md",
+            )
             .with_adapter_invocation_receipt_ref("work/module-receipts/not-allowed-invocation.md")
             .with_receipt_bytes_ref("work/module-receipt-bytes/not-allowed.json")
             .with_operation_evidence_bytes_ref(
@@ -9182,7 +9309,11 @@ mod tests {
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::ChannelRefNotAllowed));
         assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::ConnectorProfileResolutionRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::ConnectorProfileRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::SelectedConnectorStrategyRefNotAllowed));
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::AdapterInvocationReceiptRefNotAllowed));
         assert!(assessment.findings.iter().any(|finding| finding.code
@@ -9223,7 +9354,13 @@ mod tests {
             .with_adapter_invocation_receipt_ref("../work/module-receipts/invocation.md")
             .with_payload_ref("../publishing/posts/example.md")
             .with_channel_ref("/tmp/channel.md")
+            .with_connector_profile_resolution_ref(
+                "../work/module-assessments/pubpunk-connector-profile-resolution.md",
+            )
             .with_connector_profile_ref("https://example.com/connector")
+            .with_selected_connector_strategy_ref(
+                "../work/module-assessments/pubpunk-selected-connector-strategy.md",
+            )
             .with_allowed_source_refs(vec!["../publishing/posts/example.md"])
             .with_privacy_policy(PubPunkPrivacyPolicy {
                 raw_external_payloads: true,
@@ -9277,8 +9414,16 @@ mod tests {
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafePayloadRef));
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeChannelRef));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeConnectorProfileResolutionRef
+        }));
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeConnectorProfileRef));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeSelectedConnectorStrategyRef
+        }));
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafePrivacyPolicy));
         assert!(assessment.findings.iter().any(|finding| finding.code

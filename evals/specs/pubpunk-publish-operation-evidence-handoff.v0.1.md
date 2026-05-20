@@ -7,13 +7,14 @@ Authority: advisory/design
 ## Purpose
 
 Define deterministic expectations for the first PubPunk publish operation
-evidence handoff packet.
+evidence handoff packet after channel connector profile resolution.
 
 The packet is the boundary between PubPunk's publish receipt write handoff model
 and the existing Module Host operation-evidence writer for receipt-writer
-results. It carries explicit refs for a host-owned exact-byte operation evidence
-write without making PubPunk an evidence writer, receipt writer, publisher,
-adapter, event-log mutator, gate/proof authority, or runtime surface.
+results. It carries explicit resolved connector evidence plus refs for a
+host-owned exact-byte operation evidence write without making PubPunk an
+evidence writer, receipt writer, publisher, adapter, event-log mutator,
+gate/proof authority, or runtime surface.
 
 This spec does not activate PubPunk runtime, Module Host runtime, module
 loading, filesystem reads by PubPunk, workspace initialization, external
@@ -28,7 +29,8 @@ The packet must include safe explicit refs for publish receipt write handoff,
 receipt writer result, receipt storage, receipt target, receipt target path,
 receipt bytes, operation evidence, operation evidence target path, operation
 evidence bytes, operation evidence write result, idempotency, rollback, error,
-adapter invocation receipt, payload, channel, and connector profile.
+adapter invocation receipt, payload, channel, connector profile resolution,
+connector profile, and selected connector strategy.
 
 ### PUBPUNK-PUBLISH-OPERATION-EVIDENCE-HANDOFF-002: operation evidence target stays under `.punk/runs`
 
@@ -46,10 +48,12 @@ different evidence destination.
 ### PUBPUNK-PUBLISH-OPERATION-EVIDENCE-HANDOFF-004: source refs stay allowed
 
 The publish receipt write handoff, receipt writer result, payload, channel,
-connector profile, adapter invocation receipt, receipt bytes, and operation
-evidence bytes refs must be present in the packet's allowed source refs. These
-are evidence refs only; PubPunk does not read the referenced files in this
-slice.
+connector profile resolution, connector profile, selected connector strategy,
+adapter invocation receipt, receipt bytes, and operation evidence bytes refs
+must be present in the packet's allowed source refs. Direct adapter, channel,
+payload, or connector profile refs are not enough to bypass channel connector
+profile resolution. These are evidence refs only; PubPunk does not read the
+referenced files in this slice.
 
 ### PUBPUNK-PUBLISH-OPERATION-EVIDENCE-HANDOFF-005: write handoff grant is narrow
 
@@ -61,9 +65,11 @@ gate/proof writing, and acceptance claims, must block readiness.
 ### PUBPUNK-PUBLISH-OPERATION-EVIDENCE-HANDOFF-006: receipt expectations include evidence write coverage
 
 The packet must require expected receipt fields and must include `side_effects`,
-`host_validation`, `adapter_invocation_receipt`, `operation_evidence`,
-`publication_receipt`, `receipt_write_result`, `operation_evidence_bytes`,
-`operation_evidence_target_path`, and `operation_evidence_write_result`.
+`host_validation`, `connector_profile_resolution`, `connector_profile_ref`,
+`selected_connector_strategy`, `adapter_invocation_receipt`,
+`operation_evidence`, `publication_receipt`, `receipt_write_result`,
+`operation_evidence_bytes`, `operation_evidence_target_path`, and
+`operation_evidence_write_result`.
 
 ### PUBPUNK-PUBLISH-OPERATION-EVIDENCE-HANDOFF-007: privacy remains metadata-only
 
@@ -107,6 +113,10 @@ pubpunk_publish_operation_evidence_handoff_result:
   workspace_policy: split_explicit_refs
   publish_receipt_write_handoff_ref_explicit: true
   receipt_writer_result_ref_explicit: true
+  connector_profile_resolution_ref_explicit: true
+  connector_profile_ref_explicit: true
+  selected_connector_strategy_ref_explicit: true
+  allowed_source_refs_cover_payload_channel_resolved_connector: true
   operation_evidence_target_path_ref_under_punk_runs: true
   operation_evidence_target_matches_writer_result_ref: true
   operation_evidence_bytes_ref_explicit: true
