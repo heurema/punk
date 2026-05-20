@@ -7,6 +7,7 @@
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 pub const PUBPUNK_MODULE_ID: &str = "pubpunk";
+pub const PUBPUNK_INVENTORY_READER_SCHEMA_VERSION: &str = "punk.pubpunk.inventory_reader.v0.1";
 pub const PUBPUNK_INVENTORY_INPUT_PACKET_SCHEMA_VERSION: &str =
     "punk.pubpunk.inventory_input_packet.v0.1";
 pub const PUBPUNK_INVENTORY_ASSESSMENT_SCHEMA_VERSION: &str =
@@ -150,6 +151,10 @@ impl PubPunkCapabilityGrant {
 
     pub fn supported_by_side_effect_free_assessment(self) -> bool {
         matches!(self, Self::AssessProvidedInventory)
+    }
+
+    pub fn supported_by_side_effect_free_reader(self) -> bool {
+        matches!(self, Self::ReadWorkspaceMetadata)
     }
 }
 
@@ -313,6 +318,488 @@ impl PubPunkWorkspacePolicy {
     pub fn selected_for_first_slice(self) -> bool {
         matches!(self, Self::SplitExplicitRefs)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkInventoryReaderInput {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub allowed_source_refs: Vec<String>,
+    pub instruction_refs: Vec<String>,
+    pub observed_items: Vec<PubPunkInventoryItemInput>,
+    pub granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    pub privacy_policy: PubPunkPrivacyPolicy,
+    pub expected_receipt_fields: Vec<String>,
+    pub token_cost_ref: Option<String>,
+}
+
+impl PubPunkInventoryReaderInput {
+    pub fn new(
+        module_version_ref: impl Into<String>,
+        contract_ref: impl Into<String>,
+        run_ref: impl Into<String>,
+        project_ref: impl Into<String>,
+        publishing_workspace_ref: impl Into<String>,
+    ) -> Self {
+        Self {
+            module_id: PUBPUNK_MODULE_ID.to_owned(),
+            module_version_ref: module_version_ref.into(),
+            contract_ref: contract_ref.into(),
+            run_ref: run_ref.into(),
+            project_ref: project_ref.into(),
+            workspace_policy: PubPunkWorkspacePolicy::SplitExplicitRefs,
+            publishing_workspace_ref: publishing_workspace_ref.into(),
+            allowed_source_refs: Vec::new(),
+            instruction_refs: Vec::new(),
+            observed_items: Vec::new(),
+            granted_capabilities: Vec::new(),
+            privacy_policy: PubPunkPrivacyPolicy::safe_metadata_only(),
+            expected_receipt_fields: Vec::new(),
+            token_cost_ref: None,
+        }
+    }
+
+    pub fn with_workspace_policy(mut self, workspace_policy: PubPunkWorkspacePolicy) -> Self {
+        self.workspace_policy = workspace_policy;
+        self
+    }
+
+    pub fn with_allowed_source_refs(mut self, allowed_source_refs: Vec<impl Into<String>>) -> Self {
+        self.allowed_source_refs = allowed_source_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_instruction_refs(mut self, instruction_refs: Vec<impl Into<String>>) -> Self {
+        self.instruction_refs = instruction_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_observed_items(mut self, observed_items: Vec<PubPunkInventoryItemInput>) -> Self {
+        self.observed_items = observed_items;
+        self
+    }
+
+    pub fn with_granted_capabilities(
+        mut self,
+        granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    ) -> Self {
+        self.granted_capabilities = granted_capabilities;
+        self
+    }
+
+    pub fn with_privacy_policy(mut self, privacy_policy: PubPunkPrivacyPolicy) -> Self {
+        self.privacy_policy = privacy_policy;
+        self
+    }
+
+    pub fn with_expected_receipt_fields(
+        mut self,
+        expected_receipt_fields: Vec<impl Into<String>>,
+    ) -> Self {
+        self.expected_receipt_fields = expected_receipt_fields
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        self
+    }
+
+    pub fn with_token_cost_ref(mut self, token_cost_ref: impl Into<String>) -> Self {
+        self.token_cost_ref = Some(token_cost_ref.into());
+        self
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkInventoryReaderFindingCode {
+    MissingModuleId,
+    NonCanonicalModuleId,
+    MissingModuleVersionRef,
+    MissingContractRef,
+    MissingRunRef,
+    MissingProjectRef,
+    UnsupportedWorkspacePolicy,
+    MissingPublishingWorkspaceRef,
+    UnsafePublishingWorkspaceRef,
+    MissingInstructionRefs,
+    MissingRequiredInstructionRef,
+    UnsafeInstructionRef,
+    UnsafeAllowedSourceRef,
+    MissingReadWorkspaceMetadataGrant,
+    UnsupportedCapabilityGrant,
+    MissingExpectedReceiptFields,
+    UnsafePrivacyPolicy,
+    UnsafeObservedItemSourceRef,
+    ObservedItemSourceRefNotAllowed,
+    RawBodyProvided,
+    UnsafeTokenCostRef,
+}
+
+impl PubPunkInventoryReaderFindingCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingModuleId => "missing_module_id",
+            Self::NonCanonicalModuleId => "non_canonical_module_id",
+            Self::MissingModuleVersionRef => "missing_module_version_ref",
+            Self::MissingContractRef => "missing_contract_ref",
+            Self::MissingRunRef => "missing_run_ref",
+            Self::MissingProjectRef => "missing_project_ref",
+            Self::UnsupportedWorkspacePolicy => "unsupported_workspace_policy",
+            Self::MissingPublishingWorkspaceRef => "missing_publishing_workspace_ref",
+            Self::UnsafePublishingWorkspaceRef => "unsafe_publishing_workspace_ref",
+            Self::MissingInstructionRefs => "missing_instruction_refs",
+            Self::MissingRequiredInstructionRef => "missing_required_instruction_ref",
+            Self::UnsafeInstructionRef => "unsafe_instruction_ref",
+            Self::UnsafeAllowedSourceRef => "unsafe_allowed_source_ref",
+            Self::MissingReadWorkspaceMetadataGrant => "missing_read_workspace_metadata_grant",
+            Self::UnsupportedCapabilityGrant => "unsupported_capability_grant",
+            Self::MissingExpectedReceiptFields => "missing_expected_receipt_fields",
+            Self::UnsafePrivacyPolicy => "unsafe_privacy_policy",
+            Self::UnsafeObservedItemSourceRef => "unsafe_observed_item_source_ref",
+            Self::ObservedItemSourceRefNotAllowed => "observed_item_source_ref_not_allowed",
+            Self::RawBodyProvided => "raw_body_provided",
+            Self::UnsafeTokenCostRef => "unsafe_token_cost_ref",
+        }
+    }
+
+    pub fn is_blocking(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkInventoryReaderFinding {
+    pub code: PubPunkInventoryReaderFindingCode,
+    pub ref_value: Option<String>,
+    pub capability: Option<PubPunkCapabilityGrant>,
+    pub message: &'static str,
+}
+
+impl PubPunkInventoryReaderFinding {
+    fn new(code: PubPunkInventoryReaderFindingCode, message: &'static str) -> Self {
+        Self {
+            code,
+            ref_value: None,
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_ref(
+        code: PubPunkInventoryReaderFindingCode,
+        ref_value: impl Into<String>,
+        message: &'static str,
+    ) -> Self {
+        Self {
+            code,
+            ref_value: Some(ref_value.into()),
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_capability(capability: PubPunkCapabilityGrant) -> Self {
+        Self {
+            code: PubPunkInventoryReaderFindingCode::UnsupportedCapabilityGrant,
+            ref_value: None,
+            capability: Some(capability),
+            message: "capability is not available in the side-effect-free reader slice",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkInventoryReaderRefs {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub token_cost_ref: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkInventoryReaderAssessment {
+    pub schema_version: &'static str,
+    pub status: PubPunkAssessmentStatus,
+    pub authority: PubPunkAssessmentAuthority,
+    pub observed_item_count: usize,
+    pub candidate_count: usize,
+    pub receipt_count: usize,
+    pub metrics_snapshot_count: usize,
+    pub unclear_item_count: usize,
+    pub findings: Vec<PubPunkInventoryReaderFinding>,
+    pub boundary_flags: PubPunkInventoryBoundaryFlags,
+    pub refs: PubPunkInventoryReaderRefs,
+}
+
+impl PubPunkInventoryReaderAssessment {
+    pub fn blocking_findings(&self) -> impl Iterator<Item = &PubPunkInventoryReaderFinding> {
+        self.findings
+            .iter()
+            .filter(|finding| finding.code.is_blocking())
+    }
+
+    pub fn has_blockers(&self) -> bool {
+        self.blocking_findings().next().is_some()
+    }
+}
+
+pub fn assess_pubpunk_inventory_reader_input(
+    input: &PubPunkInventoryReaderInput,
+) -> PubPunkInventoryReaderAssessment {
+    let mut findings = Vec::new();
+
+    push_reader_required_ref_finding(
+        &mut findings,
+        input.module_id.as_str(),
+        PubPunkInventoryReaderFindingCode::MissingModuleId,
+        "module id is required",
+    );
+    if !input.module_id.trim().is_empty() && input.module_id != PUBPUNK_MODULE_ID {
+        findings.push(PubPunkInventoryReaderFinding::for_ref(
+            PubPunkInventoryReaderFindingCode::NonCanonicalModuleId,
+            input.module_id.clone(),
+            "PubPunk inventory readers must use the canonical pubpunk module id",
+        ));
+    }
+    push_reader_required_ref_finding(
+        &mut findings,
+        input.module_version_ref.as_str(),
+        PubPunkInventoryReaderFindingCode::MissingModuleVersionRef,
+        "module version ref is required",
+    );
+    push_reader_required_ref_finding(
+        &mut findings,
+        input.contract_ref.as_str(),
+        PubPunkInventoryReaderFindingCode::MissingContractRef,
+        "contract ref is required",
+    );
+    push_reader_required_ref_finding(
+        &mut findings,
+        input.run_ref.as_str(),
+        PubPunkInventoryReaderFindingCode::MissingRunRef,
+        "run ref is required",
+    );
+    push_reader_required_ref_finding(
+        &mut findings,
+        input.project_ref.as_str(),
+        PubPunkInventoryReaderFindingCode::MissingProjectRef,
+        "project ref is required",
+    );
+
+    if !input.workspace_policy.selected_for_first_slice() {
+        findings.push(PubPunkInventoryReaderFinding::for_ref(
+            PubPunkInventoryReaderFindingCode::UnsupportedWorkspacePolicy,
+            input.workspace_policy.as_str(),
+            "the first PubPunk reader slice only supports split explicit refs",
+        ));
+    }
+
+    push_reader_required_ref_finding(
+        &mut findings,
+        input.publishing_workspace_ref.as_str(),
+        PubPunkInventoryReaderFindingCode::MissingPublishingWorkspaceRef,
+        "publishing workspace ref is required",
+    );
+    if !input.publishing_workspace_ref.trim().is_empty()
+        && !is_safe_workspace_ref(&input.publishing_workspace_ref)
+    {
+        findings.push(PubPunkInventoryReaderFinding::for_ref(
+            PubPunkInventoryReaderFindingCode::UnsafePublishingWorkspaceRef,
+            input.publishing_workspace_ref.clone(),
+            "publishing workspace ref must be an explicit safe logical or repo-relative ref",
+        ));
+    }
+
+    if input.instruction_refs.is_empty() {
+        findings.push(PubPunkInventoryReaderFinding::new(
+            PubPunkInventoryReaderFindingCode::MissingInstructionRefs,
+            "instruction refs are required for PubPunk reader inputs",
+        ));
+    }
+
+    for required_ref in PUBPUNK_REQUIRED_INSTRUCTION_REFS {
+        if !input
+            .instruction_refs
+            .iter()
+            .any(|instruction_ref| instruction_ref == required_ref)
+        {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::MissingRequiredInstructionRef,
+                *required_ref,
+                "required PubPunk instruction ref is missing",
+            ));
+        }
+    }
+
+    for instruction_ref in &input.instruction_refs {
+        if !is_safe_source_ref(instruction_ref) {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::UnsafeInstructionRef,
+                instruction_ref.clone(),
+                "instruction refs must be explicit repo-relative refs",
+            ));
+        }
+    }
+
+    for source_ref in &input.allowed_source_refs {
+        if !is_safe_source_ref(source_ref) {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::UnsafeAllowedSourceRef,
+                source_ref.clone(),
+                "allowed source refs must be explicit repo-relative refs",
+            ));
+        }
+    }
+
+    if !input
+        .granted_capabilities
+        .contains(&PubPunkCapabilityGrant::ReadWorkspaceMetadata)
+    {
+        findings.push(PubPunkInventoryReaderFinding::new(
+            PubPunkInventoryReaderFindingCode::MissingReadWorkspaceMetadataGrant,
+            "read_workspace_metadata must be explicitly granted for this reader input",
+        ));
+    }
+    for capability in &input.granted_capabilities {
+        if !capability.supported_by_side_effect_free_reader() {
+            findings.push(PubPunkInventoryReaderFinding::for_capability(*capability));
+        }
+    }
+
+    if input.expected_receipt_fields.is_empty() {
+        findings.push(PubPunkInventoryReaderFinding::new(
+            PubPunkInventoryReaderFindingCode::MissingExpectedReceiptFields,
+            "expected receipt fields are required even though this reader does not write receipts",
+        ));
+    }
+
+    if input.privacy_policy.allows_private_or_raw_payloads() {
+        findings.push(PubPunkInventoryReaderFinding::new(
+            PubPunkInventoryReaderFindingCode::UnsafePrivacyPolicy,
+            "privacy policy must disallow raw/private payloads for this reader slice",
+        ));
+    }
+
+    let mut candidate_count = 0;
+    let mut receipt_count = 0;
+    let mut metrics_snapshot_count = 0;
+    let mut unclear_item_count = 0;
+
+    for item in &input.observed_items {
+        if !is_safe_source_ref(&item.source_ref) {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::UnsafeObservedItemSourceRef,
+                item.source_ref.clone(),
+                "observed item refs must be explicit repo-relative metadata refs",
+            ));
+        }
+        if !input.allowed_source_refs.contains(&item.source_ref) {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::ObservedItemSourceRefNotAllowed,
+                item.source_ref.clone(),
+                "observed item refs must be included in allowed source refs",
+            ));
+        }
+        if item.raw_body_provided {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::RawBodyProvided,
+                item.source_ref.clone(),
+                "raw post bodies are not accepted by the PubPunk reader model",
+            ));
+        }
+
+        match item.kind {
+            PubPunkInventoryItemKind::PostDraft | PubPunkInventoryItemKind::PreviewDraft => {
+                candidate_count += 1;
+            }
+            PubPunkInventoryItemKind::PublicationReceipt => {
+                receipt_count += 1;
+            }
+            PubPunkInventoryItemKind::MetricsSnapshot => {
+                metrics_snapshot_count += 1;
+            }
+            PubPunkInventoryItemKind::Other => {
+                unclear_item_count += 1;
+            }
+        }
+    }
+
+    if let Some(token_cost_ref) = &input.token_cost_ref {
+        if !is_safe_source_ref(token_cost_ref) {
+            findings.push(PubPunkInventoryReaderFinding::for_ref(
+                PubPunkInventoryReaderFindingCode::UnsafeTokenCostRef,
+                token_cost_ref.clone(),
+                "token cost ref must be an explicit repo-relative ref when provided",
+            ));
+        }
+    }
+
+    let status = if findings.iter().any(|finding| finding.code.is_blocking()) {
+        PubPunkAssessmentStatus::Blocked
+    } else {
+        PubPunkAssessmentStatus::Ready
+    };
+
+    PubPunkInventoryReaderAssessment {
+        schema_version: PUBPUNK_INVENTORY_READER_SCHEMA_VERSION,
+        status,
+        authority: PubPunkAssessmentAuthority::Advisory,
+        observed_item_count: input.observed_items.len(),
+        candidate_count,
+        receipt_count,
+        metrics_snapshot_count,
+        unclear_item_count,
+        findings,
+        boundary_flags: PUBPUNK_INVENTORY_ASSESSMENT_BOUNDARY_FLAGS,
+        refs: PubPunkInventoryReaderRefs {
+            module_id: input.module_id.clone(),
+            module_version_ref: input.module_version_ref.clone(),
+            contract_ref: input.contract_ref.clone(),
+            run_ref: input.run_ref.clone(),
+            project_ref: input.project_ref.clone(),
+            workspace_policy: input.workspace_policy,
+            publishing_workspace_ref: input.publishing_workspace_ref.clone(),
+            token_cost_ref: input.token_cost_ref.clone(),
+        },
+    }
+}
+
+pub fn build_pubpunk_inventory_input_packet_from_reader_input(
+    input: &PubPunkInventoryReaderInput,
+) -> Result<PubPunkInventoryInputPacket, PubPunkInventoryReaderAssessment> {
+    let assessment = assess_pubpunk_inventory_reader_input(input);
+    if assessment.has_blockers() {
+        return Err(assessment);
+    }
+
+    let mut packet = PubPunkInventoryInputPacket::new(
+        input.module_version_ref.clone(),
+        input.contract_ref.clone(),
+        input.run_ref.clone(),
+        input.project_ref.clone(),
+        input.publishing_workspace_ref.clone(),
+    )
+    .with_workspace_policy(input.workspace_policy)
+    .with_allowed_source_refs(input.allowed_source_refs.clone())
+    .with_instruction_refs(input.instruction_refs.clone())
+    .with_items(input.observed_items.clone())
+    .with_granted_capabilities(vec![PubPunkCapabilityGrant::AssessProvidedInventory])
+    .with_privacy_policy(input.privacy_policy)
+    .with_expected_receipt_fields(input.expected_receipt_fields.clone());
+
+    if let Some(token_cost_ref) = &input.token_cost_ref {
+        packet = packet.with_token_cost_ref(token_cost_ref.clone());
+    }
+
+    Ok(packet)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1088,6 +1575,17 @@ fn push_input_packet_required_ref_finding(
     }
 }
 
+fn push_reader_required_ref_finding(
+    findings: &mut Vec<PubPunkInventoryReaderFinding>,
+    value: &str,
+    code: PubPunkInventoryReaderFindingCode,
+    message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkInventoryReaderFinding::new(code, message));
+    }
+}
+
 fn is_safe_workspace_ref(value: &str) -> bool {
     let value = value.trim();
     if let Some(project_id) = value.strip_prefix("punk-publishing://project/") {
@@ -1128,10 +1626,12 @@ fn is_safe_source_ref(value: &str) -> bool {
 mod tests {
     use super::{
         assess_pubpunk_inventory, assess_pubpunk_inventory_input_packet,
-        PubPunkAssessmentAuthority, PubPunkAssessmentStatus, PubPunkCapabilityGrant,
-        PubPunkInventoryFindingCode, PubPunkInventoryInput, PubPunkInventoryInputPacket,
-        PubPunkInventoryInputPacketFindingCode, PubPunkInventoryItemInput,
-        PubPunkInventoryItemKind, PubPunkInventoryItemStatus, PubPunkPrivacyPolicy,
+        assess_pubpunk_inventory_reader_input,
+        build_pubpunk_inventory_input_packet_from_reader_input, PubPunkAssessmentAuthority,
+        PubPunkAssessmentStatus, PubPunkCapabilityGrant, PubPunkInventoryFindingCode,
+        PubPunkInventoryInput, PubPunkInventoryInputPacket, PubPunkInventoryInputPacketFindingCode,
+        PubPunkInventoryItemInput, PubPunkInventoryItemKind, PubPunkInventoryItemStatus,
+        PubPunkInventoryReaderFindingCode, PubPunkInventoryReaderInput, PubPunkPrivacyPolicy,
         PubPunkWorkspacePolicy, PUBPUNK_REQUIRED_INSTRUCTION_REFS,
     };
 
@@ -1171,6 +1671,212 @@ mod tests {
             "side_effects",
         ])
         .with_token_cost_ref("work/reports/pubpunk-token-cost.md")
+    }
+
+    fn valid_reader_input() -> PubPunkInventoryReaderInput {
+        PubPunkInventoryReaderInput::new(
+            "v0.1",
+            "contracts/publish-cycle-0",
+            "runs/local-pubpunk-inventory",
+            "project/punk",
+            "punk-publishing://project/punk",
+        )
+        .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
+        .with_allowed_source_refs(vec![
+            "publishing/posts/example.md",
+            "publishing/publications/example.md",
+            "publishing/metrics/example.md",
+            "publishing/misc/unclear.md",
+        ])
+        .with_granted_capabilities(vec![PubPunkCapabilityGrant::ReadWorkspaceMetadata])
+        .with_expected_receipt_fields(vec![
+            "module_id",
+            "operation",
+            "source_refs",
+            "capability_grants",
+            "side_effects",
+        ])
+        .with_token_cost_ref("work/reports/pubpunk-token-cost.md")
+    }
+
+    #[test]
+    fn inventory_reader_builds_packet_from_explicit_observed_refs() {
+        let reader_input = valid_reader_input().with_observed_items(vec![
+            PubPunkInventoryItemInput::new(
+                "publishing/posts/example.md",
+                PubPunkInventoryItemKind::PostDraft,
+                PubPunkInventoryItemStatus::ReadyForReview,
+            )
+            .with_channel("github-discussions"),
+            PubPunkInventoryItemInput::new(
+                "publishing/publications/example.md",
+                PubPunkInventoryItemKind::PublicationReceipt,
+                PubPunkInventoryItemStatus::Published,
+            )
+            .with_publication_receipt(true),
+            PubPunkInventoryItemInput::new(
+                "publishing/metrics/example.md",
+                PubPunkInventoryItemKind::MetricsSnapshot,
+                PubPunkInventoryItemStatus::History,
+            ),
+            PubPunkInventoryItemInput::new(
+                "publishing/misc/unclear.md",
+                PubPunkInventoryItemKind::Other,
+                PubPunkInventoryItemStatus::Unknown,
+            ),
+        ]);
+
+        let reader_assessment = assess_pubpunk_inventory_reader_input(&reader_input);
+        let packet = build_pubpunk_inventory_input_packet_from_reader_input(&reader_input)
+            .expect("reader input should build packet");
+        let packet_assessment = assess_pubpunk_inventory_input_packet(&packet);
+        let inventory_input = packet
+            .try_into_inventory_input()
+            .expect("packet should convert");
+        let inventory_assessment = assess_pubpunk_inventory(&inventory_input);
+
+        assert_eq!(reader_assessment.status, PubPunkAssessmentStatus::Ready);
+        assert_eq!(
+            reader_assessment.authority,
+            PubPunkAssessmentAuthority::Advisory
+        );
+        assert_eq!(reader_assessment.observed_item_count, 4);
+        assert_eq!(reader_assessment.candidate_count, 1);
+        assert_eq!(reader_assessment.receipt_count, 1);
+        assert_eq!(reader_assessment.metrics_snapshot_count, 1);
+        assert_eq!(reader_assessment.unclear_item_count, 1);
+        assert!(reader_assessment
+            .boundary_flags
+            .all_side_effect_flags_false());
+        assert_eq!(
+            packet.granted_capabilities,
+            vec![PubPunkCapabilityGrant::AssessProvidedInventory]
+        );
+        assert_eq!(packet.items.len(), 4);
+        assert_eq!(packet_assessment.status, PubPunkAssessmentStatus::Ready);
+        assert_eq!(inventory_assessment.status, PubPunkAssessmentStatus::Ready);
+    }
+
+    #[test]
+    fn inventory_reader_allows_empty_new_project_inventory() {
+        let reader_input = valid_reader_input()
+            .with_allowed_source_refs(Vec::<String>::new())
+            .with_observed_items(Vec::new());
+
+        let reader_assessment = assess_pubpunk_inventory_reader_input(&reader_input);
+        let packet = build_pubpunk_inventory_input_packet_from_reader_input(&reader_input)
+            .expect("empty new-project inventory should be allowed");
+
+        assert_eq!(reader_assessment.status, PubPunkAssessmentStatus::Ready);
+        assert_eq!(reader_assessment.observed_item_count, 0);
+        assert_eq!(reader_assessment.candidate_count, 0);
+        assert!(reader_assessment
+            .boundary_flags
+            .all_side_effect_flags_false());
+        assert!(packet.items.is_empty());
+    }
+
+    #[test]
+    fn inventory_reader_blocks_unallowed_observed_refs_and_raw_bodies() {
+        let reader_input = valid_reader_input()
+            .with_allowed_source_refs(vec!["publishing/posts/other.md"])
+            .with_privacy_policy(PubPunkPrivacyPolicy {
+                raw_post_bodies: true,
+                ..PubPunkPrivacyPolicy::safe_metadata_only()
+            })
+            .with_observed_items(vec![PubPunkInventoryItemInput::new(
+                "publishing/posts/example.md",
+                PubPunkInventoryItemKind::PostDraft,
+                PubPunkInventoryItemStatus::Draft,
+            )
+            .with_raw_body_provided(true)]);
+
+        let reader_assessment = assess_pubpunk_inventory_reader_input(&reader_input);
+
+        assert_eq!(reader_assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(reader_assessment.findings.iter().any(|finding| finding.code
+            == PubPunkInventoryReaderFindingCode::ObservedItemSourceRefNotAllowed));
+        assert!(reader_assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code == PubPunkInventoryReaderFindingCode::UnsafePrivacyPolicy));
+        assert!(reader_assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code == PubPunkInventoryReaderFindingCode::RawBodyProvided));
+        assert!(build_pubpunk_inventory_input_packet_from_reader_input(&reader_input).is_err());
+    }
+
+    #[test]
+    fn inventory_reader_blocks_unsupported_capabilities() {
+        let reader_input = valid_reader_input().with_granted_capabilities(vec![
+            PubPunkCapabilityGrant::ReadWorkspaceMetadata,
+            PubPunkCapabilityGrant::RequestExternalPublish,
+        ]);
+        let missing_grant_input = valid_reader_input()
+            .with_granted_capabilities(vec![PubPunkCapabilityGrant::AssessProvidedInventory]);
+
+        let reader_assessment = assess_pubpunk_inventory_reader_input(&reader_input);
+        let missing_grant_assessment = assess_pubpunk_inventory_reader_input(&missing_grant_input);
+
+        assert_eq!(reader_assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(reader_assessment.findings.iter().any(|finding| finding.code
+            == PubPunkInventoryReaderFindingCode::UnsupportedCapabilityGrant
+            && finding.capability == Some(PubPunkCapabilityGrant::RequestExternalPublish)));
+        assert_eq!(
+            missing_grant_assessment.status,
+            PubPunkAssessmentStatus::Blocked
+        );
+        assert!(missing_grant_assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code
+                == PubPunkInventoryReaderFindingCode::MissingReadWorkspaceMetadataGrant));
+    }
+
+    #[test]
+    fn inventory_reader_blocks_unsafe_refs() {
+        let mut instruction_refs = PUBPUNK_REQUIRED_INSTRUCTION_REFS
+            .iter()
+            .map(|instruction_ref| (*instruction_ref).to_owned())
+            .collect::<Vec<_>>();
+        instruction_refs.push("/tmp/pubpunk-instruction.md".to_owned());
+
+        let mut reader_input = valid_reader_input()
+            .with_instruction_refs(instruction_refs)
+            .with_allowed_source_refs(vec![
+                "publishing/posts/example.md",
+                "../publishing/posts/escape.md",
+            ])
+            .with_observed_items(vec![PubPunkInventoryItemInput::new(
+                "../publishing/posts/escape.md",
+                PubPunkInventoryItemKind::PostDraft,
+                PubPunkInventoryItemStatus::Draft,
+            )])
+            .with_token_cost_ref("../work/reports/token-cost.md");
+        reader_input.publishing_workspace_ref = "https://example.com/workspace".to_owned();
+
+        let reader_assessment = assess_pubpunk_inventory_reader_input(&reader_input);
+
+        assert_eq!(reader_assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(reader_assessment.findings.iter().any(|finding| finding.code
+            == PubPunkInventoryReaderFindingCode::UnsafePublishingWorkspaceRef));
+        assert!(
+            reader_assessment
+                .findings
+                .iter()
+                .any(|finding| finding.code
+                    == PubPunkInventoryReaderFindingCode::UnsafeInstructionRef)
+        );
+        assert!(reader_assessment.findings.iter().any(
+            |finding| finding.code == PubPunkInventoryReaderFindingCode::UnsafeAllowedSourceRef
+        ));
+        assert!(reader_assessment.findings.iter().any(|finding| finding.code
+            == PubPunkInventoryReaderFindingCode::UnsafeObservedItemSourceRef));
+        assert!(reader_assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code == PubPunkInventoryReaderFindingCode::UnsafeTokenCostRef));
     }
 
     #[test]
