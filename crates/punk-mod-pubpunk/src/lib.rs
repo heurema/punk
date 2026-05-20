@@ -14,6 +14,8 @@ pub const PUBPUNK_INVENTORY_ASSESSMENT_SCHEMA_VERSION: &str =
     "punk.pubpunk.inventory_assessment.v0.1";
 pub const PUBPUNK_PUBLISH_REQUEST_PACKET_SCHEMA_VERSION: &str =
     "punk.pubpunk.publish_request_packet.v0.1";
+pub const PUBPUNK_PUBLISH_RECEIPT_PREFLIGHT_PACKET_SCHEMA_VERSION: &str =
+    "punk.pubpunk.publish_receipt_preflight_packet.v0.1";
 pub const PUBPUNK_REQUIRED_INSTRUCTION_REFS: &[&str] = &[
     "docs/modules/pubpunk.md",
     "docs/modules/pubpunk-workspace-instructions.md",
@@ -160,6 +162,10 @@ impl PubPunkCapabilityGrant {
     }
 
     pub fn supported_by_side_effect_free_publish_request(self) -> bool {
+        matches!(self, Self::RequestExternalPublish)
+    }
+
+    pub fn supported_by_side_effect_free_publish_receipt_preflight(self) -> bool {
         matches!(self, Self::RequestExternalPublish)
     }
 }
@@ -2236,6 +2242,793 @@ pub fn assess_pubpunk_publish_request_packet(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkPublishReceiptPreflightOperation {
+    PreparePublishReceiptPreflight,
+}
+
+impl PubPunkPublishReceiptPreflightOperation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PreparePublishReceiptPreflight => "prepare_publish_receipt_preflight",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptPreflightPacket {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub publish_request_ref: String,
+    pub receipt_writer_preflight_ref: String,
+    pub policy_gate_preflight_ref: String,
+    pub receipt_target_ref: String,
+    pub receipt_storage_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub channel_ref: String,
+    pub connector_profile_ref: String,
+    pub allowed_source_refs: Vec<String>,
+    pub instruction_refs: Vec<String>,
+    pub granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    pub privacy_policy: PubPunkPrivacyPolicy,
+    pub expected_receipt_fields: Vec<String>,
+    pub token_cost_ref: Option<String>,
+}
+
+impl PubPunkPublishReceiptPreflightPacket {
+    pub fn new(
+        module_version_ref: impl Into<String>,
+        contract_ref: impl Into<String>,
+        run_ref: impl Into<String>,
+        project_ref: impl Into<String>,
+        publishing_workspace_ref: impl Into<String>,
+    ) -> Self {
+        Self {
+            module_id: PUBPUNK_MODULE_ID.to_owned(),
+            module_version_ref: module_version_ref.into(),
+            contract_ref: contract_ref.into(),
+            run_ref: run_ref.into(),
+            project_ref: project_ref.into(),
+            workspace_policy: PubPunkWorkspacePolicy::SplitExplicitRefs,
+            publishing_workspace_ref: publishing_workspace_ref.into(),
+            publish_request_ref: String::new(),
+            receipt_writer_preflight_ref: String::new(),
+            policy_gate_preflight_ref: String::new(),
+            receipt_target_ref: String::new(),
+            receipt_storage_ref: String::new(),
+            operation_evidence_ref: String::new(),
+            idempotency_ref: String::new(),
+            rollback_ref: String::new(),
+            error_ref: String::new(),
+            adapter_invocation_receipt_ref: String::new(),
+            payload_ref: String::new(),
+            channel_ref: String::new(),
+            connector_profile_ref: String::new(),
+            allowed_source_refs: Vec::new(),
+            instruction_refs: Vec::new(),
+            granted_capabilities: Vec::new(),
+            privacy_policy: PubPunkPrivacyPolicy::safe_metadata_only(),
+            expected_receipt_fields: Vec::new(),
+            token_cost_ref: None,
+        }
+    }
+
+    pub fn with_workspace_policy(mut self, workspace_policy: PubPunkWorkspacePolicy) -> Self {
+        self.workspace_policy = workspace_policy;
+        self
+    }
+
+    pub fn with_publish_request_ref(mut self, publish_request_ref: impl Into<String>) -> Self {
+        self.publish_request_ref = publish_request_ref.into();
+        self
+    }
+
+    pub fn with_receipt_writer_preflight_ref(
+        mut self,
+        receipt_writer_preflight_ref: impl Into<String>,
+    ) -> Self {
+        self.receipt_writer_preflight_ref = receipt_writer_preflight_ref.into();
+        self
+    }
+
+    pub fn with_policy_gate_preflight_ref(
+        mut self,
+        policy_gate_preflight_ref: impl Into<String>,
+    ) -> Self {
+        self.policy_gate_preflight_ref = policy_gate_preflight_ref.into();
+        self
+    }
+
+    pub fn with_receipt_target_ref(mut self, receipt_target_ref: impl Into<String>) -> Self {
+        self.receipt_target_ref = receipt_target_ref.into();
+        self
+    }
+
+    pub fn with_receipt_storage_ref(mut self, receipt_storage_ref: impl Into<String>) -> Self {
+        self.receipt_storage_ref = receipt_storage_ref.into();
+        self
+    }
+
+    pub fn with_operation_evidence_ref(
+        mut self,
+        operation_evidence_ref: impl Into<String>,
+    ) -> Self {
+        self.operation_evidence_ref = operation_evidence_ref.into();
+        self
+    }
+
+    pub fn with_idempotency_ref(mut self, idempotency_ref: impl Into<String>) -> Self {
+        self.idempotency_ref = idempotency_ref.into();
+        self
+    }
+
+    pub fn with_rollback_ref(mut self, rollback_ref: impl Into<String>) -> Self {
+        self.rollback_ref = rollback_ref.into();
+        self
+    }
+
+    pub fn with_error_ref(mut self, error_ref: impl Into<String>) -> Self {
+        self.error_ref = error_ref.into();
+        self
+    }
+
+    pub fn with_adapter_invocation_receipt_ref(
+        mut self,
+        adapter_invocation_receipt_ref: impl Into<String>,
+    ) -> Self {
+        self.adapter_invocation_receipt_ref = adapter_invocation_receipt_ref.into();
+        self
+    }
+
+    pub fn with_payload_ref(mut self, payload_ref: impl Into<String>) -> Self {
+        self.payload_ref = payload_ref.into();
+        self
+    }
+
+    pub fn with_channel_ref(mut self, channel_ref: impl Into<String>) -> Self {
+        self.channel_ref = channel_ref.into();
+        self
+    }
+
+    pub fn with_connector_profile_ref(mut self, connector_profile_ref: impl Into<String>) -> Self {
+        self.connector_profile_ref = connector_profile_ref.into();
+        self
+    }
+
+    pub fn with_allowed_source_refs(mut self, allowed_source_refs: Vec<impl Into<String>>) -> Self {
+        self.allowed_source_refs = allowed_source_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_instruction_refs(mut self, instruction_refs: Vec<impl Into<String>>) -> Self {
+        self.instruction_refs = instruction_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_granted_capabilities(
+        mut self,
+        granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    ) -> Self {
+        self.granted_capabilities = granted_capabilities;
+        self
+    }
+
+    pub fn with_privacy_policy(mut self, privacy_policy: PubPunkPrivacyPolicy) -> Self {
+        self.privacy_policy = privacy_policy;
+        self
+    }
+
+    pub fn with_expected_receipt_fields(
+        mut self,
+        expected_receipt_fields: Vec<impl Into<String>>,
+    ) -> Self {
+        self.expected_receipt_fields = expected_receipt_fields
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        self
+    }
+
+    pub fn with_token_cost_ref(mut self, token_cost_ref: impl Into<String>) -> Self {
+        self.token_cost_ref = Some(token_cost_ref.into());
+        self
+    }
+
+    pub fn try_into_receipt_writer_preflight_refs(
+        &self,
+    ) -> Result<
+        PubPunkPublishReceiptWriterPreflightRefs,
+        PubPunkPublishReceiptPreflightPacketAssessment,
+    > {
+        let assessment = assess_pubpunk_publish_receipt_preflight_packet(self);
+        if assessment.has_blockers() {
+            return Err(assessment);
+        }
+
+        Ok(PubPunkPublishReceiptWriterPreflightRefs {
+            preflight_ref: self.receipt_writer_preflight_ref.clone(),
+            policy_gate_preflight_ref: self.policy_gate_preflight_ref.clone(),
+            receipt_target_ref: self.receipt_target_ref.clone(),
+            storage_ref: self.receipt_storage_ref.clone(),
+            operation_evidence_ref: self.operation_evidence_ref.clone(),
+            idempotency_ref: self.idempotency_ref.clone(),
+            rollback_ref: self.rollback_ref.clone(),
+            error_ref: self.error_ref.clone(),
+            adapter_invocation_receipt_ref: self.adapter_invocation_receipt_ref.clone(),
+            payload_ref: self.payload_ref.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptWriterPreflightRefs {
+    pub preflight_ref: String,
+    pub policy_gate_preflight_ref: String,
+    pub receipt_target_ref: String,
+    pub storage_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkPublishReceiptPreflightPacketFindingCode {
+    MissingModuleId,
+    NonCanonicalModuleId,
+    MissingModuleVersionRef,
+    MissingContractRef,
+    MissingRunRef,
+    MissingProjectRef,
+    UnsupportedWorkspacePolicy,
+    MissingPublishingWorkspaceRef,
+    UnsafePublishingWorkspaceRef,
+    MissingPublishRequestRef,
+    UnsafePublishRequestRef,
+    MissingReceiptWriterPreflightRef,
+    UnsafeReceiptWriterPreflightRef,
+    MissingPolicyGatePreflightRef,
+    UnsafePolicyGatePreflightRef,
+    MissingReceiptTargetRef,
+    UnsafeReceiptTargetRef,
+    MissingReceiptStorageRef,
+    UnsafeReceiptStorageRef,
+    MissingOperationEvidenceRef,
+    UnsafeOperationEvidenceRef,
+    MissingIdempotencyRef,
+    UnsafeIdempotencyRef,
+    MissingRollbackRef,
+    UnsafeRollbackRef,
+    MissingErrorRef,
+    UnsafeErrorRef,
+    MissingAdapterInvocationReceiptRef,
+    UnsafeAdapterInvocationReceiptRef,
+    MissingPayloadRef,
+    UnsafePayloadRef,
+    PayloadRefNotAllowed,
+    MissingChannelRef,
+    UnsafeChannelRef,
+    ChannelRefNotAllowed,
+    MissingConnectorProfileRef,
+    UnsafeConnectorProfileRef,
+    ConnectorProfileRefNotAllowed,
+    MissingInstructionRefs,
+    MissingRequiredInstructionRef,
+    UnsafeInstructionRef,
+    UnsafeAllowedSourceRef,
+    MissingRequestExternalPublishGrant,
+    UnsupportedCapabilityGrant,
+    MissingExpectedReceiptFields,
+    MissingRequiredExpectedReceiptField,
+    UnsafePrivacyPolicy,
+    UnsafeTokenCostRef,
+}
+
+impl PubPunkPublishReceiptPreflightPacketFindingCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingModuleId => "missing_module_id",
+            Self::NonCanonicalModuleId => "non_canonical_module_id",
+            Self::MissingModuleVersionRef => "missing_module_version_ref",
+            Self::MissingContractRef => "missing_contract_ref",
+            Self::MissingRunRef => "missing_run_ref",
+            Self::MissingProjectRef => "missing_project_ref",
+            Self::UnsupportedWorkspacePolicy => "unsupported_workspace_policy",
+            Self::MissingPublishingWorkspaceRef => "missing_publishing_workspace_ref",
+            Self::UnsafePublishingWorkspaceRef => "unsafe_publishing_workspace_ref",
+            Self::MissingPublishRequestRef => "missing_publish_request_ref",
+            Self::UnsafePublishRequestRef => "unsafe_publish_request_ref",
+            Self::MissingReceiptWriterPreflightRef => "missing_receipt_writer_preflight_ref",
+            Self::UnsafeReceiptWriterPreflightRef => "unsafe_receipt_writer_preflight_ref",
+            Self::MissingPolicyGatePreflightRef => "missing_policy_gate_preflight_ref",
+            Self::UnsafePolicyGatePreflightRef => "unsafe_policy_gate_preflight_ref",
+            Self::MissingReceiptTargetRef => "missing_receipt_target_ref",
+            Self::UnsafeReceiptTargetRef => "unsafe_receipt_target_ref",
+            Self::MissingReceiptStorageRef => "missing_receipt_storage_ref",
+            Self::UnsafeReceiptStorageRef => "unsafe_receipt_storage_ref",
+            Self::MissingOperationEvidenceRef => "missing_operation_evidence_ref",
+            Self::UnsafeOperationEvidenceRef => "unsafe_operation_evidence_ref",
+            Self::MissingIdempotencyRef => "missing_idempotency_ref",
+            Self::UnsafeIdempotencyRef => "unsafe_idempotency_ref",
+            Self::MissingRollbackRef => "missing_rollback_ref",
+            Self::UnsafeRollbackRef => "unsafe_rollback_ref",
+            Self::MissingErrorRef => "missing_error_ref",
+            Self::UnsafeErrorRef => "unsafe_error_ref",
+            Self::MissingAdapterInvocationReceiptRef => "missing_adapter_invocation_receipt_ref",
+            Self::UnsafeAdapterInvocationReceiptRef => "unsafe_adapter_invocation_receipt_ref",
+            Self::MissingPayloadRef => "missing_payload_ref",
+            Self::UnsafePayloadRef => "unsafe_payload_ref",
+            Self::PayloadRefNotAllowed => "payload_ref_not_allowed",
+            Self::MissingChannelRef => "missing_channel_ref",
+            Self::UnsafeChannelRef => "unsafe_channel_ref",
+            Self::ChannelRefNotAllowed => "channel_ref_not_allowed",
+            Self::MissingConnectorProfileRef => "missing_connector_profile_ref",
+            Self::UnsafeConnectorProfileRef => "unsafe_connector_profile_ref",
+            Self::ConnectorProfileRefNotAllowed => "connector_profile_ref_not_allowed",
+            Self::MissingInstructionRefs => "missing_instruction_refs",
+            Self::MissingRequiredInstructionRef => "missing_required_instruction_ref",
+            Self::UnsafeInstructionRef => "unsafe_instruction_ref",
+            Self::UnsafeAllowedSourceRef => "unsafe_allowed_source_ref",
+            Self::MissingRequestExternalPublishGrant => "missing_request_external_publish_grant",
+            Self::UnsupportedCapabilityGrant => "unsupported_capability_grant",
+            Self::MissingExpectedReceiptFields => "missing_expected_receipt_fields",
+            Self::MissingRequiredExpectedReceiptField => "missing_required_expected_receipt_field",
+            Self::UnsafePrivacyPolicy => "unsafe_privacy_policy",
+            Self::UnsafeTokenCostRef => "unsafe_token_cost_ref",
+        }
+    }
+
+    pub fn is_blocking(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptPreflightPacketFinding {
+    pub code: PubPunkPublishReceiptPreflightPacketFindingCode,
+    pub ref_value: Option<String>,
+    pub capability: Option<PubPunkCapabilityGrant>,
+    pub message: &'static str,
+}
+
+impl PubPunkPublishReceiptPreflightPacketFinding {
+    fn new(code: PubPunkPublishReceiptPreflightPacketFindingCode, message: &'static str) -> Self {
+        Self {
+            code,
+            ref_value: None,
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_ref(
+        code: PubPunkPublishReceiptPreflightPacketFindingCode,
+        ref_value: impl Into<String>,
+        message: &'static str,
+    ) -> Self {
+        Self {
+            code,
+            ref_value: Some(ref_value.into()),
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_capability(capability: PubPunkCapabilityGrant) -> Self {
+        Self {
+            code: PubPunkPublishReceiptPreflightPacketFindingCode::UnsupportedCapabilityGrant,
+            ref_value: None,
+            capability: Some(capability),
+            message: "capability is not available in the side-effect-free publish receipt preflight packet",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptPreflightPacketRefs {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub publish_request_ref: String,
+    pub receipt_writer_preflight_ref: String,
+    pub policy_gate_preflight_ref: String,
+    pub receipt_target_ref: String,
+    pub receipt_storage_ref: String,
+    pub operation_evidence_ref: String,
+    pub idempotency_ref: String,
+    pub rollback_ref: String,
+    pub error_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub channel_ref: String,
+    pub connector_profile_ref: String,
+    pub token_cost_ref: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptPreflightPacketAssessment {
+    pub schema_version: &'static str,
+    pub status: PubPunkAssessmentStatus,
+    pub authority: PubPunkAssessmentAuthority,
+    pub requested_operation: PubPunkPublishReceiptPreflightOperation,
+    pub findings: Vec<PubPunkPublishReceiptPreflightPacketFinding>,
+    pub boundary_flags: PubPunkInventoryBoundaryFlags,
+    pub refs: PubPunkPublishReceiptPreflightPacketRefs,
+}
+
+impl PubPunkPublishReceiptPreflightPacketAssessment {
+    pub fn blocking_findings(
+        &self,
+    ) -> impl Iterator<Item = &PubPunkPublishReceiptPreflightPacketFinding> {
+        self.findings
+            .iter()
+            .filter(|finding| finding.code.is_blocking())
+    }
+
+    pub fn has_blockers(&self) -> bool {
+        self.blocking_findings().next().is_some()
+    }
+}
+
+pub fn assess_pubpunk_publish_receipt_preflight_packet(
+    packet: &PubPunkPublishReceiptPreflightPacket,
+) -> PubPunkPublishReceiptPreflightPacketAssessment {
+    let mut findings = Vec::new();
+
+    push_publish_receipt_preflight_required_ref_finding(
+        &mut findings,
+        packet.module_id.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingModuleId,
+        "module id is required",
+    );
+    if !packet.module_id.trim().is_empty() && packet.module_id != PUBPUNK_MODULE_ID {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            PubPunkPublishReceiptPreflightPacketFindingCode::NonCanonicalModuleId,
+            packet.module_id.clone(),
+            "PubPunk publish receipt preflight packets must use the canonical pubpunk module id",
+        ));
+    }
+    push_publish_receipt_preflight_required_ref_finding(
+        &mut findings,
+        packet.module_version_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingModuleVersionRef,
+        "module version ref is required",
+    );
+    push_publish_receipt_preflight_required_ref_finding(
+        &mut findings,
+        packet.contract_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingContractRef,
+        "contract ref is required",
+    );
+    push_publish_receipt_preflight_required_ref_finding(
+        &mut findings,
+        packet.run_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingRunRef,
+        "run ref is required",
+    );
+    push_publish_receipt_preflight_required_ref_finding(
+        &mut findings,
+        packet.project_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingProjectRef,
+        "project ref is required",
+    );
+
+    if !packet.workspace_policy.selected_for_first_slice() {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            PubPunkPublishReceiptPreflightPacketFindingCode::UnsupportedWorkspacePolicy,
+            packet.workspace_policy.as_str(),
+            "the first PubPunk publish receipt preflight packet supports split explicit refs only",
+        ));
+    }
+
+    push_publish_receipt_preflight_required_ref_finding(
+        &mut findings,
+        packet.publishing_workspace_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingPublishingWorkspaceRef,
+        "publishing workspace ref is required",
+    );
+    if !packet.publishing_workspace_ref.trim().is_empty()
+        && !is_safe_workspace_ref(&packet.publishing_workspace_ref)
+    {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePublishingWorkspaceRef,
+            packet.publishing_workspace_ref.clone(),
+            "publishing workspace ref must be an explicit safe logical or repo-relative ref",
+        ));
+    }
+
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.publish_request_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingPublishRequestRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePublishRequestRef,
+        "publish request ref is required",
+        "publish request ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.receipt_writer_preflight_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingReceiptWriterPreflightRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeReceiptWriterPreflightRef,
+        "receipt writer preflight ref is required",
+        "receipt writer preflight ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.policy_gate_preflight_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingPolicyGatePreflightRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePolicyGatePreflightRef,
+        "policy gate preflight ref is required",
+        "policy gate preflight ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.receipt_target_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingReceiptTargetRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeReceiptTargetRef,
+        "receipt target ref is required",
+        "receipt target ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.receipt_storage_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingReceiptStorageRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeReceiptStorageRef,
+        "receipt storage ref is required",
+        "receipt storage ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.operation_evidence_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingOperationEvidenceRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeOperationEvidenceRef,
+        "operation evidence ref is required",
+        "operation evidence ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.idempotency_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingIdempotencyRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeIdempotencyRef,
+        "idempotency ref is required",
+        "idempotency ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.rollback_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingRollbackRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeRollbackRef,
+        "rollback ref is required",
+        "rollback ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.error_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingErrorRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeErrorRef,
+        "error ref is required",
+        "error ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.adapter_invocation_receipt_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingAdapterInvocationReceiptRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeAdapterInvocationReceiptRef,
+        "adapter invocation receipt ref is required",
+        "adapter invocation receipt ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.payload_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingPayloadRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePayloadRef,
+        "payload ref is required",
+        "payload ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.channel_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingChannelRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeChannelRef,
+        "channel ref is required",
+        "channel ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_preflight_ref(
+        &mut findings,
+        packet.connector_profile_ref.as_str(),
+        PubPunkPublishReceiptPreflightPacketFindingCode::MissingConnectorProfileRef,
+        PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeConnectorProfileRef,
+        "connector profile ref is required",
+        "connector profile ref must be an explicit repo-relative ref",
+    );
+
+    if packet.instruction_refs.is_empty() {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::new(
+            PubPunkPublishReceiptPreflightPacketFindingCode::MissingInstructionRefs,
+            "instruction refs are required for PubPunk publish receipt preflight packets",
+        ));
+    }
+
+    for required_ref in PUBPUNK_REQUIRED_INSTRUCTION_REFS {
+        if !packet
+            .instruction_refs
+            .iter()
+            .any(|instruction_ref| instruction_ref == required_ref)
+        {
+            findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+                PubPunkPublishReceiptPreflightPacketFindingCode::MissingRequiredInstructionRef,
+                *required_ref,
+                "required PubPunk instruction ref is missing",
+            ));
+        }
+    }
+
+    for instruction_ref in &packet.instruction_refs {
+        if !is_safe_source_ref(instruction_ref) {
+            findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+                PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeInstructionRef,
+                instruction_ref.clone(),
+                "instruction refs must be explicit repo-relative refs",
+            ));
+        }
+    }
+
+    for source_ref in &packet.allowed_source_refs {
+        if !is_safe_source_ref(source_ref) {
+            findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+                PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeAllowedSourceRef,
+                source_ref.clone(),
+                "allowed source refs must be explicit repo-relative refs",
+            ));
+        }
+    }
+
+    if !packet.payload_ref.trim().is_empty()
+        && !packet.allowed_source_refs.contains(&packet.payload_ref)
+    {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            PubPunkPublishReceiptPreflightPacketFindingCode::PayloadRefNotAllowed,
+            packet.payload_ref.clone(),
+            "payload ref must be included in allowed source refs",
+        ));
+    }
+    if !packet.channel_ref.trim().is_empty()
+        && !packet.allowed_source_refs.contains(&packet.channel_ref)
+    {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            PubPunkPublishReceiptPreflightPacketFindingCode::ChannelRefNotAllowed,
+            packet.channel_ref.clone(),
+            "channel ref must be included in allowed source refs",
+        ));
+    }
+    if !packet.connector_profile_ref.trim().is_empty()
+        && !packet
+            .allowed_source_refs
+            .contains(&packet.connector_profile_ref)
+    {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            PubPunkPublishReceiptPreflightPacketFindingCode::ConnectorProfileRefNotAllowed,
+            packet.connector_profile_ref.clone(),
+            "connector profile ref must be included in allowed source refs",
+        ));
+    }
+
+    if !packet
+        .granted_capabilities
+        .contains(&PubPunkCapabilityGrant::RequestExternalPublish)
+    {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::new(
+            PubPunkPublishReceiptPreflightPacketFindingCode::MissingRequestExternalPublishGrant,
+            "request_external_publish must be explicitly granted for this packet",
+        ));
+    }
+    for capability in &packet.granted_capabilities {
+        if !capability.supported_by_side_effect_free_publish_receipt_preflight() {
+            findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_capability(
+                *capability,
+            ));
+        }
+    }
+
+    if packet.expected_receipt_fields.is_empty() {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::new(
+            PubPunkPublishReceiptPreflightPacketFindingCode::MissingExpectedReceiptFields,
+            "expected receipt fields are required even though this packet does not write receipts",
+        ));
+    }
+    for required_field in [
+        "side_effects",
+        "host_validation",
+        "adapter_invocation_receipt",
+        "operation_evidence",
+        "publication_receipt",
+    ] {
+        if !packet
+            .expected_receipt_fields
+            .iter()
+            .any(|field| field == required_field)
+        {
+            findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+                PubPunkPublishReceiptPreflightPacketFindingCode::MissingRequiredExpectedReceiptField,
+                required_field,
+                "publish receipt preflight expectations must include host and publication receipt evidence coverage",
+            ));
+        }
+    }
+
+    if packet.privacy_policy.allows_private_or_raw_payloads() {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::new(
+            PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePrivacyPolicy,
+            "privacy policy must disallow raw/private payloads for this packet",
+        ));
+    }
+
+    if let Some(token_cost_ref) = &packet.token_cost_ref {
+        if !is_safe_source_ref(token_cost_ref) {
+            findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+                PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeTokenCostRef,
+                token_cost_ref.clone(),
+                "token cost ref must be an explicit repo-relative ref when provided",
+            ));
+        }
+    }
+
+    let status = if findings.iter().any(|finding| finding.code.is_blocking()) {
+        PubPunkAssessmentStatus::Blocked
+    } else {
+        PubPunkAssessmentStatus::Ready
+    };
+
+    PubPunkPublishReceiptPreflightPacketAssessment {
+        schema_version: PUBPUNK_PUBLISH_RECEIPT_PREFLIGHT_PACKET_SCHEMA_VERSION,
+        status,
+        authority: PubPunkAssessmentAuthority::Advisory,
+        requested_operation:
+            PubPunkPublishReceiptPreflightOperation::PreparePublishReceiptPreflight,
+        findings,
+        boundary_flags: PUBPUNK_INVENTORY_ASSESSMENT_BOUNDARY_FLAGS,
+        refs: PubPunkPublishReceiptPreflightPacketRefs {
+            module_id: packet.module_id.clone(),
+            module_version_ref: packet.module_version_ref.clone(),
+            contract_ref: packet.contract_ref.clone(),
+            run_ref: packet.run_ref.clone(),
+            project_ref: packet.project_ref.clone(),
+            workspace_policy: packet.workspace_policy,
+            publishing_workspace_ref: packet.publishing_workspace_ref.clone(),
+            publish_request_ref: packet.publish_request_ref.clone(),
+            receipt_writer_preflight_ref: packet.receipt_writer_preflight_ref.clone(),
+            policy_gate_preflight_ref: packet.policy_gate_preflight_ref.clone(),
+            receipt_target_ref: packet.receipt_target_ref.clone(),
+            receipt_storage_ref: packet.receipt_storage_ref.clone(),
+            operation_evidence_ref: packet.operation_evidence_ref.clone(),
+            idempotency_ref: packet.idempotency_ref.clone(),
+            rollback_ref: packet.rollback_ref.clone(),
+            error_ref: packet.error_ref.clone(),
+            adapter_invocation_receipt_ref: packet.adapter_invocation_receipt_ref.clone(),
+            payload_ref: packet.payload_ref.clone(),
+            channel_ref: packet.channel_ref.clone(),
+            connector_profile_ref: packet.connector_profile_ref.clone(),
+            token_cost_ref: packet.token_cost_ref.clone(),
+        },
+    }
+}
+
 fn push_required_ref_finding(
     findings: &mut Vec<PubPunkInventoryFinding>,
     value: &str,
@@ -2302,6 +3095,41 @@ fn validate_publish_request_ref(
     }
 }
 
+fn push_publish_receipt_preflight_required_ref_finding(
+    findings: &mut Vec<PubPunkPublishReceiptPreflightPacketFinding>,
+    value: &str,
+    code: PubPunkPublishReceiptPreflightPacketFindingCode,
+    message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::new(
+            code, message,
+        ));
+    }
+}
+
+fn validate_publish_receipt_preflight_ref(
+    findings: &mut Vec<PubPunkPublishReceiptPreflightPacketFinding>,
+    value: &str,
+    missing_code: PubPunkPublishReceiptPreflightPacketFindingCode,
+    unsafe_code: PubPunkPublishReceiptPreflightPacketFindingCode,
+    missing_message: &'static str,
+    unsafe_message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::new(
+            missing_code,
+            missing_message,
+        ));
+    } else if !is_safe_source_ref(value) {
+        findings.push(PubPunkPublishReceiptPreflightPacketFinding::for_ref(
+            unsafe_code,
+            value,
+            unsafe_message,
+        ));
+    }
+}
+
 fn is_safe_workspace_ref(value: &str) -> bool {
     let value = value.trim();
     if let Some(project_id) = value.strip_prefix("punk-publishing://project/") {
@@ -2342,15 +3170,17 @@ fn is_safe_source_ref(value: &str) -> bool {
 mod tests {
     use super::{
         assess_pubpunk_inventory, assess_pubpunk_inventory_input_packet,
-        assess_pubpunk_inventory_reader_input, assess_pubpunk_publish_request_packet,
+        assess_pubpunk_inventory_reader_input, assess_pubpunk_publish_receipt_preflight_packet,
+        assess_pubpunk_publish_request_packet,
         build_pubpunk_inventory_input_packet_from_reader_input, PubPunkAssessmentAuthority,
         PubPunkAssessmentStatus, PubPunkCapabilityGrant, PubPunkInventoryFindingCode,
         PubPunkInventoryInput, PubPunkInventoryInputPacket, PubPunkInventoryInputPacketFindingCode,
         PubPunkInventoryItemInput, PubPunkInventoryItemKind, PubPunkInventoryItemStatus,
         PubPunkInventoryReaderFindingCode, PubPunkInventoryReaderInput, PubPunkPrivacyPolicy,
-        PubPunkPublishRequestOperation, PubPunkPublishRequestPacket,
-        PubPunkPublishRequestPacketFindingCode, PubPunkWorkspacePolicy,
-        PUBPUNK_REQUIRED_INSTRUCTION_REFS,
+        PubPunkPublishReceiptPreflightOperation, PubPunkPublishReceiptPreflightPacket,
+        PubPunkPublishReceiptPreflightPacketFindingCode, PubPunkPublishRequestOperation,
+        PubPunkPublishRequestPacket, PubPunkPublishRequestPacketFindingCode,
+        PubPunkWorkspacePolicy, PUBPUNK_REQUIRED_INSTRUCTION_REFS,
     };
 
     fn valid_input() -> PubPunkInventoryInput {
@@ -2449,6 +3279,52 @@ mod tests {
             "host_validation",
         ])
         .with_token_cost_ref("work/reports/pubpunk-publish-request-token-cost.md")
+    }
+
+    fn valid_publish_receipt_preflight_packet() -> PubPunkPublishReceiptPreflightPacket {
+        PubPunkPublishReceiptPreflightPacket::new(
+            "v0.1",
+            "contracts/publish-cycle-0",
+            "runs/local-pubpunk-publish-request",
+            "project/punk",
+            "punk-publishing://project/punk",
+        )
+        .with_publish_request_ref("work/module-assessments/pubpunk-publish-request.md")
+        .with_receipt_writer_preflight_ref(
+            "work/module-receipt-preflights/pubpunk-publish-example.md",
+        )
+        .with_policy_gate_preflight_ref("work/module-policy-gate/pubpunk-publish-example.md")
+        .with_receipt_target_ref("work/module-receipts/pubpunk-publish-example.md")
+        .with_receipt_storage_ref(".punk/runs/local-pubpunk-publish-request/receipts")
+        .with_operation_evidence_ref(
+            ".punk/runs/local-pubpunk-publish-request/operation-evidence/pubpunk-publish-example.md",
+        )
+        .with_idempotency_ref("work/module-idempotency/pubpunk-publish-example.md")
+        .with_rollback_ref("work/module-rollbacks/pubpunk-publish-example.md")
+        .with_error_ref("work/module-errors/pubpunk-publish-example.md")
+        .with_adapter_invocation_receipt_ref("work/module-receipts/github-discussions-invocation.md")
+        .with_payload_ref("publishing/posts/example.md")
+        .with_channel_ref("publishing/channels/github-discussions.md")
+        .with_connector_profile_ref("publishing/connectors/github-discussions.md")
+        .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
+        .with_allowed_source_refs(vec![
+            "publishing/posts/example.md",
+            "publishing/channels/github-discussions.md",
+            "publishing/connectors/github-discussions.md",
+        ])
+        .with_granted_capabilities(vec![PubPunkCapabilityGrant::RequestExternalPublish])
+        .with_expected_receipt_fields(vec![
+            "module_id",
+            "operation",
+            "source_refs",
+            "capability_grants",
+            "side_effects",
+            "host_validation",
+            "adapter_invocation_receipt",
+            "operation_evidence",
+            "publication_receipt",
+        ])
+        .with_token_cost_ref("work/reports/pubpunk-publish-receipt-preflight-token-cost.md")
     }
 
     #[test]
@@ -2772,6 +3648,158 @@ mod tests {
             .iter()
             .any(|finding| finding.code
                 == PubPunkPublishRequestPacketFindingCode::UnsafeTokenCostRef));
+    }
+
+    #[test]
+    fn publish_receipt_preflight_packet_builds_writer_refs_without_side_effects() {
+        let packet = valid_publish_receipt_preflight_packet();
+
+        let assessment = assess_pubpunk_publish_receipt_preflight_packet(&packet);
+        let writer_refs = packet
+            .try_into_receipt_writer_preflight_refs()
+            .expect("publish receipt preflight packet should be ready");
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Ready);
+        assert_eq!(assessment.authority, PubPunkAssessmentAuthority::Advisory);
+        assert_eq!(
+            assessment.requested_operation,
+            PubPunkPublishReceiptPreflightOperation::PreparePublishReceiptPreflight
+        );
+        assert_eq!(assessment.refs.module_id, "pubpunk");
+        assert_eq!(
+            assessment.refs.workspace_policy,
+            PubPunkWorkspacePolicy::SplitExplicitRefs
+        );
+        assert_eq!(
+            assessment.refs.publish_request_ref,
+            "work/module-assessments/pubpunk-publish-request.md"
+        );
+        assert_eq!(
+            assessment.refs.connector_profile_ref,
+            "publishing/connectors/github-discussions.md"
+        );
+        assert_eq!(
+            assessment.refs.token_cost_ref.as_deref(),
+            Some("work/reports/pubpunk-publish-receipt-preflight-token-cost.md")
+        );
+        assert!(assessment.boundary_flags.all_side_effect_flags_false());
+        assert_eq!(
+            writer_refs.preflight_ref,
+            "work/module-receipt-preflights/pubpunk-publish-example.md"
+        );
+        assert_eq!(
+            writer_refs.policy_gate_preflight_ref,
+            "work/module-policy-gate/pubpunk-publish-example.md"
+        );
+        assert_eq!(
+            writer_refs.receipt_target_ref,
+            "work/module-receipts/pubpunk-publish-example.md"
+        );
+        assert_eq!(
+            writer_refs.storage_ref,
+            ".punk/runs/local-pubpunk-publish-request/receipts"
+        );
+        assert_eq!(writer_refs.payload_ref, "publishing/posts/example.md");
+    }
+
+    #[test]
+    fn publish_receipt_preflight_packet_blocks_missing_publish_grant_and_receipt_fields() {
+        let packet = valid_publish_receipt_preflight_packet()
+            .with_granted_capabilities(vec![PubPunkCapabilityGrant::AssessProvidedInventory])
+            .with_expected_receipt_fields(vec!["side_effects"]);
+
+        let assessment = assess_pubpunk_publish_receipt_preflight_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::MissingRequestExternalPublishGrant
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsupportedCapabilityGrant
+            && finding.capability == Some(PubPunkCapabilityGrant::AssessProvidedInventory)));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::MissingRequiredExpectedReceiptField
+            && finding.ref_value.as_deref() == Some("host_validation")));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::MissingRequiredExpectedReceiptField
+            && finding.ref_value.as_deref() == Some("adapter_invocation_receipt")));
+        assert!(packet.try_into_receipt_writer_preflight_refs().is_err());
+    }
+
+    #[test]
+    fn publish_receipt_preflight_packet_blocks_unallowed_payload_channel_and_connector_refs() {
+        let packet = valid_publish_receipt_preflight_packet()
+            .with_allowed_source_refs(vec!["publishing/posts/other.md"])
+            .with_channel_ref("publishing/channels/not-allowed.md")
+            .with_connector_profile_ref("publishing/connectors/not-allowed.md");
+
+        let assessment = assess_pubpunk_publish_receipt_preflight_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::PayloadRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::ChannelRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::ConnectorProfileRefNotAllowed));
+    }
+
+    #[test]
+    fn publish_receipt_preflight_packet_blocks_unsafe_refs_and_privacy() {
+        let mut instruction_refs = PUBPUNK_REQUIRED_INSTRUCTION_REFS
+            .iter()
+            .map(|instruction_ref| (*instruction_ref).to_owned())
+            .collect::<Vec<_>>();
+        instruction_refs.push("/tmp/pubpunk-instruction.md".to_owned());
+
+        let mut packet = valid_publish_receipt_preflight_packet()
+            .with_instruction_refs(instruction_refs)
+            .with_publish_request_ref("../work/module-assessments/pubpunk-publish-request.md")
+            .with_receipt_writer_preflight_ref("../work/module-receipt-preflights/request.md")
+            .with_policy_gate_preflight_ref("https://example.com/policy-gate")
+            .with_receipt_storage_ref("https://example.com/receipts")
+            .with_operation_evidence_ref("../.punk/runs/evidence.md")
+            .with_payload_ref("../publishing/posts/example.md")
+            .with_channel_ref("/tmp/channel.md")
+            .with_connector_profile_ref("https://example.com/connector")
+            .with_allowed_source_refs(vec!["../publishing/posts/example.md"])
+            .with_privacy_policy(PubPunkPrivacyPolicy {
+                raw_external_payloads: true,
+                ..PubPunkPrivacyPolicy::safe_metadata_only()
+            })
+            .with_token_cost_ref("../work/reports/token-cost.md");
+        packet.publishing_workspace_ref = "https://example.com/workspace".to_owned();
+
+        let assessment = assess_pubpunk_publish_receipt_preflight_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePublishingWorkspaceRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeInstructionRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeAllowedSourceRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePublishRequestRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeReceiptWriterPreflightRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePolicyGatePreflightRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeReceiptStorageRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeOperationEvidenceRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePayloadRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeChannelRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeConnectorProfileRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafePrivacyPolicy));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptPreflightPacketFindingCode::UnsafeTokenCostRef));
     }
 
     #[test]

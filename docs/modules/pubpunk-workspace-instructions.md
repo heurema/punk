@@ -20,6 +20,7 @@ related_evals:
   - evals/specs/pubpunk-inventory-input-packet.v0.1.md
   - evals/specs/pubpunk-host-handoff.v0.1.md
   - evals/specs/pubpunk-publish-request-packet.v0.1.md
+  - evals/specs/pubpunk-publish-receipt-preflight.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -112,6 +113,14 @@ models. This remains a request/preflight chain only. It does not publish, invoke
 adapters, run policy engines, invoke gate, write receipts, read draft bodies,
 collect metrics, or activate PubPunk or Module Host runtime.
 
+The current publish receipt preflight packet can then carry explicit receipt
+target, storage, operation-evidence, idempotency, rollback, error, adapter
+invocation receipt, connector profile, channel, and payload refs into the
+existing Module Host side-effect receipt writer preflight model. This remains a
+preflight chain only. It does not write receipts, persist operation evidence,
+publish, invoke adapters, run policy engines, invoke gate, read draft bodies,
+collect metrics, or activate PubPunk or Module Host runtime.
+
 ## Capability envelope for the next slice
 
 Default grants:
@@ -121,7 +130,9 @@ Default grants:
 - `assess_provided_inventory`, when a ready reader or work order passes an
   explicit input packet.
 - `request_external_publish`, only when a ready publish request packet is
-  preparing explicit refs for future host side-effect policy.
+  preparing explicit refs for future host side-effect policy or a ready publish
+  receipt preflight packet is preparing explicit refs for future receipt-writer
+  policy.
 
 Default denies:
 
@@ -261,6 +272,34 @@ These checks are advisory readiness checks only. They prepare refs for existing
 Module Host side-effect request and policy-gate preflight models. They do not
 write a side-effect request, invoke an adapter, run policy, invoke gate, publish,
 read draft bodies, collect metrics, or write receipts.
+
+## Publish receipt preflight packet checks
+
+For the current code slice, the publish receipt preflight packet blocks:
+
+- non-canonical module id;
+- workspace policy other than `split_explicit_refs`;
+- missing safe publishing workspace ref;
+- missing publish request, receipt writer preflight, policy gate preflight,
+  receipt target, storage, operation-evidence, idempotency, rollback, error,
+  adapter invocation receipt, payload, channel, or connector profile refs;
+- payload, channel, or connector profile refs not present in the allowed source
+  refs;
+- missing required instruction refs;
+- unsafe instruction, allowed-source, workspace, packet, or token-cost refs;
+- missing `request_external_publish` grant;
+- unsupported grants such as adapter invocation, metrics collection,
+  credential reads, gate/proof behavior, direct event-log writes, or acceptance
+  claims;
+- raw post bodies or privacy policy that allows raw/private payloads;
+- missing expected receipt fields, especially `side_effects`,
+  `host_validation`, `adapter_invocation_receipt`, `operation_evidence`, and
+  `publication_receipt`.
+
+These checks are advisory readiness checks only. They prepare refs for the
+existing Module Host side-effect receipt writer preflight model. They do not
+write receipts, persist operation evidence, invoke adapters, publish, run
+policy, invoke gate, read draft bodies, collect metrics, or activate runtime.
 
 ## Non-goals
 
