@@ -5,7 +5,7 @@ status: active
 authority: advisory
 owner: vitaly
 created_at: 2026-05-19
-updated_at: 2026-05-19
+updated_at: 2026-05-20
 review_after: 2026-06-19
 related_docs:
   - docs/modules/pubpunk.md
@@ -16,6 +16,8 @@ related_docs:
   - publishing/README.md
 related_evals:
   - evals/specs/pubpunk-workspace-instruction-packet.v0.1.md
+  - evals/specs/pubpunk-inventory-input-packet.v0.1.md
+  - evals/specs/pubpunk-host-handoff.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -85,6 +87,12 @@ capability, receipt-field, and optional token-cost refs before the assessment
 model runs. It should not restart PubPunk from zero, add a public CLI, scan the
 filesystem, generate drafts, publish externally, collect metrics, write
 receipts, or activate Module Host runtime.
+
+The current smoke evidence can hand the ready packet and advisory assessment to
+existing Module Host preflight, envelope, and receipt proposal models. This is a
+model-chain check only. It does not invoke a module, load plugins, initialize a
+workspace, write receipts, publish, collect metrics, invoke adapters, or activate
+Module Host runtime.
 
 ## Capability envelope for the next slice
 

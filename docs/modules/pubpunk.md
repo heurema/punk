@@ -10,8 +10,10 @@ It handles public narrative, content production, distribution, and metrics.
 
 This document defines the module boundary before any PubPunk runtime, draft
 planner, receipt writer, adapter, or external publish behavior is implemented.
-The current code slice is limited to a side-effect-free inventory assessment
-model over caller-provided metadata.
+The current code slice is limited to a side-effect-free inventory input packet,
+inventory assessment model, and smoke evidence for wrapping that advisory
+assessment through existing Module Host preflight, envelope, and receipt
+proposal models.
 
 ## Scope
 
@@ -42,6 +44,13 @@ requires explicit workspace, instruction, source, capability, receipt-field, and
 optional token-cost refs before assessment. It does not read files, write
 receipts, publish, call external APIs, read credentials, invoke adapters, write
 gate decisions, write proofpacks, or claim acceptance.
+
+The current `punk-eval` smoke evidence also proves the first host handoff chain:
+`PubPunkInventoryInputPacket` readiness, PubPunk inventory assessment, Module
+Host invocation preflight, advisory envelope, and Module Host receipt proposal.
+This evidence does not invoke modules, load plugins, activate Module Host
+runtime, write receipts, publish, collect metrics, invoke adapters, or promote
+authority.
 
 The existing `punk publishing locate` resolver is a transitional core locator
 only. It must not be used as precedent for adding publishing inventory,
@@ -110,6 +119,23 @@ collect token usage automatically in this slice.
 must not discover hidden project truth, read credentials, infer scope from
 external platforms, or treat a publishing workspace as a second project memory
 store.
+
+## Current host handoff evidence
+
+The current host handoff evidence is:
+
+```text
+eval_pubpunk_host_handoff_chains_packet_to_receipt_proposal_without_side_effects
+```
+
+It starts from the input packet, runs the PubPunk inventory assessment, then
+uses existing Module Host preflight, advisory envelope, and receipt proposal
+models.
+
+This is not runtime invocation. It is deterministic model-chain evidence only.
+It does not add a module manifest, dynamic dispatch, public CLI, filesystem
+reader, workspace initializer, external publisher, metrics collector, receipt
+writer, gate writer, proofpack writer, or acceptance authority.
 
 ## Future module outputs
 
