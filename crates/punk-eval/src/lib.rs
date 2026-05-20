@@ -52,11 +52,12 @@ use punk_gate::{
 use punk_mod_pubpunk::{
     assess_pubpunk_inventory, assess_pubpunk_inventory_input_packet,
     assess_pubpunk_inventory_reader_input, assess_pubpunk_publish_receipt_preflight_packet,
-    assess_pubpunk_publish_request_packet, build_pubpunk_inventory_input_packet_from_reader_input,
-    PubPunkAssessmentAuthority, PubPunkAssessmentStatus, PubPunkCapabilityGrant,
-    PubPunkInventoryInput, PubPunkInventoryInputPacket, PubPunkInventoryItemInput,
-    PubPunkInventoryItemKind, PubPunkInventoryItemStatus, PubPunkInventoryReaderInput,
-    PubPunkPublishReceiptPreflightPacket, PubPunkPublishRequestPacket, PubPunkWorkspacePolicy,
+    assess_pubpunk_publish_receipt_write_handoff_packet, assess_pubpunk_publish_request_packet,
+    build_pubpunk_inventory_input_packet_from_reader_input, PubPunkAssessmentAuthority,
+    PubPunkAssessmentStatus, PubPunkCapabilityGrant, PubPunkInventoryInput,
+    PubPunkInventoryInputPacket, PubPunkInventoryItemInput, PubPunkInventoryItemKind,
+    PubPunkInventoryItemStatus, PubPunkInventoryReaderInput, PubPunkPublishReceiptPreflightPacket,
+    PubPunkPublishReceiptWriteHandoffPacket, PubPunkPublishRequestPacket, PubPunkWorkspacePolicy,
     PUBPUNK_REQUIRED_INSTRUCTION_REFS,
 };
 use punk_module_host::{
@@ -484,6 +485,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_pubpunk_host_handoff_chains_packet_to_receipt_proposal_without_side_effects(),
         eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request(),
         eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_preflight(),
+        eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write(),
         eval_module_host_side_effect_request_proposal_model_is_side_effect_free(),
         eval_module_host_policy_gate_preflight_model_is_side_effect_free(),
         eval_module_host_side_effect_receipt_writer_preflight_model_is_side_effect_free(),
@@ -652,10 +654,10 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         SmokeEvalStatus::Fail
     };
     let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
             .to_owned()
     };
 
@@ -682,6 +684,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
             "PubPunk host handoff smoke case chains input packet readiness, inventory assessment, module-host preflight, advisory envelope, and receipt proposal without invoking modules, reading files, writing receipts, publishing, collecting metrics, invoking adapters, or writing gate/proof authority",
             "PubPunk publish request packet smoke case chains explicit candidate, channel, policy, adapter, payload, and receipt refs into existing Module Host side-effect request and policy-gate models without publishing, invoking adapters, reading draft bodies, writing receipts, or activating runtime",
             "PubPunk publish receipt preflight smoke case chains explicit receipt target, storage, operation-evidence, idempotency, rollback, error, adapter invocation receipt, connector, channel, and payload refs into existing Module Host side-effect receipt writer preflight without writing receipts, invoking adapters, publishing, reading credentials, or activating runtime",
+            "PubPunk publish receipt write handoff smoke case chains explicit preflight, policy, target-path, receipt-bytes, operation-evidence, adapter invocation receipt, connector, channel, and payload refs into the existing Module Host receipt writer, which writes exact bytes only to a temporary .punk/runs target without invoking adapters, publishing, mutating event logs, writing gate/proof authority, or claiming acceptance",
             "module-host invocation envelope smoke case wraps advisory module output only and does not load plugins, invoke modules, expose CLI behavior, read or write files, create receipts, mutate event logs, call APIs, read credentials, invoke adapters, publish, or write gate/proof authority",
             "module-host receipt proposal smoke case models future module receipt fields only and does not write receipts, mutate event logs, read or write files, call APIs, read credentials, invoke modules or adapters, publish, or write gate/proof authority",
             "module-host side-effect request proposal smoke case models future external action preconditions only and does not invoke adapters, publish, comment, create pull requests, write receipts, mutate event logs, call APIs, read credentials, or write gate/proof authority",
@@ -2306,6 +2309,322 @@ fn eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_prefligh
             "eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_preflight",
             "PubPunk publish receipt preflight chains to host receipt writer preflight",
             "PubPunk publish receipt preflight drifted from explicit no-execution receipt writer preflight boundary",
+        )
+    }
+}
+
+fn eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write(
+) -> SmokeEvalCaseResult {
+    let invocation = ModuleInvocationEnvelope::new(
+        "pubpunk",
+        "v0.1",
+        "contracts/pubpunk-publish-cycle-0",
+        "runs/pubpunk-publish-request",
+        "project/punk",
+        "request_publish",
+    )
+    .with_input_refs(vec![
+        "evals/specs/pubpunk-publish-receipt-write-handoff.v0.1.md",
+        "publishing/posts/community-lab.md",
+        "publishing/channels/github-discussions-community-lab.md",
+        "publishing/connectors/github-discussions-community-lab.md",
+    ])
+    .with_granted_capabilities(vec![ModuleCapabilityGrant::AssessProvidedInput])
+    .with_expected_receipt_fields(vec![
+        "module_id",
+        "module_version",
+        "operation",
+        "contract_ref",
+        "run_ref",
+        "project_ref",
+        "input_refs",
+        "capability_grants",
+        "module_output_ref",
+        "module_output_status",
+        "boundary_flags",
+        "side_effects",
+        "host_validation",
+    ]);
+    let invocation_preflight = preflight_module_invocation(&invocation);
+    let output = ModuleOutputSummary::new(
+        "work/module-assessments/pubpunk-publish-receipt-write-handoff.md",
+        ModuleOutputStatus::Ready,
+        ModuleOutputAuthority::Advisory,
+        0,
+        ModuleOutputBoundaryFlags::side_effect_free(),
+    );
+    let envelope = wrap_module_assessment(&invocation, &output);
+    let receipt_proposal = propose_module_assessment_receipt(&invocation, &envelope);
+    let request = ModuleSideEffectRequestDraft::new(
+        "work/module-side-effects/pubpunk-publish-community-lab.md",
+        ModuleSideEffectKind::Publish,
+    )
+    .with_target_ref("publishing/channels/github-discussions-community-lab.md")
+    .with_intent_ref("work/goals/goal_pubpunk_publish_cycle_0.md")
+    .with_policy_ref("docs/modules/pubpunk.md")
+    .with_receipt_proposal_ref("work/module-receipts/pubpunk-publish-community-lab.md")
+    .with_adapter_ref("adapters/github-discussions")
+    .with_payload_ref("publishing/posts/community-lab.md");
+    let side_effect_proposal =
+        propose_module_side_effect_request(&invocation, &receipt_proposal, &request);
+    let policy_gate_draft = ModulePolicyGatePreflightDraft::new(
+        "work/module-policy-gate/pubpunk-publish-community-lab.md",
+    )
+    .with_policy_ref("docs/modules/pubpunk.md")
+    .with_gate_input_ref("work/module-gate-inputs/pubpunk-publish-community-lab.md")
+    .with_side_effect_receipt_proposal_ref("work/module-receipts/pubpunk-publish-community-lab.md")
+    .with_adapter_invocation_receipt_ref("work/module-receipts/github-discussions-invocation.md")
+    .with_payload_ref("publishing/posts/community-lab.md")
+    .with_proof_requirement_ref("work/module-proof-requirements/pubpunk-publish-community-lab.md");
+    let policy_gate_preflight =
+        preflight_module_policy_gate(&side_effect_proposal, &policy_gate_draft);
+
+    let handoff_packet = PubPunkPublishReceiptWriteHandoffPacket::new(
+        "v0.1",
+        "contracts/pubpunk-publish-cycle-0",
+        "runs/pubpunk-publish-request",
+        "project/punk",
+        "punk-publishing://project/punk",
+    )
+    .with_publish_receipt_preflight_ref(
+        "work/module-assessments/pubpunk-publish-receipt-preflight.md",
+    )
+    .with_receipt_writer_preflight_ref(
+        "work/module-receipt-preflights/pubpunk-publish-community-lab.md",
+    )
+    .with_receipt_writer_active_behavior_ref(
+        "work/module-receipt-writer-active-behavior/pubpunk-publish-community-lab.md",
+    )
+    .with_receipt_writer_file_io_plan_ref(
+        "work/module-receipt-writer-file-io/pubpunk-publish-community-lab.md",
+    )
+    .with_receipt_writer_target_storage_policy_ref(
+        "work/module-receipt-writer-target-storage-policy/pubpunk-publish-community-lab.md",
+    )
+    .with_receipt_writer_host_path_observation_ref(
+        "work/module-receipt-writer-host-path-observation/pubpunk-publish-community-lab.md",
+    )
+    .with_receipt_writer_concrete_path_storage_policy_ref(
+        "work/module-receipt-writer-concrete-path-storage-policy/pubpunk-publish-community-lab.md",
+    )
+    .with_operation_evidence_persistence_ref(
+        "work/module-receipt-writer-operation-evidence-persistence/pubpunk-publish-community-lab.md",
+    )
+    .with_receipt_target_ref("work/module-receipts/pubpunk-publish-community-lab.md")
+    .with_receipt_storage_ref(".punk/runs/pubpunk-publish-request")
+    .with_receipt_target_path_ref(".punk/runs/pubpunk-publish-request/receipt.json")
+    .with_receipt_bytes_ref("work/module-receipt-bytes/pubpunk-publish-community-lab.json")
+    .with_operation_evidence_ref(
+        ".punk/runs/pubpunk-publish-request/operation-evidence/pubpunk-publish-community-lab.md",
+    )
+    .with_idempotency_ref("work/module-idempotency/pubpunk-publish-community-lab.md")
+    .with_rollback_ref("work/module-rollbacks/pubpunk-publish-community-lab.md")
+    .with_error_ref("work/module-errors/pubpunk-publish-community-lab.md")
+    .with_adapter_invocation_receipt_ref(
+        policy_gate_preflight.adapter_invocation_receipt_ref.clone(),
+    )
+    .with_payload_ref("publishing/posts/community-lab.md")
+    .with_channel_ref("publishing/channels/github-discussions-community-lab.md")
+    .with_connector_profile_ref("publishing/connectors/github-discussions-community-lab.md")
+    .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
+    .with_allowed_source_refs(vec![
+        "publishing/posts/community-lab.md",
+        "publishing/channels/github-discussions-community-lab.md",
+        "publishing/connectors/github-discussions-community-lab.md",
+        "work/module-receipts/github-discussions-invocation.md",
+        "work/module-receipt-bytes/pubpunk-publish-community-lab.json",
+    ])
+    .with_granted_capabilities(vec![PubPunkCapabilityGrant::RequestPublicationReceiptWrite])
+    .with_expected_receipt_fields(vec![
+        "side_effects",
+        "host_validation",
+        "adapter_invocation_receipt",
+        "operation_evidence",
+        "publication_receipt",
+        "receipt_bytes",
+        "receipt_target_path",
+        "receipt_write_result",
+    ])
+    .with_token_cost_ref("work/reports/pubpunk-publish-receipt-write-handoff-token-cost.md");
+    let handoff_assessment = assess_pubpunk_publish_receipt_write_handoff_packet(&handoff_packet);
+    let handoff_refs = match handoff_packet.try_into_receipt_write_handoff_refs() {
+        Ok(refs) => refs,
+        Err(_) => {
+            return SmokeEvalCaseResult::fail(
+                "eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write",
+                "PubPunk publish receipt write handoff chains to host receipt writer write",
+                "ready PubPunk publish receipt write handoff packet failed to build host writer refs",
+            );
+        }
+    };
+
+    let receipt_writer_draft = ModuleSideEffectReceiptWriterPreflightDraft::new(
+        handoff_refs.receipt_writer_preflight_ref.clone(),
+    )
+    .with_policy_gate_preflight_ref(policy_gate_preflight.preflight_id.clone())
+    .with_receipt_target_ref(handoff_refs.receipt_target_ref.clone())
+    .with_storage_ref(handoff_refs.storage_ref.clone())
+    .with_operation_evidence_ref(handoff_refs.operation_evidence_ref.clone())
+    .with_idempotency_ref(handoff_refs.idempotency_ref.clone())
+    .with_rollback_ref(handoff_refs.rollback_ref.clone())
+    .with_error_ref(handoff_refs.error_ref.clone())
+    .with_adapter_invocation_receipt_ref(handoff_refs.adapter_invocation_receipt_ref.clone())
+    .with_payload_ref(handoff_refs.payload_ref.clone());
+    let receipt_writer_preflight =
+        preflight_module_side_effect_receipt_writer(&policy_gate_preflight, &receipt_writer_draft);
+    let planned_behavior =
+        model_module_side_effect_receipt_writer_active_behavior(&receipt_writer_preflight, None);
+    let ready_plan = plan_module_side_effect_receipt_writer_file_io(
+        &planned_behavior,
+        handoff_refs.receipt_target_path_ref.clone(),
+        ModuleSideEffectReceiptWriterWritePolicy::IdempotentIfMatching,
+        ModuleSideEffectReceiptWriterIdempotencyBasis::ReceiptTargetAndPayloadRefs,
+        ModuleSideEffectReceiptWriterTempAtomicPolicy::ExplicitNonAtomic,
+        vec![
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::StorageRootMissing,
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::TargetPathInvalid,
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::ParentDirectoryMissing,
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::ExistingTargetDifferent,
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::CleanupFailed,
+            ModuleSideEffectReceiptWriterFileIoFailureVisibility::OperationEvidencePersistenceFailed,
+        ],
+        vec!["PubPunk handoff selects explicit local receipt write target only.".to_owned()],
+    );
+    let ready_policy_refs = ModuleSideEffectReceiptWriterTargetStoragePolicyRefs::all_selected(
+        "policies/module-host/storage-root-selection.v0.1",
+        "policies/module-host/receipt-target.v0.1",
+        "policies/module-host/target-path-derivation.v0.1",
+        "policies/module-host/path-encoding.v0.1",
+        "policies/module-host/parent-directory.v0.1",
+        "policies/module-host/symlink.v0.1",
+        "policies/module-host/traversal.v0.1",
+        "policies/module-host/storage-root-escape.v0.1",
+        "policies/module-host/redaction.v0.1",
+        "policies/module-host/idempotency-conflict.v0.1",
+        "policies/module-host/temp-atomic.v0.1",
+        "policies/module-host/operation-evidence-persistence.v0.1",
+    );
+    let ready_target_storage_policy = model_module_side_effect_receipt_writer_target_storage_policy(
+        &ready_plan,
+        ready_policy_refs,
+        vec!["PubPunk handoff uses selected host target/storage policies.".to_owned()],
+    );
+    let ready_observation = model_module_side_effect_receipt_writer_host_path_observation(
+        &ready_target_storage_policy,
+        ModuleSideEffectReceiptWriterHostPathKind::RuntimeRelative,
+        Some("runtime-relative:pubpunk-publish-request/receipt.json".to_owned()),
+        true,
+        vec![],
+        vec!["PubPunk handoff host path observation remains redacted.".to_owned()],
+    );
+    let ready_concrete_policy =
+        model_module_side_effect_receipt_writer_concrete_path_storage_policy(
+            &ready_target_storage_policy,
+            &ready_observation,
+            vec!["PubPunk handoff concrete path/storage policy is ready.".to_owned()],
+        );
+    let ready_persistence = model_module_side_effect_receipt_writer_operation_evidence_persistence(
+        &ready_concrete_policy,
+        vec!["PubPunk handoff consumes ready operation evidence persistence policy.".to_owned()],
+    );
+
+    let storage_root = unique_smoke_temp_path();
+    let target_relative = std::path::Path::new(handoff_refs.receipt_target_path_ref.as_str());
+    let target_path = storage_root.join(target_relative);
+    let setup_ok =
+        fs::create_dir_all(storage_root.join(".punk/runs/pubpunk-publish-request")).is_ok();
+    let receipt_bytes = br#"{"schema_version":"punk.module_host.side_effect_receipt.v0.1","receipt_id":"pubpunk-write-handoff-smoke-001"}"#;
+
+    let write_result = write_module_side_effect_receipt_first_active_slice(
+        &ready_persistence,
+        receipt_bytes,
+        &storage_root,
+        target_relative,
+        vec!["PubPunk handoff smoke writes exact receipt bytes to an explicit temporary .punk/runs target only.".to_owned()],
+    );
+    let written = fs::read(&target_path);
+    let idempotent = write_module_side_effect_receipt_first_active_slice(
+        &ready_persistence,
+        receipt_bytes,
+        &storage_root,
+        target_relative,
+        vec![],
+    );
+    let forbidden_runtime_exists = storage_root.join(".punk/events").exists()
+        || storage_root.join(".punk/decisions").exists()
+        || storage_root.join(".punk/proofs").exists();
+    let cleanup_ok = fs::remove_dir_all(&storage_root).is_ok();
+
+    let ok = invocation_preflight.status == ModuleHostStatus::Ready
+        && envelope.status == ModuleHostStatus::Ready
+        && receipt_proposal.status == ModuleHostStatus::Ready
+        && side_effect_proposal.status == ModuleHostStatus::Ready
+        && policy_gate_preflight.status == ModuleHostStatus::Ready
+        && handoff_assessment.status == PubPunkAssessmentStatus::Ready
+        && handoff_assessment.authority == PubPunkAssessmentAuthority::Advisory
+        && !handoff_assessment.has_blockers()
+        && handoff_assessment
+            .boundary_flags
+            .all_side_effect_flags_false()
+        && handoff_assessment.refs.receipt_target_path_ref
+            == ".punk/runs/pubpunk-publish-request/receipt.json"
+        && handoff_assessment.refs.receipt_bytes_ref
+            == "work/module-receipt-bytes/pubpunk-publish-community-lab.json"
+        && handoff_refs.operation_evidence_persistence_ref
+            == "work/module-receipt-writer-operation-evidence-persistence/pubpunk-publish-community-lab.md"
+        && receipt_writer_preflight.status == ModuleHostStatus::Ready
+        && ready_persistence.is_ready()
+        && setup_ok
+        && write_result.schema_version
+            == MODULE_HOST_SIDE_EFFECT_RECEIPT_WRITER_FIRST_ACTIVE_WRITE_SLICE_SCHEMA_VERSION
+        && write_result.status == ModuleHostStatus::Ready
+        && write_result.outcome == ModuleSideEffectReceiptWriterOutcome::Written
+        && write_result.represents_new_receipt_write()
+        && write_result.is_success()
+        && write_result.blockers.is_empty()
+        && matches!(&written, Ok(bytes) if bytes.as_slice() == receipt_bytes)
+        && write_result.receipt_byte_len == receipt_bytes.len()
+        && idempotent.outcome == ModuleSideEffectReceiptWriterOutcome::Idempotent
+        && idempotent.is_idempotent_existing_match()
+        && idempotent.is_success()
+        && !forbidden_runtime_exists
+        && cleanup_ok
+        && write_result.writes_receipt()
+        && write_result.writes_punk_runs()
+        && write_result.reads_filesystem()
+        && write_result.touches_filesystem()
+        && !write_result.persists_operation_evidence()
+        && !write_result.writes_event_log()
+        && !write_result.invokes_adapter()
+        && !write_result.invokes_policy_engine()
+        && !write_result.invokes_gate()
+        && !write_result.publishes()
+        && !write_result.comments()
+        && !write_result.creates_pull_request()
+        && !write_result.writes_gate_decision()
+        && !write_result.writes_proofpack()
+        && !write_result.creates_acceptance_claim()
+        && !write_result.can_claim_acceptance_by_itself();
+
+    if ok {
+        SmokeEvalCaseResult::pass(
+            "eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write",
+            "PubPunk publish receipt write handoff chains to host receipt writer write",
+            "PubPunk publish receipt write handoff projected explicit preflight, policy, path, receipt-bytes, and evidence refs into the existing Module Host receipt writer, which wrote exact bytes only to a temporary .punk/runs target without invoking adapters, publishing, mutating event logs, writing gate/proof authority, or claiming acceptance",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write",
+            "PubPunk publish receipt write handoff chains to host receipt writer write",
+            format!(
+                "PubPunk receipt write handoff drifted; handoff_status={:?} writer_status={:?} persistence_ready={} write_outcome={:?} blockers={:?} written={:?} setup_ok={setup_ok} cleanup_ok={cleanup_ok}",
+                handoff_assessment.status,
+                receipt_writer_preflight.status,
+                ready_persistence.is_ready(),
+                write_result.outcome,
+                write_result.blockers,
+                written.as_ref().map(|bytes| bytes.len()),
+            ),
         )
     }
 }
@@ -12435,7 +12754,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "local-event-log-writer");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 171);
+        assert_eq!(report.cases().len(), 172);
     }
 
     #[test]
@@ -12460,7 +12779,7 @@ mod tests {
         assert!(rendered.contains("report_storage: inactive"));
         assert!(rendered.contains("smoke_result: pass"));
         assert!(rendered.contains(
-            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
+            "assessment: local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk publish request packet, PubPunk publish receipt preflight packet, PubPunk publish receipt write handoff packet, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
         ));
         assert!(rendered.contains("case_results:"));
         assert!(rendered.contains("  - id: eval_flow_allows_approval_transition"));
@@ -12491,6 +12810,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "  - id: eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_preflight"
+        ));
+        assert!(rendered.contains(
+            "  - id: eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write"
         ));
         assert!(rendered.contains(
             "  - id: eval_module_host_side_effect_request_proposal_model_is_side_effect_free"
@@ -12529,6 +12851,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "module-host side-effect receipt writer operation-evidence write slice smoke case writes exact operation-evidence bytes only to an explicit temporary .punk/runs target after a successful receipt write"
+        ));
+        assert!(rendered.contains(
+            "PubPunk publish receipt write handoff smoke case chains explicit preflight, policy, target-path, receipt-bytes"
         ));
         assert!(rendered.contains(
             "local receipt/evidence event handoff smoke coverage appends only safe receipt and operation-evidence refs to .punk/events/flow.jsonl"
@@ -12922,6 +13247,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_pubpunk_publish_receipt_preflight_chains_to_host_receipt_writer_preflight\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_write\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_source_corpus_manifest_model_is_side_effect_free\""));

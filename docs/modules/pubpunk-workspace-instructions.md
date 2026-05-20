@@ -21,6 +21,7 @@ related_evals:
   - evals/specs/pubpunk-host-handoff.v0.1.md
   - evals/specs/pubpunk-publish-request-packet.v0.1.md
   - evals/specs/pubpunk-publish-receipt-preflight.v0.1.md
+  - evals/specs/pubpunk-publish-receipt-write-handoff.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -33,7 +34,8 @@ Define the smallest workspace and instruction packet for future PubPunk work.
 
 This resolves the first PubPunk conformance blockers without activating
 PubPunk runtime, Module Host runtime, real filesystem reads, workspace creation,
-adapters, publishing, metrics collection, receipt writing, or credential use.
+adapters, publishing, metrics collection, PubPunk-owned receipt writing, or
+credential use.
 
 ## Selected workspace policy
 
@@ -121,6 +123,16 @@ preflight chain only. It does not write receipts, persist operation evidence,
 publish, invoke adapters, run policy engines, invoke gate, read draft bodies,
 collect metrics, or activate PubPunk or Module Host runtime.
 
+The current publish receipt write handoff packet can then carry explicit
+preflight, receipt writer, target-path, receipt-bytes, operation-evidence,
+adapter invocation receipt, connector profile, channel, and payload refs into
+the existing Module Host first active local receipt writer. PubPunk still does
+not read files or write receipts itself. The smoke evidence writes exact
+caller-provided bytes only to an explicit temporary `.punk/runs` target through
+the already-existing host writer, and does not invoke adapters, publish, mutate
+event logs, persist operation evidence, write gate/proof authority, or claim
+acceptance.
+
 ## Capability envelope for the next slice
 
 Default grants:
@@ -133,6 +145,9 @@ Default grants:
   preparing explicit refs for future host side-effect policy or a ready publish
   receipt preflight packet is preparing explicit refs for future receipt-writer
   policy.
+- `request_publication_receipt_write`, only when a ready publish receipt write
+  handoff packet is preparing explicit refs for the existing Module Host first
+  active local receipt writer.
 
 Default denies:
 
@@ -300,6 +315,42 @@ These checks are advisory readiness checks only. They prepare refs for the
 existing Module Host side-effect receipt writer preflight model. They do not
 write receipts, persist operation evidence, invoke adapters, publish, run
 policy, invoke gate, read draft bodies, collect metrics, or activate runtime.
+
+## Publish receipt write handoff packet checks
+
+For the current code slice, the publish receipt write handoff packet blocks:
+
+- non-canonical module id;
+- workspace policy other than `split_explicit_refs`;
+- missing safe publishing workspace ref;
+- missing publish receipt preflight, receipt writer preflight, active behavior,
+  file-IO plan, target/storage policy, host-path observation, concrete
+  path/storage policy, or operation-evidence persistence refs;
+- missing receipt target, storage, target path, receipt bytes,
+  operation-evidence, idempotency, rollback, error, adapter invocation receipt,
+  payload, channel, or connector profile refs;
+- receipt target path refs outside `.punk/runs`;
+- payload, channel, connector profile, adapter invocation receipt, or receipt
+  bytes refs not present in the allowed source refs;
+- missing required instruction refs;
+- unsafe instruction, allowed-source, workspace, packet, path, or token-cost
+  refs;
+- missing `request_publication_receipt_write` grant;
+- unsupported grants such as external publishing, adapter invocation, metrics
+  collection, credential reads, gate/proof behavior, direct event-log writes,
+  or acceptance claims;
+- raw post bodies or privacy policy that allows raw/private payloads;
+- missing expected receipt fields, especially `side_effects`,
+  `host_validation`, `adapter_invocation_receipt`, `operation_evidence`,
+  `publication_receipt`, `receipt_bytes`, `receipt_target_path`, and
+  `receipt_write_result`.
+
+These checks are advisory readiness checks only. They prepare refs for the
+existing Module Host first active local receipt writer. PubPunk does not read
+receipt bytes, write receipts, persist operation evidence, invoke adapters,
+publish, run policy, invoke gate, read draft bodies, collect metrics, or
+activate runtime. The current smoke case exercises the already-existing host
+writer only against an explicit temporary `.punk/runs` target.
 
 ## Non-goals
 
