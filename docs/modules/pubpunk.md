@@ -10,10 +10,10 @@ It handles public narrative, content production, distribution, and metrics.
 
 This document defines the module boundary before any PubPunk runtime, draft
 planner, receipt writer, adapter, or external publish behavior is implemented.
-The current code slice is limited to a side-effect-free inventory input packet,
-inventory assessment model, and smoke evidence for wrapping that advisory
-assessment through existing Module Host preflight, envelope, and receipt
-proposal models.
+The current code slice is limited to a side-effect-free inventory reader model,
+inventory input packet, inventory assessment model, and smoke evidence for
+wrapping that advisory assessment through existing Module Host preflight,
+envelope, and receipt proposal models.
 
 ## Scope
 
@@ -38,12 +38,15 @@ PubPunk is not active as runtime, CLI, adapter, or publisher.
 There is no automation in the new `punk` core yet.
 
 The first incubating PubPunk crate, `punk-mod-pubpunk`, can validate an explicit
-inventory input packet and then assess caller-provided publishing inventory
-metadata and receipt gaps as advisory module evidence only. The input packet
-requires explicit workspace, instruction, source, capability, receipt-field, and
-optional token-cost refs before assessment. It does not read files, write
-receipts, publish, call external APIs, read credentials, invoke adapters, write
-gate decisions, write proofpacks, or claim acceptance.
+inventory reader input, build an explicit inventory input packet when that
+reader input is ready, and then assess caller-provided publishing inventory
+metadata and receipt gaps as advisory module evidence only. The reader model
+accepts explicit observed metadata refs and keeps them inside explicit allowed
+source refs. The input packet requires explicit workspace, instruction, source,
+capability, receipt-field, and optional token-cost refs before assessment. These
+models do not read files, write receipts, publish, call external APIs, read
+credentials, invoke adapters, write gate decisions, write proofpacks, or claim
+acceptance.
 
 The current `punk-eval` smoke evidence also proves the first host handoff chain:
 `PubPunkInventoryInputPacket` readiness, PubPunk inventory assessment, Module
@@ -86,8 +89,44 @@ It selects split explicit refs: repo-native `publishing/` artifacts for Punk's
 own public narrative, plus explicit external workspace refs for
 project-specific publishing operations.
 
-This packet does not grant filesystem reads, create workspaces, publish,
+This packet does not grant broad filesystem reads, create workspaces, publish,
 collect metrics, write receipts, invoke adapters, or activate runtime behavior.
+The current reader model may require the narrow `read_workspace_metadata` grant
+as declared input evidence, but it still does not perform IO.
+
+## Current inventory reader model
+
+The current side-effect-free inventory reader input is:
+
+```text
+PubPunkInventoryReaderInput
+```
+
+It must provide:
+
+- module id and version;
+- contract ref;
+- run ref;
+- project ref;
+- `split_explicit_refs` workspace policy;
+- publishing workspace ref;
+- required instruction refs;
+- allowed source refs;
+- observed item metadata refs;
+- `read_workspace_metadata` capability;
+- metadata-only privacy and redaction policy;
+- expected receipt fields.
+
+The reader allows an empty observed item set so a new project can start without
+existing drafts, receipts, or metrics snapshots. It blocks raw post bodies,
+unsafe refs, observed refs outside the allowed source set, unsupported
+capabilities, and unsafe optional token-cost refs.
+
+When ready, the reader can build `PubPunkInventoryInputPacket` and switch the
+next capability to `assess_provided_inventory`. This is still deterministic
+model evidence only. It is not a filesystem reader, workspace initializer,
+publication receipt writer, metrics collector, adapter, public CLI, Module Host
+runtime invocation, gate writer, proofpack writer, or acceptance authority.
 
 ## Current module input packet
 
@@ -169,6 +208,12 @@ External publishing, credential access, browser/API calls, adapter invocation,
 and metrics collection require explicit policy, side-effect receipts, and
 conformance evals before activation.
 
+In the current code, `read_workspace_metadata` is accepted only by
+`PubPunkInventoryReaderInput`, and `assess_provided_inventory` is accepted only
+by `PubPunkInventoryInputPacket`. Neither grant activates filesystem IO,
+adapter behavior, publication, metrics collection, receipt writing, or authority
+promotion.
+
 ## Required conformance
 
 PubPunk must follow Punk Laws.
@@ -213,7 +258,8 @@ This boundary does not activate:
 - PubPunk runtime;
 - Module Host runtime;
 - a new `punk publishing` command;
-- publishing inventory implementation;
+- runtime publishing inventory implementation;
+- filesystem-scanning inventory implementation;
 - draft generation;
 - receipt writing;
 - external publishing;

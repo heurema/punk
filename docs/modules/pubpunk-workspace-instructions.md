@@ -16,6 +16,7 @@ related_docs:
   - publishing/README.md
 related_evals:
   - evals/specs/pubpunk-workspace-instruction-packet.v0.1.md
+  - evals/specs/pubpunk-inventory-reader.v0.1.md
   - evals/specs/pubpunk-inventory-input-packet.v0.1.md
   - evals/specs/pubpunk-host-handoff.v0.1.md
 supersedes: []
@@ -29,7 +30,7 @@ superseded_by: null
 Define the smallest workspace and instruction packet for future PubPunk work.
 
 This resolves the first PubPunk conformance blockers without activating
-PubPunk runtime, Module Host runtime, filesystem reads, workspace creation,
+PubPunk runtime, Module Host runtime, real filesystem reads, workspace creation,
 adapters, publishing, metrics collection, receipt writing, or credential use.
 
 ## Selected workspace policy
@@ -79,8 +80,14 @@ When asked to run PubPunk work, an executor should:
 ## First PubPunk work boundary
 
 The existing `punk-mod-pubpunk` crate contains a side-effect-free inventory
-input packet and inventory assessment model over caller-provided publishing
-metadata.
+reader model, inventory input packet, and inventory assessment model over
+caller-provided publishing metadata.
+
+The reader model takes explicit observed metadata refs, checks them against
+explicit allowed source refs, and may build the input packet only when unblocked.
+It allows an empty observed item set for new projects. It does not scan the
+filesystem, read draft bodies, initialize a workspace, collect metrics, write
+receipts, publish, or invoke adapters.
 
 The input packet must carry explicit workspace, instruction, source,
 capability, receipt-field, and optional token-cost refs before the assessment
@@ -98,11 +105,16 @@ Module Host runtime.
 
 Default grants:
 
-- `assess_provided_inventory`, when the work order passes explicit metadata.
+- `read_workspace_metadata`, when the work order passes explicit observed
+  metadata refs to the reader model.
+- `assess_provided_inventory`, when a ready reader or work order passes an
+  explicit input packet.
 
 Default denies:
 
-- filesystem read;
+- broad filesystem read;
+- draft body read;
+- directory walks and workspace scans;
 - filesystem write;
 - network;
 - environment;
@@ -118,6 +130,26 @@ Default denies:
 
 A later slice may request scoped filesystem read over explicit publishing refs.
 That request is not a grant in this packet.
+
+## Inventory reader checks
+
+For the current code slice, the reader model blocks:
+
+- non-canonical module id;
+- workspace policy other than `split_explicit_refs`;
+- missing safe publishing workspace ref;
+- missing required instruction refs;
+- unsafe instruction, allowed-source, observed-item, workspace, or token-cost
+  refs;
+- observed item refs not present in the allowed source refs;
+- missing `read_workspace_metadata` grant;
+- unsupported grants such as draft reads, publishing, metrics, adapters,
+  credentials, gate, proof, or acceptance behavior;
+- raw post bodies or privacy policy that allows raw/private payloads;
+- missing expected receipt fields.
+
+These checks are advisory readiness checks only. The reader name does not mean
+the model reads the filesystem; it classifies caller-provided metadata refs.
 
 ## Advisory assessment fields
 
