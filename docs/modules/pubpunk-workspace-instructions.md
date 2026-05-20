@@ -376,9 +376,10 @@ For the current code slice, the publish receipt preflight packet blocks:
 - missing safe publishing workspace ref;
 - missing publish request, receipt writer preflight, policy gate preflight,
   receipt target, storage, operation-evidence, idempotency, rollback, error,
-  adapter invocation receipt, payload, channel, or connector profile refs;
-- payload, channel, or connector profile refs not present in the allowed source
-  refs;
+  adapter invocation receipt, payload, channel, connector profile resolution,
+  connector profile, or selected connector strategy refs;
+- payload, channel, connector profile resolution, connector profile, or
+  selected connector strategy refs not present in the allowed source refs;
 - missing required instruction refs;
 - unsafe instruction, allowed-source, workspace, packet, or token-cost refs;
 - missing `request_external_publish` grant;
@@ -387,13 +388,16 @@ For the current code slice, the publish receipt preflight packet blocks:
   claims;
 - raw post bodies or privacy policy that allows raw/private payloads;
 - missing expected receipt fields, especially `side_effects`,
-  `host_validation`, `adapter_invocation_receipt`, `operation_evidence`, and
-  `publication_receipt`.
+  `host_validation`, `connector_profile_resolution`, `connector_profile_ref`,
+  `selected_connector_strategy`, `adapter_invocation_receipt`,
+  `operation_evidence`, and `publication_receipt`.
 
 These checks are advisory readiness checks only. They prepare refs for the
 existing Module Host side-effect receipt writer preflight model. They do not
 write receipts, persist operation evidence, invoke adapters, publish, run
 policy, invoke gate, read draft bodies, collect metrics, or activate runtime.
+Direct adapter, channel, payload, or connector profile refs are not enough to
+bypass connector profile resolution.
 
 ## Publish receipt write handoff packet checks
 

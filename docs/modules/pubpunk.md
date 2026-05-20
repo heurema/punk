@@ -65,9 +65,10 @@ connector profile resolution, connector profile, selected connector strategy,
 adapter, payload, receipt, host side-effect request, and expected-receipt refs
 before it can project side-effect request refs. The publish receipt preflight
 packet requires explicit receipt target, storage, operation-evidence,
-idempotency, rollback, error, adapter invocation receipt, connector profile,
-channel, payload, and expected-receipt refs before it can project host
-receipt-writer preflight refs.
+idempotency, rollback, error, adapter invocation receipt, channel, connector
+profile resolution, connector profile, selected connector strategy, payload,
+and expected-receipt refs before it can project host receipt-writer preflight
+refs.
 The publish receipt write handoff packet requires explicit preflight, receipt
 writer model, target path, receipt bytes, operation-evidence, adapter
 invocation receipt, connector profile, channel, payload, and expected-receipt
@@ -108,10 +109,11 @@ collect metrics, write receipts, or activate runtime behavior.
 The current smoke evidence also proves the first publish receipt preflight
 chain: a ready PubPunk packet projects explicit receipt target, storage,
 operation-evidence, idempotency, rollback, error, adapter invocation receipt,
-connector profile, channel, and payload refs into the existing Module Host
-side-effect receipt writer preflight model. This evidence does not write
-receipts, invoke adapters, publish, run policy engines, invoke gate, read draft
-bodies, collect metrics, or activate runtime behavior.
+connector profile resolution, connector profile, selected connector strategy,
+channel, and payload refs into the existing Module Host side-effect receipt
+writer preflight model. This evidence does not write receipts, invoke adapters,
+publish, run policy engines, invoke gate, read draft bodies, collect metrics,
+or activate runtime behavior.
 
 The current smoke evidence also proves the first publish receipt write handoff:
 a ready PubPunk packet projects explicit preflight, receipt writer, target path,
@@ -374,22 +376,28 @@ It must provide:
 - adapter invocation receipt ref;
 - payload ref;
 - channel ref;
+- connector profile resolution ref;
 - connector profile ref;
-- allowed source refs covering payload, channel, and connector profile refs;
+- selected connector strategy ref;
+- allowed source refs covering payload, channel, connector profile resolution,
+  connector profile, and selected connector strategy refs;
 - instruction refs;
 - `request_external_publish` capability;
 - metadata-only privacy policy;
 - expected receipt fields including `side_effects`, `host_validation`,
-  `adapter_invocation_receipt`, `operation_evidence`, and
-  `publication_receipt`;
+  `connector_profile_resolution`, `connector_profile_ref`,
+  `selected_connector_strategy`, `adapter_invocation_receipt`,
+  `operation_evidence`, and `publication_receipt`;
 - optional token-cost ref.
 
 When ready, the packet can project only
 `PubPunkPublishReceiptWriterPreflightRefs` for the existing Module Host
-side-effect receipt writer preflight model. It does not write a receipt,
-persist operation evidence, invoke an adapter, publish externally, call a
-policy engine, invoke gate, read draft bodies, collect metrics, or activate
-PubPunk or Module Host runtime behavior.
+side-effect receipt writer preflight model. Direct adapter, channel, payload,
+or connector profile refs are not enough to bypass the connector profile
+resolution boundary. The packet does not write a receipt, persist operation
+evidence, invoke an adapter, publish externally, call a policy engine, invoke
+gate, read draft bodies, collect metrics, or activate PubPunk or Module Host
+runtime behavior.
 
 ## Current publish receipt write handoff packet
 

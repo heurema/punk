@@ -7,13 +7,13 @@ Authority: advisory/design
 ## Purpose
 
 Define deterministic expectations for the first PubPunk publish receipt
-preflight packet.
+preflight packet after channel connector profile resolution.
 
-The packet is the boundary between PubPunk's publish request model and the
-existing Module Host side-effect receipt writer preflight model. It carries
-explicit refs for future publication receipt writing without writing receipts,
-persisting operation evidence, publishing, invoking adapters, reading draft
-bodies, or activating runtime behavior.
+The packet is the boundary between PubPunk's publish request model, resolved
+connector evidence, and the existing Module Host side-effect receipt writer
+preflight model. It carries explicit refs for future publication receipt
+writing without writing receipts, persisting operation evidence, publishing,
+invoking adapters, reading draft bodies, or activating runtime behavior.
 
 This spec does not activate PubPunk runtime, Module Host runtime, module
 loading, filesystem reads, workspace initialization, external publishing,
@@ -27,13 +27,18 @@ persistence, gate writing, proofpack writing, or acceptance claims.
 The packet must include safe explicit refs for the publish request, receipt
 writer preflight, policy gate preflight, receipt target, receipt storage,
 operation evidence, idempotency, rollback, error, adapter invocation receipt,
-payload, channel, and connector profile.
+payload, channel, connector profile resolution, connector profile, and selected
+connector strategy.
 
-### PUBPUNK-PUBLISH-RECEIPT-PREFLIGHT-002: connector and channel refs stay allowed
+### PUBPUNK-PUBLISH-RECEIPT-PREFLIGHT-002: resolved connector refs stay allowed
 
-The payload, channel, and connector profile refs must be present in the
-packet's allowed source refs. Connector profile refs are evidence inputs only;
-they do not invoke adapters or read credentials.
+The payload, channel, connector profile resolution, connector profile, and
+selected connector strategy refs must be present in the packet's allowed source
+refs. Connector refs are evidence inputs only; they do not invoke adapters or
+read credentials.
+
+The packet must not treat direct adapter, channel, payload, or connector profile
+refs as enough to bypass channel connector profile resolution.
 
 ### PUBPUNK-PUBLISH-RECEIPT-PREFLIGHT-003: publish grant is narrow
 
@@ -45,9 +50,10 @@ claims, must block readiness.
 ### PUBPUNK-PUBLISH-RECEIPT-PREFLIGHT-004: receipt expectations include evidence coverage
 
 The packet must require expected receipt fields and must include `side_effects`,
-`host_validation`, `adapter_invocation_receipt`, `operation_evidence`, and
-`publication_receipt`. This describes future evidence requirements only and
-does not write a receipt.
+`host_validation`, `connector_profile_resolution`, `connector_profile_ref`,
+`selected_connector_strategy`, `adapter_invocation_receipt`,
+`operation_evidence`, and `publication_receipt`. This describes future evidence
+requirements only and does not write a receipt.
 
 ### PUBPUNK-PUBLISH-RECEIPT-PREFLIGHT-005: privacy remains metadata-only
 
@@ -91,8 +97,10 @@ pubpunk_publish_receipt_preflight_result:
   receipt_target_ref_explicit: true
   receipt_storage_ref_explicit: true
   operation_evidence_ref_explicit: true
+  connector_profile_resolution_ref_explicit: true
   connector_profile_ref_explicit: true
-  allowed_source_refs_cover_payload_channel_connector: true
+  selected_connector_strategy_ref_explicit: true
+  allowed_source_refs_cover_payload_channel_resolved_connector: true
   request_external_publish_grant_required: true
   receipt_writer_preflight_refs_ready: true
   module_host_side_effect_request_proposal_ready: true
