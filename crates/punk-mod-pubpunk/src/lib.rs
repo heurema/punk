@@ -20,6 +20,8 @@ pub const PUBPUNK_PUBLISH_RECEIPT_WRITE_HANDOFF_PACKET_SCHEMA_VERSION: &str =
     "punk.pubpunk.publish_receipt_write_handoff_packet.v0.1";
 pub const PUBPUNK_PUBLISH_OPERATION_EVIDENCE_HANDOFF_PACKET_SCHEMA_VERSION: &str =
     "punk.pubpunk.publish_operation_evidence_handoff_packet.v0.1";
+pub const PUBPUNK_PUBLISH_RECEIPT_EVIDENCE_EVENT_HANDOFF_PACKET_SCHEMA_VERSION: &str =
+    "punk.pubpunk.publish_receipt_evidence_event_handoff_packet.v0.1";
 pub const PUBPUNK_REQUIRED_INSTRUCTION_REFS: &[&str] = &[
     "docs/modules/pubpunk.md",
     "docs/modules/pubpunk-workspace-instructions.md",
@@ -132,6 +134,7 @@ pub enum PubPunkCapabilityGrant {
     WriteReceiptProposal,
     RequestPublicationReceiptWrite,
     RequestOperationEvidenceWrite,
+    RequestReceiptEvidenceEventHandoff,
     RequestExternalPublish,
     RequestMetricsCollection,
     ReadCredentials,
@@ -151,6 +154,7 @@ impl PubPunkCapabilityGrant {
             Self::WriteReceiptProposal => "write_receipt_proposal",
             Self::RequestPublicationReceiptWrite => "request_publication_receipt_write",
             Self::RequestOperationEvidenceWrite => "request_operation_evidence_write",
+            Self::RequestReceiptEvidenceEventHandoff => "request_receipt_evidence_event_handoff",
             Self::RequestExternalPublish => "request_external_publish",
             Self::RequestMetricsCollection => "request_metrics_collection",
             Self::ReadCredentials => "read_credentials",
@@ -183,6 +187,10 @@ impl PubPunkCapabilityGrant {
 
     pub fn supported_by_side_effect_free_publish_operation_evidence_handoff(self) -> bool {
         matches!(self, Self::RequestOperationEvidenceWrite)
+    }
+
+    pub fn supported_by_side_effect_free_publish_receipt_evidence_event_handoff(self) -> bool {
+        matches!(self, Self::RequestReceiptEvidenceEventHandoff)
     }
 }
 
@@ -5122,6 +5130,941 @@ pub fn assess_pubpunk_publish_operation_evidence_handoff_packet(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkPublishReceiptEvidenceEventHandoffOperation {
+    PreparePublishReceiptEvidenceEventHandoff,
+}
+
+impl PubPunkPublishReceiptEvidenceEventHandoffOperation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PreparePublishReceiptEvidenceEventHandoff => {
+                "prepare_publish_receipt_evidence_event_handoff"
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptEvidenceEventHandoffPacket {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub publish_operation_evidence_handoff_ref: String,
+    pub receipt_writer_result_ref: String,
+    pub operation_evidence_write_result_ref: String,
+    pub receipt_ref: String,
+    pub operation_evidence_ref: String,
+    pub event_log_ref: String,
+    pub event_source_ref: String,
+    pub event_correlation_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub channel_ref: String,
+    pub connector_profile_ref: String,
+    pub allowed_source_refs: Vec<String>,
+    pub instruction_refs: Vec<String>,
+    pub granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    pub privacy_policy: PubPunkPrivacyPolicy,
+    pub expected_receipt_fields: Vec<String>,
+    pub token_cost_ref: Option<String>,
+}
+
+impl PubPunkPublishReceiptEvidenceEventHandoffPacket {
+    pub fn new(
+        module_version_ref: impl Into<String>,
+        contract_ref: impl Into<String>,
+        run_ref: impl Into<String>,
+        project_ref: impl Into<String>,
+        publishing_workspace_ref: impl Into<String>,
+    ) -> Self {
+        Self {
+            module_id: PUBPUNK_MODULE_ID.to_owned(),
+            module_version_ref: module_version_ref.into(),
+            contract_ref: contract_ref.into(),
+            run_ref: run_ref.into(),
+            project_ref: project_ref.into(),
+            workspace_policy: PubPunkWorkspacePolicy::SplitExplicitRefs,
+            publishing_workspace_ref: publishing_workspace_ref.into(),
+            publish_operation_evidence_handoff_ref: String::new(),
+            receipt_writer_result_ref: String::new(),
+            operation_evidence_write_result_ref: String::new(),
+            receipt_ref: String::new(),
+            operation_evidence_ref: String::new(),
+            event_log_ref: String::new(),
+            event_source_ref: String::new(),
+            event_correlation_ref: String::new(),
+            adapter_invocation_receipt_ref: String::new(),
+            payload_ref: String::new(),
+            channel_ref: String::new(),
+            connector_profile_ref: String::new(),
+            allowed_source_refs: Vec::new(),
+            instruction_refs: Vec::new(),
+            granted_capabilities: Vec::new(),
+            privacy_policy: PubPunkPrivacyPolicy::safe_metadata_only(),
+            expected_receipt_fields: Vec::new(),
+            token_cost_ref: None,
+        }
+    }
+
+    pub fn with_workspace_policy(mut self, workspace_policy: PubPunkWorkspacePolicy) -> Self {
+        self.workspace_policy = workspace_policy;
+        self
+    }
+
+    pub fn with_publish_operation_evidence_handoff_ref(
+        mut self,
+        publish_operation_evidence_handoff_ref: impl Into<String>,
+    ) -> Self {
+        self.publish_operation_evidence_handoff_ref = publish_operation_evidence_handoff_ref.into();
+        self
+    }
+
+    pub fn with_receipt_writer_result_ref(
+        mut self,
+        receipt_writer_result_ref: impl Into<String>,
+    ) -> Self {
+        self.receipt_writer_result_ref = receipt_writer_result_ref.into();
+        self
+    }
+
+    pub fn with_operation_evidence_write_result_ref(
+        mut self,
+        operation_evidence_write_result_ref: impl Into<String>,
+    ) -> Self {
+        self.operation_evidence_write_result_ref = operation_evidence_write_result_ref.into();
+        self
+    }
+
+    pub fn with_receipt_ref(mut self, receipt_ref: impl Into<String>) -> Self {
+        self.receipt_ref = receipt_ref.into();
+        self
+    }
+
+    pub fn with_operation_evidence_ref(
+        mut self,
+        operation_evidence_ref: impl Into<String>,
+    ) -> Self {
+        self.operation_evidence_ref = operation_evidence_ref.into();
+        self
+    }
+
+    pub fn with_event_log_ref(mut self, event_log_ref: impl Into<String>) -> Self {
+        self.event_log_ref = event_log_ref.into();
+        self
+    }
+
+    pub fn with_event_source_ref(mut self, event_source_ref: impl Into<String>) -> Self {
+        self.event_source_ref = event_source_ref.into();
+        self
+    }
+
+    pub fn with_event_correlation_ref(mut self, event_correlation_ref: impl Into<String>) -> Self {
+        self.event_correlation_ref = event_correlation_ref.into();
+        self
+    }
+
+    pub fn with_adapter_invocation_receipt_ref(
+        mut self,
+        adapter_invocation_receipt_ref: impl Into<String>,
+    ) -> Self {
+        self.adapter_invocation_receipt_ref = adapter_invocation_receipt_ref.into();
+        self
+    }
+
+    pub fn with_payload_ref(mut self, payload_ref: impl Into<String>) -> Self {
+        self.payload_ref = payload_ref.into();
+        self
+    }
+
+    pub fn with_channel_ref(mut self, channel_ref: impl Into<String>) -> Self {
+        self.channel_ref = channel_ref.into();
+        self
+    }
+
+    pub fn with_connector_profile_ref(mut self, connector_profile_ref: impl Into<String>) -> Self {
+        self.connector_profile_ref = connector_profile_ref.into();
+        self
+    }
+
+    pub fn with_allowed_source_refs(mut self, allowed_source_refs: Vec<impl Into<String>>) -> Self {
+        self.allowed_source_refs = allowed_source_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_instruction_refs(mut self, instruction_refs: Vec<impl Into<String>>) -> Self {
+        self.instruction_refs = instruction_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_granted_capabilities(
+        mut self,
+        granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    ) -> Self {
+        self.granted_capabilities = granted_capabilities;
+        self
+    }
+
+    pub fn with_privacy_policy(mut self, privacy_policy: PubPunkPrivacyPolicy) -> Self {
+        self.privacy_policy = privacy_policy;
+        self
+    }
+
+    pub fn with_expected_receipt_fields(
+        mut self,
+        expected_receipt_fields: Vec<impl Into<String>>,
+    ) -> Self {
+        self.expected_receipt_fields = expected_receipt_fields
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        self
+    }
+
+    pub fn with_token_cost_ref(mut self, token_cost_ref: impl Into<String>) -> Self {
+        self.token_cost_ref = Some(token_cost_ref.into());
+        self
+    }
+
+    pub fn try_into_receipt_evidence_event_handoff_refs(
+        &self,
+    ) -> Result<
+        PubPunkPublishReceiptEvidenceEventHandoffRefs,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketAssessment,
+    > {
+        let assessment = assess_pubpunk_publish_receipt_evidence_event_handoff_packet(self);
+        if assessment.has_blockers() {
+            return Err(assessment);
+        }
+
+        Ok(PubPunkPublishReceiptEvidenceEventHandoffRefs {
+            publish_operation_evidence_handoff_ref: self
+                .publish_operation_evidence_handoff_ref
+                .clone(),
+            receipt_writer_result_ref: self.receipt_writer_result_ref.clone(),
+            operation_evidence_write_result_ref: self.operation_evidence_write_result_ref.clone(),
+            receipt_ref: self.receipt_ref.clone(),
+            operation_evidence_ref: self.operation_evidence_ref.clone(),
+            event_log_ref: self.event_log_ref.clone(),
+            event_source_ref: self.event_source_ref.clone(),
+            event_correlation_ref: self.event_correlation_ref.clone(),
+            adapter_invocation_receipt_ref: self.adapter_invocation_receipt_ref.clone(),
+            payload_ref: self.payload_ref.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptEvidenceEventHandoffRefs {
+    pub publish_operation_evidence_handoff_ref: String,
+    pub receipt_writer_result_ref: String,
+    pub operation_evidence_write_result_ref: String,
+    pub receipt_ref: String,
+    pub operation_evidence_ref: String,
+    pub event_log_ref: String,
+    pub event_source_ref: String,
+    pub event_correlation_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode {
+    MissingModuleId,
+    NonCanonicalModuleId,
+    MissingModuleVersionRef,
+    MissingContractRef,
+    MissingRunRef,
+    MissingProjectRef,
+    UnsupportedWorkspacePolicy,
+    MissingPublishingWorkspaceRef,
+    UnsafePublishingWorkspaceRef,
+    MissingPublishOperationEvidenceHandoffRef,
+    UnsafePublishOperationEvidenceHandoffRef,
+    PublishOperationEvidenceHandoffRefNotAllowed,
+    MissingReceiptWriterResultRef,
+    UnsafeReceiptWriterResultRef,
+    ReceiptWriterResultRefNotAllowed,
+    MissingOperationEvidenceWriteResultRef,
+    UnsafeOperationEvidenceWriteResultRef,
+    OperationEvidenceWriteResultRefNotAllowed,
+    MissingReceiptRef,
+    UnsafeReceiptRef,
+    ReceiptRefOutsidePunkRuns,
+    ReceiptRefNotAllowed,
+    MissingOperationEvidenceRef,
+    UnsafeOperationEvidenceRef,
+    OperationEvidenceRefOutsidePunkRuns,
+    OperationEvidenceRefNotAllowed,
+    ReceiptEvidenceRefsCollapsed,
+    MissingEventLogRef,
+    UnsafeEventLogRef,
+    EventLogRefNotPunkFlowLog,
+    MissingEventSourceRef,
+    UnsafeEventSourceRef,
+    EventSourceRefNotAllowed,
+    MissingEventCorrelationRef,
+    UnsafeEventCorrelationRef,
+    EventCorrelationRefNotAllowed,
+    MissingAdapterInvocationReceiptRef,
+    UnsafeAdapterInvocationReceiptRef,
+    AdapterInvocationReceiptRefNotAllowed,
+    MissingPayloadRef,
+    UnsafePayloadRef,
+    PayloadRefNotAllowed,
+    MissingChannelRef,
+    UnsafeChannelRef,
+    ChannelRefNotAllowed,
+    MissingConnectorProfileRef,
+    UnsafeConnectorProfileRef,
+    ConnectorProfileRefNotAllowed,
+    MissingInstructionRefs,
+    MissingRequiredInstructionRef,
+    UnsafeInstructionRef,
+    UnsafeAllowedSourceRef,
+    MissingRequestReceiptEvidenceEventHandoffGrant,
+    UnsupportedCapabilityGrant,
+    MissingExpectedReceiptFields,
+    MissingRequiredExpectedReceiptField,
+    UnsafePrivacyPolicy,
+    UnsafeTokenCostRef,
+}
+
+impl PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingModuleId => "missing_module_id",
+            Self::NonCanonicalModuleId => "non_canonical_module_id",
+            Self::MissingModuleVersionRef => "missing_module_version_ref",
+            Self::MissingContractRef => "missing_contract_ref",
+            Self::MissingRunRef => "missing_run_ref",
+            Self::MissingProjectRef => "missing_project_ref",
+            Self::UnsupportedWorkspacePolicy => "unsupported_workspace_policy",
+            Self::MissingPublishingWorkspaceRef => "missing_publishing_workspace_ref",
+            Self::UnsafePublishingWorkspaceRef => "unsafe_publishing_workspace_ref",
+            Self::MissingPublishOperationEvidenceHandoffRef => {
+                "missing_publish_operation_evidence_handoff_ref"
+            }
+            Self::UnsafePublishOperationEvidenceHandoffRef => {
+                "unsafe_publish_operation_evidence_handoff_ref"
+            }
+            Self::PublishOperationEvidenceHandoffRefNotAllowed => {
+                "publish_operation_evidence_handoff_ref_not_allowed"
+            }
+            Self::MissingReceiptWriterResultRef => "missing_receipt_writer_result_ref",
+            Self::UnsafeReceiptWriterResultRef => "unsafe_receipt_writer_result_ref",
+            Self::ReceiptWriterResultRefNotAllowed => "receipt_writer_result_ref_not_allowed",
+            Self::MissingOperationEvidenceWriteResultRef => {
+                "missing_operation_evidence_write_result_ref"
+            }
+            Self::UnsafeOperationEvidenceWriteResultRef => {
+                "unsafe_operation_evidence_write_result_ref"
+            }
+            Self::OperationEvidenceWriteResultRefNotAllowed => {
+                "operation_evidence_write_result_ref_not_allowed"
+            }
+            Self::MissingReceiptRef => "missing_receipt_ref",
+            Self::UnsafeReceiptRef => "unsafe_receipt_ref",
+            Self::ReceiptRefOutsidePunkRuns => "receipt_ref_outside_punk_runs",
+            Self::ReceiptRefNotAllowed => "receipt_ref_not_allowed",
+            Self::MissingOperationEvidenceRef => "missing_operation_evidence_ref",
+            Self::UnsafeOperationEvidenceRef => "unsafe_operation_evidence_ref",
+            Self::OperationEvidenceRefOutsidePunkRuns => "operation_evidence_ref_outside_punk_runs",
+            Self::OperationEvidenceRefNotAllowed => "operation_evidence_ref_not_allowed",
+            Self::ReceiptEvidenceRefsCollapsed => "receipt_evidence_refs_collapsed",
+            Self::MissingEventLogRef => "missing_event_log_ref",
+            Self::UnsafeEventLogRef => "unsafe_event_log_ref",
+            Self::EventLogRefNotPunkFlowLog => "event_log_ref_not_punk_flow_log",
+            Self::MissingEventSourceRef => "missing_event_source_ref",
+            Self::UnsafeEventSourceRef => "unsafe_event_source_ref",
+            Self::EventSourceRefNotAllowed => "event_source_ref_not_allowed",
+            Self::MissingEventCorrelationRef => "missing_event_correlation_ref",
+            Self::UnsafeEventCorrelationRef => "unsafe_event_correlation_ref",
+            Self::EventCorrelationRefNotAllowed => "event_correlation_ref_not_allowed",
+            Self::MissingAdapterInvocationReceiptRef => "missing_adapter_invocation_receipt_ref",
+            Self::UnsafeAdapterInvocationReceiptRef => "unsafe_adapter_invocation_receipt_ref",
+            Self::AdapterInvocationReceiptRefNotAllowed => {
+                "adapter_invocation_receipt_ref_not_allowed"
+            }
+            Self::MissingPayloadRef => "missing_payload_ref",
+            Self::UnsafePayloadRef => "unsafe_payload_ref",
+            Self::PayloadRefNotAllowed => "payload_ref_not_allowed",
+            Self::MissingChannelRef => "missing_channel_ref",
+            Self::UnsafeChannelRef => "unsafe_channel_ref",
+            Self::ChannelRefNotAllowed => "channel_ref_not_allowed",
+            Self::MissingConnectorProfileRef => "missing_connector_profile_ref",
+            Self::UnsafeConnectorProfileRef => "unsafe_connector_profile_ref",
+            Self::ConnectorProfileRefNotAllowed => "connector_profile_ref_not_allowed",
+            Self::MissingInstructionRefs => "missing_instruction_refs",
+            Self::MissingRequiredInstructionRef => "missing_required_instruction_ref",
+            Self::UnsafeInstructionRef => "unsafe_instruction_ref",
+            Self::UnsafeAllowedSourceRef => "unsafe_allowed_source_ref",
+            Self::MissingRequestReceiptEvidenceEventHandoffGrant => {
+                "missing_request_receipt_evidence_event_handoff_grant"
+            }
+            Self::UnsupportedCapabilityGrant => "unsupported_capability_grant",
+            Self::MissingExpectedReceiptFields => "missing_expected_receipt_fields",
+            Self::MissingRequiredExpectedReceiptField => "missing_required_expected_receipt_field",
+            Self::UnsafePrivacyPolicy => "unsafe_privacy_policy",
+            Self::UnsafeTokenCostRef => "unsafe_token_cost_ref",
+        }
+    }
+
+    pub fn is_blocking(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptEvidenceEventHandoffPacketFinding {
+    pub code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
+    pub ref_value: Option<String>,
+    pub capability: Option<PubPunkCapabilityGrant>,
+    pub message: &'static str,
+}
+
+impl PubPunkPublishReceiptEvidenceEventHandoffPacketFinding {
+    fn new(
+        code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
+        message: &'static str,
+    ) -> Self {
+        Self {
+            code,
+            ref_value: None,
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_ref(
+        code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
+        ref_value: impl Into<String>,
+        message: &'static str,
+    ) -> Self {
+        Self {
+            code,
+            ref_value: Some(ref_value.into()),
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_capability(capability: PubPunkCapabilityGrant) -> Self {
+        Self {
+            code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsupportedCapabilityGrant,
+            ref_value: None,
+            capability: Some(capability),
+            message: "capability is not available in the side-effect-free publish receipt/evidence event handoff packet",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptEvidenceEventHandoffPacketRefs {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub publish_operation_evidence_handoff_ref: String,
+    pub receipt_writer_result_ref: String,
+    pub operation_evidence_write_result_ref: String,
+    pub receipt_ref: String,
+    pub operation_evidence_ref: String,
+    pub event_log_ref: String,
+    pub event_source_ref: String,
+    pub event_correlation_ref: String,
+    pub adapter_invocation_receipt_ref: String,
+    pub payload_ref: String,
+    pub channel_ref: String,
+    pub connector_profile_ref: String,
+    pub token_cost_ref: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishReceiptEvidenceEventHandoffPacketAssessment {
+    pub schema_version: &'static str,
+    pub status: PubPunkAssessmentStatus,
+    pub authority: PubPunkAssessmentAuthority,
+    pub requested_operation: PubPunkPublishReceiptEvidenceEventHandoffOperation,
+    pub findings: Vec<PubPunkPublishReceiptEvidenceEventHandoffPacketFinding>,
+    pub boundary_flags: PubPunkInventoryBoundaryFlags,
+    pub refs: PubPunkPublishReceiptEvidenceEventHandoffPacketRefs,
+}
+
+impl PubPunkPublishReceiptEvidenceEventHandoffPacketAssessment {
+    pub fn blocking_findings(
+        &self,
+    ) -> impl Iterator<Item = &PubPunkPublishReceiptEvidenceEventHandoffPacketFinding> {
+        self.findings
+            .iter()
+            .filter(|finding| finding.code.is_blocking())
+    }
+
+    pub fn has_blockers(&self) -> bool {
+        self.blocking_findings().next().is_some()
+    }
+}
+
+pub fn assess_pubpunk_publish_receipt_evidence_event_handoff_packet(
+    packet: &PubPunkPublishReceiptEvidenceEventHandoffPacket,
+) -> PubPunkPublishReceiptEvidenceEventHandoffPacketAssessment {
+    let mut findings = Vec::new();
+
+    push_publish_receipt_evidence_event_handoff_required_ref_finding(
+        &mut findings,
+        packet.module_id.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingModuleId,
+        "module id is required",
+    );
+    if !packet.module_id.trim().is_empty() && packet.module_id != PUBPUNK_MODULE_ID {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::NonCanonicalModuleId,
+                packet.module_id.clone(),
+                "PubPunk publish receipt/evidence event handoff packets must use the canonical pubpunk module id",
+            ),
+        );
+    }
+    push_publish_receipt_evidence_event_handoff_required_ref_finding(
+        &mut findings,
+        packet.module_version_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingModuleVersionRef,
+        "module version ref is required",
+    );
+    push_publish_receipt_evidence_event_handoff_required_ref_finding(
+        &mut findings,
+        packet.contract_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingContractRef,
+        "contract ref is required",
+    );
+    push_publish_receipt_evidence_event_handoff_required_ref_finding(
+        &mut findings,
+        packet.run_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRunRef,
+        "run ref is required",
+    );
+    push_publish_receipt_evidence_event_handoff_required_ref_finding(
+        &mut findings,
+        packet.project_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingProjectRef,
+        "project ref is required",
+    );
+
+    if !packet.workspace_policy.selected_for_first_slice() {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsupportedWorkspacePolicy,
+                packet.workspace_policy.as_str(),
+                "the first PubPunk publish receipt/evidence event handoff supports split explicit refs only",
+            ),
+        );
+    }
+
+    push_publish_receipt_evidence_event_handoff_required_ref_finding(
+        &mut findings,
+        packet.publishing_workspace_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingPublishingWorkspaceRef,
+        "publishing workspace ref is required",
+    );
+    if !packet.publishing_workspace_ref.trim().is_empty()
+        && !is_safe_workspace_ref(&packet.publishing_workspace_ref)
+    {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePublishingWorkspaceRef,
+                packet.publishing_workspace_ref.clone(),
+                "publishing workspace ref must be an explicit safe logical or repo-relative ref",
+            ),
+        );
+    }
+
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.publish_operation_evidence_handoff_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingPublishOperationEvidenceHandoffRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePublishOperationEvidenceHandoffRef,
+        "publish operation evidence handoff ref is required",
+        "publish operation evidence handoff ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.receipt_writer_result_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingReceiptWriterResultRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeReceiptWriterResultRef,
+        "receipt writer result ref is required",
+        "receipt writer result ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.operation_evidence_write_result_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingOperationEvidenceWriteResultRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeOperationEvidenceWriteResultRef,
+        "operation evidence write result ref is required",
+        "operation evidence write result ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.receipt_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingReceiptRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeReceiptRef,
+        "receipt ref is required",
+        "receipt ref must be an explicit repo-relative ref",
+    );
+    if !packet.receipt_ref.trim().is_empty()
+        && is_safe_source_ref(&packet.receipt_ref)
+        && !is_punk_runs_target_ref(&packet.receipt_ref)
+    {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptRefOutsidePunkRuns,
+                packet.receipt_ref.clone(),
+                "receipt ref must stay under .punk/runs for the event handoff",
+            ),
+        );
+    }
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.operation_evidence_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingOperationEvidenceRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeOperationEvidenceRef,
+        "operation evidence ref is required",
+        "operation evidence ref must be an explicit repo-relative ref",
+    );
+    if !packet.operation_evidence_ref.trim().is_empty()
+        && is_safe_source_ref(&packet.operation_evidence_ref)
+        && !is_punk_runs_target_ref(&packet.operation_evidence_ref)
+    {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::OperationEvidenceRefOutsidePunkRuns,
+                packet.operation_evidence_ref.clone(),
+                "operation evidence ref must stay under .punk/runs for the event handoff",
+            ),
+        );
+    }
+    if !packet.receipt_ref.trim().is_empty()
+        && !packet.operation_evidence_ref.trim().is_empty()
+        && is_safe_source_ref(&packet.receipt_ref)
+        && is_safe_source_ref(&packet.operation_evidence_ref)
+        && packet.receipt_ref == packet.operation_evidence_ref
+    {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptEvidenceRefsCollapsed,
+                packet.receipt_ref.clone(),
+                "receipt and operation evidence refs must remain separate artifacts",
+            ),
+        );
+    }
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.event_log_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingEventLogRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeEventLogRef,
+        "event log ref is required",
+        "event log ref must be an explicit repo-relative ref",
+    );
+    if !packet.event_log_ref.trim().is_empty()
+        && is_safe_source_ref(&packet.event_log_ref)
+        && !is_punk_flow_event_log_ref(&packet.event_log_ref)
+    {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::EventLogRefNotPunkFlowLog,
+                packet.event_log_ref.clone(),
+                "event log ref must point to .punk/events/flow.jsonl",
+            ),
+        );
+    }
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.event_source_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingEventSourceRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeEventSourceRef,
+        "event source ref is required",
+        "event source ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.event_correlation_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingEventCorrelationRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeEventCorrelationRef,
+        "event correlation ref is required",
+        "event correlation ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.adapter_invocation_receipt_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingAdapterInvocationReceiptRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeAdapterInvocationReceiptRef,
+        "adapter invocation receipt ref is required",
+        "adapter invocation receipt ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.payload_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingPayloadRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePayloadRef,
+        "payload ref is required",
+        "payload ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.channel_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingChannelRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeChannelRef,
+        "channel ref is required",
+        "channel ref must be an explicit repo-relative ref",
+    );
+    validate_publish_receipt_evidence_event_handoff_ref(
+        &mut findings,
+        packet.connector_profile_ref.as_str(),
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingConnectorProfileRef,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeConnectorProfileRef,
+        "connector profile ref is required",
+        "connector profile ref must be an explicit repo-relative ref",
+    );
+
+    if packet.instruction_refs.is_empty() {
+        findings.push(PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::new(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingInstructionRefs,
+            "instruction refs are required for PubPunk publish receipt/evidence event handoff packets",
+        ));
+    }
+
+    for required_ref in PUBPUNK_REQUIRED_INSTRUCTION_REFS {
+        if !packet
+            .instruction_refs
+            .iter()
+            .any(|instruction_ref| instruction_ref == required_ref)
+        {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                    PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRequiredInstructionRef,
+                    *required_ref,
+                    "required PubPunk instruction ref is missing",
+                ),
+            );
+        }
+    }
+
+    for instruction_ref in &packet.instruction_refs {
+        if !is_safe_source_ref(instruction_ref) {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                    PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeInstructionRef,
+                    instruction_ref.clone(),
+                    "instruction refs must be explicit repo-relative refs",
+                ),
+            );
+        }
+    }
+
+    for source_ref in &packet.allowed_source_refs {
+        if !is_safe_source_ref(source_ref) {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                    PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeAllowedSourceRef,
+                    source_ref.clone(),
+                    "allowed source refs must be explicit repo-relative refs",
+                ),
+            );
+        }
+    }
+
+    for (source_ref, code, message) in [
+        (
+            packet.publish_operation_evidence_handoff_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::PublishOperationEvidenceHandoffRefNotAllowed,
+            "publish operation evidence handoff ref must be included in allowed source refs",
+        ),
+        (
+            packet.receipt_writer_result_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptWriterResultRefNotAllowed,
+            "receipt writer result ref must be included in allowed source refs",
+        ),
+        (
+            packet.operation_evidence_write_result_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::OperationEvidenceWriteResultRefNotAllowed,
+            "operation evidence write result ref must be included in allowed source refs",
+        ),
+        (
+            packet.receipt_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptRefNotAllowed,
+            "receipt ref must be included in allowed source refs",
+        ),
+        (
+            packet.operation_evidence_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::OperationEvidenceRefNotAllowed,
+            "operation evidence ref must be included in allowed source refs",
+        ),
+        (
+            packet.event_source_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::EventSourceRefNotAllowed,
+            "event source ref must be included in allowed source refs",
+        ),
+        (
+            packet.event_correlation_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::EventCorrelationRefNotAllowed,
+            "event correlation ref must be included in allowed source refs",
+        ),
+        (
+            packet.adapter_invocation_receipt_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::AdapterInvocationReceiptRefNotAllowed,
+            "adapter invocation receipt ref must be included in allowed source refs",
+        ),
+        (
+            packet.payload_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::PayloadRefNotAllowed,
+            "payload ref must be included in allowed source refs",
+        ),
+        (
+            packet.channel_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ChannelRefNotAllowed,
+            "channel ref must be included in allowed source refs",
+        ),
+        (
+            packet.connector_profile_ref.as_str(),
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ConnectorProfileRefNotAllowed,
+            "connector profile ref must be included in allowed source refs",
+        ),
+    ] {
+        if !source_ref.trim().is_empty()
+            && !packet
+                .allowed_source_refs
+                .iter()
+                .any(|allowed_ref| allowed_ref == source_ref)
+        {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                    code,
+                    source_ref,
+                    message,
+                ),
+            );
+        }
+    }
+
+    if !packet
+        .granted_capabilities
+        .contains(&PubPunkCapabilityGrant::RequestReceiptEvidenceEventHandoff)
+    {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::new(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRequestReceiptEvidenceEventHandoffGrant,
+                "request_receipt_evidence_event_handoff must be explicitly granted for this packet",
+            ),
+        );
+    }
+    for capability in &packet.granted_capabilities {
+        if !capability.supported_by_side_effect_free_publish_receipt_evidence_event_handoff() {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_capability(*capability),
+            );
+        }
+    }
+
+    if packet.expected_receipt_fields.is_empty() {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::new(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingExpectedReceiptFields,
+                "expected receipt fields are required even though this packet does not append events",
+            ),
+        );
+    }
+    for required_field in [
+        "side_effects",
+        "host_validation",
+        "adapter_invocation_receipt",
+        "operation_evidence",
+        "publication_receipt",
+        "receipt_write_result",
+        "operation_evidence_write_result",
+        "receipt_evidence_event_handoff",
+    ] {
+        if !packet
+            .expected_receipt_fields
+            .iter()
+            .any(|field| field == required_field)
+        {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                    PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRequiredExpectedReceiptField,
+                    required_field,
+                    "publish receipt/evidence event handoff expectations must include host, receipt, operation-evidence, and event handoff coverage",
+                ),
+            );
+        }
+    }
+
+    if packet.privacy_policy.allows_private_or_raw_payloads() {
+        findings.push(PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::new(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePrivacyPolicy,
+            "privacy policy must disallow raw/private payloads for this packet",
+        ));
+    }
+
+    if let Some(token_cost_ref) = &packet.token_cost_ref {
+        if !is_safe_source_ref(token_cost_ref) {
+            findings.push(
+                PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                    PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeTokenCostRef,
+                    token_cost_ref.clone(),
+                    "token cost ref must be an explicit repo-relative ref when provided",
+                ),
+            );
+        }
+    }
+
+    let status = if findings.iter().any(|finding| finding.code.is_blocking()) {
+        PubPunkAssessmentStatus::Blocked
+    } else {
+        PubPunkAssessmentStatus::Ready
+    };
+
+    PubPunkPublishReceiptEvidenceEventHandoffPacketAssessment {
+        schema_version: PUBPUNK_PUBLISH_RECEIPT_EVIDENCE_EVENT_HANDOFF_PACKET_SCHEMA_VERSION,
+        status,
+        authority: PubPunkAssessmentAuthority::Advisory,
+        requested_operation: PubPunkPublishReceiptEvidenceEventHandoffOperation::PreparePublishReceiptEvidenceEventHandoff,
+        findings,
+        boundary_flags: PUBPUNK_INVENTORY_ASSESSMENT_BOUNDARY_FLAGS,
+        refs: PubPunkPublishReceiptEvidenceEventHandoffPacketRefs {
+            module_id: packet.module_id.clone(),
+            module_version_ref: packet.module_version_ref.clone(),
+            contract_ref: packet.contract_ref.clone(),
+            run_ref: packet.run_ref.clone(),
+            project_ref: packet.project_ref.clone(),
+            workspace_policy: packet.workspace_policy,
+            publishing_workspace_ref: packet.publishing_workspace_ref.clone(),
+            publish_operation_evidence_handoff_ref: packet
+                .publish_operation_evidence_handoff_ref
+                .clone(),
+            receipt_writer_result_ref: packet.receipt_writer_result_ref.clone(),
+            operation_evidence_write_result_ref: packet
+                .operation_evidence_write_result_ref
+                .clone(),
+            receipt_ref: packet.receipt_ref.clone(),
+            operation_evidence_ref: packet.operation_evidence_ref.clone(),
+            event_log_ref: packet.event_log_ref.clone(),
+            event_source_ref: packet.event_source_ref.clone(),
+            event_correlation_ref: packet.event_correlation_ref.clone(),
+            adapter_invocation_receipt_ref: packet.adapter_invocation_receipt_ref.clone(),
+            payload_ref: packet.payload_ref.clone(),
+            channel_ref: packet.channel_ref.clone(),
+            connector_profile_ref: packet.connector_profile_ref.clone(),
+            token_cost_ref: packet.token_cost_ref.clone(),
+        },
+    }
+}
+
 fn push_required_ref_finding(
     findings: &mut Vec<PubPunkInventoryFinding>,
     value: &str,
@@ -5295,8 +6238,49 @@ fn validate_publish_operation_evidence_handoff_ref(
     }
 }
 
+fn push_publish_receipt_evidence_event_handoff_required_ref_finding(
+    findings: &mut Vec<PubPunkPublishReceiptEvidenceEventHandoffPacketFinding>,
+    value: &str,
+    code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
+    message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::new(
+            code, message,
+        ));
+    }
+}
+
+fn validate_publish_receipt_evidence_event_handoff_ref(
+    findings: &mut Vec<PubPunkPublishReceiptEvidenceEventHandoffPacketFinding>,
+    value: &str,
+    missing_code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
+    unsafe_code: PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
+    missing_message: &'static str,
+    unsafe_message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::new(
+            missing_code,
+            missing_message,
+        ));
+    } else if !is_safe_source_ref(value) {
+        findings.push(
+            PubPunkPublishReceiptEvidenceEventHandoffPacketFinding::for_ref(
+                unsafe_code,
+                value,
+                unsafe_message,
+            ),
+        );
+    }
+}
+
 fn is_punk_runs_target_ref(value: &str) -> bool {
     value.trim().starts_with(".punk/runs/")
+}
+
+fn is_punk_flow_event_log_ref(value: &str) -> bool {
+    value.trim() == ".punk/events/flow.jsonl"
 }
 
 fn is_safe_workspace_ref(value: &str) -> bool {
@@ -5341,6 +6325,7 @@ mod tests {
         assess_pubpunk_inventory, assess_pubpunk_inventory_input_packet,
         assess_pubpunk_inventory_reader_input,
         assess_pubpunk_publish_operation_evidence_handoff_packet,
+        assess_pubpunk_publish_receipt_evidence_event_handoff_packet,
         assess_pubpunk_publish_receipt_preflight_packet,
         assess_pubpunk_publish_receipt_write_handoff_packet, assess_pubpunk_publish_request_packet,
         build_pubpunk_inventory_input_packet_from_reader_input, PubPunkAssessmentAuthority,
@@ -5351,6 +6336,9 @@ mod tests {
         PubPunkPublishOperationEvidenceHandoffOperation,
         PubPunkPublishOperationEvidenceHandoffPacket,
         PubPunkPublishOperationEvidenceHandoffPacketFindingCode,
+        PubPunkPublishReceiptEvidenceEventHandoffOperation,
+        PubPunkPublishReceiptEvidenceEventHandoffPacket,
+        PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode,
         PubPunkPublishReceiptPreflightOperation, PubPunkPublishReceiptPreflightPacket,
         PubPunkPublishReceiptPreflightPacketFindingCode,
         PubPunkPublishReceiptWriteHandoffOperation, PubPunkPublishReceiptWriteHandoffPacket,
@@ -5636,6 +6624,69 @@ mod tests {
         ])
         .with_token_cost_ref(
             "work/reports/pubpunk-publish-operation-evidence-handoff-token-cost.md",
+        )
+    }
+
+    fn valid_publish_receipt_evidence_event_handoff_packet(
+    ) -> PubPunkPublishReceiptEvidenceEventHandoffPacket {
+        PubPunkPublishReceiptEvidenceEventHandoffPacket::new(
+            "v0.1",
+            "contracts/publish-cycle-0",
+            "runs/local-pubpunk-publish-request",
+            "project/punk",
+            "punk-publishing://project/punk",
+        )
+        .with_publish_operation_evidence_handoff_ref(
+            "work/module-assessments/pubpunk-publish-operation-evidence-handoff.md",
+        )
+        .with_receipt_writer_result_ref(
+            "work/module-receipt-writer-results/pubpunk-publish-example.md",
+        )
+        .with_operation_evidence_write_result_ref(
+            "work/module-operation-evidence-results/pubpunk-publish-example.md",
+        )
+        .with_receipt_ref(".punk/runs/local-pubpunk-publish-request/receipt.json")
+        .with_operation_evidence_ref(
+            ".punk/runs/local-pubpunk-publish-request/operation-evidence.jsonl",
+        )
+        .with_event_log_ref(".punk/events/flow.jsonl")
+        .with_event_source_ref("work/module-events/pubpunk-receipt-evidence-source.md")
+        .with_event_correlation_ref("work/module-events/pubpunk-receipt-evidence-correlation.md")
+        .with_adapter_invocation_receipt_ref(
+            "work/module-receipts/github-discussions-invocation.md",
+        )
+        .with_payload_ref("publishing/posts/example.md")
+        .with_channel_ref("publishing/channels/github-discussions.md")
+        .with_connector_profile_ref("publishing/connectors/github-discussions.md")
+        .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
+        .with_allowed_source_refs(vec![
+            "work/module-assessments/pubpunk-publish-operation-evidence-handoff.md",
+            "work/module-receipt-writer-results/pubpunk-publish-example.md",
+            "work/module-operation-evidence-results/pubpunk-publish-example.md",
+            ".punk/runs/local-pubpunk-publish-request/receipt.json",
+            ".punk/runs/local-pubpunk-publish-request/operation-evidence.jsonl",
+            "work/module-events/pubpunk-receipt-evidence-source.md",
+            "work/module-events/pubpunk-receipt-evidence-correlation.md",
+            "publishing/posts/example.md",
+            "publishing/channels/github-discussions.md",
+            "publishing/connectors/github-discussions.md",
+            "work/module-receipts/github-discussions-invocation.md",
+        ])
+        .with_granted_capabilities(vec![
+            PubPunkCapabilityGrant::RequestReceiptEvidenceEventHandoff,
+        ])
+        .with_expected_receipt_fields(vec![
+            "side_effects",
+            "host_validation",
+            "adapter_invocation_receipt",
+            "operation_evidence",
+            "publication_receipt",
+            "receipt_write_result",
+            "operation_evidence_write_result",
+            "receipt_evidence_event_handoff",
+        ])
+        .with_token_cost_ref(
+            "work/reports/pubpunk-publish-receipt-evidence-event-handoff-token-cost.md",
         )
     }
 
@@ -6509,6 +7560,217 @@ mod tests {
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafePrivacyPolicy));
         assert!(assessment.findings.iter().any(|finding| finding.code
             == PubPunkPublishOperationEvidenceHandoffPacketFindingCode::UnsafeTokenCostRef));
+    }
+
+    #[test]
+    fn publish_receipt_evidence_event_handoff_packet_builds_event_refs_without_side_effects() {
+        let packet = valid_publish_receipt_evidence_event_handoff_packet();
+
+        let assessment = assess_pubpunk_publish_receipt_evidence_event_handoff_packet(&packet);
+        let handoff_refs = packet
+            .try_into_receipt_evidence_event_handoff_refs()
+            .expect("publish receipt/evidence event handoff packet should be ready");
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Ready);
+        assert_eq!(assessment.authority, PubPunkAssessmentAuthority::Advisory);
+        assert_eq!(
+            assessment.requested_operation,
+            PubPunkPublishReceiptEvidenceEventHandoffOperation::PreparePublishReceiptEvidenceEventHandoff
+        );
+        assert_eq!(assessment.refs.module_id, "pubpunk");
+        assert_eq!(
+            assessment.refs.workspace_policy,
+            PubPunkWorkspacePolicy::SplitExplicitRefs
+        );
+        assert_eq!(
+            assessment.refs.publish_operation_evidence_handoff_ref,
+            "work/module-assessments/pubpunk-publish-operation-evidence-handoff.md"
+        );
+        assert_eq!(assessment.refs.event_log_ref, ".punk/events/flow.jsonl");
+        assert_eq!(
+            assessment.refs.token_cost_ref.as_deref(),
+            Some("work/reports/pubpunk-publish-receipt-evidence-event-handoff-token-cost.md")
+        );
+        assert!(assessment.boundary_flags.all_side_effect_flags_false());
+        assert_eq!(
+            handoff_refs.receipt_ref,
+            ".punk/runs/local-pubpunk-publish-request/receipt.json"
+        );
+        assert_eq!(
+            handoff_refs.operation_evidence_ref,
+            ".punk/runs/local-pubpunk-publish-request/operation-evidence.jsonl"
+        );
+        assert_eq!(handoff_refs.event_log_ref, ".punk/events/flow.jsonl");
+        assert_eq!(handoff_refs.payload_ref, "publishing/posts/example.md");
+    }
+
+    #[test]
+    fn publish_receipt_evidence_event_handoff_packet_blocks_missing_grant_and_fields() {
+        let packet = valid_publish_receipt_evidence_event_handoff_packet()
+            .with_granted_capabilities(vec![PubPunkCapabilityGrant::RequestOperationEvidenceWrite])
+            .with_expected_receipt_fields(vec!["side_effects"]);
+
+        let assessment = assess_pubpunk_publish_receipt_evidence_event_handoff_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+                == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRequestReceiptEvidenceEventHandoffGrant
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsupportedCapabilityGrant
+            && finding.capability == Some(PubPunkCapabilityGrant::RequestOperationEvidenceWrite)));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRequiredExpectedReceiptField
+            && finding.ref_value.as_deref() == Some("operation_evidence_write_result")));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::MissingRequiredExpectedReceiptField
+            && finding.ref_value.as_deref() == Some("receipt_evidence_event_handoff")));
+        assert!(packet
+            .try_into_receipt_evidence_event_handoff_refs()
+            .is_err());
+    }
+
+    #[test]
+    fn publish_receipt_evidence_event_handoff_packet_blocks_unallowed_source_refs() {
+        let packet = valid_publish_receipt_evidence_event_handoff_packet()
+            .with_allowed_source_refs(vec!["publishing/posts/other.md"])
+            .with_publish_operation_evidence_handoff_ref("work/module-assessments/not-allowed.md")
+            .with_receipt_writer_result_ref("work/module-receipt-writer-results/not-allowed.md")
+            .with_operation_evidence_write_result_ref(
+                "work/module-operation-evidence-results/not-allowed.md",
+            )
+            .with_receipt_ref(".punk/runs/not-allowed/receipt.json")
+            .with_operation_evidence_ref(".punk/runs/not-allowed/operation-evidence.jsonl")
+            .with_event_source_ref("work/module-events/not-allowed-source.md")
+            .with_event_correlation_ref("work/module-events/not-allowed-correlation.md")
+            .with_channel_ref("publishing/channels/not-allowed.md")
+            .with_connector_profile_ref("publishing/connectors/not-allowed.md")
+            .with_adapter_invocation_receipt_ref("work/module-receipts/not-allowed.md");
+
+        let assessment = assess_pubpunk_publish_receipt_evidence_event_handoff_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::PublishOperationEvidenceHandoffRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptWriterResultRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::OperationEvidenceWriteResultRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::OperationEvidenceRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::EventSourceRefNotAllowed
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::EventCorrelationRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::PayloadRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ChannelRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ConnectorProfileRefNotAllowed));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::AdapterInvocationReceiptRefNotAllowed));
+    }
+
+    #[test]
+    fn publish_receipt_evidence_event_handoff_packet_blocks_unsafe_refs_and_privacy() {
+        let mut instruction_refs = PUBPUNK_REQUIRED_INSTRUCTION_REFS
+            .iter()
+            .map(|instruction_ref| (*instruction_ref).to_owned())
+            .collect::<Vec<_>>();
+        instruction_refs.push("/tmp/pubpunk-instruction.md".to_owned());
+
+        let mut packet = valid_publish_receipt_evidence_event_handoff_packet()
+            .with_instruction_refs(instruction_refs)
+            .with_publish_operation_evidence_handoff_ref("../work/module-assessments/handoff.md")
+            .with_receipt_writer_result_ref("../work/module-receipt-writer-results/result.md")
+            .with_operation_evidence_write_result_ref(
+                "../work/module-operation-evidence-results/result.md",
+            )
+            .with_receipt_ref("receipts/outside.json")
+            .with_operation_evidence_ref("operation-evidence/outside.jsonl")
+            .with_event_log_ref("work/events/flow.jsonl")
+            .with_event_source_ref("../work/module-events/source.md")
+            .with_event_correlation_ref("/tmp/correlation.md")
+            .with_adapter_invocation_receipt_ref("../work/module-receipts/invocation.md")
+            .with_payload_ref("../publishing/posts/example.md")
+            .with_channel_ref("/tmp/channel.md")
+            .with_connector_profile_ref("https://example.com/connector")
+            .with_allowed_source_refs(vec!["../publishing/posts/example.md"])
+            .with_privacy_policy(PubPunkPrivacyPolicy {
+                raw_external_payloads: true,
+                ..PubPunkPrivacyPolicy::safe_metadata_only()
+            })
+            .with_token_cost_ref("../work/reports/token-cost.md");
+        packet.publishing_workspace_ref = "https://example.com/workspace".to_owned();
+
+        let assessment = assess_pubpunk_publish_receipt_evidence_event_handoff_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+                == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePublishingWorkspaceRef
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeInstructionRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeAllowedSourceRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePublishOperationEvidenceHandoffRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeReceiptWriterResultRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeOperationEvidenceWriteResultRef));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptRefOutsidePunkRuns
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::OperationEvidenceRefOutsidePunkRuns));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::EventLogRefNotPunkFlowLog
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeEventSourceRef));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeEventCorrelationRef
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeAdapterInvocationReceiptRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePayloadRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeChannelRef));
+        assert!(assessment.findings.iter().any(|finding| {
+            finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeConnectorProfileRef
+        }));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafePrivacyPolicy));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::UnsafeTokenCostRef));
+    }
+
+    #[test]
+    fn publish_receipt_evidence_event_handoff_packet_blocks_collapsed_artifact_refs() {
+        let packet = valid_publish_receipt_evidence_event_handoff_packet()
+            .with_operation_evidence_ref(".punk/runs/local-pubpunk-publish-request/receipt.json");
+
+        let assessment = assess_pubpunk_publish_receipt_evidence_event_handoff_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishReceiptEvidenceEventHandoffPacketFindingCode::ReceiptEvidenceRefsCollapsed));
+        assert!(packet
+            .try_into_receipt_evidence_event_handoff_refs()
+            .is_err());
     }
 
     #[test]

@@ -23,6 +23,7 @@ related_evals:
   - evals/specs/pubpunk-publish-receipt-preflight.v0.1.md
   - evals/specs/pubpunk-publish-receipt-write-handoff.v0.1.md
   - evals/specs/pubpunk-publish-operation-evidence-handoff.v0.1.md
+  - evals/specs/pubpunk-publish-receipt-evidence-event-handoff.v0.1.md
 supersedes: []
 superseded_by: null
 ---
@@ -144,6 +145,18 @@ only to an explicit temporary `.punk/runs` target through the already-existing
 host writer after a successful receipt write, and does not invoke adapters,
 publish, mutate event logs, write gate/proof authority, or claim acceptance.
 
+The current publish receipt/evidence event handoff packet can then carry
+explicit publish operation evidence handoff, receipt writer result,
+operation-evidence write result, receipt, operation-evidence, event source,
+event correlation, adapter invocation receipt, connector profile, channel, and
+payload refs into the existing local receipt/evidence event writer. PubPunk
+still does not read files, write receipts, write operation evidence, or mutate
+the event log itself. The smoke evidence appends one bounded
+`receipt_evidence_handoff` event only under an explicit temporary
+`.punk/events/flow.jsonl` through the already-existing `punk-events` helper, and
+does not create `.punk/runs` artifacts, invoke adapters, publish, write
+gate/proof authority, or claim acceptance.
+
 ## Capability envelope for the next slice
 
 Default grants:
@@ -162,6 +175,9 @@ Default grants:
 - `request_operation_evidence_write`, only when a ready publish operation
   evidence handoff packet is preparing explicit refs for the existing Module
   Host operation-evidence writer after a successful receipt write.
+- `request_receipt_evidence_event_handoff`, only when a ready publish
+  receipt/evidence event handoff packet is preparing explicit refs for the
+  existing local receipt/evidence event writer.
 
 Default denies:
 

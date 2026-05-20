@@ -414,6 +414,56 @@ current smoke case uses the projected refs to call the already-existing Module
 Host writer against an explicit temporary `.punk/runs` target only after a
 successful receipt write.
 
+## Current publish receipt/evidence event handoff packet
+
+The current side-effect-free publish receipt/evidence event handoff packet is:
+
+```text
+PubPunkPublishReceiptEvidenceEventHandoffPacket
+```
+
+It must provide:
+
+- module id and version;
+- contract ref;
+- run ref;
+- project ref;
+- `split_explicit_refs` workspace policy;
+- publishing workspace ref;
+- publish operation evidence handoff ref;
+- receipt writer result ref;
+- operation evidence write result ref;
+- receipt ref and operation evidence ref;
+- event log ref, fixed to `.punk/events/flow.jsonl`;
+- event source and event correlation refs;
+- adapter invocation receipt ref;
+- payload ref;
+- channel ref;
+- connector profile ref;
+- allowed source refs covering publish operation evidence handoff, receipt
+  writer result, operation evidence write result, receipt, operation evidence,
+  event source, event correlation, payload, channel, connector profile, and
+  adapter invocation receipt refs;
+- instruction refs;
+- `request_receipt_evidence_event_handoff` capability;
+- metadata-only privacy policy;
+- expected receipt fields including `side_effects`, `host_validation`,
+  `adapter_invocation_receipt`, `operation_evidence`, `publication_receipt`,
+  `receipt_write_result`, `operation_evidence_write_result`, and
+  `receipt_evidence_event_handoff`;
+- optional token-cost ref.
+
+When ready, the packet can project only
+`PubPunkPublishReceiptEvidenceEventHandoffRefs` for the existing local
+receipt/evidence event writer in `punk-events`. The PubPunk packet does not
+write the event log, write receipts, write operation evidence, read files,
+invoke an adapter, publish externally, call a policy engine, invoke gate, read
+draft bodies, collect metrics, or activate PubPunk or Module Host runtime
+behavior. The current smoke case uses the projected refs to call the
+already-existing `punk-events` receipt/evidence handoff helper against an
+explicit temporary `.punk/events/flow.jsonl` log only, without creating
+`.punk/runs` artifacts.
+
 ## Future module outputs
 
 A future PubPunk invocation may return:
@@ -468,6 +518,7 @@ Candidate future capabilities must be granted separately:
 - write local receipt proposals;
 - request local publication receipt write handoff;
 - request local operation evidence write handoff;
+- request local receipt/evidence event handoff;
 - request external publishing through an adapter;
 - request metrics collection through an adapter.
 
@@ -486,8 +537,11 @@ existing Module Host first active local receipt writer.
 `request_operation_evidence_write` is accepted only by
 `PubPunkPublishOperationEvidenceHandoffPacket` as a handoff grant to the
 existing Module Host operation-evidence writer after a successful receipt write.
-None of these grants activates PubPunk runtime, adapter behavior, publication,
-metrics collection, PubPunk-owned receipt/evidence writing, gate/proof
+`request_receipt_evidence_event_handoff` is accepted only by
+`PubPunkPublishReceiptEvidenceEventHandoffPacket` as a handoff grant to the
+existing local receipt/evidence event writer. None of these grants activates
+PubPunk runtime, adapter behavior, publication, metrics collection,
+PubPunk-owned receipt/evidence writing, direct event-log mutation, gate/proof
 authority, or acceptance promotion.
 
 ## Required conformance
