@@ -12,6 +12,8 @@ pub const PUBPUNK_INVENTORY_INPUT_PACKET_SCHEMA_VERSION: &str =
     "punk.pubpunk.inventory_input_packet.v0.1";
 pub const PUBPUNK_INVENTORY_ASSESSMENT_SCHEMA_VERSION: &str =
     "punk.pubpunk.inventory_assessment.v0.1";
+pub const PUBPUNK_PUBLISH_REQUEST_PACKET_SCHEMA_VERSION: &str =
+    "punk.pubpunk.publish_request_packet.v0.1";
 pub const PUBPUNK_REQUIRED_INSTRUCTION_REFS: &[&str] = &[
     "docs/modules/pubpunk.md",
     "docs/modules/pubpunk-workspace-instructions.md",
@@ -155,6 +157,10 @@ impl PubPunkCapabilityGrant {
 
     pub fn supported_by_side_effect_free_reader(self) -> bool {
         matches!(self, Self::ReadWorkspaceMetadata)
+    }
+
+    pub fn supported_by_side_effect_free_publish_request(self) -> bool {
+        matches!(self, Self::RequestExternalPublish)
     }
 }
 
@@ -1553,6 +1559,683 @@ pub fn assess_pubpunk_inventory(input: &PubPunkInventoryInput) -> PubPunkInvento
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkPublishRequestOperation {
+    RequestExternalPublish,
+}
+
+impl PubPunkPublishRequestOperation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RequestExternalPublish => "request_external_publish",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishRequestPacket {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub inventory_assessment_ref: String,
+    pub candidate_ref: String,
+    pub channel_ref: String,
+    pub side_effect_request_ref: String,
+    pub intent_ref: String,
+    pub policy_ref: String,
+    pub adapter_ref: String,
+    pub payload_ref: String,
+    pub receipt_proposal_ref: String,
+    pub allowed_source_refs: Vec<String>,
+    pub instruction_refs: Vec<String>,
+    pub granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    pub privacy_policy: PubPunkPrivacyPolicy,
+    pub expected_receipt_fields: Vec<String>,
+    pub token_cost_ref: Option<String>,
+}
+
+impl PubPunkPublishRequestPacket {
+    pub fn new(
+        module_version_ref: impl Into<String>,
+        contract_ref: impl Into<String>,
+        run_ref: impl Into<String>,
+        project_ref: impl Into<String>,
+        publishing_workspace_ref: impl Into<String>,
+    ) -> Self {
+        Self {
+            module_id: PUBPUNK_MODULE_ID.to_owned(),
+            module_version_ref: module_version_ref.into(),
+            contract_ref: contract_ref.into(),
+            run_ref: run_ref.into(),
+            project_ref: project_ref.into(),
+            workspace_policy: PubPunkWorkspacePolicy::SplitExplicitRefs,
+            publishing_workspace_ref: publishing_workspace_ref.into(),
+            inventory_assessment_ref: String::new(),
+            candidate_ref: String::new(),
+            channel_ref: String::new(),
+            side_effect_request_ref: String::new(),
+            intent_ref: String::new(),
+            policy_ref: String::new(),
+            adapter_ref: String::new(),
+            payload_ref: String::new(),
+            receipt_proposal_ref: String::new(),
+            allowed_source_refs: Vec::new(),
+            instruction_refs: Vec::new(),
+            granted_capabilities: Vec::new(),
+            privacy_policy: PubPunkPrivacyPolicy::safe_metadata_only(),
+            expected_receipt_fields: Vec::new(),
+            token_cost_ref: None,
+        }
+    }
+
+    pub fn with_workspace_policy(mut self, workspace_policy: PubPunkWorkspacePolicy) -> Self {
+        self.workspace_policy = workspace_policy;
+        self
+    }
+
+    pub fn with_inventory_assessment_ref(
+        mut self,
+        inventory_assessment_ref: impl Into<String>,
+    ) -> Self {
+        self.inventory_assessment_ref = inventory_assessment_ref.into();
+        self
+    }
+
+    pub fn with_candidate_ref(mut self, candidate_ref: impl Into<String>) -> Self {
+        self.candidate_ref = candidate_ref.into();
+        self
+    }
+
+    pub fn with_channel_ref(mut self, channel_ref: impl Into<String>) -> Self {
+        self.channel_ref = channel_ref.into();
+        self
+    }
+
+    pub fn with_side_effect_request_ref(
+        mut self,
+        side_effect_request_ref: impl Into<String>,
+    ) -> Self {
+        self.side_effect_request_ref = side_effect_request_ref.into();
+        self
+    }
+
+    pub fn with_intent_ref(mut self, intent_ref: impl Into<String>) -> Self {
+        self.intent_ref = intent_ref.into();
+        self
+    }
+
+    pub fn with_policy_ref(mut self, policy_ref: impl Into<String>) -> Self {
+        self.policy_ref = policy_ref.into();
+        self
+    }
+
+    pub fn with_adapter_ref(mut self, adapter_ref: impl Into<String>) -> Self {
+        self.adapter_ref = adapter_ref.into();
+        self
+    }
+
+    pub fn with_payload_ref(mut self, payload_ref: impl Into<String>) -> Self {
+        self.payload_ref = payload_ref.into();
+        self
+    }
+
+    pub fn with_receipt_proposal_ref(mut self, receipt_proposal_ref: impl Into<String>) -> Self {
+        self.receipt_proposal_ref = receipt_proposal_ref.into();
+        self
+    }
+
+    pub fn with_allowed_source_refs(mut self, allowed_source_refs: Vec<impl Into<String>>) -> Self {
+        self.allowed_source_refs = allowed_source_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_instruction_refs(mut self, instruction_refs: Vec<impl Into<String>>) -> Self {
+        self.instruction_refs = instruction_refs.into_iter().map(Into::into).collect();
+        self
+    }
+
+    pub fn with_granted_capabilities(
+        mut self,
+        granted_capabilities: Vec<PubPunkCapabilityGrant>,
+    ) -> Self {
+        self.granted_capabilities = granted_capabilities;
+        self
+    }
+
+    pub fn with_privacy_policy(mut self, privacy_policy: PubPunkPrivacyPolicy) -> Self {
+        self.privacy_policy = privacy_policy;
+        self
+    }
+
+    pub fn with_expected_receipt_fields(
+        mut self,
+        expected_receipt_fields: Vec<impl Into<String>>,
+    ) -> Self {
+        self.expected_receipt_fields = expected_receipt_fields
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        self
+    }
+
+    pub fn with_token_cost_ref(mut self, token_cost_ref: impl Into<String>) -> Self {
+        self.token_cost_ref = Some(token_cost_ref.into());
+        self
+    }
+
+    pub fn try_into_side_effect_request_refs(
+        &self,
+    ) -> Result<PubPunkPublishSideEffectRequestRefs, PubPunkPublishRequestPacketAssessment> {
+        let assessment = assess_pubpunk_publish_request_packet(self);
+        if assessment.has_blockers() {
+            return Err(assessment);
+        }
+
+        Ok(PubPunkPublishSideEffectRequestRefs {
+            request_ref: self.side_effect_request_ref.clone(),
+            target_ref: self.channel_ref.clone(),
+            intent_ref: self.intent_ref.clone(),
+            policy_ref: self.policy_ref.clone(),
+            adapter_ref: self.adapter_ref.clone(),
+            payload_ref: self.payload_ref.clone(),
+            receipt_proposal_ref: self.receipt_proposal_ref.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishSideEffectRequestRefs {
+    pub request_ref: String,
+    pub target_ref: String,
+    pub intent_ref: String,
+    pub policy_ref: String,
+    pub adapter_ref: String,
+    pub payload_ref: String,
+    pub receipt_proposal_ref: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PubPunkPublishRequestPacketFindingCode {
+    MissingModuleId,
+    NonCanonicalModuleId,
+    MissingModuleVersionRef,
+    MissingContractRef,
+    MissingRunRef,
+    MissingProjectRef,
+    UnsupportedWorkspacePolicy,
+    MissingPublishingWorkspaceRef,
+    UnsafePublishingWorkspaceRef,
+    MissingInventoryAssessmentRef,
+    UnsafeInventoryAssessmentRef,
+    MissingCandidateRef,
+    UnsafeCandidateRef,
+    CandidateRefNotAllowed,
+    MissingChannelRef,
+    UnsafeChannelRef,
+    ChannelRefNotAllowed,
+    MissingSideEffectRequestRef,
+    UnsafeSideEffectRequestRef,
+    MissingIntentRef,
+    UnsafeIntentRef,
+    MissingPolicyRef,
+    UnsafePolicyRef,
+    MissingAdapterRef,
+    UnsafeAdapterRef,
+    MissingPayloadRef,
+    UnsafePayloadRef,
+    PayloadRefNotAllowed,
+    MissingReceiptProposalRef,
+    UnsafeReceiptProposalRef,
+    MissingInstructionRefs,
+    MissingRequiredInstructionRef,
+    UnsafeInstructionRef,
+    UnsafeAllowedSourceRef,
+    MissingRequestExternalPublishGrant,
+    UnsupportedCapabilityGrant,
+    MissingExpectedReceiptFields,
+    MissingRequiredExpectedReceiptField,
+    UnsafePrivacyPolicy,
+    UnsafeTokenCostRef,
+}
+
+impl PubPunkPublishRequestPacketFindingCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingModuleId => "missing_module_id",
+            Self::NonCanonicalModuleId => "non_canonical_module_id",
+            Self::MissingModuleVersionRef => "missing_module_version_ref",
+            Self::MissingContractRef => "missing_contract_ref",
+            Self::MissingRunRef => "missing_run_ref",
+            Self::MissingProjectRef => "missing_project_ref",
+            Self::UnsupportedWorkspacePolicy => "unsupported_workspace_policy",
+            Self::MissingPublishingWorkspaceRef => "missing_publishing_workspace_ref",
+            Self::UnsafePublishingWorkspaceRef => "unsafe_publishing_workspace_ref",
+            Self::MissingInventoryAssessmentRef => "missing_inventory_assessment_ref",
+            Self::UnsafeInventoryAssessmentRef => "unsafe_inventory_assessment_ref",
+            Self::MissingCandidateRef => "missing_candidate_ref",
+            Self::UnsafeCandidateRef => "unsafe_candidate_ref",
+            Self::CandidateRefNotAllowed => "candidate_ref_not_allowed",
+            Self::MissingChannelRef => "missing_channel_ref",
+            Self::UnsafeChannelRef => "unsafe_channel_ref",
+            Self::ChannelRefNotAllowed => "channel_ref_not_allowed",
+            Self::MissingSideEffectRequestRef => "missing_side_effect_request_ref",
+            Self::UnsafeSideEffectRequestRef => "unsafe_side_effect_request_ref",
+            Self::MissingIntentRef => "missing_intent_ref",
+            Self::UnsafeIntentRef => "unsafe_intent_ref",
+            Self::MissingPolicyRef => "missing_policy_ref",
+            Self::UnsafePolicyRef => "unsafe_policy_ref",
+            Self::MissingAdapterRef => "missing_adapter_ref",
+            Self::UnsafeAdapterRef => "unsafe_adapter_ref",
+            Self::MissingPayloadRef => "missing_payload_ref",
+            Self::UnsafePayloadRef => "unsafe_payload_ref",
+            Self::PayloadRefNotAllowed => "payload_ref_not_allowed",
+            Self::MissingReceiptProposalRef => "missing_receipt_proposal_ref",
+            Self::UnsafeReceiptProposalRef => "unsafe_receipt_proposal_ref",
+            Self::MissingInstructionRefs => "missing_instruction_refs",
+            Self::MissingRequiredInstructionRef => "missing_required_instruction_ref",
+            Self::UnsafeInstructionRef => "unsafe_instruction_ref",
+            Self::UnsafeAllowedSourceRef => "unsafe_allowed_source_ref",
+            Self::MissingRequestExternalPublishGrant => "missing_request_external_publish_grant",
+            Self::UnsupportedCapabilityGrant => "unsupported_capability_grant",
+            Self::MissingExpectedReceiptFields => "missing_expected_receipt_fields",
+            Self::MissingRequiredExpectedReceiptField => "missing_required_expected_receipt_field",
+            Self::UnsafePrivacyPolicy => "unsafe_privacy_policy",
+            Self::UnsafeTokenCostRef => "unsafe_token_cost_ref",
+        }
+    }
+
+    pub fn is_blocking(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishRequestPacketFinding {
+    pub code: PubPunkPublishRequestPacketFindingCode,
+    pub ref_value: Option<String>,
+    pub capability: Option<PubPunkCapabilityGrant>,
+    pub message: &'static str,
+}
+
+impl PubPunkPublishRequestPacketFinding {
+    fn new(code: PubPunkPublishRequestPacketFindingCode, message: &'static str) -> Self {
+        Self {
+            code,
+            ref_value: None,
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_ref(
+        code: PubPunkPublishRequestPacketFindingCode,
+        ref_value: impl Into<String>,
+        message: &'static str,
+    ) -> Self {
+        Self {
+            code,
+            ref_value: Some(ref_value.into()),
+            capability: None,
+            message,
+        }
+    }
+
+    fn for_capability(capability: PubPunkCapabilityGrant) -> Self {
+        Self {
+            code: PubPunkPublishRequestPacketFindingCode::UnsupportedCapabilityGrant,
+            ref_value: None,
+            capability: Some(capability),
+            message: "capability is not available in the side-effect-free publish request packet",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishRequestPacketRefs {
+    pub module_id: String,
+    pub module_version_ref: String,
+    pub contract_ref: String,
+    pub run_ref: String,
+    pub project_ref: String,
+    pub workspace_policy: PubPunkWorkspacePolicy,
+    pub publishing_workspace_ref: String,
+    pub inventory_assessment_ref: String,
+    pub candidate_ref: String,
+    pub channel_ref: String,
+    pub side_effect_request_ref: String,
+    pub intent_ref: String,
+    pub policy_ref: String,
+    pub adapter_ref: String,
+    pub payload_ref: String,
+    pub receipt_proposal_ref: String,
+    pub token_cost_ref: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PubPunkPublishRequestPacketAssessment {
+    pub schema_version: &'static str,
+    pub status: PubPunkAssessmentStatus,
+    pub authority: PubPunkAssessmentAuthority,
+    pub requested_operation: PubPunkPublishRequestOperation,
+    pub findings: Vec<PubPunkPublishRequestPacketFinding>,
+    pub boundary_flags: PubPunkInventoryBoundaryFlags,
+    pub refs: PubPunkPublishRequestPacketRefs,
+}
+
+impl PubPunkPublishRequestPacketAssessment {
+    pub fn blocking_findings(&self) -> impl Iterator<Item = &PubPunkPublishRequestPacketFinding> {
+        self.findings
+            .iter()
+            .filter(|finding| finding.code.is_blocking())
+    }
+
+    pub fn has_blockers(&self) -> bool {
+        self.blocking_findings().next().is_some()
+    }
+}
+
+pub fn assess_pubpunk_publish_request_packet(
+    packet: &PubPunkPublishRequestPacket,
+) -> PubPunkPublishRequestPacketAssessment {
+    let mut findings = Vec::new();
+
+    push_publish_request_required_ref_finding(
+        &mut findings,
+        packet.module_id.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingModuleId,
+        "module id is required",
+    );
+    if !packet.module_id.trim().is_empty() && packet.module_id != PUBPUNK_MODULE_ID {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            PubPunkPublishRequestPacketFindingCode::NonCanonicalModuleId,
+            packet.module_id.clone(),
+            "PubPunk publish request packets must use the canonical pubpunk module id",
+        ));
+    }
+    push_publish_request_required_ref_finding(
+        &mut findings,
+        packet.module_version_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingModuleVersionRef,
+        "module version ref is required",
+    );
+    push_publish_request_required_ref_finding(
+        &mut findings,
+        packet.contract_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingContractRef,
+        "contract ref is required",
+    );
+    push_publish_request_required_ref_finding(
+        &mut findings,
+        packet.run_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingRunRef,
+        "run ref is required",
+    );
+    push_publish_request_required_ref_finding(
+        &mut findings,
+        packet.project_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingProjectRef,
+        "project ref is required",
+    );
+
+    if !packet.workspace_policy.selected_for_first_slice() {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            PubPunkPublishRequestPacketFindingCode::UnsupportedWorkspacePolicy,
+            packet.workspace_policy.as_str(),
+            "the first PubPunk publish request packet supports split explicit refs only",
+        ));
+    }
+
+    push_publish_request_required_ref_finding(
+        &mut findings,
+        packet.publishing_workspace_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingPublishingWorkspaceRef,
+        "publishing workspace ref is required",
+    );
+    if !packet.publishing_workspace_ref.trim().is_empty()
+        && !is_safe_workspace_ref(&packet.publishing_workspace_ref)
+    {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            PubPunkPublishRequestPacketFindingCode::UnsafePublishingWorkspaceRef,
+            packet.publishing_workspace_ref.clone(),
+            "publishing workspace ref must be an explicit safe logical or repo-relative ref",
+        ));
+    }
+
+    validate_publish_request_ref(
+        &mut findings,
+        packet.inventory_assessment_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingInventoryAssessmentRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeInventoryAssessmentRef,
+        "inventory assessment ref is required",
+        "inventory assessment ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.candidate_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingCandidateRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeCandidateRef,
+        "candidate ref is required",
+        "candidate ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.channel_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingChannelRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeChannelRef,
+        "channel ref is required",
+        "channel ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.side_effect_request_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingSideEffectRequestRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeSideEffectRequestRef,
+        "side-effect request ref is required",
+        "side-effect request ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.intent_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingIntentRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeIntentRef,
+        "intent ref is required",
+        "intent ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.policy_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingPolicyRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafePolicyRef,
+        "policy ref is required",
+        "policy ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.adapter_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingAdapterRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeAdapterRef,
+        "adapter ref is required",
+        "adapter ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.payload_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingPayloadRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafePayloadRef,
+        "payload ref is required",
+        "payload ref must be an explicit repo-relative ref",
+    );
+    validate_publish_request_ref(
+        &mut findings,
+        packet.receipt_proposal_ref.as_str(),
+        PubPunkPublishRequestPacketFindingCode::MissingReceiptProposalRef,
+        PubPunkPublishRequestPacketFindingCode::UnsafeReceiptProposalRef,
+        "receipt proposal ref is required",
+        "receipt proposal ref must be an explicit repo-relative ref",
+    );
+
+    if packet.instruction_refs.is_empty() {
+        findings.push(PubPunkPublishRequestPacketFinding::new(
+            PubPunkPublishRequestPacketFindingCode::MissingInstructionRefs,
+            "instruction refs are required for PubPunk publish request packets",
+        ));
+    }
+
+    for required_ref in PUBPUNK_REQUIRED_INSTRUCTION_REFS {
+        if !packet
+            .instruction_refs
+            .iter()
+            .any(|instruction_ref| instruction_ref == required_ref)
+        {
+            findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+                PubPunkPublishRequestPacketFindingCode::MissingRequiredInstructionRef,
+                *required_ref,
+                "required PubPunk instruction ref is missing",
+            ));
+        }
+    }
+
+    for instruction_ref in &packet.instruction_refs {
+        if !is_safe_source_ref(instruction_ref) {
+            findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+                PubPunkPublishRequestPacketFindingCode::UnsafeInstructionRef,
+                instruction_ref.clone(),
+                "instruction refs must be explicit repo-relative refs",
+            ));
+        }
+    }
+
+    for source_ref in &packet.allowed_source_refs {
+        if !is_safe_source_ref(source_ref) {
+            findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+                PubPunkPublishRequestPacketFindingCode::UnsafeAllowedSourceRef,
+                source_ref.clone(),
+                "allowed source refs must be explicit repo-relative refs",
+            ));
+        }
+    }
+
+    if !packet.candidate_ref.trim().is_empty()
+        && !packet.allowed_source_refs.contains(&packet.candidate_ref)
+    {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            PubPunkPublishRequestPacketFindingCode::CandidateRefNotAllowed,
+            packet.candidate_ref.clone(),
+            "candidate ref must be included in allowed source refs",
+        ));
+    }
+    if !packet.channel_ref.trim().is_empty()
+        && !packet.allowed_source_refs.contains(&packet.channel_ref)
+    {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            PubPunkPublishRequestPacketFindingCode::ChannelRefNotAllowed,
+            packet.channel_ref.clone(),
+            "channel ref must be included in allowed source refs",
+        ));
+    }
+    if !packet.payload_ref.trim().is_empty()
+        && !packet.allowed_source_refs.contains(&packet.payload_ref)
+    {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            PubPunkPublishRequestPacketFindingCode::PayloadRefNotAllowed,
+            packet.payload_ref.clone(),
+            "payload ref must be included in allowed source refs",
+        ));
+    }
+
+    if !packet
+        .granted_capabilities
+        .contains(&PubPunkCapabilityGrant::RequestExternalPublish)
+    {
+        findings.push(PubPunkPublishRequestPacketFinding::new(
+            PubPunkPublishRequestPacketFindingCode::MissingRequestExternalPublishGrant,
+            "request_external_publish must be explicitly granted for this packet",
+        ));
+    }
+    for capability in &packet.granted_capabilities {
+        if !capability.supported_by_side_effect_free_publish_request() {
+            findings.push(PubPunkPublishRequestPacketFinding::for_capability(
+                *capability,
+            ));
+        }
+    }
+
+    if packet.expected_receipt_fields.is_empty() {
+        findings.push(PubPunkPublishRequestPacketFinding::new(
+            PubPunkPublishRequestPacketFindingCode::MissingExpectedReceiptFields,
+            "expected receipt fields are required even though this packet does not write receipts",
+        ));
+    }
+    for required_field in ["side_effects", "host_validation"] {
+        if !packet
+            .expected_receipt_fields
+            .iter()
+            .any(|field| field == required_field)
+        {
+            findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+                PubPunkPublishRequestPacketFindingCode::MissingRequiredExpectedReceiptField,
+                required_field,
+                "publish request receipt expectations must include host side-effect coverage",
+            ));
+        }
+    }
+
+    if packet.privacy_policy.allows_private_or_raw_payloads() {
+        findings.push(PubPunkPublishRequestPacketFinding::new(
+            PubPunkPublishRequestPacketFindingCode::UnsafePrivacyPolicy,
+            "privacy policy must disallow raw/private payloads for this packet",
+        ));
+    }
+
+    if let Some(token_cost_ref) = &packet.token_cost_ref {
+        if !is_safe_source_ref(token_cost_ref) {
+            findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+                PubPunkPublishRequestPacketFindingCode::UnsafeTokenCostRef,
+                token_cost_ref.clone(),
+                "token cost ref must be an explicit repo-relative ref when provided",
+            ));
+        }
+    }
+
+    let status = if findings.iter().any(|finding| finding.code.is_blocking()) {
+        PubPunkAssessmentStatus::Blocked
+    } else {
+        PubPunkAssessmentStatus::Ready
+    };
+
+    PubPunkPublishRequestPacketAssessment {
+        schema_version: PUBPUNK_PUBLISH_REQUEST_PACKET_SCHEMA_VERSION,
+        status,
+        authority: PubPunkAssessmentAuthority::Advisory,
+        requested_operation: PubPunkPublishRequestOperation::RequestExternalPublish,
+        findings,
+        boundary_flags: PUBPUNK_INVENTORY_ASSESSMENT_BOUNDARY_FLAGS,
+        refs: PubPunkPublishRequestPacketRefs {
+            module_id: packet.module_id.clone(),
+            module_version_ref: packet.module_version_ref.clone(),
+            contract_ref: packet.contract_ref.clone(),
+            run_ref: packet.run_ref.clone(),
+            project_ref: packet.project_ref.clone(),
+            workspace_policy: packet.workspace_policy,
+            publishing_workspace_ref: packet.publishing_workspace_ref.clone(),
+            inventory_assessment_ref: packet.inventory_assessment_ref.clone(),
+            candidate_ref: packet.candidate_ref.clone(),
+            channel_ref: packet.channel_ref.clone(),
+            side_effect_request_ref: packet.side_effect_request_ref.clone(),
+            intent_ref: packet.intent_ref.clone(),
+            policy_ref: packet.policy_ref.clone(),
+            adapter_ref: packet.adapter_ref.clone(),
+            payload_ref: packet.payload_ref.clone(),
+            receipt_proposal_ref: packet.receipt_proposal_ref.clone(),
+            token_cost_ref: packet.token_cost_ref.clone(),
+        },
+    }
+}
+
 fn push_required_ref_finding(
     findings: &mut Vec<PubPunkInventoryFinding>,
     value: &str,
@@ -1583,6 +2266,39 @@ fn push_reader_required_ref_finding(
 ) {
     if value.trim().is_empty() {
         findings.push(PubPunkInventoryReaderFinding::new(code, message));
+    }
+}
+
+fn push_publish_request_required_ref_finding(
+    findings: &mut Vec<PubPunkPublishRequestPacketFinding>,
+    value: &str,
+    code: PubPunkPublishRequestPacketFindingCode,
+    message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkPublishRequestPacketFinding::new(code, message));
+    }
+}
+
+fn validate_publish_request_ref(
+    findings: &mut Vec<PubPunkPublishRequestPacketFinding>,
+    value: &str,
+    missing_code: PubPunkPublishRequestPacketFindingCode,
+    unsafe_code: PubPunkPublishRequestPacketFindingCode,
+    missing_message: &'static str,
+    unsafe_message: &'static str,
+) {
+    if value.trim().is_empty() {
+        findings.push(PubPunkPublishRequestPacketFinding::new(
+            missing_code,
+            missing_message,
+        ));
+    } else if !is_safe_source_ref(value) {
+        findings.push(PubPunkPublishRequestPacketFinding::for_ref(
+            unsafe_code,
+            value,
+            unsafe_message,
+        ));
     }
 }
 
@@ -1626,13 +2342,15 @@ fn is_safe_source_ref(value: &str) -> bool {
 mod tests {
     use super::{
         assess_pubpunk_inventory, assess_pubpunk_inventory_input_packet,
-        assess_pubpunk_inventory_reader_input,
+        assess_pubpunk_inventory_reader_input, assess_pubpunk_publish_request_packet,
         build_pubpunk_inventory_input_packet_from_reader_input, PubPunkAssessmentAuthority,
         PubPunkAssessmentStatus, PubPunkCapabilityGrant, PubPunkInventoryFindingCode,
         PubPunkInventoryInput, PubPunkInventoryInputPacket, PubPunkInventoryInputPacketFindingCode,
         PubPunkInventoryItemInput, PubPunkInventoryItemKind, PubPunkInventoryItemStatus,
         PubPunkInventoryReaderFindingCode, PubPunkInventoryReaderInput, PubPunkPrivacyPolicy,
-        PubPunkWorkspacePolicy, PUBPUNK_REQUIRED_INSTRUCTION_REFS,
+        PubPunkPublishRequestOperation, PubPunkPublishRequestPacket,
+        PubPunkPublishRequestPacketFindingCode, PubPunkWorkspacePolicy,
+        PUBPUNK_REQUIRED_INSTRUCTION_REFS,
     };
 
     fn valid_input() -> PubPunkInventoryInput {
@@ -1697,6 +2415,40 @@ mod tests {
             "side_effects",
         ])
         .with_token_cost_ref("work/reports/pubpunk-token-cost.md")
+    }
+
+    fn valid_publish_request_packet() -> PubPunkPublishRequestPacket {
+        PubPunkPublishRequestPacket::new(
+            "v0.1",
+            "contracts/publish-cycle-0",
+            "runs/local-pubpunk-publish-request",
+            "project/punk",
+            "punk-publishing://project/punk",
+        )
+        .with_inventory_assessment_ref("work/module-assessments/pubpunk-inventory.md")
+        .with_candidate_ref("publishing/posts/example.md")
+        .with_channel_ref("publishing/channels/github-discussions.md")
+        .with_side_effect_request_ref("work/module-side-effects/pubpunk-publish-example.md")
+        .with_intent_ref("work/goals/goal_pubpunk_publish_example.md")
+        .with_policy_ref("docs/modules/pubpunk.md")
+        .with_adapter_ref("adapters/github-discussions")
+        .with_payload_ref("publishing/posts/example.md")
+        .with_receipt_proposal_ref("work/module-receipts/pubpunk-publish-example.md")
+        .with_instruction_refs(PUBPUNK_REQUIRED_INSTRUCTION_REFS.to_vec())
+        .with_allowed_source_refs(vec![
+            "publishing/posts/example.md",
+            "publishing/channels/github-discussions.md",
+        ])
+        .with_granted_capabilities(vec![PubPunkCapabilityGrant::RequestExternalPublish])
+        .with_expected_receipt_fields(vec![
+            "module_id",
+            "operation",
+            "source_refs",
+            "capability_grants",
+            "side_effects",
+            "host_validation",
+        ])
+        .with_token_cost_ref("work/reports/pubpunk-publish-request-token-cost.md")
     }
 
     #[test]
@@ -1877,6 +2629,149 @@ mod tests {
             .findings
             .iter()
             .any(|finding| finding.code == PubPunkInventoryReaderFindingCode::UnsafeTokenCostRef));
+    }
+
+    #[test]
+    fn publish_request_packet_builds_side_effect_request_refs_without_side_effects() {
+        let packet = valid_publish_request_packet();
+
+        let assessment = assess_pubpunk_publish_request_packet(&packet);
+        let side_effect_refs = packet
+            .try_into_side_effect_request_refs()
+            .expect("publish request packet should be ready");
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Ready);
+        assert_eq!(assessment.authority, PubPunkAssessmentAuthority::Advisory);
+        assert_eq!(
+            assessment.requested_operation,
+            PubPunkPublishRequestOperation::RequestExternalPublish
+        );
+        assert_eq!(assessment.refs.module_id, "pubpunk");
+        assert_eq!(
+            assessment.refs.workspace_policy,
+            PubPunkWorkspacePolicy::SplitExplicitRefs
+        );
+        assert_eq!(
+            assessment.refs.token_cost_ref.as_deref(),
+            Some("work/reports/pubpunk-publish-request-token-cost.md")
+        );
+        assert!(assessment.boundary_flags.all_side_effect_flags_false());
+        assert_eq!(
+            side_effect_refs.request_ref,
+            "work/module-side-effects/pubpunk-publish-example.md"
+        );
+        assert_eq!(
+            side_effect_refs.target_ref,
+            "publishing/channels/github-discussions.md"
+        );
+        assert_eq!(side_effect_refs.policy_ref, "docs/modules/pubpunk.md");
+        assert_eq!(side_effect_refs.adapter_ref, "adapters/github-discussions");
+        assert_eq!(side_effect_refs.payload_ref, "publishing/posts/example.md");
+        assert_eq!(
+            side_effect_refs.receipt_proposal_ref,
+            "work/module-receipts/pubpunk-publish-example.md"
+        );
+    }
+
+    #[test]
+    fn publish_request_packet_blocks_missing_publish_grant_and_receipt_fields() {
+        let packet = valid_publish_request_packet()
+            .with_granted_capabilities(vec![PubPunkCapabilityGrant::AssessProvidedInventory])
+            .with_expected_receipt_fields(vec!["side_effects"]);
+
+        let assessment = assess_pubpunk_publish_request_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::MissingRequestExternalPublishGrant));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::UnsupportedCapabilityGrant
+            && finding.capability == Some(PubPunkCapabilityGrant::AssessProvidedInventory)));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::MissingRequiredExpectedReceiptField
+            && finding.ref_value.as_deref() == Some("host_validation")));
+        assert!(packet.try_into_side_effect_request_refs().is_err());
+    }
+
+    #[test]
+    fn publish_request_packet_blocks_unallowed_payload_and_candidate_refs() {
+        let packet = valid_publish_request_packet()
+            .with_allowed_source_refs(vec!["publishing/channels/github-discussions.md"])
+            .with_payload_ref("publishing/posts/not-allowed.md");
+
+        let assessment = assess_pubpunk_publish_request_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::CandidateRefNotAllowed));
+        assert!(assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code
+                == PubPunkPublishRequestPacketFindingCode::PayloadRefNotAllowed));
+    }
+
+    #[test]
+    fn publish_request_packet_blocks_unsafe_refs_and_privacy() {
+        let mut instruction_refs = PUBPUNK_REQUIRED_INSTRUCTION_REFS
+            .iter()
+            .map(|instruction_ref| (*instruction_ref).to_owned())
+            .collect::<Vec<_>>();
+        instruction_refs.push("/tmp/pubpunk-instruction.md".to_owned());
+
+        let mut packet = valid_publish_request_packet()
+            .with_instruction_refs(instruction_refs)
+            .with_candidate_ref("../publishing/posts/example.md")
+            .with_channel_ref("https://example.com/channel")
+            .with_side_effect_request_ref("../work/module-side-effects/request.md")
+            .with_policy_ref("/tmp/policy.md")
+            .with_allowed_source_refs(vec!["../publishing/posts/example.md"])
+            .with_privacy_policy(PubPunkPrivacyPolicy {
+                raw_external_payloads: true,
+                ..PubPunkPrivacyPolicy::safe_metadata_only()
+            })
+            .with_token_cost_ref("../work/reports/token-cost.md");
+        packet.publishing_workspace_ref = "https://example.com/workspace".to_owned();
+
+        let assessment = assess_pubpunk_publish_request_packet(&packet);
+
+        assert_eq!(assessment.status, PubPunkAssessmentStatus::Blocked);
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::UnsafePublishingWorkspaceRef));
+        assert!(assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code
+                == PubPunkPublishRequestPacketFindingCode::UnsafeInstructionRef));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::UnsafeAllowedSourceRef));
+        assert!(assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code
+                == PubPunkPublishRequestPacketFindingCode::UnsafeCandidateRef));
+        assert!(assessment.findings.iter().any(
+            |finding| finding.code == PubPunkPublishRequestPacketFindingCode::UnsafeChannelRef
+        ));
+        assert!(assessment.findings.iter().any(|finding| finding.code
+            == PubPunkPublishRequestPacketFindingCode::UnsafeSideEffectRequestRef));
+        assert!(
+            assessment
+                .findings
+                .iter()
+                .any(|finding| finding.code
+                    == PubPunkPublishRequestPacketFindingCode::UnsafePolicyRef)
+        );
+        assert!(assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code
+                == PubPunkPublishRequestPacketFindingCode::UnsafePrivacyPolicy));
+        assert!(assessment
+            .findings
+            .iter()
+            .any(|finding| finding.code
+                == PubPunkPublishRequestPacketFindingCode::UnsafeTokenCostRef));
     }
 
     #[test]
