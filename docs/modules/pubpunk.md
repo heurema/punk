@@ -71,9 +71,10 @@ and expected-receipt refs before it can project host receipt-writer preflight
 refs.
 The publish receipt write handoff packet requires explicit preflight, receipt
 writer model, target path, receipt bytes, operation-evidence, adapter
-invocation receipt, connector profile, channel, payload, and expected-receipt
-refs before it can project handoff refs for the existing Module Host first
-active local receipt writer. The publish operation evidence handoff packet
+invocation receipt, connector profile resolution, connector profile, selected
+connector strategy, channel, payload, and expected-receipt refs before it can
+project handoff refs for the existing Module Host first active local receipt
+writer. The publish operation evidence handoff packet
 requires explicit receipt write handoff, receipt writer result, receipt storage,
 receipt target, receipt path, receipt bytes, operation-evidence target path,
 operation-evidence bytes, operation-evidence write result, idempotency,
@@ -117,13 +118,14 @@ or activate runtime behavior.
 
 The current smoke evidence also proves the first publish receipt write handoff:
 a ready PubPunk packet projects explicit preflight, receipt writer, target path,
-receipt bytes, operation-evidence, adapter invocation receipt, connector,
-channel, and payload refs into the existing Module Host first active local
-receipt writer. The writer writes exact caller-provided bytes only to an
-explicit temporary `.punk/runs` target. This evidence does not invoke adapters,
-publish, run policy engines, invoke gate, mutate event logs, persist operation
-evidence, write proofpacks, claim acceptance, or activate PubPunk or Module Host
-runtime behavior.
+receipt bytes, operation-evidence, adapter invocation receipt, connector
+profile resolution, connector profile, selected connector strategy, channel,
+and payload refs into the existing Module Host first active local receipt
+writer. The writer writes exact caller-provided bytes only to an explicit
+temporary `.punk/runs` target. This evidence does not invoke adapters, publish,
+run policy engines, invoke gate, mutate event logs, persist operation evidence,
+write proofpacks, claim acceptance, or activate PubPunk or Module Host runtime
+behavior.
 
 The current smoke evidence also proves the first publish operation evidence
 handoff: a ready PubPunk packet projects explicit receipt writer result,
@@ -424,15 +426,20 @@ It must provide:
 - adapter invocation receipt ref;
 - payload ref;
 - channel ref;
+- connector profile resolution ref;
 - connector profile ref;
-- allowed source refs covering payload, channel, connector profile, adapter
-  invocation receipt, and receipt bytes refs;
+- selected connector strategy ref;
+- allowed source refs covering payload, channel, connector profile resolution,
+  connector profile, selected connector strategy, adapter invocation receipt,
+  and receipt bytes refs;
 - instruction refs;
 - `request_publication_receipt_write` capability;
 - metadata-only privacy policy;
 - expected receipt fields including `side_effects`, `host_validation`,
-  `adapter_invocation_receipt`, `operation_evidence`, `publication_receipt`,
-  `receipt_bytes`, `receipt_target_path`, and `receipt_write_result`;
+  `connector_profile_resolution`, `connector_profile_ref`,
+  `selected_connector_strategy`, `adapter_invocation_receipt`,
+  `operation_evidence`, `publication_receipt`, `receipt_bytes`,
+  `receipt_target_path`, and `receipt_write_result`;
 - optional token-cost ref.
 
 When ready, the packet can project only
@@ -440,9 +447,11 @@ When ready, the packet can project only
 active local side-effect receipt writer. The PubPunk packet does not write a
 receipt, read receipt bytes, persist operation evidence, invoke an adapter,
 publish externally, call a policy engine, invoke gate, read draft bodies,
-collect metrics, or activate PubPunk or Module Host runtime behavior. The
-current smoke case uses the projected refs to call the already-existing Module
-Host writer against an explicit temporary `.punk/runs` target only.
+collect metrics, or activate PubPunk or Module Host runtime behavior. Direct
+adapter, channel, payload, or connector profile refs are not enough to bypass
+connector profile resolution. The current smoke case uses the projected refs to
+call the already-existing Module Host writer against an explicit temporary
+`.punk/runs` target only.
 
 ## Current publish operation evidence handoff packet
 
