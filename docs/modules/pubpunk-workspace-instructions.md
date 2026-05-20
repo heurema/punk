@@ -131,21 +131,22 @@ Host runtime.
 
 The current publish receipt preflight packet can then carry explicit receipt
 target, storage, operation-evidence, idempotency, rollback, error, adapter
-invocation receipt, connector profile, channel, and payload refs into the
-existing Module Host side-effect receipt writer preflight model. This remains a
-preflight chain only. It does not write receipts, persist operation evidence,
-publish, invoke adapters, run policy engines, invoke gate, read draft bodies,
-collect metrics, or activate PubPunk or Module Host runtime.
+invocation receipt, connector profile resolution, connector profile, selected
+connector strategy, channel, and payload refs into the existing Module Host
+side-effect receipt writer preflight model. This remains a preflight chain
+only. It does not write receipts, persist operation evidence, publish, invoke
+adapters, run policy engines, invoke gate, read draft bodies, collect metrics,
+or activate PubPunk or Module Host runtime.
 
 The current publish receipt write handoff packet can then carry explicit
 preflight, receipt writer, target-path, receipt-bytes, operation-evidence,
-adapter invocation receipt, connector profile, channel, and payload refs into
-the existing Module Host first active local receipt writer. PubPunk still does
-not read files or write receipts itself. The smoke evidence writes exact
-caller-provided bytes only to an explicit temporary `.punk/runs` target through
-the already-existing host writer, and does not invoke adapters, publish, mutate
-event logs, persist operation evidence, write gate/proof authority, or claim
-acceptance.
+adapter invocation receipt, connector profile resolution, connector profile,
+selected connector strategy, channel, and payload refs into the existing Module
+Host first active local receipt writer. PubPunk still does not read files or
+write receipts itself. The smoke evidence writes exact caller-provided bytes
+only to an explicit temporary `.punk/runs` target through the already-existing
+host writer, and does not invoke adapters, publish, mutate event logs, persist
+operation evidence, write gate/proof authority, or claim acceptance.
 
 The current publish operation evidence handoff packet can then carry explicit
 publish receipt write handoff, receipt writer result, operation-evidence target
@@ -411,10 +412,12 @@ For the current code slice, the publish receipt write handoff packet blocks:
   path/storage policy, or operation-evidence persistence refs;
 - missing receipt target, storage, target path, receipt bytes,
   operation-evidence, idempotency, rollback, error, adapter invocation receipt,
-  payload, channel, or connector profile refs;
+  payload, channel, connector profile resolution, connector profile, or
+  selected connector strategy refs;
 - receipt target path refs outside `.punk/runs`;
-- payload, channel, connector profile, adapter invocation receipt, or receipt
-  bytes refs not present in the allowed source refs;
+- payload, channel, connector profile resolution, connector profile, selected
+  connector strategy, adapter invocation receipt, or receipt bytes refs not
+  present in the allowed source refs;
 - missing required instruction refs;
 - unsafe instruction, allowed-source, workspace, packet, path, or token-cost
   refs;
@@ -424,9 +427,10 @@ For the current code slice, the publish receipt write handoff packet blocks:
   or acceptance claims;
 - raw post bodies or privacy policy that allows raw/private payloads;
 - missing expected receipt fields, especially `side_effects`,
-  `host_validation`, `adapter_invocation_receipt`, `operation_evidence`,
-  `publication_receipt`, `receipt_bytes`, `receipt_target_path`, and
-  `receipt_write_result`.
+  `host_validation`, `connector_profile_resolution`,
+  `connector_profile_ref`, `selected_connector_strategy`,
+  `adapter_invocation_receipt`, `operation_evidence`, `publication_receipt`,
+  `receipt_bytes`, `receipt_target_path`, and `receipt_write_result`.
 
 These checks are advisory readiness checks only. They prepare refs for the
 existing Module Host first active local receipt writer. PubPunk does not read

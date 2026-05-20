@@ -7,14 +7,14 @@ Authority: advisory/design
 ## Purpose
 
 Define deterministic expectations for the first PubPunk publish receipt write
-handoff packet.
+handoff packet after channel connector profile resolution.
 
-The packet is the boundary between PubPunk's publish receipt preflight model
-and the existing Module Host first active local side-effect receipt writer. It
-carries explicit refs for a host-owned exact-byte receipt write without making
-PubPunk a receipt writer, reading receipt bytes, persisting operation evidence,
-publishing, invoking adapters, mutating event logs, or activating runtime
-behavior.
+The packet is the boundary between PubPunk's publish receipt preflight model,
+resolved connector evidence, and the existing Module Host first active local
+side-effect receipt writer. It carries explicit refs for a host-owned
+exact-byte receipt write without making PubPunk a receipt writer, reading
+receipt bytes, persisting operation evidence, publishing, invoking adapters,
+mutating event logs, or activating runtime behavior.
 
 This spec does not activate PubPunk runtime, Module Host runtime, module
 loading, filesystem reads by PubPunk, workspace initialization, external
@@ -30,7 +30,8 @@ receipt writer preflight, active behavior, file-IO plan, target/storage policy,
 host-path observation, concrete path/storage policy, operation-evidence
 persistence, receipt target, storage, target path, receipt bytes, operation
 evidence, idempotency, rollback, error, adapter invocation receipt, payload,
-channel, and connector profile.
+channel, connector profile resolution, connector profile, and selected
+connector strategy.
 
 ### PUBPUNK-PUBLISH-RECEIPT-WRITE-HANDOFF-002: receipt target stays under `.punk/runs`
 
@@ -40,9 +41,13 @@ handoff can project refs.
 
 ### PUBPUNK-PUBLISH-RECEIPT-WRITE-HANDOFF-003: source refs stay allowed
 
-The payload, channel, connector profile, adapter invocation receipt, and receipt
-bytes refs must be present in the packet's allowed source refs. These are
-evidence refs only; PubPunk does not read the referenced files in this slice.
+The payload, channel, connector profile resolution, connector profile, selected
+connector strategy, adapter invocation receipt, and receipt bytes refs must be
+present in the packet's allowed source refs. These are evidence refs only;
+PubPunk does not read the referenced files in this slice.
+
+The packet must not treat direct adapter, channel, payload, or connector profile
+refs as enough to bypass channel connector profile resolution.
 
 ### PUBPUNK-PUBLISH-RECEIPT-WRITE-HANDOFF-004: write handoff grant is narrow
 
@@ -54,9 +59,10 @@ writes, and acceptance claims, must block readiness.
 ### PUBPUNK-PUBLISH-RECEIPT-WRITE-HANDOFF-005: receipt expectations include write coverage
 
 The packet must require expected receipt fields and must include `side_effects`,
-`host_validation`, `adapter_invocation_receipt`, `operation_evidence`,
-`publication_receipt`, `receipt_bytes`, `receipt_target_path`, and
-`receipt_write_result`.
+`host_validation`, `connector_profile_resolution`, `connector_profile_ref`,
+`selected_connector_strategy`, `adapter_invocation_receipt`,
+`operation_evidence`, `publication_receipt`, `receipt_bytes`,
+`receipt_target_path`, and `receipt_write_result`.
 
 ### PUBPUNK-PUBLISH-RECEIPT-WRITE-HANDOFF-006: privacy remains metadata-only
 
@@ -111,6 +117,10 @@ pubpunk_publish_receipt_write_handoff_result:
   operation_evidence_persistence_ref_explicit: true
   receipt_target_path_ref_under_punk_runs: true
   receipt_bytes_ref_explicit: true
+  connector_profile_resolution_ref_explicit: true
+  connector_profile_ref_explicit: true
+  selected_connector_strategy_ref_explicit: true
+  allowed_source_refs_cover_payload_channel_resolved_connector: true
   request_publication_receipt_write_grant_required: true
   receipt_write_handoff_refs_ready: true
   module_host_receipt_writer_write_ready: true
