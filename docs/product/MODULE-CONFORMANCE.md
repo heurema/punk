@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-05-19
-updated_at: 2026-05-19
+updated_at: 2026-05-21
 review_after: 2026-06-19
 canonical_for:
   - module-conformance-packet
@@ -13,6 +13,7 @@ canonical_for:
   - module-readiness-finding-boundary
 related_docs:
   - docs/product/MODULE-AUTHORING.md
+  - docs/product/MODULE-CONTROL-PLANE.md
   - docs/product/MODULE-HOST-CONTRACT.md
   - docs/product/MODULES.md
   - docs/product/MODULE-HOST.md
@@ -20,6 +21,7 @@ related_docs:
   - docs/product/INSTRUCTION-SOURCES.md
 related_evals:
   - evals/specs/module-authoring-baseline.v0.1.md
+  - evals/specs/module-control-plane.v0.1.md
   - evals/specs/module-conformance-packet.v0.1.md
   - evals/specs/module-host-contract-stub.v0.1.md
 supersedes: []
@@ -59,9 +61,11 @@ module_conformance_packet:
   module_ref: docs/modules/pubpunk.md
   baseline_version: module-authoring-baseline.v0.1
   baseline_ref: docs/product/MODULE-AUTHORING.md
+  control_plane_ref: docs/product/MODULE-CONTROL-PLANE.md
   host_contract_ref: docs/product/MODULE-HOST-CONTRACT.md
   eval_refs:
     - evals/specs/module-authoring-baseline.v0.1.md
+    - evals/specs/module-control-plane.v0.1.md
     - evals/specs/module-conformance-packet.v0.1.md
     - evals/specs/module-host-contract-stub.v0.1.md
   lifecycle_target: parked
@@ -77,6 +81,12 @@ module_conformance_packet:
   instruction_policy:
     source_refs: []
     generated_views: deferred
+  control_plane:
+    manifest_ref: null
+    behavior_artifact_refs: []
+    tuning_proposal_refs: []
+    reflection_trigger: none
+    auto_apply: false
   deliberation:
     budget_class: standard
     report_ref: null
@@ -158,6 +168,10 @@ Common findings:
 - implied final decision or proof authority;
 - unclear receipt/evidence requirement;
 - no conformance eval refs.
+- missing module control manifest when behavior artifacts are used;
+- behavior artifact tries to grant capabilities;
+- reflection trigger is not explicit;
+- tuning proposal lacks evidence or eval refs.
 
 ## DevPunk use
 

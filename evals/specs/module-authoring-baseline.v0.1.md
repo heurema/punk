@@ -115,6 +115,20 @@ Module receipts, module assessments, draft refs, runner aids, hints, and
 side-effect request proposals must remain advisory until host validation and
 gate/proof paths apply.
 
+### MODULE-AUTHOR-019: editable behavior artifacts are gated
+
+A module proposal that uses editable instructions, skills, playbooks, profiles,
+templates, routing rules, or recurring workflow preferences must treat them as
+behavior artifacts.
+
+Behavior artifact changes must not grant capabilities, rewrite immutable core
+boundaries, mutate event logs, write final decisions, write proofpacks, or
+claim acceptance.
+
+A future tuning proposal must cite target artifact refs, evidence refs,
+eval/check refs, and the promotion path before a behavior artifact becomes
+current module guidance.
+
 ## Minimal fixture shape
 
 ```yaml
@@ -131,6 +145,14 @@ module_authoring_baseline_fixture:
       - "No final decisions."
     workspace_policy: external_workspace
     instruction_refs: []
+    behavior_artifact_refs:
+      - docs/modules/pubpunk-workspace-instructions.md
+    immutable_core:
+      - capability_envelope
+      - host_validation
+      - gate_interface
+      - receipt_emission
+      - proof_authority
     deliberation_budget_ref: work/reports/example.md
     capability_grants: []
     denied_capabilities:

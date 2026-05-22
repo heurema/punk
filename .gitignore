@@ -1,5 +1,6 @@
 .DS_Store
 .github-account
+.antigravitycli/
 .wrangler/
 .playwright-cli/
 output/playwright/
