@@ -164,13 +164,15 @@ gate/proof authority, or claim acceptance.
 The current publish receipt/evidence event handoff packet can then carry
 explicit publish operation evidence handoff, receipt writer result,
 operation-evidence write result, receipt, operation-evidence, event source,
-event correlation, adapter invocation receipt, connector profile, channel, and
-payload refs into the existing local receipt/evidence event writer. PubPunk
-still does not read files, write receipts, write operation evidence, or mutate
-the event log itself. The smoke evidence appends one bounded
-`receipt_evidence_handoff` event only under an explicit temporary
-`.punk/events/flow.jsonl` through the already-existing `punk-events` helper, and
-does not create `.punk/runs` artifacts, invoke adapters, publish, write
+event correlation, adapter invocation receipt, connector profile resolution,
+connector profile, selected connector strategy, channel, and payload refs into
+the existing local receipt/evidence event writer. Direct adapter, channel,
+payload, or connector profile refs are not enough to bypass channel connector
+profile resolution. PubPunk still does not read files, write receipts, write
+operation evidence, or mutate the event log itself. The smoke evidence appends
+one bounded `receipt_evidence_handoff` event only under an explicit temporary
+`.punk/events/flow.jsonl` through the already-existing `punk-events` helper,
+and does not create `.punk/runs` artifacts, invoke adapters, publish, write
 gate/proof authority, or claim acceptance.
 
 ## Capability envelope for the next slice

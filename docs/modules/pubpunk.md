@@ -81,7 +81,13 @@ operation-evidence bytes, operation-evidence write result, idempotency,
 rollback, error, adapter invocation receipt, connector profile resolution,
 connector profile, selected connector strategy, channel, payload, and
 expected-receipt refs before it can project handoff refs for the existing
-Module Host operation-evidence writer. These PubPunk models do not
+Module Host operation-evidence writer. The publish receipt/evidence event
+handoff packet requires explicit operation evidence handoff, receipt writer
+result, operation evidence write result, receipt, operation evidence, event log,
+event source, event correlation, adapter invocation receipt, connector profile
+resolution, connector profile, selected connector strategy, channel, payload,
+and expected-receipt refs before it can project handoff refs for the existing
+local receipt/evidence event writer. These PubPunk models do not
 read files, write receipts, write operation evidence, publish, call external
 APIs, open browsers, read credentials, invoke adapters, write gate decisions,
 write proofpacks, or claim acceptance.
@@ -536,19 +542,26 @@ It must provide:
 - adapter invocation receipt ref;
 - payload ref;
 - channel ref;
+- connector profile resolution ref;
 - connector profile ref;
+- selected connector strategy ref;
 - allowed source refs covering publish operation evidence handoff, receipt
   writer result, operation evidence write result, receipt, operation evidence,
-  event source, event correlation, payload, channel, connector profile, and
-  adapter invocation receipt refs;
+  event source, event correlation, payload, channel, connector profile
+  resolution, connector profile, selected connector strategy, and adapter
+  invocation receipt refs;
 - instruction refs;
 - `request_receipt_evidence_event_handoff` capability;
 - metadata-only privacy policy;
 - expected receipt fields including `side_effects`, `host_validation`,
-  `adapter_invocation_receipt`, `operation_evidence`, `publication_receipt`,
-  `receipt_write_result`, `operation_evidence_write_result`, and
-  `receipt_evidence_event_handoff`;
+  `connector_profile_resolution`, `connector_profile_ref`,
+  `selected_connector_strategy`, `adapter_invocation_receipt`,
+  `operation_evidence`, `publication_receipt`, `receipt_write_result`,
+  `operation_evidence_write_result`, and `receipt_evidence_event_handoff`;
 - optional token-cost ref.
+
+Direct adapter, channel, payload, or connector profile refs are not enough to
+bypass channel connector profile resolution for this handoff.
 
 When ready, the packet can project only
 `PubPunkPublishReceiptEvidenceEventHandoffRefs` for the existing local
