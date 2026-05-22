@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-05-19
-updated_at: 2026-05-19
+updated_at: 2026-05-21
 review_after: 2026-06-19
 canonical_for:
   - module-authoring-baseline
@@ -20,14 +20,18 @@ related_docs:
   - docs/product/ARCHITECTURE.md
   - docs/product/MODULES.md
   - docs/product/MODULE-CONFORMANCE.md
+  - docs/product/MODULE-CONTROL-PLANE.md
   - docs/product/MODULE-HOST.md
   - docs/product/DELIBERATION-BUDGET.md
   - docs/product/INSTRUCTION-SOURCES.md
   - docs/product/RUNNER-AIDS.md
   - docs/product/REVIEW-ASSESSMENT.md
   - docs/product/PLOT-INTAKE.md
+related_research:
+  - knowledge/research/2026-05-21-adaptive-module-control-plane.md
 related_evals:
   - evals/specs/module-authoring-baseline.v0.1.md
+  - evals/specs/module-control-plane.v0.1.md
   - evals/specs/module-naming-baseline.v0.1.md
   - evals/specs/module-conformance-packet.v0.1.md
 supersedes: []
@@ -152,6 +156,40 @@ or provider-specific authority in instruction text.
 
 Instruction sources may later produce host-specific runner aids. Generated
 views remain rebuildable and non-authoritative.
+
+## Adaptive control plane direction
+
+Future modules may separate a stable implementation from editable behavior
+artifacts, such as instruction pages, skills, playbooks, profiles, templates,
+routing rules, and recurring workflow preferences.
+
+That separation is an editability boundary. It is not a trust boundary.
+
+Editable behavior artifacts can change module behavior. They must not be
+treated as safety-light config merely because they are text. A behavior
+artifact change that affects module behavior should move through explicit
+evidence, eval/check refs, gate rationale, and provenance before promotion.
+
+Future module control manifests should declare:
+
+- behavior artifact refs;
+- immutable core boundaries;
+- capability requests and denies;
+- behavior-provenance fields;
+- reflection trigger status;
+- tuning proposal refs, when present;
+- latest promoted gate or decision refs, when present.
+
+The canonical control manifest and tuning proposal contract lives in
+`docs/product/MODULE-CONTROL-PLANE.md`.
+
+Reflection may generate advisory tuning proposals. It must not apply changes,
+grant capabilities, rewrite immutable core boundaries, mutate event logs, write
+final decisions, write proofpacks, or make acceptance claims.
+
+This direction is documentation and eval guidance only. It does not add a
+module control manifest schema, parser, registry, background reflection job,
+Module Host runtime, adapter invocation, or behavior-artifact writer.
 
 ## Deliberation policy
 

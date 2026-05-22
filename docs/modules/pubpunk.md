@@ -178,6 +178,27 @@ It selects split explicit refs: repo-native `publishing/` artifacts for Punk's
 own public narrative, plus explicit external workspace refs for
 project-specific publishing operations.
 
+## Control-plane fixtures
+
+The first advisory control manifest fixture is
+`docs/modules/pubpunk-control-manifest.md`.
+
+The first concrete, non-applying user-local tuning fixture is
+`docs/modules/pubpunk-article-hook-tuning-fixture.md`. It models an article
+hook tuning chain from operator request to resolved behavior set without
+selecting current PubPunk behavior, writing config, collecting metrics, running
+external research, publishing, invoking adapters, or claiming acceptance.
+
+The manual operator path for live tuning is
+`docs/modules/pubpunk-live-tuning-runbook.md`. It defines the request,
+evidence, proposal, approval, user-local, promotion, and provenance steps for
+requests such as tuning article hooks during active work. It does not activate
+runtime behavior or let PubPunk self-modify.
+The reusable handoff template for one manual live tuning session is
+`docs/modules/pubpunk-live-tuning-handoff-template.md`.
+The filled example for article hook tuning is
+`docs/modules/pubpunk-article-hook-live-tuning-handoff-example.md`.
+
 This packet does not grant broad filesystem reads, create workspaces, publish,
 collect metrics, write receipts, invoke adapters, or activate runtime behavior.
 The current reader model may require the narrow `read_workspace_metadata` grant
