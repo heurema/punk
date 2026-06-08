@@ -1,7 +1,7 @@
 ---
 id: goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1
 title: "Decide next brownfield phase after manifest writer pause v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,13 +9,14 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
     - "work/STATUS.md"
     - "work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md"
+    - "work/goals/goal_prepare_brownfield_source_inventory_observation_packet_boundary_v0_1.md"
     - "work/reports/**"
   exclude:
     - ".punk/**"
@@ -30,7 +31,8 @@ knowledge_refs:
   - "work/reports/2026-06-08-pause-after-brownfield-manifest-writer-first-slice-v0-1.md"
   - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-decide-next-brownfield-phase-after-manifest-writer-pause-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -49,6 +51,7 @@ doc_impact:
   classification: work-ledger-only
   required_updates:
     - "work/STATUS.md"
+    - "work/goals/goal_prepare_brownfield_source_inventory_observation_packet_boundary_v0_1.md"
     - "work/reports/**"
   rationale: "The next step should decide the next bounded Brownfield phase without activating source inventory or runtime behavior."
 ---
@@ -66,6 +69,23 @@ write, and in-memory non-authoritative operation evidence.
 
 Decide the next bounded Brownfield phase before any broader source inventory
 work is selected.
+
+## Decision
+
+Selected next:
+
+```text
+work/goals/goal_prepare_brownfield_source_inventory_observation_packet_boundary_v0_1.md
+```
+
+The next phase is a docs/eval boundary for a future source inventory
+observation packet. It should define explicit observation inputs, include and
+exclude policies, safety blockers, and the handoff shape into the existing
+Brownfield Source Corpus Manifest model and writer track.
+
+This is selected before any scanner, file walker, content reader, source hash
+collector, manifest generator from repository state, CLI behavior, runtime
+storage, or broader Writer behavior.
 
 ## Decision boundary
 
