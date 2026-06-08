@@ -177,6 +177,24 @@ file walking, source content reading, source filesystem hashing, size
 collection, manifest generation from repository state, claim extraction, AI
 summaries, runtime storage, CLI behavior, or broader Writer behavior.
 
+### BFI-021: codebase study is a separate future module
+
+Future codebase study must be represented as a separate Unix-style Punk module
+when implementation is selected.
+
+Brownfield core, `punk-project`, Source Corpus Manifest writer behavior, and
+generic Punk `Writer` behavior must not silently absorb codebase study as an
+implicit scanner.
+
+### BFI-022: codebase study module returns packet not authority
+
+A future codebase-study module may return an advisory observation packet from
+explicit source observation input and narrow capability grants.
+
+It must not return final Brownfield decisions, accepted claims, contract
+approval, gate decisions, proof, acceptance, runtime storage writes, or Source
+Corpus Manifest writer authority.
+
 ## Minimal fixture shape
 
 This is illustrative boundary shape only, not an implemented schema.

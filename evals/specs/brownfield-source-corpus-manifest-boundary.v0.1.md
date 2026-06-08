@@ -465,6 +465,26 @@ manifest-generation selection.
 Invalid, unrepeatable, policy-violating, or insufficient-evidence runs must not
 be averaged, ranked, or used for authority promotion.
 
+### BSCM-064: handoff_does_not_run_codebase_study_module
+
+Future codebase study belongs to a separate Unix-style Punk module upstream of
+the manifest model track.
+
+The manifest model track may consume only an accepted-for-handoff advisory
+observation packet. It must not run the codebase-study module, scan the
+repository, walk directories, read source contents, compute hashes, collect
+sizes, or infer observations itself.
+
+### BSCM-065: module_output_does_not_promote_manifest_authority
+
+A future codebase-study module output may provide advisory observed structure
+only.
+
+Manifest handoff must preserve `manifest_status = advisory` and
+`authority = observed_structure`; module output must not promote the manifest
+to canonical, accepted, contract, gate, proof, acceptance, or project-truth
+authority.
+
 ## Minimal fixture shape
 
 This is illustrative boundary shape only, not an implemented schema.

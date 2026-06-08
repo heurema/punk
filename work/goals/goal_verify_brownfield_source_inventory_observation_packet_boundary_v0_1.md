@@ -1,7 +1,7 @@
 ---
 id: goal_verify_brownfield_source_inventory_observation_packet_boundary_v0_1
 title: "Verify brownfield source inventory observation packet boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -39,7 +39,8 @@ knowledge_refs:
   - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
   - "work/reports/2026-06-08-brownfield-source-inventory-observation-packet-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-brownfield-observation-packet-boundary-verification-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -59,11 +60,15 @@ research_gate:
   external_research_refs: []
   blocked_reason: null
 doc_impact:
-  classification: work-ledger
+  classification: docs-only
   required_updates:
     - "work/STATUS.md"
     - "work/reports/**"
-  rationale: "Verification should update only work-ledger artifacts unless it finds drift that requires a narrow docs or eval-spec fix."
+    - "docs/product/BROWNFIELD-INVENTORY.md"
+    - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
+    - "evals/specs/brownfield-inventory-boundary.v0.1.md"
+    - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
+  rationale: "Verification found a maintainer clarification that codebase study should be a separate Unix-style Punk module, so the Brownfield packet docs/evals were narrowed before selecting the next module-boundary goal."
 ---
 
 ## Context
@@ -107,3 +112,24 @@ runtime, Punk `Writer` behavior, runtime `.punk` storage, CLI behavior,
 grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime,
 Regenerative Spec behavior, spec-as-source behavior, lab code import, benchmark
 suite execution, or benchmark-result authority.
+
+## Outcome
+
+Done in `work/reports/2026-06-08-brownfield-observation-packet-boundary-verification-v0-1.md`.
+
+Verification passed with a boundary refinement: future codebase study is a
+separate Unix-style Punk module upstream of the observation packet, not
+Brownfield core, `punk-project`, the Source Corpus Manifest writer, or generic
+Punk `Writer` behavior.
+
+The verified packet stays advisory observed structure only. The future module
+may return an advisory source inventory observation packet from explicit input
+and narrow capability grants, but it must not own final Brownfield decisions,
+contract approval, gate decisions, proof, acceptance, runtime `.punk` storage,
+writer behavior, or broad Punk orchestration.
+
+Selected next:
+
+```text
+work/goals/goal_define_codebase_study_module_boundary_v0_1.md
+```

@@ -108,6 +108,11 @@ be used as evidence of source intent, freshness, acceptance, or authority.
 This policy constrains future handoff from a source inventory observation
 packet to the Source Corpus Manifest model track.
 
+Future codebase study should be a separate Unix-style Punk module upstream of
+this handoff. The manifest model track consumes only the module's advisory
+packet after packet-specific validation; it does not run the module, scan the
+repository, or infer observations itself.
+
 A future source inventory observation packet may hand off to the Source Corpus
 Manifest model track only after packet-specific validation has accepted it for
 handoff.
@@ -147,6 +152,8 @@ The handoff must not:
 - treat `code-intel-kernel` ideas as product authority;
 - treat `agent-bench-lab` benchmark results as gate, proof, acceptance, or
   project-truth authority;
+- promote a codebase-study module output into manifest, contract, gate, proof,
+  acceptance, or project-truth authority;
 - activate the source corpus manifest writer.
 
 The current first writer slice is downstream of this boundary. It still accepts
