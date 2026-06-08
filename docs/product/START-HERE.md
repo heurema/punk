@@ -85,13 +85,14 @@ See `docs/product/DOCUMENTATION-MAP.md` and `docs/product/GLOSSARY.md`.
 The implemented CLI surface today is intentionally small:
 
 - `punk init <project-id>`
-- `punk init <project-id> --mode brownfield`
+- `punk init <project-id> --mode <greenfield|brownfield>`
 - `punk flow inspect`
 - `punk publishing locate [--project-root <path>] [--json]`
 - `punk eval run smoke`
 - `punk eval run smoke --format json`
 
 `punk init <project-id>` is active as the default greenfield Dogfooding Level 0 compact manual project-memory scaffold.
+`punk init <project-id> --mode greenfield` is the explicit spelling for the same default mode.
 It records `project_id` and `entry_mode = greenfield`, then writes repo-tracked `.punk/memory/` durable memory, `.punk` marker/setup files, and thin source instruction entrypoints under `.punk/instructions/` with create-new/no-overwrite behavior.
 Run it from the target project root; it initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 For user projects, the default layout is compact `.punk/memory/`; root-level `work/`, `knowledge/`, `docs/adr/`, and `publishing/` are Punk repository dogfooding layout, not the default init layout.
@@ -142,7 +143,8 @@ Parked/future ideas may exist in docs, research, or idea backlog, but must stay 
 
 ## Documentation system of record
 
-Read in this order for architecture/product work:
+Read in this order for architecture/product work.
+This is a navigation order, not conflict precedence; use `docs/product/DOCUMENTATION-MAP.md` as the conflict-precedence owner.
 
 1. `docs/product/PUNK-LAWS.md` — hard laws
 2. `docs/product/ARCHITECTURE.md` — current structural boundaries

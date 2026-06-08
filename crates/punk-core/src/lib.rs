@@ -410,10 +410,24 @@ fn artifact_path(
     repo_root: &RepoRoot,
     artifact_ref: &RepoRelativeArtifactRef,
 ) -> Result<PathBuf, FileArtifactHashError> {
-    let path = repo_root.as_path().join(artifact_ref.as_str());
+    // RepoRelativeArtifactRef already rejects lexical escapes; this walk keeps
+    // the filesystem resolution boundary explicit for future construction paths.
+    let mut path = repo_root.as_path().to_path_buf();
+    let mut segments = artifact_ref.as_str().split('/').peekable();
 
-    if !path.starts_with(repo_root.as_path()) {
-        return Err(FileArtifactHashError::OutsideRepoRoot);
+    while let Some(segment) = segments.next() {
+        path.push(segment);
+
+        let metadata = fs::symlink_metadata(&path).map_err(file_artifact_hash_error)?;
+        let file_type = metadata.file_type();
+
+        if file_type.is_symlink() {
+            return Err(FileArtifactHashError::SymlinkNotSupported);
+        }
+
+        if segments.peek().is_some() && !file_type.is_dir() {
+            return Err(FileArtifactHashError::NotRegularFile);
+        }
     }
 
     Ok(path)
@@ -888,6 +902,41 @@ mod tests {
         assert_eq!(verification.observed_digest(), None);
 
         fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_artifact_digest_rejects_intermediate_symlink_directory_escape() {
+        use std::os::unix::fs::symlink;
+
+        let temp_path = unique_temp_path();
+        let outside_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp repo should be created");
+        fs::create_dir_all(&outside_path).expect("outside dir should be created");
+        fs::write(outside_path.join("secret.txt"), b"outside secret")
+            .expect("outside file should be written");
+        symlink(&outside_path, temp_path.join("artifacts"))
+            .expect("intermediate symlink should be created");
+        let repo_root = RepoRoot::new(temp_path.clone()).expect("repo root should be valid");
+        let artifact_ref =
+            RepoRelativeArtifactRef::new("artifacts/secret.txt").expect("ref should be valid");
+        let expected = compute_artifact_digest(b"outside secret");
+
+        assert_eq!(
+            compute_artifact_file_digest(&repo_root, &artifact_ref),
+            Err(FileArtifactHashError::SymlinkNotSupported)
+        );
+
+        let verification = verify_referenced_artifact_digest(&repo_root, &artifact_ref, &expected);
+
+        assert_eq!(
+            verification.outcome(),
+            ReferencedArtifactVerificationOutcome::Symlink
+        );
+        assert_eq!(verification.observed_digest(), None);
+
+        fs::remove_dir_all(temp_path).expect("temp repo should be removed");
+        fs::remove_dir_all(outside_path).expect("outside dir should be removed");
     }
 
     fn unique_temp_path() -> PathBuf {

@@ -17,3 +17,5 @@ __pycache__/
 .punk/contracts/
 .punk/decisions/
 .punk/proofs/
+.punk/publishing.local.toml
+.punk/publishing/

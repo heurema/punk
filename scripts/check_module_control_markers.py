@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -44,15 +45,46 @@ def read_required(path: Path, issues: list[str]) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def key_value_marker_pattern(token: str, *, exact_value: bool) -> re.Pattern[str] | None:
+    marker = re.match(r"^([A-Za-z0-9_-]+)\s*[:=]\s*(.*)$", token.strip())
+    if not marker:
+        return None
+    key = marker.group(1)
+    value = marker.group(2).strip()
+    if value:
+        value_pattern = r"\s+".join(re.escape(part) for part in re.split(r"\s+", value))
+        suffix = r"\s*(?:#.*)?$" if exact_value else r"(?:\s+.*|\s*(?:#.*)?$)"
+        value_pattern = rf"\s*{value_pattern}{suffix}"
+    else:
+        value_pattern = r"\s*[^\n]*(?:#.*)?$"
+    return re.compile(
+        rf"(?im)^[ \t-]*{re.escape(key)}\s*[:=]{value_pattern}"
+    )
+
+
+def has_marker(text: str, token: str, *, exact_value: bool) -> bool:
+    pattern = key_value_marker_pattern(token, exact_value=exact_value)
+    if pattern is not None:
+        if pattern.search(text) is not None:
+            return True
+        if not exact_value:
+            uncommented = "\n".join(
+                line for line in text.splitlines() if not line.lstrip().startswith("#")
+            )
+            return token in uncommented
+        return False
+    return token in text
+
+
 def require_tokens(label: str, text: str, tokens: dict[str, str], issues: list[str]) -> None:
     for name, token in tokens.items():
-        if token not in text:
+        if not has_marker(text, token, exact_value=False):
             issues.append(f"{label} missing {name}: {token}")
 
 
 def reject_tokens(label: str, text: str, tokens: dict[str, str], issues: list[str]) -> None:
     for name, token in tokens.items():
-        if token in text:
+        if has_marker(text, token, exact_value=True):
             issues.append(f"{label} contains forbidden {name}: {token}")
 
 
