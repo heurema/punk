@@ -1,7 +1,7 @@
 ---
 id: goal_define_codebase_study_source_observation_request_packet_v0_1
 title: "Define Codebase Study source observation request packet v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "product"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -40,7 +40,8 @@ knowledge_refs:
   - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
   - "work/reports/2026-06-08-codebase-study-conformance-packet-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-codebase-study-source-observation-request-packet-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -95,6 +96,22 @@ Capture the request packet boundary only:
 - privacy/redaction blockers;
 - downstream handoff intent;
 - eval/spec cases and work report.
+
+## Outcome
+
+Done in
+`work/reports/2026-06-08-codebase-study-source-observation-request-packet-v0-1.md`.
+
+The request packet boundary defines caller-supplied input shape, explicit
+source refs, capability requests separate from grants, privacy/redaction refs
+or blockers, expected advisory output authority, downstream handoff intent,
+and explicit invalid request cases. It does not grant scanner, traversal,
+content read, source hashing, size collection, manifest generation, runtime
+storage, lab execution, benchmark authority, gate/proof authority, or
+acceptance behavior.
+
+The next bounded checkpoint is
+`work/goals/goal_define_codebase_study_capability_privacy_boundary_v0_1.md`.
 
 ## Boundary
 
