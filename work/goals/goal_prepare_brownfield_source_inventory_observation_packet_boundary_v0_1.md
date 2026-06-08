@@ -1,7 +1,7 @@
 ---
 id: goal_prepare_brownfield_source_inventory_observation_packet_boundary_v0_1
 title: "Prepare brownfield source inventory observation packet boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -42,7 +42,8 @@ knowledge_refs:
   - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md"
   - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-brownfield-source-inventory-observation-packet-boundary-v0-1.md"
 decision_refs:
   - "work/reports/2026-06-08-decide-next-brownfield-phase-after-manifest-writer-pause-v0-1.md"
 proof_refs: []
@@ -71,6 +72,9 @@ doc_impact:
     - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
     - "docs/product/BROWNFIELD-INVENTORY.md"
     - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
+    - "docs/product/DOCUMENTATION-MAP.md"
+    - "docs/product/GLOSSARY.md"
+    - "docs/product/CRATE-STATUS.md"
     - "evals/specs/brownfield-inventory-boundary.v0.1.md"
     - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
   rationale: "The next step should define the observation packet boundary, compare local lab ideas, and define evaluation requirements before any Brownfield source inventory implementation."
@@ -107,3 +111,27 @@ runtime, Punk `Writer` behavior, runtime `.punk` storage, CLI behavior,
 grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime,
 Regenerative Spec behavior, spec-as-source behavior, lab code import, benchmark
 suite execution, or benchmark-result authority.
+
+## Outcome
+
+Done in `work/reports/2026-06-08-brownfield-source-inventory-observation-packet-boundary-v0-1.md`.
+
+The boundary now defines a future Brownfield source inventory observation
+packet as advisory observed structure only, with explicit scoped inputs,
+repo-relative refs, evidence ids, bounded source-class and sensitivity
+candidates, warnings, blockers, limitations, lab advisory notes, and future
+evaluation requirement refs.
+
+The Source Corpus Manifest docs/spec now define packet handoff as upstream of
+the existing manifest model and writer track. The first active writer slice
+still accepts only an already-constructed `SourceCorpusManifest` model plus
+explicit target and preflight result.
+
+The local `code-intel-kernel` lab was reviewed as advisory design input, and
+future active observer/scanner results now require an `agent-bench-lab`
+evaluation route before they influence Brownfield decisions.
+
+No source inventory implementation, repo scan, file walker, content read,
+source filesystem hash computation, size collection, manifest generation from
+repository state, claim extraction, AI summary, runtime storage, CLI behavior,
+benchmark execution, lab code import, or authority promotion was activated.
