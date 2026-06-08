@@ -32,12 +32,15 @@ acceptance:
   - "Defines a docs/eval boundary for a future Brownfield source inventory observation packet before any scanner, file walker, or manifest generation from repository state is selected."
   - "Names allowed explicit observation inputs, include/exclude policy, source-class classification limits, sensitivity policy, and fail-closed blockers."
   - "Defines how an accepted observation packet may hand off to the existing Brownfield Source Corpus Manifest model/writer track without granting authority promotion."
+  - "Reviews `code-intel-kernel` as an advisory local lab input for observation-packet ideas without treating lab state as Punk product truth."
+  - "Defines an `agent-bench-lab` evaluation requirement for future active observation/scanner results before those results influence Brownfield decisions."
   - "Keeps source inventory generation, repo scanning, file walking, source content reading, source filesystem hashing, size collection, claim extraction, AI summaries, runtime storage, CLI behavior, and broader Writer behavior inactive."
 knowledge_refs:
   - "docs/product/BROWNFIELD-INVENTORY.md"
   - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
   - "work/reports/2026-06-08-pause-after-brownfield-manifest-writer-first-slice-v0-1.md"
   - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md"
+  - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
 contract_refs: []
 report_refs: []
 decision_refs:
@@ -47,9 +50,9 @@ latest_proof_ref: null
 supersedes: []
 superseded_by: null
 research_gate:
-  classification: R1
+  classification: R2
   required: true
-  rationale: "This is a repo-local docs/eval boundary step selected after the manifest writer pause. Repo-tracked Brownfield Inventory and Source Corpus Manifest docs are enough unless the scope expands toward active scanning, traversal, content reads, hashing, claims, runtime storage, or implementation."
+  rationale: "This remains a docs/eval boundary step, but the selected goal now intentionally includes advisory local-lab comparison and explicit evaluation implications. External deep research is not needed unless the scope expands toward active scanning, traversal, content reads, hashing, claims, runtime storage, or implementation."
   research_refs:
     - "docs/product/BROWNFIELD-INVENTORY.md"
     - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
@@ -57,6 +60,7 @@ research_gate:
     - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
     - "work/reports/2026-06-08-pause-after-brownfield-manifest-writer-first-slice-v0-1.md"
     - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md"
+    - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
   external_research_refs: []
   blocked_reason: null
 doc_impact:
@@ -64,11 +68,12 @@ doc_impact:
   required_updates:
     - "work/STATUS.md"
     - "work/reports/**"
+    - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
     - "docs/product/BROWNFIELD-INVENTORY.md"
     - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
     - "evals/specs/brownfield-inventory-boundary.v0.1.md"
     - "evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md"
-  rationale: "The next step should define the observation packet boundary before any Brownfield source inventory implementation."
+  rationale: "The next step should define the observation packet boundary, compare local lab ideas, and define evaluation requirements before any Brownfield source inventory implementation."
 ---
 
 ## Context
@@ -78,6 +83,14 @@ and verified, but it accepts only an already-constructed manifest model.
 
 The missing next boundary is the shape of future observed source inventory input
 before any repo traversal or manifest generation from repository state.
+
+The local `code-intel-kernel` lab may provide advisory ideas for code
+observation boundaries. The local `agent-bench-lab` must be used to define how
+future active observation/scanner results will be evaluated before those
+results influence Brownfield decisions.
+
+Local lab state must be verified at execution time and must not become Punk
+product truth by reference.
 
 ## Intent
 
@@ -92,4 +105,5 @@ generation from repository state, claim extraction, AI summaries, module maps,
 architecture recovery, intent recovery, contract generation, gate/proof
 runtime, Punk `Writer` behavior, runtime `.punk` storage, CLI behavior,
 grayfield reconciliation, Conformance Pack runtime, Migration Contract runtime,
-Regenerative Spec behavior, or spec-as-source behavior.
+Regenerative Spec behavior, spec-as-source behavior, lab code import, benchmark
+suite execution, or benchmark-result authority.
