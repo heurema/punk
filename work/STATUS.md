@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-06-08
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Pause after brownfield manifest writer first slice v0.1"
-selected_next: "work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md"
+current_focus: "Decide next brownfield phase after manifest writer pause v0.1"
+selected_next: "work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md"
 last_validated_commit: "0f013f6"
 ---
 
@@ -18,8 +18,9 @@ last_validated_commit: "0f013f6"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: pause after brownfield manifest writer first slice v0.1.
-- Selected next: `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`
+- Current focus: decide next brownfield phase after manifest writer pause v0.1.
+- Selected next: `work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md`
+- Completion note: `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md` is now recorded as done with work-ledger evidence. The checkpoint closes the pause after the first side-effectful Brownfield Source Corpus Manifest writer slice and selects a separate decision-only Brownfield phase goal before any source inventory generation, repo scanning, file walking, content reading, source filesystem hashing, claim extraction, runtime storage, CLI behavior, or broader Writer behavior. Selected next is `work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md`.
 - Side-track completion note: `work/goals/goal_clarify_pubpunk_module_execution_runtime_terms_v0_1.md` is now recorded as done with docs/spec/work-ledger evidence. The slice clarifies that PubPunk does not own a separate runtime and that future active PubPunk behavior is PubPunk module execution through the Punk-owned Module Host boundary. It updates current PubPunk product/module/spec wording from `PubPunk runtime` to `PubPunk module execution` where the old term could imply a second runtime surface. It adds no Rust code, CLI behavior, Module Host runtime, module loading, plugin loading, adapter invocation, browser/API calls, credential access, publishing, metrics collection, receipt writing, event writing, gate decisions, proofpacks, or acceptance claims. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`.
 - Side-track completion note: `work/goals/goal_capture_harness_intake_routing_boundary_v0_1.md` is now recorded as done with docs/spec/work-ledger evidence. The slice captures the proposed `/punk ...` harness slash-command bridge for Codex CLI, Codex App, Claude Code, Gemini, `agy`, and similar executor shells as a thin runner-aid layer into Punk-owned Plot Intake routing. It records the request envelope, route result shape, separate `phase_route` and `module_route`, `/punk draft a blog post...` as a PubPunk-shaped contract-intake example, and route hints such as `/pub ...` or `/dev ...` as non-authoritative. It adds no Rust code, CLI behavior, harness slash-command files, provider adapters, module routing runtime, Module Host runtime, PubPunk runtime, draft writing, publishing, browser/API calls, credential access, receipt writing, event writing, gate decisions, proofpacks, or acceptance claims. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`.
 - Side-track completion note: `work/goals/goal_fix_deep_review_high_findings_2026_06_08.md` is now recorded as done with the high-priority findings from `work/reviews/deep-review-2026-06-08.md` fixed. The slice hardens file artifact hashing against intermediate symlink escapes, adds proof acceptance authority over a real gate decision plus proofpack plus required verification evidence, rejects duplicate/conflicting proof artifact digests in that authority path, prevents single-digest self-asserted verification evidence, routes eval acceptance coverage through the new authority, makes representative eval no-gate/no-proof/no-writer cases observe boundary artifacts, marks Module Host gate approval coverage as self-asserted-not-verified, fixes DocImpact parser/enum/advisory Level 0 behavior, and wires research-gate/work-ledger/module-control checks into check dispatch and CI. It adds no `.punk` runtime state, external publishing, adapter invocation, browser automation, credential access, gate writer, proofpack writer, or acceptance claim. Selected next remains `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`.
@@ -193,8 +194,8 @@ last_validated_commit: "0f013f6"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md` | `ready` | Checkpoint after the first side-effectful Brownfield writer milestone before selecting any source inventory generation. | - |
-| Future bounded source inventory boundary/review goal | `not-created` | Actual inventory generation is more sensitive and needs a separate decision before repo scanning, file walking, content reading, hashing, claims, or manifest item generation are considered. | pause/checkpoint |
+| `work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md` | `ready` | Decision-only checkpoint before selecting the next Brownfield source inventory phase. | - |
+| Future bounded source inventory boundary/review goal | `not-created` | Actual inventory generation is more sensitive and needs a separate decision before repo scanning, file walking, content reading, hashing, claims, or manifest item generation are considered. | decision checkpoint |
 
 ## Open Drift Findings
 
@@ -216,6 +217,7 @@ last_validated_commit: "0f013f6"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-06-08 | Paused after brownfield manifest writer first slice v0.1 | `work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md`, `work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md`, `work/reports/2026-06-08-pause-after-brownfield-manifest-writer-first-slice-v0-1.md` |
 | 2026-05-22 | Consolidated Module Control marker validators v0.1 | `work/goals/goal_consolidate_module_control_marker_validators_v0_1.md`, `work/reports/2026-05-22-module-control-marker-validator-consolidation-v0-1.md`, `scripts/check_module_control_markers.py`, `scripts/check.sh`, `docs/product/MODULE-CONTROL-VALIDATION.md`, `docs/product/DOCUMENTATION-MAP.md`, `evals/specs/module-control-validation.v0.1.md` |
 | 2026-05-21 | Added Module Tuning Handoff Template v0.1 | `work/goals/goal_add_module_tuning_handoff_template_v0_1.md`, `work/reports/2026-05-21-module-tuning-handoff-template-v0-1.md`, `docs/product/MODULE-TUNING-HANDOFF-TEMPLATE.md`, `evals/specs/module-tuning-handoff-template.v0.1.md`, `scripts/check_module_control_markers.py`, `scripts/check.sh`, `docs/product/MODULE-CONTROL-PLANE.md`, `docs/product/MODULE-CONTROL-VALIDATION.md`, `docs/product/DOCUMENTATION-MAP.md`, `evals/specs/module-control-validation.v0.1.md` |
 | 2026-05-21 | Added Module Control validation runbook v0.1 | `work/goals/goal_add_module_control_validation_runbook_v0_1.md`, `work/reports/2026-05-21-module-control-validation-runbook-v0-1.md`, `docs/product/MODULE-CONTROL-VALIDATION.md`, `evals/specs/module-control-validation.v0.1.md`, `scripts/check_module_control_markers.py`, `scripts/check.sh`, `docs/product/MODULE-CONTROL-PLANE.md`, `docs/product/DOCUMENTATION-MAP.md` |

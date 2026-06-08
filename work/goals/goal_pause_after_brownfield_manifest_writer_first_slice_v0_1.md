@@ -1,21 +1,22 @@
 ---
 id: goal_pause_after_brownfield_manifest_writer_first_slice_v0_1
 title: "Pause after brownfield manifest writer first slice v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "project"
 priority: P2
 authority: canonical
 created_at: 2026-05-04
-updated_at: 2026-05-04
+updated_at: 2026-06-08
 selected_at: 2026-05-04
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
     - "work/STATUS.md"
     - "work/goals/goal_pause_after_brownfield_manifest_writer_first_slice_v0_1.md"
+    - "work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md"
     - "work/reports/**"
   exclude:
     - ".punk/**"
@@ -29,7 +30,8 @@ acceptance:
 knowledge_refs:
   - "work/reports/2026-05-04-brownfield-source-corpus-manifest-writer-first-slice-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-pause-after-brownfield-manifest-writer-first-slice-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -47,6 +49,7 @@ doc_impact:
   classification: work-ledger-only
   required_updates:
     - "work/STATUS.md"
+    - "work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md"
     - "work/reports/**"
   rationale: "This is a pause/checkpoint after a verified first side-effectful Brownfield writer slice."
 ---
@@ -62,6 +65,22 @@ target after matching successful preflight.
 ## Intent
 
 Pause before selecting any broader Brownfield source inventory work.
+
+## Outcome
+
+Done in `work/reports/2026-06-08-pause-after-brownfield-manifest-writer-first-slice-v0-1.md`.
+
+The checkpoint records that the first side-effectful Brownfield Source Corpus
+Manifest writer slice is complete and intentionally stops before any source
+inventory generation, repository scanning, file walking, content reading,
+source filesystem hashing, claim extraction, runtime storage, CLI behavior, or
+broader Writer behavior.
+
+Selected next is a separate decision-only Brownfield phase goal:
+
+```text
+work/goals/goal_decide_next_brownfield_phase_after_manifest_writer_pause_v0_1.md
+```
 
 ## Non-Scope
 
