@@ -203,7 +203,7 @@ proposal-only, no-runtime, no-auto-apply boundaries.
 This runbook does not add:
 
 - Rust code;
-- PubPunk runtime;
+- PubPunk module execution;
 - Module Host runtime;
 - manifest parsing;
 - behavior resolver;

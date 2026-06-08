@@ -13,7 +13,7 @@ The handoff proves that an explicit PubPunk inventory input packet can feed the
 existing side-effect-free inventory assessment, then be wrapped by existing
 Module Host preflight, advisory envelope, and receipt proposal models.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, filesystem reads, workspace initialization, publishing, metrics
 collection, adapter invocation, receipt writing, gate writing, proofpack
 writing, or acceptance claims.
@@ -60,7 +60,7 @@ fields from the advisory envelope without creating or writing a receipt.
 ### PUBPUNK-HOST-HANDOFF-007: no runtime promotion is implied
 
 Passing this smoke case means only that the local model chain is coherent. It
-does not promote PubPunk to active runtime, public CLI, adapter behavior,
+does not promote PubPunk to active module execution, public CLI, adapter behavior,
 external publishing, metrics collection, receipt writing, gate writing,
 proofpack writing, or acceptance authority.
 

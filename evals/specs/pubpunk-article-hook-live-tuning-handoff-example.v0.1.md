@@ -95,7 +95,7 @@ scripts/check.sh module-control-suite
 
 The commands validate the current live tuning and control-plane marker suites.
 They do not read articles, collect metrics, run research, write config, promote
-artifacts, activate PubPunk runtime, publish, invoke adapters, write gates,
+artifacts, activate PubPunk module execution, publish, invoke adapters, write gates,
 write proofpacks, or claim acceptance.
 
 ## Non-goals

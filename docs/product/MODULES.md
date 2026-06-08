@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-19
+updated_at: 2026-06-08
 review_after: 2026-07-20
 canonical_for:
   - module-boundaries
@@ -93,7 +93,9 @@ Use this section as the current PubPunk status checkpoint.
 
 PubPunk remains the future content-engineering module.
 
-Its runtime, CLI, adapters, and publishing behavior are parked for now.
+Its active module execution surface, CLI, adapters, and publishing behavior are
+parked for now. PubPunk does not own a separate runtime; future PubPunk
+execution must happen through the Punk-owned Module Host boundary.
 
 The first code slice is incubating only: `punk-mod-pubpunk` provides a
 side-effect-free inventory assessment model over caller-provided publishing

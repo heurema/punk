@@ -12,7 +12,7 @@ The reader model is the boundary before `PubPunkInventoryInputPacket`. It turns
 explicit caller-provided observed refs into an input packet while preserving
 allowed-source boundaries and empty new-project inventories.
 
-This spec does not activate PubPunk runtime, Module Host runtime, public CLI
+This spec does not activate PubPunk module execution, Module Host runtime, public CLI
 behavior, workspace initialization, filesystem scanning, draft body reads,
 provider orchestration, adapter invocation, publishing, metrics collection,
 receipt writing, gate writing, proofpack writing, or acceptance claims.

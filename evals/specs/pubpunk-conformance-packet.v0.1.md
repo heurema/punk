@@ -9,7 +9,7 @@ Authority: advisory/design
 Define the expected advisory result for applying Module Conformance Packet v0.1
 and Module Host Contract Stub v0.1 to PubPunk before any PubPunk skeleton work.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, manifest parsing, workspace initialization, adapter invocation,
 publishing, metrics collection, receipt writing, gate writing, proofpack
 writing, or acceptance claims.

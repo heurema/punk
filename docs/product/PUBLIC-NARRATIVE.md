@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-04-19
-updated_at: 2026-05-16
+updated_at: 2026-06-08
 review_after: 2026-07-20
 canonical_for:
   - public-narrative-plane
@@ -39,7 +39,8 @@ Stories, post drafts, channel notes, manual publication receipts, and manual met
 
 Manual now. Structured now. Automated later.
 
-Do not wait for PubPunk runtime to begin preserving public artifacts.
+Do not wait for active PubPunk module execution to begin preserving public
+artifacts.
 
 ## Relationship to PubPunk
 

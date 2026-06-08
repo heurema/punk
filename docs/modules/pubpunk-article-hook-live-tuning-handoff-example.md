@@ -242,7 +242,7 @@ This example does not add:
 
 - Rust code;
 - CLI behavior;
-- PubPunk runtime;
+- PubPunk module execution;
 - Module Host runtime;
 - manifest parsing;
 - behavior resolving;

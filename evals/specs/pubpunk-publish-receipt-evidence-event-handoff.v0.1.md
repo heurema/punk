@@ -17,7 +17,7 @@ host-owned `receipt_evidence_handoff` event without making PubPunk an event-log
 writer, evidence writer, receipt writer, publisher, adapter, gate/proof
 authority, or runtime surface.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, filesystem reads by PubPunk, workspace initialization, external
 publishing, metrics collection, adapter invocation, PubPunk-owned event-log
 mutation, gate writing, proofpack writing, or acceptance claims.
@@ -107,7 +107,7 @@ claims.
 ### PUBPUNK-PUBLISH-RECEIPT-EVIDENCE-EVENT-HANDOFF-012: no runtime promotion is implied
 
 Passing this smoke case means only that the local model chain is coherent. It
-does not promote PubPunk to active runtime, public CLI, adapter behavior,
+does not promote PubPunk to active module execution, public CLI, adapter behavior,
 external publishing, metrics collection, persisted publication receipt writer,
 persisted operation evidence writer, PubPunk-owned event writer, gate writing,
 proofpack writing, or acceptance authority.

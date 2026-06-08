@@ -307,7 +307,7 @@ This fixture does not add:
 - config resolving;
 - user-local config writing;
 - deterministic checker implementation;
-- PubPunk runtime;
+- PubPunk module execution;
 - Module Host runtime;
 - background reflection;
 - behavior-artifact writing;

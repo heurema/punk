@@ -15,7 +15,7 @@ API, browser, and manual fallback metadata without calling APIs, opening
 browsers, reading credentials, invoking adapters, publishing, collecting
 metrics, writing receipts, or activating runtime behavior.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, filesystem reads, workspace initialization, external publishing,
 metrics collection, adapter invocation, browser automation, credential reads,
 receipt writing, gate writing, proofpack writing, or acceptance claims.
@@ -80,7 +80,7 @@ The packet must not collect token usage automatically.
 ### PUBPUNK-CONNECTOR-PROFILE-010: no runtime promotion is implied
 
 Passing this smoke case means only that the local model can select a connector
-strategy from explicit metadata. It does not promote PubPunk to active runtime,
+strategy from explicit metadata. It does not promote PubPunk to active module execution,
 public CLI, adapter behavior, browser automation, external publishing, metrics
 collection, receipt writing, gate writing, proofpack writing, or acceptance
 authority.

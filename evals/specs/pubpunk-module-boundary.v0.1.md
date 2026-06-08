@@ -10,7 +10,7 @@ Define the boundary PubPunk must satisfy before any publishing inventory,
 drafting, planning, receipt creation, adapter invocation, or external publish
 behavior becomes active.
 
-This is a design/spec artifact only. It does not activate PubPunk runtime,
+This is a design/spec artifact only. It does not activate PubPunk module execution,
 Module Host runtime, active-core publishing subcommands, adapters, browser/API
 calls, credential access, publication receipts, or external side effects.
 
@@ -36,7 +36,7 @@ before Module Host promotion must fail.
 
 The existing `punk publishing locate` surface may resolve a local publishing
 workspace binding. It must not imply permission to add more active-core
-publishing subcommands or to treat the resolver as PubPunk runtime.
+publishing subcommands or to treat the resolver as active PubPunk module execution.
 
 ### PUBPUNK-003: denied capabilities by default
 
@@ -131,7 +131,7 @@ pubpunk_module_invocation:
 
 ## Non-goals
 
-This v0.1 boundary does not define or activate PubPunk runtime, Module Host
+This v0.1 boundary does not define or activate PubPunk module execution, Module Host
 runtime, active-core publishing subcommands, module manifest schema, module SDK,
 plugin packaging, local inventory implementation, draft generation, receipt
 writer, adapter implementation, external publishing, browser/API calls,

@@ -1,6 +1,6 @@
 # PubPunk
 
-Status: incubating model / runtime parked
+Status: incubating model / module execution parked
 
 ## Purpose
 
@@ -8,8 +8,9 @@ PubPunk is the future content-engineering module for `punk`.
 
 It handles public narrative, content production, distribution, and metrics.
 
-This document defines the module boundary before any PubPunk runtime, draft
-planner, receipt writer, adapter, or external publish behavior is implemented.
+This document defines the module boundary before any active PubPunk module
+execution through the Punk-owned Module Host, draft planner, receipt writer,
+adapter, or external publish behavior is implemented.
 The current code slice is limited to a side-effect-free inventory reader model,
 inventory input packet, inventory assessment model, channel connector profile
 resolution packet, publish request packet, publish receipt preflight packet,
@@ -40,7 +41,9 @@ Future PubPunk may own:
 
 ## Current state
 
-PubPunk is not active as runtime, CLI, adapter, or publisher.
+PubPunk is not active as a module execution surface, CLI, adapter, or
+publisher. PubPunk does not own a separate runtime; future PubPunk execution
+must run through the Punk-owned Module Host boundary.
 
 There is no automation in the new `punk` core yet.
 
@@ -131,8 +134,8 @@ and payload refs into the existing Module Host first active local receipt
 writer. The writer writes exact caller-provided bytes only to an explicit
 temporary `.punk/runs` target. This evidence does not invoke adapters, publish,
 run policy engines, invoke gate, mutate event logs, persist operation evidence,
-write proofpacks, claim acceptance, or activate PubPunk or Module Host runtime
-behavior.
+write proofpacks, claim acceptance, or activate PubPunk module execution or
+Module Host runtime behavior.
 
 The current smoke evidence also proves the first publish operation evidence
 handoff: a ready PubPunk packet projects explicit receipt writer result,
@@ -142,7 +145,8 @@ operation-evidence writer. The writer writes exact caller-provided evidence
 bytes only to an explicit temporary `.punk/runs` target after a successful
 receipt write. This evidence does not invoke adapters, publish, run policy
 engines, invoke gate, mutate event logs, write receipts, write proofpacks, claim
-acceptance, or activate PubPunk or Module Host runtime behavior.
+acceptance, or activate PubPunk module execution or Module Host runtime
+behavior.
 
 The existing `punk publishing locate` resolver is a transitional core locator
 only. It must not be used as precedent for adding publishing inventory,
@@ -330,7 +334,7 @@ only when API is unavailable and browser policy allows it, and manual handoff
 when the automated paths are unavailable but manual fallback is allowed. It
 does not call an API, open a browser, read credentials, invoke an adapter,
 publish externally, collect metrics, write receipts, read draft bodies, or
-activate PubPunk or Module Host runtime behavior.
+activate PubPunk module execution or Module Host runtime behavior.
 
 ## Current publish request packet
 
@@ -376,7 +380,7 @@ request and policy-gate preflight models. Direct adapter or payload refs are
 not enough to bypass the connector profile resolution boundary. The packet
 does not write the side-effect request, invoke an adapter, publish externally,
 call a policy engine, invoke gate, write receipts, read draft bodies, collect
-metrics, or activate PubPunk or Module Host runtime behavior.
+metrics, or activate PubPunk module execution or Module Host runtime behavior.
 
 ## Current publish receipt preflight packet
 
@@ -426,8 +430,8 @@ side-effect receipt writer preflight model. Direct adapter, channel, payload,
 or connector profile refs are not enough to bypass the connector profile
 resolution boundary. The packet does not write a receipt, persist operation
 evidence, invoke an adapter, publish externally, call a policy engine, invoke
-gate, read draft bodies, collect metrics, or activate PubPunk or Module Host
-runtime behavior.
+gate, read draft bodies, collect metrics, or activate PubPunk module execution
+or Module Host runtime behavior.
 
 ## Current publish receipt write handoff packet
 
@@ -475,7 +479,8 @@ When ready, the packet can project only
 active local side-effect receipt writer. The PubPunk packet does not write a
 receipt, read receipt bytes, persist operation evidence, invoke an adapter,
 publish externally, call a policy engine, invoke gate, read draft bodies,
-collect metrics, or activate PubPunk or Module Host runtime behavior. Direct
+collect metrics, or activate PubPunk module execution or Module Host runtime
+behavior. Direct
 adapter, channel, payload, or connector profile refs are not enough to bypass
 connector profile resolution. The current smoke case uses the projected refs to
 call the already-existing Module Host writer against an explicit temporary
@@ -533,7 +538,8 @@ When ready, the packet can project only
 operation-evidence writer. The PubPunk packet does not write operation
 evidence, read operation evidence bytes, write receipts, invoke an adapter,
 publish externally, call a policy engine, invoke gate, read draft bodies,
-collect metrics, or activate PubPunk or Module Host runtime behavior. The
+collect metrics, or activate PubPunk module execution or Module Host runtime
+behavior. The
 current smoke case uses the projected refs to call the already-existing Module
 Host writer against an explicit temporary `.punk/runs` target only after a
 successful receipt write.
@@ -589,8 +595,8 @@ When ready, the packet can project only
 receipt/evidence event writer in `punk-events`. The PubPunk packet does not
 write the event log, write receipts, write operation evidence, read files,
 invoke an adapter, publish externally, call a policy engine, invoke gate, read
-draft bodies, collect metrics, or activate PubPunk or Module Host runtime
-behavior. The current smoke case uses the projected refs to call the
+draft bodies, collect metrics, or activate PubPunk module execution or Module
+Host runtime behavior. The current smoke case uses the projected refs to call the
 already-existing `punk-events` receipt/evidence handoff helper against an
 explicit temporary `.punk/events/flow.jsonl` log only, without creating
 `.punk/runs` artifacts.
@@ -675,7 +681,7 @@ existing Module Host operation-evidence writer after a successful receipt write.
 `request_receipt_evidence_event_handoff` is accepted only by
 `PubPunkPublishReceiptEvidenceEventHandoffPacket` as a handoff grant to the
 existing local receipt/evidence event writer. None of these grants activates
-PubPunk runtime, adapter behavior, publication, metrics collection,
+PubPunk module execution, adapter behavior, publication, metrics collection,
 PubPunk-owned receipt/evidence writing, direct event-log mutation, gate/proof
 authority, or acceptance promotion.
 
@@ -720,7 +726,7 @@ External posting APIs and automated metrics collection come later.
 
 This boundary does not activate:
 
-- PubPunk runtime;
+- PubPunk module execution through the Punk-owned Module Host;
 - Module Host runtime;
 - a new `punk publishing` command;
 - runtime publishing inventory implementation;

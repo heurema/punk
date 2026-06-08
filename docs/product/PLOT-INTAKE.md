@@ -197,8 +197,9 @@ side_effects_active: false
 ```
 
 This means the request is probably a PubPunk-shaped contract/intake problem. It
-does not mean PubPunk runtime is active, a draft has been written, publishing
-is allowed, adapters may run, or the result has been accepted.
+does not mean PubPunk module execution through the Punk-owned Module Host is
+active, a draft has been written, publishing is allowed, adapters may run, or
+the result has been accepted.
 
 Optional shorter harness commands such as `/pub ...` or `/dev ...` may be
 introduced later as explicit route hints, but hints are not authority. The Punk

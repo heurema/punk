@@ -10,7 +10,7 @@ Define deterministic expectations for the first PubPunk inventory input packet.
 
 The packet is the boundary before the existing inventory assessment model. It
 keeps PubPunk's first implementation step explicit and repeatable without
-activating PubPunk runtime, Module Host runtime, module loading, workspace
+activating PubPunk module execution, Module Host runtime, module loading, workspace
 initialization, filesystem scanning, draft body reads, provider orchestration,
 adapter invocation, publishing, metrics collection, receipt writing, gate
 writing, proofpack writing, or acceptance claims.

@@ -9,7 +9,7 @@ Authority: advisory/design
 Define deterministic review cases for the PubPunk control manifest fixture.
 
 This spec applies `docs/product/MODULE-CONTROL-PLANE.md` to PubPunk without
-activating PubPunk runtime, manifest parsing, reflection, behavior-artifact
+activating PubPunk module execution, manifest parsing, reflection, behavior-artifact
 writing, adapter invocation, publishing, metrics collection, event writing,
 gate writing, proofpack writing, or acceptance claims.
 
@@ -69,7 +69,7 @@ as manifest-level grants.
 ### PUBPUNK-CONTROL-009: fixture is not runtime
 
 The fixture must not imply active manifest parsing, Module Host runtime,
-PubPunk runtime, background reflection, behavior-artifact writing, adapter
+PubPunk module execution, background reflection, behavior-artifact writing, adapter
 invocation, browser automation, credential access, publishing, metrics
 collection, event writing, gate writing, proofpack writing, or acceptance
 claims.
@@ -172,7 +172,7 @@ pubpunk_control_manifest_fixture:
 ## Non-goals
 
 This spec does not define module code, host code, manifest parsing,
-deterministic checker implementation, PubPunk runtime, Module Host runtime,
+deterministic checker implementation, PubPunk module execution, Module Host runtime,
 workspace creation, filesystem scanning, draft body reads, instruction
 generation, behavior-artifact writing, adapter behavior, browser automation,
 credential access, publishing behavior, metrics collection, gate writing,
@@ -187,5 +187,5 @@ scripts/check.sh pubpunk-control-manifest
 The command is a read-only marker check over this spec and
 `docs/modules/pubpunk-control-manifest.md`. It does not parse manifests, resolve
 behavior artifacts, run reflection, write config, promote artifacts, activate
-PubPunk runtime, publish, collect metrics, invoke adapters, write gates, write
+PubPunk module execution, publish, collect metrics, invoke adapters, write gates, write
 proofpacks, or claim acceptance.

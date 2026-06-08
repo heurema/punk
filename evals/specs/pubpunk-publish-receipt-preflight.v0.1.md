@@ -15,7 +15,7 @@ preflight model. It carries explicit refs for future publication receipt
 writing without writing receipts, persisting operation evidence, publishing,
 invoking adapters, reading draft bodies, or activating runtime behavior.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, filesystem reads, workspace initialization, external publishing,
 metrics collection, adapter invocation, receipt writing, operation-evidence
 persistence, gate writing, proofpack writing, or acceptance claims.
@@ -83,7 +83,7 @@ operation-evidence persistence.
 ### PUBPUNK-PUBLISH-RECEIPT-PREFLIGHT-009: no runtime promotion is implied
 
 Passing this smoke case means only that the local model chain is coherent. It
-does not promote PubPunk to active runtime, public CLI, adapter behavior,
+does not promote PubPunk to active module execution, public CLI, adapter behavior,
 external publishing, metrics collection, receipt writing, operation-evidence
 persistence, gate writing, proofpack writing, or acceptance authority.
 
