@@ -21,7 +21,12 @@ Ensure module/domain routing remains advisory, explainable, and non-authoritativ
 
 ## Status
 
-Design/advisory only. This spec does not implement module routing.
+Design/advisory spec with first side-effect-free model coverage in
+`punk-contract` and `punk-eval`.
+
+This does not implement public CLI routing, harness adapters, module routing
+runtime, module execution, provider calls, adapters, publishing, receipts, gate
+decisions, proofpacks, or acceptance claims.
 
 ## Cases
 
