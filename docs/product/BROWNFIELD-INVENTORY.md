@@ -71,6 +71,37 @@ authority = decision
 authority = proof
 ```
 
+## Module ownership boundary
+
+Future codebase study should be owned by a separate Punk module, not by
+Brownfield core, `punk-project`, the Source Corpus Manifest writer, or generic
+Punk `Writer` behavior.
+
+The Unix-style role for that future module is:
+
+```text
+explicit source observation request
+  -> codebase study module
+  -> advisory source inventory observation packet
+```
+
+That module may later produce an observation packet only through explicit input
+and narrow capability grants. The packet is a handoff artifact, not final
+authority.
+
+The module must not own:
+
+- final Brownfield decisions;
+- contract approval;
+- gate decisions;
+- proof or acceptance;
+- Source Corpus Manifest writer behavior;
+- runtime `.punk` storage;
+- broad Punk orchestration.
+
+Brownfield core may define packet and handoff contracts. It must not silently
+absorb codebase study into an implicit core scanner.
+
 ## Core rule
 
 Brownfield inventory records observable structure only.
@@ -133,6 +164,10 @@ Future inventory must not produce semantic summaries.
 A future source inventory observation packet is the bounded input envelope
 between a future Brownfield observer and the existing Source Corpus Manifest
 model track.
+
+The future observer is expected to be a separate Punk codebase-study module
+once implementation is selected. This boundary does not name, implement, or
+activate that module.
 
 It is not a scanner result, not a manifest, not a claim ledger, not project
 truth, and not a command to write `.punk/` state.
