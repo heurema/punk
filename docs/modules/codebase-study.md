@@ -67,8 +67,8 @@ request.
 
 The request must be caller-supplied and bounded before any module execution is
 considered. It must identify the intended observation scope through explicit
-refs, selected capability grants, privacy policy, expected output authority,
-and downstream handoff intent.
+refs, capability requests, any later selected capability grants as separate
+refs, privacy policy, expected output authority, and downstream handoff intent.
 
 The request must not rely on ambient repo discovery, implicit current-working-
 directory traversal, hidden provider context, provider-specific prompt state,
@@ -77,6 +77,61 @@ or local lab state.
 Requests for autonomous discovery such as "find all Rust files" are not valid
 Codebase Study input in this boundary. They need a later explicit traversal
 boundary before implementation.
+
+### Source observation request packet
+
+The source observation request packet is the future caller-supplied envelope
+for Codebase Study input.
+
+It is request shape only. It is not a capability grant, runtime schema, parser,
+module invocation, scanner plan, file walker plan, content-read approval,
+manifest-generation request, `.punk` write request, lab run, benchmark result,
+gate decision, proof, or acceptance.
+
+Required request-packet surfaces:
+
+- packet id and schema version;
+- `module_id = codebase-study`;
+- requested operation kind;
+- requester or goal ref;
+- explicit source scope refs and exclude refs;
+- requested observation categories;
+- capability requests, kept separate from grants;
+- privacy policy ref, redaction policy ref, or explicit blockers;
+- expected output authority;
+- downstream handoff intent;
+- evaluation requirement refs or blockers;
+- warnings, limitations, blockers, or refusal state;
+- `non_authority = true`.
+
+The packet must keep:
+
+```text
+capability_grants = []
+authority = request_only
+```
+
+It may request future capabilities such as scoped path observation over
+caller-supplied refs. It must not treat those requests as approval to scan,
+walk directories, read contents, compute hashes, collect sizes, import lab
+code, run benchmarks, write storage, or make authority claims.
+
+Invalid request-packet inputs include:
+
+- ambient repository discovery;
+- implicit current-working-directory traversal;
+- "auto-discover all Rust files";
+- "read these source files and summarize them";
+- source snippets, document excerpts, raw environment values, or secret-like
+  values;
+- source filesystem hashing or size collection;
+- Source Corpus Manifest generation;
+- runtime `.punk` storage or event-log mutation;
+- lab execution or benchmark authority;
+- gate decisions, proof writing, or acceptance claims.
+
+The deterministic eval target for this boundary is
+`evals/specs/codebase-study-source-observation-request-packet.v0.1.md`.
 
 ## Outputs
 
