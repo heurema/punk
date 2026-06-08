@@ -1,7 +1,7 @@
 ---
 id: goal_apply_codebase_study_conformance_packet_v0_1
 title: "Apply Codebase Study Conformance Packet v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "product"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -47,7 +47,8 @@ knowledge_refs:
   - "work/reports/2026-06-08-codebase-study-module-boundary-v0-1.md"
   - "work/reports/2026-06-08-codebase-study-module-boundary-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-codebase-study-conformance-packet-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -103,6 +104,19 @@ Capture Codebase Study conformance evidence only:
 - Codebase Study conformance eval/spec fixture;
 - work report with packet result and findings;
 - work status note.
+
+## Outcome
+
+Done in `work/reports/2026-06-08-codebase-study-conformance-packet-v0-1.md`.
+
+The conformance packet records Codebase Study as ready for docs/eval next work
+only. Skeleton implementation and runtime activation remain blocked by findings
+for source observation request input, capability grants, privacy/redaction,
+execution workspace, receipt/evidence shape, and `agent-bench-lab` evaluation
+route.
+
+The next bounded checkpoint is
+`work/goals/goal_define_codebase_study_source_observation_request_packet_v0_1.md`.
 
 ## Boundary
 
