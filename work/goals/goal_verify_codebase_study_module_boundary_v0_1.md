@@ -1,7 +1,7 @@
 ---
 id: goal_verify_codebase_study_module_boundary_v0_1
 title: "Verify codebase study module boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "product"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -40,7 +40,8 @@ knowledge_refs:
   - "evals/specs/codebase-study-module-boundary.v0.1.md"
   - "work/reports/2026-06-08-codebase-study-module-boundary-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-codebase-study-module-boundary-verification-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -83,6 +84,20 @@ manifest assembly, `.punk` writes, and authority claims.
 
 Verify that the Codebase Study module boundary is clear, non-authoritative, and
 cannot be mistaken for active scanner or source inventory implementation.
+
+## Outcome
+
+Done in `work/reports/2026-06-08-codebase-study-module-boundary-verification-v0-1.md`.
+
+Verification found no boundary drift. Codebase Study remains a parked docs/eval
+module boundary only, with canonical module id `codebase-study`, non-canonical
+aliases, explicit source observation request input, advisory observation packet
+output, fail-closed refusal/limitation surfaces, and denied active capabilities
+for implicit repo discovery, auto traversal, content reads, manifest assembly,
+runtime `.punk` writes, gate/proof authority, and acceptance.
+
+The next bounded checkpoint is
+`work/goals/goal_apply_codebase_study_conformance_packet_v0_1.md`.
 
 ## Non-scope
 
