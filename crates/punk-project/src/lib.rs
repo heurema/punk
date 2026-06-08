@@ -3875,6 +3875,8 @@ pub fn source_corpus_manifest_writer_write_first_slice(
         }
     }
 
+    // The hard link is the no-overwrite primitive; the earlier target
+    // metadata check is only diagnostic classification.
     match fs::hard_link(&temp_path, &target_path) {
         Ok(()) => match fs::remove_file(&temp_path) {
             Ok(()) => SourceCorpusManifestWriterFirstSliceResult::new(
@@ -4472,8 +4474,8 @@ fn read_publishing_binding(
         PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
     })?;
 
-    let schema_version = required_config_value(&values, "schema_version").map_err(|message| {
-        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+    let schema_version = required_config_value(&values, "schema_version").map_err(|error| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, error.message())
     })?;
     if schema_version != PUBLISHING_BINDING_SCHEMA_VERSION {
         return Err(PublishingLocateBlocker::new(
@@ -4491,12 +4493,15 @@ fn read_publishing_binding(
         ));
     }
 
-    let project_id = required_non_empty_config_value(&values, "project_id").map_err(|message| {
-        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+    let project_id = required_non_empty_config_value(&values, "project_id").map_err(|error| {
+        PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, error.message())
     })?;
     let workspace_ref =
-        required_non_empty_config_value(&values, "workspace_ref").map_err(|message| {
-            PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
+        required_non_empty_config_value(&values, "workspace_ref").map_err(|error| {
+            PublishingLocateBlocker::new(
+                PublishingLocateBlockerCode::BindingInvalid,
+                error.message(),
+            )
         })?;
     validate_publishing_workspace_ref(&workspace_ref).map_err(|message| {
         PublishingLocateBlocker::new(PublishingLocateBlockerCode::BindingInvalid, message)
@@ -4523,8 +4528,11 @@ fn read_publishing_local_pointer(
         PublishingLocateBlocker::new(PublishingLocateBlockerCode::LocalPointerInvalid, message)
     })?;
 
-    let schema_version = required_config_value(&values, "schema_version").map_err(|message| {
-        PublishingLocateBlocker::new(PublishingLocateBlockerCode::LocalPointerInvalid, message)
+    let schema_version = required_config_value(&values, "schema_version").map_err(|error| {
+        PublishingLocateBlocker::new(
+            PublishingLocateBlockerCode::LocalPointerInvalid,
+            error.message(),
+        )
     })?;
     if schema_version != PUBLISHING_LOCAL_SCHEMA_VERSION {
         return Err(PublishingLocateBlocker::new(
@@ -4542,13 +4550,13 @@ fn read_publishing_local_pointer(
         })?;
     }
     let workspace_root_raw =
-        required_non_empty_config_value(&values, "workspace_root").map_err(|message| {
-            let code = if message.contains("missing") {
+        required_non_empty_config_value(&values, "workspace_root").map_err(|error| {
+            let code = if error.is_missing() {
                 PublishingLocateBlockerCode::WorkspaceRootMissing
             } else {
                 PublishingLocateBlockerCode::LocalPointerInvalid
             };
-            PublishingLocateBlocker::new(code, message)
+            PublishingLocateBlocker::new(code, error.message())
         })?;
 
     Ok(PublishingLocalConfig {
@@ -4610,6 +4618,9 @@ fn parse_top_level_toml_strings(text: &str) -> Result<Vec<(String, String)>, Str
             continue;
         }
         if line.starts_with('[') && line.ends_with(']') {
+            // This resolver intentionally reads only the leading top-level
+            // binding table. Section keys are ignored fail-closed instead of
+            // being allowed to override committed or local pointer metadata.
             section = line.to_owned();
             continue;
         }
@@ -4685,22 +4696,64 @@ fn parse_toml_string_literal(value: &str) -> Result<String, &'static str> {
     Err("unterminated string")
 }
 
-fn required_config_value(values: &[(String, String)], key: &str) -> Result<String, String> {
-    optional_config_value(values, key).ok_or_else(|| format!("missing required key `{key}`"))
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ConfigValueError {
+    Missing { key: String },
+    Empty { key: String },
+    SurroundingWhitespace { key: String },
+}
+
+impl ConfigValueError {
+    fn missing(key: &str) -> Self {
+        Self::Missing {
+            key: key.to_owned(),
+        }
+    }
+
+    fn empty(key: &str) -> Self {
+        Self::Empty {
+            key: key.to_owned(),
+        }
+    }
+
+    fn surrounding_whitespace(key: &str) -> Self {
+        Self::SurroundingWhitespace {
+            key: key.to_owned(),
+        }
+    }
+
+    fn is_missing(&self) -> bool {
+        matches!(self, Self::Missing { .. })
+    }
+
+    fn message(&self) -> String {
+        match self {
+            Self::Missing { key } => format!("missing required key `{key}`"),
+            Self::Empty { key } => format!("key `{key}` must not be empty"),
+            Self::SurroundingWhitespace { key } => {
+                format!("key `{key}` must not contain leading or trailing whitespace")
+            }
+        }
+    }
+}
+
+fn required_config_value(
+    values: &[(String, String)],
+    key: &str,
+) -> Result<String, ConfigValueError> {
+    optional_config_value(values, key).ok_or_else(|| ConfigValueError::missing(key))
 }
 
 fn required_non_empty_config_value(
     values: &[(String, String)],
     key: &str,
-) -> Result<String, String> {
+) -> Result<String, ConfigValueError> {
     let value = required_config_value(values, key)?;
     if value.trim().is_empty() {
-        return Err(format!("key `{key}` must not be empty"));
+        return Err(ConfigValueError::empty(key));
     }
     if value.trim() != value {
-        return Err(format!(
-            "key `{key}` must not contain leading or trailing whitespace"
-        ));
+        return Err(ConfigValueError::surrounding_whitespace(key));
     }
     Ok(value)
 }
@@ -4737,6 +4790,9 @@ fn resolve_local_workspace_root(raw: &str) -> Result<PathBuf, String> {
     }
     if raw.contains('\0') {
         return Err("workspace_root must not contain NUL bytes".to_owned());
+    }
+    if raw.chars().any(char::is_control) {
+        return Err("workspace_root must not contain control characters".to_owned());
     }
     if raw == "~" {
         return env::var_os("HOME")
@@ -4999,6 +5055,8 @@ fn create_init_file(
             Some("path already exists and is not a plain file".to_owned()),
         ),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            // create_new is the no-clobber guarantee; the prior metadata
+            // check only lets us report idempotent/conflict outcomes clearly.
             let write_result = OpenOptions::new()
                 .write(true)
                 .create_new(true)
@@ -5163,6 +5221,63 @@ mod tests {
         assert!(report
             .render_json()
             .contains("\"blocker_code\": \"local_pointer_missing\""));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn publishing_locate_classifies_missing_workspace_root_without_message_matching() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+        fs::write(
+            root.join(PUBLISHING_LOCAL_POINTER_PATH),
+            r#"schema_version = "punk.publishing.local.v1"
+workspace_ref = "punk-publishing://project/goalrail"
+"#,
+        )
+        .expect("local pointer should be written");
+
+        let report = locate_publishing_workspace(&root);
+        let blocker = report
+            .blocker()
+            .expect("missing workspace_root should block");
+
+        assert_eq!(
+            blocker.code(),
+            PublishingLocateBlockerCode::WorkspaceRootMissing
+        );
+        assert!(blocker
+            .message()
+            .contains("missing required key `workspace_root`"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn publishing_locate_rejects_control_characters_in_workspace_root() {
+        let root = unique_temp_path();
+        fs::create_dir_all(root.join(".punk")).expect("punk dir should be created");
+        write_publishing_binding(&root, "goalrail", "punk-publishing://project/goalrail");
+        fs::write(
+            root.join(PUBLISHING_LOCAL_POINTER_PATH),
+            "schema_version = \"punk.publishing.local.v1\"\nworkspace_ref = \"punk-publishing://project/goalrail\"\nworkspace_root = \"/tmp/\u{1b}[31mspoof\"\n",
+        )
+        .expect("local pointer should be written");
+
+        let report = locate_publishing_workspace(&root);
+        let blocker = report
+            .blocker()
+            .expect("control-char workspace_root should block");
+
+        assert_eq!(
+            blocker.code(),
+            PublishingLocateBlockerCode::WorkspaceRootInvalid
+        );
+        assert!(blocker
+            .message()
+            .contains("workspace_root must not contain control characters"));
+        assert_eq!(report.workspace_root(), None);
 
         let _ = fs::remove_dir_all(root);
     }

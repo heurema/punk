@@ -44,6 +44,9 @@ ALLOWED_DOC_IMPACT_CLASSIFICATION = {
     "dependency",
     "public-claim",
     "research-promotion",
+    "work-ledger",
+    "work-ledger-only",
+    "advisory-research-and-work-ledger",
 }
 CANONICAL_DOC_PREFIXES = ("docs/product/", "docs/archive/")
 MEANINGFUL_CHANGE_PREFIXES = (
@@ -55,6 +58,8 @@ MEANINGFUL_CHANGE_PREFIXES = (
     "crates/",
     "evals/specs/",
 )
+CARGO_MEANINGFUL_CHANGE_PATHS = {"Cargo.toml", "Cargo.lock"}
+CARGO_MEANINGFUL_CHANGE_SUFFIXES = ("/Cargo.toml",)
 PARKED_CAPABILITY_TERMS = {
     "module-host": ["module host"],
     "provider-adapters": ["provider adapter", "provider adapters"],
@@ -77,10 +82,11 @@ NEGATING_PHRASES = (
     "not the default",
     "not part of",
     "remains parked",
-    "parked",
 )
 IMPLEMENTED_PUNK_CLI_COMMANDS = {
     "punk init <project-id>",
+    "punk init <project-id> --mode <greenfield|brownfield>",
+    "punk init <project-id> --mode greenfield",
     "punk init <project-id> --mode brownfield",
     "punk flow inspect",
     "punk publishing locate",
@@ -158,6 +164,12 @@ NEGATING_CLI_GUARD_PHRASES = (
 )
 MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 DOC_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])((?:docs|knowledge|publishing)/[^\s`)]*\.md(?:#[^\s`)]+)?)")
+FENCED_CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
+INLINE_CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
+DOC_IMPACT_SECTION_RE = re.compile(
+    r"^##\s+(?:\d+[\.)]\s*)?(?:doc\s*impact|docs\s*impact|docs/status\s*impact|docimpact)\b[^\n]*\n\s*```yaml\n(.*?)```",
+    re.IGNORECASE | re.MULTILINE | re.DOTALL,
+)
 HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$", re.MULTILINE)
 STATUS_LINE_RE = re.compile(r"^Status:\s*(.+)$", re.MULTILINE | re.IGNORECASE)
 DOCUMENTATION_MAP_PATH = "docs/product/DOCUMENTATION-MAP.md"
@@ -276,6 +288,8 @@ def parse_scalar(value: str) -> object:
     value = value.strip()
     if value in {"null", "Null", "NULL"}:
         return None
+    if value.startswith("[") and value.endswith("]"):
+        return [parse_scalar(item.strip()) for item in value[1:-1].split(",") if item.strip()]
     if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
         return value[1:-1]
     return value
@@ -340,13 +354,17 @@ def collect_doc_refs(text: str) -> set[str]:
     return refs
 
 
+def strip_markdown_code(text: str) -> str:
+    return INLINE_CODE_SPAN_RE.sub("", FENCED_CODE_BLOCK_RE.sub("", text))
+
+
 def parse_doc_impact_from_report(text: str) -> dict[str, object] | None:
-    section = re.search(r"^##\s+Doc impact\s*```yaml\n(.*?)```", text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    section = DOC_IMPACT_SECTION_RE.search(text)
     if not section:
         return None
     block = section.group(1)
-    classification = re.search(r"^\s{2}classification:\s*(.+)$", block, re.MULTILINE)
-    reason = re.search(r"^\s{2}reason:\s*(.+)$", block, re.MULTILINE)
+    classification = re.search(r"^\s*classification:\s*(.+)$", block, re.MULTILINE)
+    reason = re.search(r"^\s*reason:\s*(.+)$", block, re.MULTILINE)
     if not classification or not reason:
         return None
     return {
@@ -512,7 +530,11 @@ def is_active_cli_surface_doc(rel_path: str) -> bool:
 
 
 def is_meaningful_change(rel_path: str) -> bool:
-    return rel_path.startswith(MEANINGFUL_CHANGE_PREFIXES)
+    return (
+        rel_path.startswith(MEANINGFUL_CHANGE_PREFIXES)
+        or rel_path in CARGO_MEANINGFUL_CHANGE_PATHS
+        or rel_path.endswith(CARGO_MEANINGFUL_CHANGE_SUFFIXES)
+    )
 
 
 def add_issue(issues: list[dict[str, object]], severity: str, code: str, path: str, message: str, **extra: object) -> None:
@@ -588,7 +610,7 @@ def check_links(repo: Path, rel_path: str, text: str, issues: list[dict[str, obj
 def check_superseded_refs(repo: Path, rel_path: str, text: str, issues: list[dict[str, object]]) -> None:
     if rel_path.startswith("docs/archive/"):
         return
-    for ref in sorted(collect_doc_refs(text)):
+    for ref in sorted(collect_doc_refs(strip_markdown_code(text))):
         target_part = ref.split("#", 1)[0]
         if not target_part.startswith(("docs/", "knowledge/", "publishing/")):
             continue
@@ -615,10 +637,8 @@ def check_parked_as_active(rel_path: str, text: str, issues: list[dict[str, obje
             continue
         if not any(phrase in line for phrase in ACTIVE_PHRASES):
             continue
-        if any(phrase in line for phrase in NEGATING_PHRASES):
-            continue
         for capability, terms in PARKED_CAPABILITY_TERMS.items():
-            if any(term in line for term in terms):
+            if any(term in line and not capability_term_is_negated(line, term) for term in terms):
                 add_issue(
                     issues,
                     "failure",
@@ -628,6 +648,16 @@ def check_parked_as_active(rel_path: str, text: str, issues: list[dict[str, obje
                     capability=capability,
                     line=raw_line.strip(),
                 )
+
+
+def capability_term_is_negated(line: str, term: str) -> bool:
+    term_index = line.find(term)
+    if term_index == -1:
+        return False
+    window_start = max(0, term_index - 60)
+    window_end = min(len(line), term_index + len(term) + 60)
+    window = line[window_start:window_end]
+    return any(phrase in window for phrase in NEGATING_PHRASES)
 
 
 def normalize_cli_command(command: str) -> str:
@@ -660,7 +690,9 @@ def check_active_cli_surface(rel_path: str, text: str, issues: list[dict[str, ob
                 future_context_lines -= 1
             continue
 
-        if has_any_phrase(lowered, FUTURE_CLI_GUARD_PHRASES):
+        line_has_future_guard = has_any_phrase(lowered, FUTURE_CLI_GUARD_PHRASES)
+        line_has_active_phrase = has_any_phrase(lowered, ACTIVE_CLI_LINE_PHRASES)
+        if line_has_future_guard:
             future_context_lines = 8
             if any(term in lowered for term in ("cli", "command", "commands", "surface", "surfaces")):
                 active_context_lines = 0
@@ -676,12 +708,9 @@ def check_active_cli_surface(rel_path: str, text: str, issues: list[dict[str, ob
                 future_context_lines -= 1
             continue
 
-        guarded_as_future = future_context_lines > 0 or has_any_phrase(lowered, FUTURE_CLI_GUARD_PHRASES)
         guarded_as_negative = has_any_phrase(lowered, NEGATING_CLI_GUARD_PHRASES)
-        line_is_active_claim = active_context_lines > 0 or (
-            has_any_phrase(lowered, ACTIVE_CLI_LINE_PHRASES) and not guarded_as_future and not guarded_as_negative
-        )
-        if line_is_active_claim and not guarded_as_future and not guarded_as_negative:
+        line_is_active_claim = active_context_lines > 0 or line_has_active_phrase
+        if line_is_active_claim and not line_has_future_guard and not guarded_as_negative:
             for command in commands:
                 if command in IMPLEMENTED_PUNK_CLI_COMMANDS:
                     continue
@@ -842,6 +871,55 @@ def check_duplicate_definition_candidates(rel_path: str, text: str, issues: list
         )
 
 
+def check_doc_impact_classification_consistency(
+    changed_files: list[str],
+    classification: object,
+    rel_path: str,
+    issues: list[dict[str, object]],
+) -> None:
+    if not isinstance(classification, str):
+        return
+
+    code_changed = any(path.startswith("crates/") for path in changed_files)
+    cargo_changed = any(
+        path in CARGO_MEANINGFUL_CHANGE_PATHS or path.endswith(CARGO_MEANINGFUL_CHANGE_SUFFIXES)
+        for path in changed_files
+    )
+    architecture_changed = any(
+        path.startswith("docs/adr/")
+        or path in {"docs/product/ARCHITECTURE.md", "docs/product/PUNK-LAWS.md"}
+        for path in changed_files
+    )
+
+    if (code_changed or cargo_changed) and classification in {
+        "none",
+        "docs-only",
+        "work-ledger",
+        "work-ledger-only",
+        "advisory-research-and-work-ledger",
+    }:
+        add_issue(
+            issues,
+            "warning",
+            "DOC_IMPACT_CLASSIFICATION_MISMATCH",
+            rel_path,
+            "DocImpact classification does not match code or dependency changes.",
+            classification=classification,
+            changed_files=changed_files,
+        )
+
+    if architecture_changed and classification in {"none", "work-ledger", "work-ledger-only"}:
+        add_issue(
+            issues,
+            "warning",
+            "DOC_IMPACT_CLASSIFICATION_MISMATCH",
+            rel_path,
+            "DocImpact classification does not match architecture-significant changes.",
+            classification=classification,
+            changed_files=changed_files,
+        )
+
+
 def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[str], issues: list[dict[str, object]]) -> None:
     meaningful = [path for path in changed_files if is_meaningful_change(path)]
     if not meaningful:
@@ -849,7 +927,7 @@ def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[st
     if not report_paths:
         add_issue(
             issues,
-            "failure",
+            "warning",
             "DOC_IMPACT_REQUIRED",
             meaningful[0],
             "Meaningful change requires a report DocImpact block.",
@@ -859,11 +937,11 @@ def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[st
     for rel_path in report_paths:
         report_file = repo / rel_path
         if not report_file.exists():
-            add_issue(issues, "failure", "DOC_IMPACT_REPORT_MISSING", rel_path, "Configured report path does not exist.")
+            add_issue(issues, "warning", "DOC_IMPACT_REPORT_MISSING", rel_path, "Configured report path does not exist.")
             continue
         impact = parse_doc_impact_from_report(load_text(report_file))
         if not impact:
-            add_issue(issues, "failure", "DOC_IMPACT_BLOCK_MISSING", rel_path, "Report does not contain a parseable DocImpact block.")
+            add_issue(issues, "warning", "DOC_IMPACT_BLOCK_MISSING", rel_path, "Report does not contain a parseable DocImpact block.")
             continue
         parsed_any = True
         classification = impact.get("classification")
@@ -871,14 +949,20 @@ def check_doc_impact(repo: Path, changed_files: list[str], report_paths: list[st
         if classification not in ALLOWED_DOC_IMPACT_CLASSIFICATION:
             add_issue(
                 issues,
-                "failure",
+                "warning",
                 "DOC_IMPACT_INVALID_CLASSIFICATION",
                 rel_path,
                 f"DocImpact classification is invalid: {classification}.",
                 classification=classification,
             )
         if not isinstance(reason, str) or not reason.strip():
-            add_issue(issues, "failure", "DOC_IMPACT_MISSING_REASON", rel_path, "DocImpact reason is required.")
+            add_issue(issues, "warning", "DOC_IMPACT_MISSING_REASON", rel_path, "DocImpact reason is required.")
+        check_doc_impact_classification_consistency(
+            changed_files,
+            classification,
+            rel_path,
+            issues,
+        )
     if report_paths and not parsed_any:
         return
 

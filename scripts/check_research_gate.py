@@ -171,6 +171,22 @@ def validate_goal(path: Path, issues: list[str], *, selected: bool = False, curr
     if current and classification == "R0" and required is True:
         issues.append(f"{label} cannot require research_gate with classification R0")
 
+    blocked = isinstance(blocked_reason, str) and bool(blocked_reason.strip())
+    has_research_refs = any(
+        isinstance(gate.get(key), list) and bool(gate.get(key))
+        for key in ("research_refs", "external_research_refs")
+    )
+    if (
+        (selected or current)
+        and classification in {"R1", "R2", "R3"}
+        and required is True
+        and not blocked
+        and not has_research_refs
+    ):
+        issues.append(
+            f"{label} requires research_gate refs for selected/current {classification} work"
+        )
+
 
 def main() -> int:
     issues: list[str] = []

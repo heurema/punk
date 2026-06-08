@@ -74,7 +74,11 @@ where
     let args: Vec<String> = args.into_iter().map(Into::into).collect();
 
     match args.as_slice() {
+        [] => Ok(CommandOutput::success(render_root_help())),
         [_bin] => Ok(CommandOutput::success(render_root_help())),
+        [_bin, help] if help == "--help" || help == "-h" => {
+            Ok(CommandOutput::success(render_root_help()))
+        }
         [_bin, init, project_id] if init == "init" => {
             let project_id = parse_project_id(project_id)?;
             Ok(render_project_init(
@@ -104,20 +108,15 @@ where
             Ok(render_smoke_eval(SmokeEvalFormat::Human))
         }
         [_bin, eval, run, smoke, format_flag, format]
-            if eval == "eval"
-                && run == "run"
-                && smoke == "smoke"
-                && format_flag == "--format"
-                && format == "json" =>
+            if eval == "eval" && run == "run" && smoke == "smoke" && format_flag == "--format" =>
         {
-            Ok(render_smoke_eval(SmokeEvalFormat::Json))
+            Ok(render_smoke_eval(parse_smoke_eval_format(format)?))
         }
         [_bin, init, ..] if init == "init" => Err(init_usage()),
         [_bin, flow, ..] if flow == "flow" => Err(flow_usage()),
         [_bin, publishing, ..] if publishing == "publishing" => Err(publishing_usage()),
         [_bin, eval, ..] if eval == "eval" => Err(eval_usage()),
         [_bin, ..] => Err(root_usage()),
-        [] => Err(root_usage()),
     }
 }
 
@@ -131,7 +130,7 @@ fn render_root_help() -> String {
         "runtime persistence is limited to a local event-log writer slice; init and inspect do not read or write runtime state\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
-        "  punk init <project-id> --mode brownfield\n",
+        "  punk init <project-id> --mode <greenfield|brownfield>\n",
         "  punk flow inspect\n",
         "  punk publishing locate [--project-root <path>] [--json]\n",
         "  punk eval run smoke\n",
@@ -144,7 +143,7 @@ fn root_usage() -> String {
         "unknown command\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
-        "  punk init <project-id> --mode brownfield\n",
+        "  punk init <project-id> --mode <greenfield|brownfield>\n",
         "  punk flow inspect\n",
         "  punk publishing locate [--project-root <path>] [--json]\n",
         "  punk eval run smoke\n",
@@ -163,7 +162,7 @@ fn init_usage() -> String {
         "unknown init command\n\n",
         "Usage:\n",
         "  punk init <project-id>\n",
-        "  punk init <project-id> --mode brownfield\n\n",
+        "  punk init <project-id> --mode <greenfield|brownfield>\n\n",
         "Notes:\n",
         "  - run from the target project root; init writes into the current directory in place\n",
         "  - init does not create a new subdirectory named <project-id>\n",
@@ -258,6 +257,11 @@ fn render_flow_inspect() -> String {
     let allowed_attempt = preview_instance.attempt_transition(FlowCommand::Approve);
     let denied_event =
         transition_attempt_event_draft(&denied_attempt, "flow_inspect_preview", None);
+    let denied_transition_label = if denied_attempt.next_state().is_some() {
+        "preview_applied_transition"
+    } else {
+        "preview_denied_transition"
+    };
 
     let allowed_next_state = allowed_attempt
         .next_state()
@@ -274,7 +278,7 @@ fn render_flow_inspect() -> String {
             "preview_state: {preview_state}\n",
             "preview_allowed_commands: {allowed_commands}\n",
             "preview_allowed_transition: {allowed_command} -> {allowed_next_state}\n",
-            "preview_denied_transition: {denied_command}\n",
+            "{denied_transition_label}: {denied_command}\n",
             "preview_guard_code: {guard_code}\n",
             "preview_event_kind: {event_kind}\n",
             "preview_event_status: {event_status}\n",
@@ -288,6 +292,7 @@ fn render_flow_inspect() -> String {
         allowed_commands = format_commands(preview_instance.allowed_commands()),
         allowed_command = allowed_attempt.attempted_command().as_str(),
         allowed_next_state = allowed_next_state,
+        denied_transition_label = denied_transition_label,
         denied_command = denied_attempt.attempted_command().as_str(),
         guard_code = denied_attempt.guard_code().unwrap_or("<none>"),
         event_kind = denied_event.kind.as_str(),
@@ -338,6 +343,16 @@ fn parse_init_entry_mode(value: &str) -> Result<ProjectInitEntryMode, String> {
         "greenfield" => Ok(ProjectInitEntryMode::Greenfield),
         "brownfield" => Ok(ProjectInitEntryMode::Brownfield),
         _ => Err(format!("invalid init mode: {value}\n\n{}", init_usage())),
+    }
+}
+
+fn parse_smoke_eval_format(value: &str) -> Result<SmokeEvalFormat, String> {
+    match value {
+        "json" => Ok(SmokeEvalFormat::Json),
+        _ => Err(format!(
+            "unsupported eval format: {value}\n\n{}",
+            eval_usage()
+        )),
     }
 }
 
@@ -560,6 +575,35 @@ mod tests {
     }
 
     #[test]
+    fn bare_binary_dispatch_returns_success_help() {
+        let output = run(["punk"]).expect("bare binary should render help");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("Usage:"));
+        assert!(output.text.contains("punk init <project-id>"));
+    }
+
+    #[test]
+    fn help_flags_dispatch_to_success_help() {
+        for flag in ["--help", "-h"] {
+            let output = run(["punk", flag]).expect("help flag should render help");
+
+            assert_eq!(output.exit_code, 0);
+            assert!(output.text.contains("Usage:"));
+            assert!(output.text.contains("punk eval run smoke"));
+        }
+    }
+
+    #[test]
+    fn empty_test_args_dispatch_to_success_help() {
+        let output = run_at(std::iter::empty::<&str>(), std::path::Path::new("."))
+            .expect("empty test args should render help defensively");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("Usage:"));
+    }
+
+    #[test]
     fn run_returns_json_for_smoke_command_when_requested() {
         let output = run(["punk", "eval", "run", "smoke", "--format", "json"])
             .expect("json smoke command must run");
@@ -625,6 +669,24 @@ mod tests {
         assert!(!root.join(".punk/proofs").exists());
         assert!(!root.join(".punk/indexes").exists());
         assert!(!root.join(".punk/views").exists());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn init_command_accepts_explicit_greenfield_mode() {
+        let root = unique_temp_path();
+        fs::create_dir_all(&root).expect("temp root should be created");
+
+        let output = run_at(
+            ["punk", "init", "weekend-project", "--mode", "greenfield"],
+            &root,
+        )
+        .expect("greenfield init command should run");
+
+        assert_eq!(output.exit_code, 0);
+        assert!(output.text.contains("entry_mode: greenfield"));
+        assert!(root.join(".punk/memory/STATUS.md").is_file());
 
         let _ = fs::remove_dir_all(root);
     }
@@ -709,7 +771,7 @@ mod tests {
         .expect_err("unsupported init mode must fail");
 
         assert!(error.contains("invalid init mode: grayfield"));
-        assert!(error.contains("punk init <project-id> --mode brownfield"));
+        assert!(error.contains("punk init <project-id> --mode <greenfield|brownfield>"));
         assert!(!root.join(".punk/memory/STATUS.md").exists());
 
         let _ = fs::remove_dir_all(root);
@@ -786,8 +848,17 @@ mod tests {
         let error = run(["punk", "eval", "run", "smoke", "--format", "yaml"])
             .expect_err("unsupported eval format must fail");
 
-        assert_eq!(error, eval_usage());
+        assert!(error.contains("unsupported eval format: yaml"));
         assert!(error.contains("--format json"));
+    }
+
+    #[test]
+    fn malformed_flow_command_returns_flow_usage_error() {
+        let error = run(["punk", "flow", "inspect", "extra"])
+            .expect_err("malformed flow command must fail");
+
+        assert_eq!(error, super::flow_usage());
+        assert!(error.contains("punk flow inspect"));
     }
 
     #[test]

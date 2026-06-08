@@ -47,6 +47,15 @@ jobs:
 
           cat "$RUNNER_TEMP/docs-governance.txt"
 
+      - name: Run required governance checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          scripts/check.sh research-gate
+          scripts/check.sh work-ledger
+          scripts/check.sh module-control-suite
+
       - name: Upload docs governance report
         if: always()
         uses: actions/upload-artifact@v4

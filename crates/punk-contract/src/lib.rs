@@ -55,6 +55,28 @@ impl ContractScope {
     pub fn is_empty(&self) -> bool {
         self.refs.is_empty()
     }
+
+    pub fn refs_are_repo_relative(&self) -> bool {
+        !self.is_empty()
+            && self
+                .refs
+                .iter()
+                .all(|artifact_ref| is_safe_contract_scope_ref(artifact_ref))
+    }
+}
+
+fn is_safe_contract_scope_ref(artifact_ref: &str) -> bool {
+    let artifact_ref = artifact_ref.trim();
+    !artifact_ref.is_empty()
+        && !artifact_ref.starts_with('/')
+        && !artifact_ref.starts_with('~')
+        && !artifact_ref.contains('\\')
+        && !artifact_ref.contains(':')
+        && !artifact_ref.split('/').any(|segment| {
+            segment.is_empty()
+                || matches!(segment, "." | "..")
+                || segment.chars().any(char::is_control)
+        })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1247,20 +1269,7 @@ pub struct ContractClauseBlueprint {
 
 impl ContractClauseBlueprint {
     pub fn hard_clause_mapping_satisfied(&self) -> bool {
-        if self.severity != ContractClauseSeverity::Hard {
-            return true;
-        }
-        if self.kind == ContractClauseKind::Rationale || self.unsupported_clause_finding {
-            return false;
-        }
-        if self.gate_review_required && self.human_gate_review_reason().is_none() {
-            return false;
-        }
-
-        self.has_validator_refs
-            || self.has_required_receipt_fields
-            || self.has_proof_requirement_refs
-            || (self.gate_review_required && self.human_gate_review_reason().is_some())
+        !assess_hard_clause_mapping(self).blocks_approval()
     }
 
     pub fn human_gate_review_reason(&self) -> Option<&'static str> {
@@ -1270,6 +1279,8 @@ impl ContractClauseBlueprint {
     }
 
     pub fn required_receipt_fields(&self) -> &[&'static str] {
+        // Empty hard receipt-field mappings default to artifact hashes so the
+        // hard-clause check stays fail-closed instead of silently unmapped.
         if self.has_required_receipt_fields && self.required_receipt_fields.is_empty() {
             &["artifact_hashes"]
         } else {
@@ -2917,11 +2928,11 @@ impl Contract {
     }
 
     pub fn contract_valid(&self) -> bool {
-        !self.title.trim().is_empty() && !self.scope.is_empty()
+        !self.title.trim().is_empty() && self.scope_valid()
     }
 
     pub fn scope_valid(&self) -> bool {
-        !self.scope.is_empty()
+        self.scope.refs_are_repo_relative()
     }
 
     pub fn ready_for_bounded_work(&self) -> bool {
@@ -2934,6 +2945,7 @@ pub enum ContractError {
     EmptyContractId,
     EmptyTitle,
     EmptyScope,
+    UnsafeScopeRef,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4074,10 +4086,18 @@ pub fn validate_contract(draft: &ContractDraft) -> Result<(), ContractError> {
     if draft.scope.is_empty() {
         return Err(ContractError::EmptyScope);
     }
+    if !draft.scope.refs_are_repo_relative() {
+        return Err(ContractError::UnsafeScopeRef);
+    }
 
     Ok(())
 }
 
+/// Build the minimal approved-for-run contract value from an already concrete
+/// draft.
+///
+/// This does not replace `confirm_contract_draft`, which owns the full user
+/// intent, research gate, hard-clause, and explicit-confirmation closure.
 pub fn approve_contract(draft: ContractDraft) -> Result<Contract, ContractError> {
     validate_contract(&draft)?;
 
@@ -4284,6 +4304,23 @@ mod tests {
         let draft = valid_draft();
 
         assert_eq!(validate_contract(&draft), Ok(()));
+    }
+
+    #[test]
+    fn contract_scope_refs_must_be_repo_relative_for_bounded_work() {
+        let draft = ContractDraft::new(
+            ContractId::new("contract_local_unsafe_scope").expect("contract id should be valid"),
+            "Unsafe scope is not bounded work",
+            ContractScope::new()
+                .with_ref("work/goals/goal_contract_scope.md")
+                .with_ref("../secrets.txt"),
+        );
+
+        assert_eq!(
+            validate_contract(&draft),
+            Err(ContractError::UnsafeScopeRef)
+        );
+        assert!(!draft.scope().refs_are_repo_relative());
     }
 
     #[test]
@@ -4641,6 +4678,36 @@ mod tests {
         assert!(gate_mapped.hard_clause_mapping_satisfied());
         assert!(!unsupported_mapped.hard_clause_mapping_satisfied());
         assert!(advisory_unmapped.hard_clause_mapping_satisfied());
+
+        for clause in [
+            unmapped,
+            validator_mapped,
+            receipt_mapped,
+            proof_mapped,
+            gate_mapped,
+            unsupported_mapped,
+            advisory_unmapped,
+        ] {
+            assert_eq!(
+                clause.hard_clause_mapping_satisfied(),
+                !assess_hard_clause_mapping(&clause).blocks_approval(),
+                "hard clause mapping predicate drifted for {}",
+                clause.id
+            );
+        }
+    }
+
+    #[test]
+    fn required_receipt_field_flag_defaults_to_artifact_hashes_when_empty() {
+        let clause = ContractClauseBlueprint {
+            id: "clause.receipt-default",
+            has_required_receipt_fields: true,
+            required_receipt_fields: &[],
+            ..hard_clause("clause.base")
+        };
+
+        assert_eq!(clause.required_receipt_fields(), &["artifact_hashes"]);
+        assert!(clause.hard_clause_mapping_satisfied());
     }
 
     #[test]

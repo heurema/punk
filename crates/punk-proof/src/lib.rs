@@ -43,6 +43,7 @@ use punk_core::{
     compute_artifact_digest, validate_artifact_digest, ArtifactDigest, ArtifactHashPolicyError,
     ReferencedArtifactVerificationOutcome,
 };
+use punk_gate::GateDecision;
 
 fn non_empty(value: impl Into<String>, error: ProofpackError) -> Result<String, ProofpackError> {
     let value = value.into().trim().to_string();
@@ -52,6 +53,20 @@ fn non_empty(value: impl Into<String>, error: ProofpackError) -> Result<String, 
     }
 
     Ok(value)
+}
+
+fn is_utc_second_timestamp(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 20
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && bytes[10] == b'T'
+        && bytes[13] == b':'
+        && bytes[16] == b':'
+        && bytes[19] == b'Z'
+        && bytes.iter().enumerate().all(|(index, byte)| {
+            matches!(index, 4 | 7 | 10 | 13 | 16 | 19) || byte.is_ascii_digit()
+        })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -72,7 +87,11 @@ pub struct ProofCreatedAt(String);
 
 impl ProofCreatedAt {
     pub fn new(value: impl Into<String>) -> Result<Self, ProofpackError> {
-        Ok(Self(non_empty(value, ProofpackError::EmptyCreatedAt)?))
+        let value = non_empty(value, ProofpackError::EmptyCreatedAt)?;
+        if !is_utc_second_timestamp(&value) {
+            return Err(ProofpackError::InvalidCreatedAt);
+        }
+        Ok(Self(value))
     }
 
     pub fn as_str(&self) -> &str {
@@ -295,16 +314,22 @@ impl ProofArtifactDigestRequirement {
 pub struct ProofpackIntegrityReport {
     required_digest_refs: Vec<ProofArtifactDigestRequirement>,
     missing_digest_refs: Vec<ProofArtifactDigestRequirement>,
+    duplicate_digest_refs: Vec<ProofArtifactDigestRequirement>,
+    conflicting_digest_refs: Vec<ProofArtifactDigestRequirement>,
 }
 
 impl ProofpackIntegrityReport {
     pub fn new(
         required_digest_refs: Vec<ProofArtifactDigestRequirement>,
         missing_digest_refs: Vec<ProofArtifactDigestRequirement>,
+        duplicate_digest_refs: Vec<ProofArtifactDigestRequirement>,
+        conflicting_digest_refs: Vec<ProofArtifactDigestRequirement>,
     ) -> Self {
         Self {
             required_digest_refs,
             missing_digest_refs,
+            duplicate_digest_refs,
+            conflicting_digest_refs,
         }
     }
 
@@ -316,12 +341,30 @@ impl ProofpackIntegrityReport {
         &self.missing_digest_refs
     }
 
+    pub fn duplicate_digest_refs(&self) -> &[ProofArtifactDigestRequirement] {
+        &self.duplicate_digest_refs
+    }
+
+    pub fn conflicting_digest_refs(&self) -> &[ProofArtifactDigestRequirement] {
+        &self.conflicting_digest_refs
+    }
+
     pub fn is_complete(&self) -> bool {
         self.missing_digest_refs.is_empty()
+            && self.duplicate_digest_refs.is_empty()
+            && self.conflicting_digest_refs.is_empty()
     }
 
     pub fn has_missing_required_digests(&self) -> bool {
-        !self.is_complete()
+        !self.missing_digest_refs.is_empty()
+    }
+
+    pub fn has_duplicate_required_digests(&self) -> bool {
+        !self.duplicate_digest_refs.is_empty()
+    }
+
+    pub fn has_conflicting_required_digests(&self) -> bool {
+        !self.conflicting_digest_refs.is_empty()
     }
 }
 
@@ -520,14 +563,44 @@ impl Proofpack {
             .filter(|requirement| !self.has_artifact_digest_for(requirement))
             .cloned()
             .collect();
+        let duplicate_digest_refs = required_digest_refs
+            .iter()
+            .filter(|requirement| declared_artifact_digests_for(self, requirement).len() > 1)
+            .cloned()
+            .collect();
+        let conflicting_digest_refs = required_digest_refs
+            .iter()
+            .filter(|requirement| declared_artifact_hashes_conflict(self, requirement))
+            .cloned()
+            .collect();
 
-        ProofpackIntegrityReport::new(required_digest_refs, missing_digest_refs)
+        ProofpackIntegrityReport::new(
+            required_digest_refs,
+            missing_digest_refs,
+            duplicate_digest_refs,
+            conflicting_digest_refs,
+        )
     }
 
+    /// Reports structural link-hash completeness only.
+    ///
+    /// This checks that every required proof artifact ref has exactly one
+    /// declared digest entry and that duplicate entries do not conflict. It
+    /// does not recompute referenced artifact bytes or prove that a declared
+    /// digest matches live content. Use `ProofAcceptanceAuthorityReport` with
+    /// required referenced-artifact verification evidence for acceptance-grade
+    /// proof checks.
     pub fn has_complete_link_hash_integrity(&self) -> bool {
         self.link_hash_integrity_report().is_complete()
     }
 
+    /// Reports structural proof readiness for a gate decision ref only.
+    ///
+    /// This requires gate-decision ref equality plus structural declared-digest
+    /// completeness. It is not content verification and does not claim
+    /// acceptance by itself. Use `ProofAcceptanceAuthorityReport::evaluate`
+    /// with a real `GateDecision` and required verification evidence for the
+    /// acceptance authority path.
     pub fn is_matching_proof_ready_for_acceptance(
         &self,
         gate_decision_ref: &ProofGateDecisionRef,
@@ -554,14 +627,14 @@ impl Proofpack {
             self.gate_decision_ref().as_str(),
             true,
         );
-        write_manifest_string_array_field(
+        write_manifest_sorted_string_array_field(
             &mut output,
             1,
             "contract_refs",
             self.contract_refs().iter().map(ProofContractRef::as_str),
             true,
         );
-        write_manifest_string_array_field(
+        write_manifest_sorted_string_array_field(
             &mut output,
             1,
             "run_receipt_refs",
@@ -570,21 +643,21 @@ impl Proofpack {
                 .map(ProofRunReceiptRef::as_str),
             true,
         );
-        write_manifest_string_array_field(
+        write_manifest_sorted_string_array_field(
             &mut output,
             1,
             "eval_refs",
             self.eval_refs().iter().map(ProofEvalRef::as_str),
             true,
         );
-        write_manifest_string_array_field(
+        write_manifest_sorted_string_array_field(
             &mut output,
             1,
             "event_refs",
             self.event_refs().iter().map(ProofEventRef::as_str),
             true,
         );
-        write_manifest_string_array_field(
+        write_manifest_sorted_string_array_field(
             &mut output,
             1,
             "output_artifact_refs",
@@ -672,12 +745,35 @@ fn write_manifest_string_array_field<'a, I>(
     output.push('\n');
 }
 
+fn write_manifest_sorted_string_array_field<'a, I>(
+    output: &mut String,
+    indent_level: usize,
+    key: &str,
+    values: I,
+    trailing_comma: bool,
+) where
+    I: IntoIterator<Item = &'a str>,
+{
+    let mut values = values.into_iter().collect::<Vec<_>>();
+    values.sort_unstable();
+    write_manifest_string_array_field(output, indent_level, key, values, trailing_comma);
+}
+
 fn write_manifest_artifact_digests(output: &mut String, artifact_digests: &[ProofArtifactDigest]) {
     write_manifest_indent(output, 1);
     push_manifest_json_string(output, "artifact_digests");
     output.push_str(": [\n");
 
-    for (index, digest) in artifact_digests.iter().enumerate() {
+    let mut sorted_digests = artifact_digests.iter().collect::<Vec<_>>();
+    sorted_digests.sort_unstable_by_key(|digest| {
+        (
+            digest.kind().as_str(),
+            digest.artifact_ref().as_str(),
+            digest.artifact_hash().as_str(),
+        )
+    });
+
+    for (index, digest) in sorted_digests.iter().enumerate() {
         write_manifest_indent(output, 2);
         output.push_str("{\n");
         write_manifest_string_field(output, 3, "kind", digest.kind().as_str(), true);
@@ -685,7 +781,7 @@ fn write_manifest_artifact_digests(output: &mut String, artifact_digests: &[Proo
         write_manifest_string_field(output, 3, "hash", digest.artifact_hash().as_str(), false);
         write_manifest_indent(output, 2);
         output.push('}');
-        if index + 1 != artifact_digests.len() {
+        if index + 1 != sorted_digests.len() {
             output.push(',');
         }
         output.push('\n');
@@ -4205,7 +4301,7 @@ fn writer_target_path_policy_reasons(
     if unsupported_backslash {
         reasons.push(ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash);
     }
-    if absolute_path || home_relative || url_ref || path_traversal {
+    if absolute_path || home_relative || url_ref || path_traversal || unsupported_backslash {
         reasons.push(ProofpackWriterTargetPathPolicyReason::StorageRootEscape);
     }
 
@@ -8673,12 +8769,22 @@ pub struct ProofpackWriterReferencedArtifactVerificationEvidence {
 }
 
 impl ProofpackWriterReferencedArtifactVerificationEvidence {
-    pub fn verified(requirement: ProofArtifactDigestRequirement, digest: ArtifactDigest) -> Self {
+    pub fn verified(
+        requirement: ProofArtifactDigestRequirement,
+        expected_digest: ArtifactDigest,
+        observed_digest: ArtifactDigest,
+    ) -> Self {
+        let status = if expected_digest == observed_digest {
+            ProofpackWriterReferencedArtifactVerificationStatus::Verified
+        } else {
+            ProofpackWriterReferencedArtifactVerificationStatus::DigestMismatch
+        };
+
         Self::required(
             requirement,
-            ProofpackWriterReferencedArtifactVerificationStatus::Verified,
-            Some(digest.clone()),
-            Some(digest),
+            status,
+            Some(expected_digest),
+            Some(observed_digest),
             Vec::new(),
         )
     }
@@ -8790,6 +8896,7 @@ pub enum ProofpackWriterHashReferenceIntegrationBlocker {
     VerificationInvalidRef,
     VerificationInvalidExpectedDigest,
     VerificationUnsupportedRef,
+    MissingRequiredVerification,
     RequiredVerificationNotRequired,
     RequiredVerificationUnverified,
 }
@@ -8818,6 +8925,7 @@ impl ProofpackWriterHashReferenceIntegrationBlocker {
             Self::VerificationInvalidRef => "verification_invalid_ref",
             Self::VerificationInvalidExpectedDigest => "verification_invalid_expected_digest",
             Self::VerificationUnsupportedRef => "verification_unsupported_ref",
+            Self::MissingRequiredVerification => "missing_required_verification",
             Self::RequiredVerificationNotRequired => "required_verification_not_required",
             Self::RequiredVerificationUnverified => "required_verification_unverified",
         }
@@ -8882,7 +8990,8 @@ impl ProofpackWriterHashReferenceIntegrationModel {
         match canonical_artifact {
             Some(canonical_artifact)
                 if canonical_artifact.proofpack_id() == proofpack.id()
-                    && canonical_artifact.manifest_self_digest_covers_canonical_body() => {}
+                    && canonical_artifact.manifest_self_digest_covers_canonical_body()
+                    && canonical_artifact.canonical_body_matches_proofpack(proofpack) => {}
             Some(_) => writer_push_unique_hash_reference_blocker(
                 &mut blockers,
                 ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMismatch,
@@ -8891,6 +9000,18 @@ impl ProofpackWriterHashReferenceIntegrationModel {
                 &mut blockers,
                 ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMissing,
             ),
+        }
+
+        for requirement in &required_digest_refs {
+            if !writer_has_required_verification_evidence(
+                requirement,
+                &referenced_artifact_verification_evidence,
+            ) {
+                writer_push_unique_hash_reference_blocker(
+                    &mut blockers,
+                    ProofpackWriterHashReferenceIntegrationBlocker::MissingRequiredVerification,
+                );
+            }
         }
 
         for evidence in &referenced_artifact_verification_evidence {
@@ -9243,6 +9364,15 @@ fn writer_hash_reference_verification_blocker(
     }
 }
 
+fn writer_has_required_verification_evidence(
+    requirement: &ProofArtifactDigestRequirement,
+    evidence: &[ProofpackWriterReferencedArtifactVerificationEvidence],
+) -> bool {
+    evidence
+        .iter()
+        .any(|evidence| evidence.is_required() && evidence.requirement() == requirement)
+}
+
 fn writer_push_unique_hash_reference_blocker(
     blockers: &mut Vec<ProofpackWriterHashReferenceIntegrationBlocker>,
     blocker: ProofpackWriterHashReferenceIntegrationBlocker,
@@ -9331,6 +9461,7 @@ pub const fn proofpack_writer_hash_reference_integration_model_boundary(
 pub enum ProofpackError {
     EmptyProofpackId,
     EmptyCreatedAt,
+    InvalidCreatedAt,
     EmptyGateDecisionRef,
     EmptyContractRef,
     EmptyRunReceiptRef,
@@ -9396,7 +9527,288 @@ pub const fn proofpack_boundary() -> ProofpackBoundary {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofAcceptanceAuthorityStatus {
+    Accepted,
+    Blocked,
+}
+
+impl ProofAcceptanceAuthorityStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Blocked => "blocked",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProofAcceptanceAuthorityBlocker {
+    GateDecisionNotAccepted,
+    GateDecisionRefMismatch,
+    ContractRefsMismatch,
+    RunReceiptRefsMismatch,
+    EvalRefsMismatch,
+    EventRefsMismatch,
+    MissingDeclaredArtifactDigest,
+    DuplicateDeclaredArtifactDigest,
+    ConflictingDeclaredArtifactDigest,
+    MissingRequiredVerification,
+    DuplicateRequiredVerification,
+    RequiredVerificationNotVerified,
+    RequiredVerificationDigestMismatch,
+}
+
+impl ProofAcceptanceAuthorityBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::GateDecisionNotAccepted => "gate_decision_not_accepted",
+            Self::GateDecisionRefMismatch => "gate_decision_ref_mismatch",
+            Self::ContractRefsMismatch => "contract_refs_mismatch",
+            Self::RunReceiptRefsMismatch => "run_receipt_refs_mismatch",
+            Self::EvalRefsMismatch => "eval_refs_mismatch",
+            Self::EventRefsMismatch => "event_refs_mismatch",
+            Self::MissingDeclaredArtifactDigest => "missing_declared_artifact_digest",
+            Self::DuplicateDeclaredArtifactDigest => "duplicate_declared_artifact_digest",
+            Self::ConflictingDeclaredArtifactDigest => "conflicting_declared_artifact_digest",
+            Self::MissingRequiredVerification => "missing_required_verification",
+            Self::DuplicateRequiredVerification => "duplicate_required_verification",
+            Self::RequiredVerificationNotVerified => "required_verification_not_verified",
+            Self::RequiredVerificationDigestMismatch => "required_verification_digest_mismatch",
+        }
+    }
+
+    pub fn is_fail_closed(self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProofAcceptanceAuthorityReport {
+    status: ProofAcceptanceAuthorityStatus,
+    blockers: Vec<ProofAcceptanceAuthorityBlocker>,
+}
+
+impl ProofAcceptanceAuthorityReport {
+    pub fn evaluate(
+        gate_decision: &GateDecision,
+        proofpack: &Proofpack,
+        referenced_artifact_verification_evidence: &[ProofpackWriterReferencedArtifactVerificationEvidence],
+    ) -> Self {
+        let mut blockers = Vec::new();
+
+        if !gate_decision.outcome().is_accepting() {
+            push_unique_acceptance_blocker(
+                &mut blockers,
+                ProofAcceptanceAuthorityBlocker::GateDecisionNotAccepted,
+            );
+        }
+
+        if proofpack.gate_decision_ref().as_str() != gate_decision.id().as_str() {
+            push_unique_acceptance_blocker(
+                &mut blockers,
+                ProofAcceptanceAuthorityBlocker::GateDecisionRefMismatch,
+            );
+        }
+
+        if !sorted_unique_ref_values(gate_decision.contract_refs().iter().map(|r| r.as_str())).eq(
+            &sorted_unique_ref_values(proofpack.contract_refs().iter().map(|r| r.as_str())),
+        ) {
+            push_unique_acceptance_blocker(
+                &mut blockers,
+                ProofAcceptanceAuthorityBlocker::ContractRefsMismatch,
+            );
+        }
+
+        if !sorted_unique_ref_values(gate_decision.run_receipt_refs().iter().map(|r| r.as_str()))
+            .eq(&sorted_unique_ref_values(
+                proofpack.run_receipt_refs().iter().map(|r| r.as_str()),
+            ))
+        {
+            push_unique_acceptance_blocker(
+                &mut blockers,
+                ProofAcceptanceAuthorityBlocker::RunReceiptRefsMismatch,
+            );
+        }
+
+        if !sorted_unique_ref_values(gate_decision.eval_refs().iter().map(|r| r.as_str())).eq(
+            &sorted_unique_ref_values(proofpack.eval_refs().iter().map(|r| r.as_str())),
+        ) {
+            push_unique_acceptance_blocker(
+                &mut blockers,
+                ProofAcceptanceAuthorityBlocker::EvalRefsMismatch,
+            );
+        }
+
+        if !sorted_unique_ref_values(gate_decision.event_refs().iter().map(|r| r.as_str())).eq(
+            &sorted_unique_ref_values(proofpack.event_refs().iter().map(|r| r.as_str())),
+        ) {
+            push_unique_acceptance_blocker(
+                &mut blockers,
+                ProofAcceptanceAuthorityBlocker::EventRefsMismatch,
+            );
+        }
+
+        for requirement in proofpack.required_artifact_digest_refs() {
+            let declared_digests = declared_artifact_digests_for(proofpack, &requirement);
+
+            match declared_digests.as_slice() {
+                [] => {
+                    push_unique_acceptance_blocker(
+                        &mut blockers,
+                        ProofAcceptanceAuthorityBlocker::MissingDeclaredArtifactDigest,
+                    );
+                    continue;
+                }
+                [declared_digest] => {
+                    evaluate_required_verification_evidence(
+                        &mut blockers,
+                        &requirement,
+                        declared_digest,
+                        referenced_artifact_verification_evidence,
+                    );
+                }
+                declared_digests => {
+                    push_unique_acceptance_blocker(
+                        &mut blockers,
+                        ProofAcceptanceAuthorityBlocker::DuplicateDeclaredArtifactDigest,
+                    );
+                    if declared_digests_have_conflicting_hashes(declared_digests) {
+                        push_unique_acceptance_blocker(
+                            &mut blockers,
+                            ProofAcceptanceAuthorityBlocker::ConflictingDeclaredArtifactDigest,
+                        );
+                    }
+                }
+            }
+        }
+
+        let status = if blockers.is_empty() {
+            ProofAcceptanceAuthorityStatus::Accepted
+        } else {
+            ProofAcceptanceAuthorityStatus::Blocked
+        };
+
+        Self { status, blockers }
+    }
+
+    pub fn status(&self) -> ProofAcceptanceAuthorityStatus {
+        self.status
+    }
+
+    pub fn blockers(&self) -> &[ProofAcceptanceAuthorityBlocker] {
+        &self.blockers
+    }
+
+    pub fn is_accepted(&self) -> bool {
+        self.status == ProofAcceptanceAuthorityStatus::Accepted
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.status == ProofAcceptanceAuthorityStatus::Blocked
+    }
+
+    pub fn has_blocker(&self, blocker: ProofAcceptanceAuthorityBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn blockers_fail_closed(&self) -> bool {
+        self.blockers.iter().all(|blocker| blocker.is_fail_closed())
+    }
+
+    pub fn acceptance_preconditions_met(&self) -> bool {
+        self.is_accepted()
+    }
+}
+
+fn sorted_unique_ref_values<'a>(values: impl Iterator<Item = &'a str>) -> Vec<&'a str> {
+    let mut values = values.collect::<Vec<_>>();
+    values.sort_unstable();
+    values.dedup();
+    values
+}
+
+fn declared_artifact_digests_for<'a>(
+    proofpack: &'a Proofpack,
+    requirement: &ProofArtifactDigestRequirement,
+) -> Vec<&'a ProofArtifactDigest> {
+    proofpack
+        .artifact_digests()
+        .iter()
+        .filter(|digest| digest.satisfies_requirement(requirement))
+        .collect()
+}
+
+fn declared_artifact_hashes_conflict(
+    proofpack: &Proofpack,
+    requirement: &ProofArtifactDigestRequirement,
+) -> bool {
+    declared_digests_have_conflicting_hashes(&declared_artifact_digests_for(proofpack, requirement))
+}
+
+fn declared_digests_have_conflicting_hashes(declared_digests: &[&ProofArtifactDigest]) -> bool {
+    let mut hashes = declared_digests
+        .iter()
+        .map(|digest| digest.artifact_hash().as_str())
+        .collect::<Vec<_>>();
+    hashes.sort_unstable();
+    hashes.dedup();
+    hashes.len() > 1
+}
+
+fn evaluate_required_verification_evidence(
+    blockers: &mut Vec<ProofAcceptanceAuthorityBlocker>,
+    requirement: &ProofArtifactDigestRequirement,
+    declared_digest: &ProofArtifactDigest,
+    referenced_artifact_verification_evidence: &[ProofpackWriterReferencedArtifactVerificationEvidence],
+) {
+    let matching_verification_evidence = referenced_artifact_verification_evidence
+        .iter()
+        .filter(|evidence| evidence.requirement() == requirement && evidence.is_required())
+        .collect::<Vec<_>>();
+
+    match matching_verification_evidence.as_slice() {
+        [] => push_unique_acceptance_blocker(
+            blockers,
+            ProofAcceptanceAuthorityBlocker::MissingRequiredVerification,
+        ),
+        [verification_evidence] => {
+            if !verification_evidence.is_verified() {
+                push_unique_acceptance_blocker(
+                    blockers,
+                    ProofAcceptanceAuthorityBlocker::RequiredVerificationNotVerified,
+                );
+            }
+
+            let declared_artifact_digest =
+                ArtifactDigest::new(declared_digest.artifact_hash().as_str())
+                    .expect("proof artifact hash should satisfy core digest policy");
+
+            if verification_evidence.expected_digest() != Some(&declared_artifact_digest)
+                || verification_evidence.observed_digest() != Some(&declared_artifact_digest)
+            {
+                push_unique_acceptance_blocker(
+                    blockers,
+                    ProofAcceptanceAuthorityBlocker::RequiredVerificationDigestMismatch,
+                );
+            }
+        }
+        _ => push_unique_acceptance_blocker(
+            blockers,
+            ProofAcceptanceAuthorityBlocker::DuplicateRequiredVerification,
+        ),
+    }
+}
+
+fn push_unique_acceptance_blocker(
+    blockers: &mut Vec<ProofAcceptanceAuthorityBlocker>,
+    blocker: ProofAcceptanceAuthorityBlocker,
+) {
+    if !blockers.contains(&blocker) {
+        blockers.push(blocker);
+    }
+}
+
 pub struct PositiveAcceptanceInputs {
     pub accepting_gate_decision: bool,
     pub matching_proofpack: bool,
@@ -9409,6 +9821,10 @@ pub fn positive_acceptance_preconditions_met(inputs: PositiveAcceptanceInputs) -
 #[cfg(test)]
 mod tests {
     use super::*;
+    use punk_gate::{
+        GateBoundaryNote, GateContractRef, GateCreatedAt, GateDecision, GateDecisionId,
+        GateDecisionOutcome, GateEvalRef, GateEventRef, GateRunReceiptRef,
+    };
 
     const PROOF_HASH_GATE_DECISION: &str =
         "sha256:0000000000000000000000000000000000000000000000000000000000000001";
@@ -9493,6 +9909,29 @@ mod tests {
             ))
     }
 
+    fn sample_accepting_gate_decision() -> GateDecision {
+        GateDecision::new(
+            GateDecisionId::new("decision_local_001").expect("decision id should be valid"),
+            GateDecisionOutcome::Accepted,
+            vec![GateContractRef::new("contract_local_001").expect("contract ref should be valid")],
+            vec![GateRunReceiptRef::new("receipt_local_001")
+                .expect("run receipt ref should be valid")],
+            GateCreatedAt::new("2026-04-25T19:00:00Z").expect("created_at should be valid"),
+            vec![GateBoundaryNote::new(
+                "Decision references evidence; proof is still required before acceptance.",
+            )
+            .expect("boundary note should be valid")],
+        )
+        .expect("decision should be valid")
+        .with_eval_ref(
+            GateEvalRef::new("work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md")
+                .expect("eval ref should be valid"),
+        )
+        .with_event_ref(
+            GateEventRef::new("evt_0000000000000001").expect("event ref should be valid"),
+        )
+    }
+
     fn digest_requirement(
         kind: ProofArtifactKind,
         artifact_ref: &str,
@@ -9546,9 +9985,30 @@ mod tests {
             .required_artifact_digest_refs()
             .into_iter()
             .map(|requirement| {
+                let digest = core_digest_for_requirement(proofpack, &requirement);
                 ProofpackWriterReferencedArtifactVerificationEvidence::verified(
                     requirement.clone(),
-                    core_digest_for_requirement(proofpack, &requirement),
+                    digest.clone(),
+                    digest,
+                )
+            })
+            .collect()
+    }
+
+    fn verification_evidence_with_observed_digest(
+        proofpack: &Proofpack,
+        observed_digest: ArtifactDigest,
+    ) -> Vec<ProofpackWriterReferencedArtifactVerificationEvidence> {
+        proofpack
+            .required_artifact_digest_refs()
+            .into_iter()
+            .map(|requirement| {
+                ProofpackWriterReferencedArtifactVerificationEvidence::required(
+                    requirement,
+                    ProofpackWriterReferencedArtifactVerificationStatus::Verified,
+                    Some(observed_digest.clone()),
+                    Some(observed_digest.clone()),
+                    Vec::new(),
                 )
             })
             .collect()
@@ -10004,6 +10464,81 @@ mod tests {
     }
 
     #[test]
+    fn proofpack_manifest_digest_is_stable_across_ref_and_digest_insert_order() {
+        let base = |contract_refs: Vec<&str>, run_refs: Vec<&str>| {
+            Proofpack::new(
+                ProofpackId::new("proofpack_order_test").expect("proofpack id should be valid"),
+                ProofGateDecisionRef::new("decision_order_test")
+                    .expect("decision ref should be valid"),
+                contract_refs
+                    .into_iter()
+                    .map(|value| {
+                        ProofContractRef::new(value).expect("contract ref should be valid")
+                    })
+                    .collect(),
+                run_refs
+                    .into_iter()
+                    .map(|value| {
+                        ProofRunReceiptRef::new(value).expect("run receipt ref should be valid")
+                    })
+                    .collect(),
+                ProofCreatedAt::new("2026-04-25T20:00:00Z").expect("created_at should be valid"),
+                vec![
+                    ProofBoundaryNote::new("Order-insensitive manifest renderer.")
+                        .expect("boundary note should be valid"),
+                ],
+            )
+            .expect("proofpack should be valid")
+        };
+        let digest_for = |kind, artifact_ref, artifact_hash| {
+            ProofArtifactDigest::new(
+                kind,
+                ProofArtifactRef::new(artifact_ref).expect("artifact ref should be valid"),
+                ProofArtifactHash::new(artifact_hash).expect("artifact hash should be valid"),
+            )
+        };
+
+        let first = base(
+            vec!["contract_b", "contract_a"],
+            vec!["receipt_b", "receipt_a"],
+        )
+        .with_eval_ref(ProofEvalRef::new("eval_b").expect("eval ref should be valid"))
+        .with_eval_ref(ProofEvalRef::new("eval_a").expect("eval ref should be valid"))
+        .with_artifact_digest(digest_for(
+            ProofArtifactKind::Contract,
+            "contract_b",
+            PROOF_HASH_CONTRACT,
+        ))
+        .with_artifact_digest(digest_for(
+            ProofArtifactKind::GateDecision,
+            "decision_order_test",
+            PROOF_HASH_GATE_DECISION,
+        ));
+        let second = base(
+            vec!["contract_a", "contract_b"],
+            vec!["receipt_a", "receipt_b"],
+        )
+        .with_eval_ref(ProofEvalRef::new("eval_a").expect("eval ref should be valid"))
+        .with_eval_ref(ProofEvalRef::new("eval_b").expect("eval ref should be valid"))
+        .with_artifact_digest(digest_for(
+            ProofArtifactKind::GateDecision,
+            "decision_order_test",
+            PROOF_HASH_GATE_DECISION,
+        ))
+        .with_artifact_digest(digest_for(
+            ProofArtifactKind::Contract,
+            "contract_b",
+            PROOF_HASH_CONTRACT,
+        ));
+
+        assert_eq!(first.render_manifest_json(), second.render_manifest_json());
+        assert_eq!(
+            compute_proofpack_manifest_digest(&first),
+            compute_proofpack_manifest_digest(&second)
+        );
+    }
+
+    #[test]
     fn proofpack_manifest_digest_uses_exact_renderer_bytes() {
         let proofpack = sample_proofpack();
         let rendered = proofpack.render_manifest_json();
@@ -10452,6 +10987,31 @@ mod tests {
     }
 
     #[test]
+    fn link_hash_integrity_report_blocks_duplicate_conflicting_declared_digests() {
+        let proofpack = sample_proofpack().with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::GateDecision,
+            ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_OTHER).expect("artifact hash should be valid"),
+        ));
+        let report = proofpack.link_hash_integrity_report();
+        let duplicate_decision =
+            digest_requirement(ProofArtifactKind::GateDecision, "decision_local_001");
+        let matching_decision =
+            ProofGateDecisionRef::new("decision_local_001").expect("decision ref should be valid");
+
+        assert!(report.missing_digest_refs().is_empty());
+        assert!(report.duplicate_digest_refs().contains(&duplicate_decision));
+        assert!(report
+            .conflicting_digest_refs()
+            .contains(&duplicate_decision));
+        assert!(report.has_duplicate_required_digests());
+        assert!(report.has_conflicting_required_digests());
+        assert!(!report.is_complete());
+        assert!(!proofpack.has_complete_link_hash_integrity());
+        assert!(!proofpack.is_matching_proof_ready_for_acceptance(&matching_decision));
+    }
+
+    #[test]
     fn minimal_link_hash_integrity_requires_only_declared_core_refs() {
         let proofpack = Proofpack::new(
             ProofpackId::new("proofpack_minimal_001").expect("proofpack id should be valid"),
@@ -10567,6 +11127,18 @@ mod tests {
     }
 
     #[test]
+    fn proof_created_at_requires_utc_second_timestamp_shape() {
+        assert_eq!(
+            ProofCreatedAt::new("tomorrow"),
+            Err(ProofpackError::InvalidCreatedAt)
+        );
+        assert_eq!(
+            ProofCreatedAt::new("2026-04-25 20:00:00"),
+            Err(ProofpackError::InvalidCreatedAt)
+        );
+    }
+
+    #[test]
     fn proofpack_is_post_gate_but_not_decision_authority() {
         let proofpack = sample_proofpack();
         let boundary = proofpack.boundary();
@@ -10632,6 +11204,105 @@ mod tests {
                 matching_proofpack: false,
             },
         ));
+    }
+
+    #[test]
+    fn proof_acceptance_authority_rejects_wrong_verified_digest_evidence() {
+        let gate_decision = sample_accepting_gate_decision();
+        let proofpack = sample_proofpack();
+        let matching_decision =
+            ProofGateDecisionRef::new(gate_decision.id().as_str()).expect("ref should be valid");
+        let observed_digest =
+            ArtifactDigest::new(PROOF_HASH_OTHER).expect("observed digest should be valid");
+        let verification_evidence =
+            verification_evidence_with_observed_digest(&proofpack, observed_digest);
+
+        let report = ProofAcceptanceAuthorityReport::evaluate(
+            &gate_decision,
+            &proofpack,
+            &verification_evidence,
+        );
+
+        assert!(proofpack.is_matching_proof_ready_for_acceptance(&matching_decision));
+        assert!(report.is_blocked());
+        assert!(
+            report.has_blocker(ProofAcceptanceAuthorityBlocker::RequiredVerificationDigestMismatch)
+        );
+        assert!(!report.acceptance_preconditions_met());
+    }
+
+    #[test]
+    fn proof_acceptance_authority_rejects_gate_and_proof_ref_mismatch() {
+        let gate_decision = sample_accepting_gate_decision();
+        let proofpack = sample_proofpack();
+        let verification_evidence = sample_hash_reference_verification_evidence(&proofpack);
+        let mismatched_gate_decision = GateDecision::new(
+            GateDecisionId::new("decision_local_001").expect("decision id should be valid"),
+            GateDecisionOutcome::Accepted,
+            vec![
+                GateContractRef::new("contract_local_other").expect("contract ref should be valid")
+            ],
+            vec![GateRunReceiptRef::new("receipt_local_001")
+                .expect("run receipt ref should be valid")],
+            GateCreatedAt::new("2026-04-25T19:00:00Z").expect("created_at should be valid"),
+            vec![
+                GateBoundaryNote::new("Decision refs must be cross-checked against proof refs.")
+                    .expect("boundary note should be valid"),
+            ],
+        )
+        .expect("decision should be valid")
+        .with_eval_ref(
+            GateEvalRef::new("work/reports/2026-04-25-gate-decision-kernel-minimal-v0-1.md")
+                .expect("eval ref should be valid"),
+        )
+        .with_event_ref(
+            GateEventRef::new("evt_0000000000000001").expect("event ref should be valid"),
+        );
+
+        let accepted_report = ProofAcceptanceAuthorityReport::evaluate(
+            &gate_decision,
+            &proofpack,
+            &verification_evidence,
+        );
+        let mismatched_report = ProofAcceptanceAuthorityReport::evaluate(
+            &mismatched_gate_decision,
+            &proofpack,
+            &verification_evidence,
+        );
+
+        assert!(accepted_report.acceptance_preconditions_met());
+        assert!(mismatched_report.is_blocked());
+        assert!(
+            mismatched_report.has_blocker(ProofAcceptanceAuthorityBlocker::ContractRefsMismatch)
+        );
+        assert!(!mismatched_report.acceptance_preconditions_met());
+    }
+
+    #[test]
+    fn proof_acceptance_authority_rejects_duplicate_conflicting_declared_digests() {
+        let gate_decision = sample_accepting_gate_decision();
+        let proofpack = sample_proofpack().with_artifact_digest(ProofArtifactDigest::new(
+            ProofArtifactKind::GateDecision,
+            ProofArtifactRef::new("decision_local_001").expect("artifact ref should be valid"),
+            ProofArtifactHash::new(PROOF_HASH_OTHER).expect("artifact hash should be valid"),
+        ));
+        let verification_evidence = sample_hash_reference_verification_evidence(&proofpack);
+
+        let report = ProofAcceptanceAuthorityReport::evaluate(
+            &gate_decision,
+            &proofpack,
+            &verification_evidence,
+        );
+
+        assert!(report.is_blocked());
+        assert!(
+            report.has_blocker(ProofAcceptanceAuthorityBlocker::DuplicateDeclaredArtifactDigest)
+        );
+        assert!(
+            report.has_blocker(ProofAcceptanceAuthorityBlocker::ConflictingDeclaredArtifactDigest)
+        );
+        assert!(report.blockers_fail_closed());
+        assert!(!report.acceptance_preconditions_met());
     }
 
     #[test]
@@ -11812,6 +12483,8 @@ mod tests {
         assert!(dot.has_reason(ProofpackWriterTargetPathPolicyReason::AmbiguousDotSegment));
         assert!(empty_segment.has_reason(ProofpackWriterTargetPathPolicyReason::EmptySegment));
         assert!(backslash.has_reason(ProofpackWriterTargetPathPolicyReason::UnsupportedBackslash));
+        assert!(backslash.has_reason(ProofpackWriterTargetPathPolicyReason::StorageRootEscape));
+        assert!(backslash.has_storage_root_escape());
         assert!(backslash.diagnostics().iter().all(|diagnostic| {
             diagnostic.surface() == ProofpackWriterFileIoDiagnosticSurface::TargetPath
                 && !diagnostic.target_path_is_authority()
@@ -13588,6 +14261,10 @@ mod tests {
             ProofpackWriterHashReferenceIntegrationBlocker::RequiredVerificationUnverified.as_str(),
             "required_verification_unverified"
         );
+        assert_eq!(
+            ProofpackWriterHashReferenceIntegrationBlocker::MissingRequiredVerification.as_str(),
+            "missing_required_verification"
+        );
         assert!(
             ProofpackWriterHashReferenceIntegrationBlocker::VerificationSymlink.is_fail_closed()
         );
@@ -13708,6 +14385,29 @@ mod tests {
         assert!(!model.writes_schema_files());
         assert!(!model.canonicalizes_host_paths());
         assert!(!model.can_claim_acceptance_by_itself());
+    }
+
+    #[test]
+    fn referenced_artifact_verified_constructor_requires_matching_expected_and_observed_digest() {
+        let requirement = digest_requirement(ProofArtifactKind::GateDecision, "decision_local_001");
+        let expected =
+            ArtifactDigest::new(PROOF_HASH_GATE_DECISION).expect("expected digest should be valid");
+        let observed =
+            ArtifactDigest::new(PROOF_HASH_OTHER).expect("observed digest should be valid");
+
+        let evidence = ProofpackWriterReferencedArtifactVerificationEvidence::verified(
+            requirement,
+            expected.clone(),
+            observed.clone(),
+        );
+
+        assert_eq!(
+            evidence.status(),
+            ProofpackWriterReferencedArtifactVerificationStatus::DigestMismatch
+        );
+        assert!(!evidence.is_verified());
+        assert_eq!(evidence.expected_digest(), Some(&expected));
+        assert_eq!(evidence.observed_digest(), Some(&observed));
     }
 
     #[test]
@@ -13844,34 +14544,109 @@ mod tests {
     }
 
     #[test]
+    fn proofpack_writer_hash_reference_integration_model_blocks_missing_required_verification_coverage(
+    ) {
+        let proofpack = sample_proofpack();
+        let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
+
+        let model = ProofpackWriterHashReferenceIntegrationModel::evaluate(
+            &proofpack,
+            Some(&canonical),
+            sample_hash_reference_declared_digest_evidence(&proofpack),
+            Vec::new(),
+            vec![ProofBoundaryNote::new(
+                "Readiness requires coverage-complete referenced artifact verification evidence.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert!(model.is_blocked());
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::MissingRequiredVerification
+        ));
+        assert!(model.blockers_fail_closed());
+    }
+
+    #[test]
+    fn proofpack_writer_hash_reference_integration_model_blocks_stale_canonical_body_same_id() {
+        let old_proofpack = sample_proofpack();
+        let mut new_proofpack = Proofpack::new(
+            old_proofpack.id().clone(),
+            old_proofpack.gate_decision_ref().clone(),
+            old_proofpack.contract_refs().to_vec(),
+            old_proofpack.run_receipt_refs().to_vec(),
+            ProofCreatedAt::new("2026-04-25T20:01:00Z").expect("created_at should be valid"),
+            vec![ProofBoundaryNote::new(
+                "Updated proofpack body keeps the same id but changes the rendered manifest.",
+            )
+            .expect("boundary note should be valid")],
+        )
+        .expect("new proofpack should be valid")
+        .with_eval_ref(old_proofpack.eval_refs()[0].clone())
+        .with_event_ref(old_proofpack.event_refs()[0].clone())
+        .with_output_artifact_ref(old_proofpack.output_artifact_refs()[0].clone());
+        for digest in old_proofpack.artifact_digests() {
+            new_proofpack = new_proofpack.with_artifact_digest(digest.clone());
+        }
+        assert_eq!(old_proofpack.id(), new_proofpack.id());
+        assert_ne!(
+            old_proofpack.render_manifest_json(),
+            new_proofpack.render_manifest_json()
+        );
+
+        let stale_canonical =
+            ProofpackWriterCanonicalArtifactModel::from_proofpack(&old_proofpack, vec![]);
+        let model = ProofpackWriterHashReferenceIntegrationModel::evaluate(
+            &new_proofpack,
+            Some(&stale_canonical),
+            sample_hash_reference_declared_digest_evidence(&new_proofpack),
+            sample_hash_reference_verification_evidence(&new_proofpack),
+            vec![ProofBoundaryNote::new(
+                "Manifest self-digest readiness must cover the live proofpack body under evaluation.",
+            )
+            .expect("boundary note should be valid")],
+        );
+
+        assert!(model.is_blocked());
+        assert!(model.has_blocker(
+            ProofpackWriterHashReferenceIntegrationBlocker::ManifestSelfDigestMismatch
+        ));
+        assert!(model.blockers_fail_closed());
+    }
+
+    #[test]
     fn proofpack_writer_hash_reference_integration_model_keeps_optional_unverified_visible() {
         let proofpack = sample_proofpack();
         let canonical = ProofpackWriterCanonicalArtifactModel::from_proofpack(&proofpack, vec![]);
         let requirements = proofpack.required_artifact_digest_refs();
         let digest = core_digest_for_requirement(&proofpack, &requirements[0]);
+        let mut verification_evidence = sample_hash_reference_verification_evidence(&proofpack);
+        verification_evidence.push(
+            ProofpackWriterReferencedArtifactVerificationEvidence::optional(
+                requirements[0].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::Unverified,
+                Some(digest),
+                None,
+                vec![ProofBoundaryNote::new(
+                    "Optional unverified evidence stays visible and non-authoritative.",
+                )
+                .expect("boundary note should be valid")],
+            ),
+        );
+        verification_evidence.push(
+            ProofpackWriterReferencedArtifactVerificationEvidence::optional(
+                requirements[1].clone(),
+                ProofpackWriterReferencedArtifactVerificationStatus::NotRequired,
+                None,
+                None,
+                vec![],
+            ),
+        );
         let model = ProofpackWriterHashReferenceIntegrationModel::evaluate(
             &proofpack,
             Some(&canonical),
             sample_hash_reference_declared_digest_evidence(&proofpack),
-            vec![
-                ProofpackWriterReferencedArtifactVerificationEvidence::optional(
-                    requirements[0].clone(),
-                    ProofpackWriterReferencedArtifactVerificationStatus::Unverified,
-                    Some(digest),
-                    None,
-                    vec![ProofBoundaryNote::new(
-                        "Optional unverified evidence stays visible and non-authoritative.",
-                    )
-                    .expect("boundary note should be valid")],
-                ),
-                ProofpackWriterReferencedArtifactVerificationEvidence::optional(
-                    requirements[1].clone(),
-                    ProofpackWriterReferencedArtifactVerificationStatus::NotRequired,
-                    None,
-                    None,
-                    vec![],
-                ),
-            ],
+            verification_evidence,
             vec![],
         );
         let not_selected = ProofpackWriterHashReferenceIntegrationModel::not_selected(
@@ -13885,14 +14660,18 @@ mod tests {
         assert!(model.is_ready());
         assert!(model.blockers().is_empty());
         assert!(model.has_optional_or_not_required_verification_evidence());
-        assert_eq!(
-            model.referenced_artifact_verification_evidence()[0].status(),
-            ProofpackWriterReferencedArtifactVerificationStatus::Unverified
-        );
-        assert_eq!(
-            model.referenced_artifact_verification_evidence()[1].status(),
-            ProofpackWriterReferencedArtifactVerificationStatus::NotRequired
-        );
+        assert!(model
+            .referenced_artifact_verification_evidence()
+            .iter()
+            .any(|evidence| !evidence.is_required()
+                && evidence.status()
+                    == ProofpackWriterReferencedArtifactVerificationStatus::Unverified));
+        assert!(model
+            .referenced_artifact_verification_evidence()
+            .iter()
+            .any(|evidence| !evidence.is_required()
+                && evidence.status()
+                    == ProofpackWriterReferencedArtifactVerificationStatus::NotRequired));
         assert!(model.keeps_evidence_surfaces_separate());
         assert!(model.has_manifest_self_digest_ready());
         assert!(!model.verifies_referenced_artifacts());

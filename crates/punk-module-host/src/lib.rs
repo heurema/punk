@@ -975,6 +975,7 @@ pub struct ModuleSideEffectRequestProposal {
     pub payload_ref: String,
     pub required_preconditions: Vec<ModuleSideEffectPrecondition>,
     pub covered_preconditions: Vec<ModuleSideEffectPrecondition>,
+    pub gate_approval_is_self_asserted_not_verified: bool,
     pub findings: Vec<ModuleHostFinding>,
     pub boundary_flags: ModuleSideEffectRequestBoundaryFlags,
 }
@@ -1172,6 +1173,7 @@ pub struct ModulePolicyGatePreflight {
     pub proof_requirement_ref: String,
     pub required_requirements: Vec<ModulePolicyGatePreflightRequirement>,
     pub covered_requirements: Vec<ModulePolicyGatePreflightRequirement>,
+    pub gate_approval_is_self_asserted_not_verified: bool,
     pub findings: Vec<ModuleHostFinding>,
     pub boundary_flags: ModulePolicyGatePreflightBoundaryFlags,
 }
@@ -1405,6 +1407,7 @@ pub struct ModuleSideEffectReceiptWriterPreflight {
     pub payload_ref: String,
     pub required_requirements: Vec<ModuleSideEffectReceiptWriterPreflightRequirement>,
     pub covered_requirements: Vec<ModuleSideEffectReceiptWriterPreflightRequirement>,
+    pub gate_approval_is_self_asserted_not_verified: bool,
     pub findings: Vec<ModuleHostFinding>,
     pub boundary_flags: ModuleSideEffectReceiptWriterPreflightBoundaryFlags,
 }
@@ -4317,6 +4320,8 @@ pub fn write_module_side_effect_receipt_first_active_slice(
         }
     }
 
+    // create_new in the exact-byte writer is the no-clobber/no-final-symlink
+    // guard; the earlier symlink_metadata check only improves diagnostics.
     if let Err(error) = receipt_writer_first_active_write_exact_bytes(&target_path, receipt_bytes) {
         if error.kind() == std::io::ErrorKind::AlreadyExists {
             match std::fs::read(&target_path) {
@@ -4856,6 +4861,8 @@ pub fn write_module_side_effect_receipt_writer_operation_evidence_first_active_s
         }
     }
 
+    // create_new in the exact-byte writer is the no-clobber/no-final-symlink
+    // guard; the earlier symlink_metadata check only improves diagnostics.
     if let Err(error) =
         receipt_writer_first_active_write_exact_bytes(&target_path, operation_evidence_bytes)
     {
@@ -5438,6 +5445,7 @@ pub fn propose_module_side_effect_request(
         payload_ref: request.payload_ref.clone(),
         required_preconditions,
         covered_preconditions,
+        gate_approval_is_self_asserted_not_verified: true,
         findings,
         boundary_flags: MODULE_HOST_PURE_SIDE_EFFECT_REQUEST_BOUNDARY_FLAGS,
     }
@@ -5580,6 +5588,7 @@ pub fn preflight_module_policy_gate(
         proof_requirement_ref: draft.proof_requirement_ref.clone(),
         required_requirements,
         covered_requirements,
+        gate_approval_is_self_asserted_not_verified: true,
         findings,
         boundary_flags: MODULE_HOST_PURE_POLICY_GATE_PREFLIGHT_BOUNDARY_FLAGS,
     }
@@ -5758,6 +5767,7 @@ pub fn preflight_module_side_effect_receipt_writer(
         payload_ref: draft.payload_ref.clone(),
         required_requirements,
         covered_requirements,
+        gate_approval_is_self_asserted_not_verified: true,
         findings,
         boundary_flags: MODULE_HOST_PURE_SIDE_EFFECT_RECEIPT_WRITER_PREFLIGHT_BOUNDARY_FLAGS,
     }
@@ -7132,11 +7142,19 @@ fn is_safe_ref(value: &str) -> bool {
         && !value.starts_with('~')
         && !value.contains('\\')
         && !value.contains("://")
+        && !has_windows_drive_like_ref(value)
         && !value.split('/').any(|segment| {
             segment.is_empty()
                 || matches!(segment, "." | "..")
                 || segment.chars().any(char::is_control)
         })
+}
+
+fn has_windows_drive_like_ref(value: &str) -> bool {
+    value.split('/').any(|segment| {
+        let bytes = segment.as_bytes();
+        bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+    })
 }
 
 #[cfg(test)]
@@ -7189,6 +7207,17 @@ mod tests {
     };
     use std::fs;
     use std::sync::atomic::{AtomicU64, Ordering};
+
+    #[test]
+    fn safe_ref_policy_rejects_windows_drive_like_prefixes() {
+        assert!(super::is_safe_ref(".punk/runs/request/receipt.json"));
+        assert!(!super::is_safe_ref("C:foo"));
+        assert!(!super::is_safe_ref("C:/foo"));
+        assert!(!super::is_safe_ref(".punk/runs/C:foo/receipt.json"));
+        assert!(super::is_safe_ref(
+            "proofpack:proofpack_local_001@sha256:abc"
+        ));
+    }
 
     fn valid_invocation() -> ModuleInvocationEnvelope {
         ModuleInvocationEnvelope::new(
@@ -7666,6 +7695,7 @@ mod tests {
         assert!(proposal
             .covered_preconditions
             .contains(&ModuleSideEffectPrecondition::GateOrPolicyApproval));
+        assert!(proposal.gate_approval_is_self_asserted_not_verified);
         assert!(proposal.boundary_flags.all_side_effect_flags_false());
     }
 
@@ -7778,6 +7808,7 @@ mod tests {
         assert!(preflight
             .covered_requirements
             .contains(&ModulePolicyGatePreflightRequirement::ProofRequirementRef));
+        assert!(preflight.gate_approval_is_self_asserted_not_verified);
         assert!(preflight.boundary_flags.all_side_effect_flags_false());
     }
 

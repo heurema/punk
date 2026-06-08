@@ -14,6 +14,9 @@ properties:
       - dependency
       - public-claim
       - research-promotion
+      - work-ledger
+      - work-ledger-only
+      - advisory-research-and-work-ledger
   reason:
     type: string
   touched_surfaces:
