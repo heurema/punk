@@ -5,11 +5,12 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-05-03
-updated_at: 2026-05-03
+updated_at: 2026-06-08
 review_after: 2026-07-20
 canonical_for:
   - brownfield-source-corpus-manifest-design
   - brownfield-source-corpus-manifest-schema
+  - brownfield-source-inventory-observation-packet-handoff
   - brownfield-manifest-path-policy
   - brownfield-manifest-content-policy
   - brownfield-manifest-hash-policy
@@ -101,6 +102,57 @@ items: []
 
 The manifest may include timestamps only as run metadata. Timestamps must not
 be used as evidence of source intent, freshness, acceptance, or authority.
+
+## Handoff From Observation Packets
+
+This policy constrains future handoff from a source inventory observation
+packet to the Source Corpus Manifest model track.
+
+A future source inventory observation packet may hand off to the Source Corpus
+Manifest model track only after packet-specific validation has accepted it for
+handoff.
+
+Accepted-for-handoff does not mean accepted project truth. The manifest remains:
+
+```text
+manifest_status = advisory
+authority = observed_structure
+```
+
+The handoff may map only explicit packet observations into manifest item fields:
+
+- repo-relative path;
+- observed kind candidate;
+- bounded B1 source class candidate;
+- sensitivity candidate;
+- generated or vendored candidate marker;
+- source markers such as extension or known basename marker;
+- evidence refs;
+- warning, blocker, and limitation refs.
+
+The handoff must preserve or downgrade uncertainty. Missing evidence,
+ambiguous classification, sensitive paths, generated/vendored candidates, or
+policy blockers must remain visible as `unknown`, `excluded`,
+`sensitive_redacted`, warnings, blockers, or limitations.
+
+The handoff must not:
+
+- take a repository root to scan;
+- walk directories;
+- read source file contents;
+- compute source file hashes;
+- collect file sizes;
+- infer claims, intent, requirements, module purpose, architecture decisions,
+  accepted behavior, or contract readiness;
+- treat `code-intel-kernel` ideas as product authority;
+- treat `agent-bench-lab` benchmark results as gate, proof, acceptance, or
+  project-truth authority;
+- activate the source corpus manifest writer.
+
+The current first writer slice is downstream of this boundary. It still accepts
+only an already-constructed `SourceCorpusManifest` model plus explicit target
+and preflight result. It must not accept an observation packet, repository root,
+directory list, raw file list, AI prompt, or lab result as a write input.
 
 ## Item schema
 

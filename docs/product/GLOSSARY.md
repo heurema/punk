@@ -197,6 +197,19 @@ Future boundary-governed inventory of observable source, docs, tests, config, sc
 
 It is advisory observed structure only. It is not project truth, not a claim ledger, not intent recovery, not a contract, not proof, and not an implementation command by itself.
 
+### source inventory observation packet
+
+Future advisory input envelope for explicit Brownfield source observations
+before manifest-model handoff.
+
+It may carry scoped repo-relative observation refs, bounded source-class and
+sensitivity candidates, evidence ids, warnings, blockers, limitations, and
+advisory lab/evaluation refs.
+
+It must not contain source contents, snippets, summaries, hashes, sizes,
+semantic claims, intent, contract readiness, gate decisions, proof, acceptance,
+project truth, scanner activation, or benchmark authority.
+
 ### source corpus manifest
 
 Future deterministic brownfield inventory artifact that may list observable repo-relative artifacts and source classes.

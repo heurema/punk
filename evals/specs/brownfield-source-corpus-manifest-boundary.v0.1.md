@@ -399,6 +399,72 @@ Writing preserves `manifest_status = advisory` and
 Operation evidence remains in-memory and non-authoritative: not proof, not a
 gate decision, not acceptance, and not project truth.
 
+## Observation packet handoff eval cases
+
+These cases define only the future handoff boundary from an accepted-for-handoff
+source inventory observation packet to the manifest model track. They do not
+activate scanner, file walker, manifest generation from repository state, or
+writer behavior.
+
+### BSCM-058: handoff_consumes_observation_packet_not_repo_scan
+
+A future manifest model builder may consume only an accepted-for-handoff
+observation packet with explicit scope, repo-relative refs, evidence ids,
+warnings, blockers, and limitations.
+
+It must not take a repository root to scan, directory list to walk, raw source
+files to inspect, AI prompt, lab result, or benchmark result as direct manifest
+generation input.
+
+### BSCM-059: handoff_maps_only_observed_structure
+
+The handoff may map only repo-relative path, observed kind candidate, bounded
+B1 source class candidate, sensitivity candidate, generated/vendored marker,
+source markers, evidence refs, warning refs, blocker refs, and limitation refs
+into manifest fields.
+
+It must not map purpose, requirement, intent, architecture, accepted behavior,
+contract readiness, proof status, gate decision, risk, severity, or project
+truth fields.
+
+### BSCM-060: handoff_preserves_uncertainty
+
+Ambiguous packet observations must remain `unknown`, `excluded`,
+`sensitive_redacted`, warning, blocker, or limitation state in the manifest
+model.
+
+The handoff must not upgrade candidate observations into certainty or accepted
+project truth.
+
+### BSCM-061: handoff_does_not_activate_writer
+
+Packet handoff is upstream of the writer.
+
+The current first writer slice still accepts only an already-constructed
+`SourceCorpusManifest` model plus explicit target and preflight result. It must
+not accept an observation packet, repository root, directory list, raw file
+list, AI prompt, lab result, or benchmark result as write input.
+
+### BSCM-062: labs_do_not_promote_manifest_authority
+
+`code-intel-kernel` may influence handoff vocabulary only as advisory design
+input.
+
+`agent-bench-lab` may define evaluation requirements for future active
+observer/scanner results.
+
+Neither lab can promote a manifest to canonical, accepted, contract, gate,
+proof, or project-truth authority.
+
+### BSCM-063: active_observer_results_need_eval_before_decisions
+
+Future active observer/scanner results must have an `agent-bench-lab`
+evaluation route before their results influence Brownfield decisions or
+manifest-generation selection.
+
+Invalid, unrepeatable, policy-violating, or insufficient-evidence runs must not
+be averaged, ranked, or used for authority promotion.
+
 ## Minimal fixture shape
 
 This is illustrative boundary shape only, not an implemented schema.

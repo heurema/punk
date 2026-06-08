@@ -63,6 +63,39 @@ results will be assessed before they influence Brownfield decisions. It should
 focus on result validity, failure visibility, benchmark integrity, and
 comparison shape rather than leaderboard-style claims.
 
+## Read-only lab pass
+
+The `code-intel-kernel` advisory pass observed these reusable ideas:
+
+- keep source observation outputs bounded and read-only;
+- require explicit selectors or explicit observed refs instead of implicit
+  natural-language localization;
+- attach evidence ids to supported facts;
+- represent warnings, limitations, missing evidence, and insufficient evidence
+  as first-class fields;
+- keep deterministic ranking or ordering separate from semantic confidence;
+- forbid edit-target, root-cause, intent, and patch recommendations in source
+  evidence surfaces;
+- avoid brittle line-only identity where a stable path/kind/symbol ref can be
+  used.
+
+The `agent-bench-lab` advisory pass observed these evaluation requirements:
+
+- compare active observer/scanner behavior on fixed task cases and frozen
+  config;
+- record run validity before using scores;
+- include repeated runs for reliability instead of one-off success;
+- separate score, success, cost, latency, tool calls, failed tool calls, policy
+  violations, hidden checks, and mutation checks;
+- treat public fixtures as smoke coverage and keep decision-grade evaluation
+  behind audited or held-out cases;
+- avoid averaging, ranking, or promoting invalid runs.
+
+Observed local lab checkout state was not clean during this pass. That does
+not block using the ideas above as advisory design input, but any future reuse
+of lab results, fixtures, code, or benchmark claims must re-verify current lab
+state before use.
+
 ## Required boundary implications
 
 The selected Brownfield observation-packet boundary should record:

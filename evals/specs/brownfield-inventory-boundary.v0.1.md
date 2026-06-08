@@ -107,6 +107,76 @@ Future inventory may support later contract-readiness assessment by providing so
 
 It must not decide contract readiness, draft contracts, write gate decisions, create proof, or accept claims.
 
+### BFI-013: observation packet stays advisory observed structure
+
+A future source inventory observation packet must carry:
+
+```text
+packet_status = advisory
+authority = observed_structure
+```
+
+It must not be canonical project memory truth, accepted behavior, a contract,
+a gate decision, proof, acceptance, or claim authority.
+
+### BFI-014: observation packet uses explicit scoped inputs
+
+A future observation packet must record explicit include and exclude scope,
+source root ref, repo-relative artifact refs, evidence ids, warnings, blockers,
+and limitations.
+
+Unbounded include rules, absolute paths, parent traversal, symlink target host
+paths, and missing evidence ids must fail closed.
+
+### BFI-015: observation packet does not read or store content
+
+A future observation packet must not contain source contents, code snippets,
+document excerpts, raw secret values, raw environment values, semantic
+summaries, filesystem hashes, or file sizes by default.
+
+Hashes and sizes require a later bounded boundary and remain structural
+evidence only if enabled.
+
+### BFI-016: observation packet preserves uncertainty
+
+Ambiguous source class, sensitivity, generated/vendored status, ignored status,
+and missing evidence must remain visible as candidates, warnings, blockers,
+limitations, or `unknown`.
+
+The packet must not force classification or convert missing evidence into a
+semantic claim.
+
+### BFI-017: local labs are advisory only
+
+`code-intel-kernel` may inform observation-packet shape, warning vocabulary,
+evidence-id requirements, selector boundaries, and missing-evidence handling.
+
+It must not import lab code, lab state, lab output, or lab benchmark results as
+Punk product truth.
+
+### BFI-018: future active observer results require evaluation route
+
+Future active observer/scanner results must define an `agent-bench-lab`
+evaluation route before they influence Brownfield decisions.
+
+The route must cover result validity, evidence coverage, deterministic
+repeatability, missing-evidence visibility, policy violations, hidden or
+mutation cases when available, and invalid-run handling.
+
+### BFI-019: benchmark results are not authority
+
+An `agent-bench-lab` run result may be evidence for review readiness only.
+
+It must not become a gate decision, proof, acceptance, contract readiness,
+project truth, or authority promotion.
+
+### BFI-020: observation packet does not activate implementation
+
+This boundary must not activate source inventory generation, repo scanning,
+file walking, source content reading, source filesystem hashing, size
+collection, manifest generation from repository state, claim extraction, AI
+summaries, runtime storage, CLI behavior, or broader Writer behavior.
+
 ## Minimal fixture shape
 
 This is illustrative boundary shape only, not an implemented schema.
@@ -122,6 +192,42 @@ inventory_item:
   authority: observed_structure
   semantic_summary: null
   claims_created: []
+```
+
+Observation packet fixture shape:
+
+```yaml
+observation_packet:
+  schema_version: brownfield-source-inventory-observation-packet.v0.1
+  packet_status: advisory
+  authority: observed_structure
+  source_root_ref:
+    kind: repo_root
+    path: .
+  observation_scope:
+    include:
+      - .
+    exclude:
+      - .git
+      - .punk/runtime
+      - .punk/cache
+      - .punk/indexes
+      - node_modules
+      - target
+  observations:
+    - repo_relative_path: crates/example/src/lib.rs
+      observed_kind_candidate: file
+      source_class_candidate: source_code
+      sensitivity_candidate: normal
+      evidence_ids:
+        - evidence:explicit-observer-input
+  warnings: []
+  blockers: []
+  limitations:
+    - no_content_read
+    - no_hashes
+    - no_sizes
+    - no_claims
 ```
 
 ## Non-goals

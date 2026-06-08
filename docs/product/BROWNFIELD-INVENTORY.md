@@ -5,10 +5,11 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-05-03
-updated_at: 2026-05-03
+updated_at: 2026-06-08
 review_after: 2026-07-20
 canonical_for:
   - brownfield-inventory-boundary
+  - brownfield-source-inventory-observation-packet-boundary
   - source-corpus-manifest-boundary
   - inventory-item-authority
   - brownfield-claim-separation
@@ -126,6 +127,130 @@ Future inventory may record only low-level observed structure by default:
 Future inventory must avoid file contents by default.
 
 Future inventory must not produce semantic summaries.
+
+## Source inventory observation packet boundary
+
+A future source inventory observation packet is the bounded input envelope
+between a future Brownfield observer and the existing Source Corpus Manifest
+model track.
+
+It is not a scanner result, not a manifest, not a claim ledger, not project
+truth, and not a command to write `.punk/` state.
+
+Required packet authority:
+
+```text
+packet_status = advisory
+authority = observed_structure
+```
+
+An observation packet may contain only explicit observed structure supplied by
+the future observer:
+
+- packet id and schema version;
+- source root ref with `kind = repo_root` and `path = .`;
+- observation scope with explicit include and exclude rules;
+- repo-relative artifact refs;
+- observed path kind candidates;
+- source class candidates from the bounded B1 vocabulary;
+- sensitivity candidates such as `normal`, `caution`, `sensitive`,
+  `excluded`, or `unknown`;
+- generated, vendored, ignored, or unknown candidate markers;
+- evidence ids for each observation;
+- warnings, blockers, and limitations;
+- lab reference notes that remain advisory;
+- evaluation requirement refs for future active observer/scanner runs.
+
+It must not contain:
+
+- source file contents;
+- code snippets;
+- document excerpts;
+- raw environment values;
+- raw secret values;
+- filesystem hashes;
+- file sizes;
+- semantic summaries;
+- user intent;
+- requirements;
+- module purpose;
+- architecture decisions;
+- accepted behavior;
+- contract readiness conclusions;
+- gate decisions;
+- proof or acceptance claims.
+
+Hashes and sizes remain excluded from the observation packet until a later
+bounded goal explicitly enables them. Even then, they would remain structural
+evidence only.
+
+Minimal illustrative packet shape:
+
+```yaml
+observation_packet:
+  schema_version: brownfield-source-inventory-observation-packet.v0.1
+  packet_status: advisory
+  authority: observed_structure
+  source_root_ref:
+    kind: repo_root
+    path: .
+  observation_scope:
+    include:
+      - .
+    exclude:
+      - .git
+      - .punk/runtime
+      - .punk/cache
+      - .punk/indexes
+      - node_modules
+      - target
+  observations:
+    - observation_id: obs:crates/example/src/lib.rs:file
+      repo_relative_path: crates/example/src/lib.rs
+      observed_kind_candidate: file
+      source_class_candidate: source_code
+      sensitivity_candidate: normal
+      generated_or_vendored_candidate: none
+      evidence_ids:
+        - evidence:explicit-observer-input
+      confidence: explicit_observation
+  warnings: []
+  blockers: []
+  limitations:
+    - no_content_read
+    - no_hashes
+    - no_sizes
+    - no_claims
+```
+
+Fail closed when a packet or future observer output includes:
+
+- absolute host paths;
+- parent traversal or normalized path escape;
+- symlink target expansion outside repo-relative refs;
+- unbounded include rules;
+- missing exclude coverage for default runtime/cache/vendor/build paths;
+- observations without evidence ids;
+- private local paths or unredacted sensitive path segments;
+- raw source contents, snippets, docs excerpts, secrets, or environment values;
+- hashes or sizes without a later accepted boundary;
+- semantic claims, intent, requirements, or contract-readiness conclusions;
+- lab results or benchmark results presented as product authority;
+- active observer/scanner results without an `agent-bench-lab` evaluation plan.
+
+`code-intel-kernel` may be used only as an advisory local lab for packet-shape
+ideas such as explicit selectors, evidence ids, warnings, limitations,
+candidate ranking, and fail-closed missing-evidence handling. Its local checkout
+state must be verified before reuse and must not become Punk product truth by
+reference.
+
+Future active observer/scanner results must define an `agent-bench-lab`
+evaluation route before they influence Brownfield decisions. The evaluation
+requirement should cover result validity, evidence coverage, deterministic
+repeatability, missing-evidence visibility, policy violations, hidden or
+mutation cases when available, and invalid-run handling. Benchmark or lab
+results are not gate decisions, proof, acceptance, contract readiness, or
+project truth.
 
 ## Forbidden inferences
 
