@@ -16,6 +16,7 @@ canonical_for:
   - brownfield-inventory-privacy-boundary
 related_docs:
   - docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md
+  - docs/modules/codebase-study.md
   - docs/product/PROJECT-MEMORY.md
   - docs/product/ROADMAP.md
   - docs/product/CRATE-STATUS.md
@@ -168,6 +169,9 @@ model track.
 The future observer is expected to be a separate Punk codebase-study module
 once implementation is selected. This boundary does not name, implement, or
 activate that module.
+
+The canonical parked module boundary now lives in
+`docs/modules/codebase-study.md`.
 
 It is not a scanner result, not a manifest, not a claim ledger, not project
 truth, and not a command to write `.punk/` state.

@@ -33,6 +33,7 @@ Modules add domain-specific capability without changing the universal laws.
 Examples:
 
 - DevPunk — software development
+- Codebase Study — bounded source observation
 - PubPunk — publishing and editorial workflows
 - future modules — time, trading, research, operations
 
@@ -86,6 +87,28 @@ publisher, PR creator, or gate/proof authority.
 ## First module strategy
 
 Do not activate DevPunk or PubPunk until the core flow, eval, contract, gate, and proof loop are stable.
+
+## Codebase Study
+
+Use this section as the current Codebase Study status checkpoint.
+
+Codebase Study is the future parked module for bounded source observation.
+
+Canonical module id:
+
+```text
+codebase-study
+```
+
+Its active module execution surface, CLI, scanner, file walker, content reader,
+indexer, Source Corpus Manifest builder, runtime storage, and benchmark runner
+are parked for now.
+
+The Codebase Study boundary is defined in `docs/modules/codebase-study.md` and
+`evals/specs/codebase-study-module-boundary.v0.1.md`. Codebase observation
+must stay behind that module boundary and must not be added as Brownfield core,
+`punk-project`, Source Corpus Manifest writer, generic Punk `Writer`, or
+active-core behavior before Module Host promotion.
 
 ## PubPunk
 
