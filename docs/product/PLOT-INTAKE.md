@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-05-19
-updated_at: 2026-05-19
+updated_at: 2026-06-08
 review_after: 2026-06-19
 canonical_for:
   - plot-intake-boundary-candidate
@@ -141,6 +141,70 @@ The routing note should include:
 
 It must not activate a module, invoke an adapter, execute work, publish, or write final decisions.
 
+## Harness slash command bridge candidate
+
+Future harness commands such as `/punk ...` inside Codex CLI, Codex App,
+Claude Code, Gemini, `agy`, or another executor shell may act as a thin bridge
+into Plot Intake.
+
+The harness command layer should not decide the route. It should package an
+explicit request envelope and call a Punk-owned intake entrypoint, such as a
+future CLI command:
+
+```text
+punk intake route --request-file <path> --harness <harness-id> --format json
+```
+
+The request envelope should include:
+
+- raw user text;
+- harness id, such as `codex-cli`, `codex-app`, `claude-code`, `gemini`, or
+  `agy`;
+- current working directory or project root ref;
+- available capability declarations;
+- explicit attachment or artifact refs;
+- redaction and privacy notes;
+- no secrets, credentials, private tokens, or hidden provider-local memory.
+
+The route result should separate phase from module:
+
+```yaml
+intake_route_result:
+  status: advisory
+  authority: non_authoritative
+  raw_request_ref: null
+  intent_candidate: null
+  phase_route: plot | cut | gate | blocked | clarify
+  module_route: core | pubpunk | devpunk | future_module | external
+  route_confidence: low | medium | high
+  rationale: []
+  alternatives_considered: []
+  blockers: []
+  required_evidence_before_execution: []
+  next_handoff: null
+  side_effects_active: false
+  module_activated: false
+  gate_decision_written: false
+```
+
+For example, `/punk draft a blog post about X` may route to:
+
+```yaml
+phase_route: plot
+module_route: pubpunk
+next_handoff: pubpunk.contract_intake
+side_effects_active: false
+```
+
+This means the request is probably a PubPunk-shaped contract/intake problem. It
+does not mean PubPunk runtime is active, a draft has been written, publishing
+is allowed, adapters may run, or the result has been accepted.
+
+Optional shorter harness commands such as `/pub ...` or `/dev ...` may be
+introduced later as explicit route hints, but hints are not authority. The Punk
+router must still be able to return `clarify`, `blocked`, or a different route
+when scope, evidence, side effects, or module status require it.
+
 ## Forbidden behavior
 
 Plot Intake must not:
@@ -179,6 +243,7 @@ Not active now:
 - runtime writer;
 - storage;
 - CLI;
+- harness slash command implementation;
 - module host integration;
 - module routing runtime;
 - generated executor briefs;
