@@ -8,8 +8,8 @@ ledger_version: work-ledger.v0.1
 dogfooding_level: 0
 updated_at: 2026-06-08
 current_phase: "Dogfooding Level 0 / v0.1-prep current truth baseline"
-current_focus: "Define Codebase Study observation receipt/evidence boundary v0.1"
-selected_next: "work/goals/goal_define_codebase_study_observation_receipt_evidence_boundary_v0_1.md"
+current_focus: "Add PubPunk post draft request packet v0.1"
+selected_next: "work/goals/goal_add_pubpunk_post_draft_request_packet_v0_1.md"
 last_validated_commit: "0f013f6"
 ---
 
@@ -18,9 +18,10 @@ last_validated_commit: "0f013f6"
 ## Now
 
 - Current stage: v0.1-prep Current Truth Baseline / Truth Alignment.
-- Current focus: define Codebase Study observation receipt/evidence boundary v0.1.
-- Selected next: `work/goals/goal_define_codebase_study_observation_receipt_evidence_boundary_v0_1.md`
-- Selected-next focus: define the advisory receipt/evidence boundary for future Codebase Study observation output. The checkpoint must keep receipt/evidence refs separate from source observation execution, storage writes, gate/proof authority, benchmark authority, and acceptance while keeping source observation implementation, repo scanning, file walking, content reading, source hashing, size collection, runtime `.punk` writes, lab execution, benchmark execution, gate/proof behavior, and acceptance inactive.
+- Current focus: add PubPunk post draft request packet v0.1.
+- Selected next: `work/goals/goal_add_pubpunk_post_draft_request_packet_v0_1.md`
+- Selected-next focus: add the first side-effect-free PubPunk request packet for post drafting across explicit target resource/channel refs. The checkpoint must capture content intent, target resources, voice/style refs, constraints, and expected draft outputs while keeping draft text generation, provider/model calls, filesystem reads, publishing workspace scans, PubPunk module execution, public CLI behavior, adapter invocation, external publishing, metrics collection, receipt writing, event writing, gate/proof behavior, and acceptance inactive.
+- Scope override note: the maintainer explicitly selected a switch from Codebase Study to PubPunk after the Codebase Study capability/privacy checkpoint landed on `main`. `work/goals/goal_define_codebase_study_observation_receipt_evidence_boundary_v0_1.md` remains a valid ready checkpoint, but it is not currently selected because PubPunk post drafting is more urgent.
 - Completion note: `work/goals/goal_define_codebase_study_capability_privacy_boundary_v0_1.md` is now recorded as done with docs/eval/work-ledger evidence. The capability/privacy boundary keeps capability requests separate from grants, records `capability_grants=[]` and selected grants empty, denies ambient repo discovery, implicit current-working-directory traversal, repo scanning, file walking, content reading, source snippets, raw environment values, secret-like values, source hashing, size collection, manifest generation, runtime `.punk` storage, event-log mutation, CLI behavior, module execution, lab execution, benchmark authority, gate/proof authority, and acceptance, and records future grant prerequisites plus privacy/redaction blockers. It adds no Rust code, request parser, capability resolver, privacy engine, redaction engine, source inventory implementation, repo scan, file walker, content read, source filesystem hash computation, size collection, manifest generation from repository state, claim extraction, AI summary, runtime storage, CLI behavior, module execution, benchmark execution, lab code import, or authority promotion.
 - Completion note: `work/goals/goal_define_codebase_study_source_observation_request_packet_v0_1.md` is now recorded as done with docs/eval/work-ledger evidence. The request packet boundary defines caller-supplied input shape, explicit source refs, capability requests separate from grants, privacy/redaction refs or blockers, expected advisory output authority, downstream handoff intent, and explicit invalid request cases. It adds no Rust code, request parser, source inventory implementation, repo scan, file walker, content read, source filesystem hash computation, size collection, manifest generation from repository state, claim extraction, AI summary, runtime storage, CLI behavior, module execution, benchmark execution, lab code import, or authority promotion.
 - Completion note: `work/goals/goal_apply_codebase_study_conformance_packet_v0_1.md` is now recorded as done with docs/eval/work-ledger evidence. The advisory conformance packet applies Module Conformance Packet v0.1 and Module Host Contract Stub v0.1 to Codebase Study; records `ready_for_docs_only_next=true`, `ready_for_skeleton=false`, and `ready_for_runtime_activation=false`; and keeps skeleton implementation and runtime activation blocked by findings for source observation request input, capability grants, privacy/redaction, execution workspace, receipt/evidence shape, and `agent-bench-lab` evaluation route. It adds no Rust code, source inventory implementation, repo scan, file walker, content read, source filesystem hash computation, size collection, manifest generation from repository state, claim extraction, AI summary, runtime storage, CLI behavior, module execution, benchmark execution, lab code import, or authority promotion.
@@ -204,7 +205,8 @@ last_validated_commit: "0f013f6"
 
 | Goal | Status | Why candidate | Blocked by |
 |---|---|---|---|
-| `work/goals/goal_define_codebase_study_observation_receipt_evidence_boundary_v0_1.md` | `ready` | Define advisory receipt/evidence refs before any implementation or active source observation behavior is considered. | - |
+| `work/goals/goal_add_pubpunk_post_draft_request_packet_v0_1.md` | `ready` | Start the urgent PubPunk post-writing path with a side-effect-free draft request packet across explicit target resource refs. | - |
+| `work/goals/goal_define_codebase_study_observation_receipt_evidence_boundary_v0_1.md` | `ready / paused` | Define advisory receipt/evidence refs before any implementation or active source observation behavior is considered. | Paused by explicit PubPunk scope override |
 | Future bounded codebase-study implementation slice | `not-created` | Actual source observation remains sensitive and needs receipt/evidence and evaluation-route boundaries before repo scanning, file walking, content reading, hashing, claims, or manifest item generation are considered. | Codebase Study receipt/evidence and follow-up eval boundaries |
 
 ## Open Drift Findings
@@ -227,6 +229,7 @@ last_validated_commit: "0f013f6"
 
 | Date | Item | Evidence |
 |---|---|---|
+| 2026-06-08 | Switched selected next to PubPunk post draft request packet v0.1 | `work/goals/goal_add_pubpunk_post_draft_request_packet_v0_1.md`, `work/reports/2026-06-08-switch-to-pubpunk-post-drafting-v0-1.md`, `work/STATUS.md` |
 | 2026-06-08 | Defined Codebase Study module boundary v0.1 | `work/goals/goal_define_codebase_study_module_boundary_v0_1.md`, `work/goals/goal_verify_codebase_study_module_boundary_v0_1.md`, `work/reports/2026-06-08-codebase-study-module-boundary-v0-1.md`, `docs/modules/codebase-study.md`, `docs/product/MODULES.md`, `docs/product/DOCUMENTATION-MAP.md`, `evals/specs/codebase-study-module-boundary.v0.1.md` |
 | 2026-06-08 | Verified Brownfield observation packet boundary and selected codebase study module boundary v0.1 | `work/goals/goal_verify_brownfield_source_inventory_observation_packet_boundary_v0_1.md`, `work/goals/goal_define_codebase_study_module_boundary_v0_1.md`, `work/reports/2026-06-08-brownfield-observation-packet-boundary-verification-v0-1.md`, `docs/product/BROWNFIELD-INVENTORY.md`, `docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md`, `evals/specs/brownfield-inventory-boundary.v0.1.md`, `evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md` |
 | 2026-06-08 | Prepared Brownfield source inventory observation packet boundary v0.1 | `work/goals/goal_prepare_brownfield_source_inventory_observation_packet_boundary_v0_1.md`, `work/goals/goal_verify_brownfield_source_inventory_observation_packet_boundary_v0_1.md`, `work/reports/2026-06-08-brownfield-source-inventory-observation-packet-boundary-v0-1.md`, `docs/product/BROWNFIELD-INVENTORY.md`, `docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md`, `evals/specs/brownfield-inventory-boundary.v0.1.md`, `evals/specs/brownfield-source-corpus-manifest-boundary.v0.1.md`, `knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md` |
