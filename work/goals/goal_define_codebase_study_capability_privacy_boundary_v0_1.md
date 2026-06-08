@@ -1,7 +1,7 @@
 ---
 id: goal_define_codebase_study_capability_privacy_boundary_v0_1
 title: "Define Codebase Study capability and privacy boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "product"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -39,7 +39,8 @@ knowledge_refs:
   - "docs/product/BROWNFIELD-SOURCE-CORPUS-MANIFEST.md"
   - "work/reports/2026-06-08-codebase-study-source-observation-request-packet-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-codebase-study-capability-privacy-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -104,6 +105,15 @@ claim.
 
 ## Outcome
 
-Done when the capability/privacy boundary is documented, eval cases cover
-positive and negative behavior, the work ledger records completion, checks
-pass, and `selected_next` points to the next bounded checkpoint.
+Done in
+`work/reports/2026-06-08-codebase-study-capability-privacy-boundary-v0-1.md`.
+
+The capability/privacy boundary defines the request-vs-grant split, keeps
+`capability_grants` and selected grants empty, records denied-by-default
+capabilities, future grant prerequisites, and privacy/redaction blockers. It
+does not grant scanner, traversal, content read, source hashing, size
+collection, manifest generation, runtime storage, lab execution, benchmark
+authority, gate/proof authority, or acceptance behavior.
+
+The next bounded checkpoint is
+`work/goals/goal_define_codebase_study_observation_receipt_evidence_boundary_v0_1.md`.
