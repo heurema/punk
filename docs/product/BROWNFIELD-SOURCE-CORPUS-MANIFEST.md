@@ -18,6 +18,7 @@ canonical_for:
   - brownfield-source-corpus-manifest-writer-implementation-boundary
 related_docs:
   - docs/product/BROWNFIELD-INVENTORY.md
+  - docs/modules/codebase-study.md
   - docs/product/PROJECT-MEMORY.md
   - docs/product/ROADMAP.md
   - docs/product/GLOSSARY.md
@@ -112,6 +113,9 @@ Future codebase study should be a separate Unix-style Punk module upstream of
 this handoff. The manifest model track consumes only the module's advisory
 packet after packet-specific validation; it does not run the module, scan the
 repository, or infer observations itself.
+
+The canonical parked module boundary now lives in
+`docs/modules/codebase-study.md`.
 
 A future source inventory observation packet may hand off to the Source Corpus
 Manifest model track only after packet-specific validation has accepted it for

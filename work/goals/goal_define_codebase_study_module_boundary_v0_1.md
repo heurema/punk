@@ -1,7 +1,7 @@
 ---
 id: goal_define_codebase_study_module_boundary_v0_1
 title: "Define codebase study module boundary v0.1"
-status: ready
+status: done
 owner: "vitaly"
 module: "product"
 priority: P2
@@ -9,8 +9,8 @@ authority: canonical
 created_at: 2026-06-08
 updated_at: 2026-06-08
 selected_at: 2026-06-08
-started_at: null
-completed_at: null
+started_at: 2026-06-08
+completed_at: 2026-06-08
 blocked_by: []
 scope:
   include:
@@ -43,7 +43,8 @@ knowledge_refs:
   - "knowledge/research/2026-06-08-brownfield-observation-local-lab-refs.md"
   - "work/reports/2026-06-08-brownfield-observation-packet-boundary-verification-v0-1.md"
 contract_refs: []
-report_refs: []
+report_refs:
+  - "work/reports/2026-06-08-codebase-study-module-boundary-v0-1.md"
 decision_refs: []
 proof_refs: []
 latest_proof_ref: null
@@ -97,3 +98,22 @@ architecture recovery, intent recovery, contract generation, gate/proof
 runtime, Punk `Writer` behavior, runtime `.punk` storage, CLI behavior, module
 execution, lab code import, benchmark suite execution, or benchmark-result
 authority.
+
+## Outcome
+
+Done in `work/reports/2026-06-08-codebase-study-module-boundary-v0-1.md`.
+
+The future codebase-study Punk module is defined as a parked docs/eval boundary
+with canonical module id `codebase-study`, prose name `Codebase Study`, and docs
+path `docs/modules/codebase-study.md`.
+
+The boundary defines explicit source observation request input, advisory source
+inventory observation packet output, failure modes, denied capabilities, and
+negative eval cases for auto-discovery, content reads, manifest assembly,
+runtime `.punk` writes, and authority claims.
+
+No source inventory implementation, repo scan, file walker, content read,
+source filesystem hash computation, size collection, manifest generation from
+repository state, claim extraction, AI summary, runtime storage, CLI behavior,
+module execution, benchmark execution, lab code import, or authority promotion
+was activated.

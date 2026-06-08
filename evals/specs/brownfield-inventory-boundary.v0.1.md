@@ -182,6 +182,12 @@ summaries, runtime storage, CLI behavior, or broader Writer behavior.
 Future codebase study must be represented as a separate Unix-style Punk module
 when implementation is selected.
 
+The canonical module id for this boundary is:
+
+```text
+codebase-study
+```
+
 Brownfield core, `punk-project`, Source Corpus Manifest writer behavior, and
 generic Punk `Writer` behavior must not silently absorb codebase study as an
 implicit scanner.

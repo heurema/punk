@@ -470,6 +470,12 @@ be averaged, ranked, or used for authority promotion.
 Future codebase study belongs to a separate Unix-style Punk module upstream of
 the manifest model track.
 
+The canonical module id for this boundary is:
+
+```text
+codebase-study
+```
+
 The manifest model track may consume only an accepted-for-handoff advisory
 observation packet. It must not run the codebase-study module, scan the
 repository, walk directories, read source contents, compute hashes, collect
