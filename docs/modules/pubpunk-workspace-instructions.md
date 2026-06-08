@@ -36,9 +36,9 @@ superseded_by: null
 Define the smallest workspace and instruction packet for future PubPunk work.
 
 This resolves the first PubPunk conformance blockers without activating
-PubPunk runtime, Module Host runtime, real filesystem reads, workspace creation,
-adapters, publishing, metrics collection, PubPunk-owned receipt writing, or
-credential use.
+PubPunk module execution, Module Host runtime, real filesystem reads, workspace
+creation, adapters, publishing, metrics collection, PubPunk-owned receipt
+writing, or credential use.
 
 ## Selected workspace policy
 
@@ -103,13 +103,13 @@ The input packet must carry explicit workspace, instruction, source,
 capability, receipt-field, and optional token-cost refs before the assessment
 model runs. It should not restart PubPunk from zero, add a public CLI, scan the
 filesystem, generate drafts, publish externally, collect metrics, write
-receipts, or activate Module Host runtime.
+receipts, activate PubPunk module execution, or activate Module Host runtime.
 
 The current smoke evidence can hand the ready packet and advisory assessment to
 existing Module Host preflight, envelope, and receipt proposal models. This is a
 model-chain check only. It does not invoke a module, load plugins, initialize a
-workspace, write receipts, publish, collect metrics, invoke adapters, or activate
-Module Host runtime.
+workspace, write receipts, publish, collect metrics, invoke adapters, activate
+PubPunk module execution, or activate Module Host runtime.
 
 The current channel connector profile resolution packet can then select an API,
 browser, or manual connector path from explicit inventory assessment,
@@ -119,15 +119,15 @@ refs. It selects API first when available, browser automation only when API is
 unavailable and browser policy allows it, and manual handoff when automated
 paths are unavailable but manual fallback is allowed. It does not call APIs,
 open browsers, read credentials, invoke adapters, publish, collect metrics,
-write receipts, or activate PubPunk or Module Host runtime.
+write receipts, or activate PubPunk module execution or Module Host runtime.
 
 The current publish request packet can then carry explicit resolved connector,
 candidate, channel, policy, adapter, payload, receipt, and host side-effect
 request refs into the existing Module Host side-effect request proposal and
 policy-gate preflight models. This remains a request/preflight chain only. It
 does not publish, invoke adapters, run policy engines, invoke gate, write
-receipts, read draft bodies, collect metrics, or activate PubPunk or Module
-Host runtime.
+receipts, read draft bodies, collect metrics, or activate PubPunk module
+execution or Module Host runtime.
 
 The current publish receipt preflight packet can then carry explicit receipt
 target, storage, operation-evidence, idempotency, rollback, error, adapter
@@ -136,7 +136,7 @@ connector strategy, channel, and payload refs into the existing Module Host
 side-effect receipt writer preflight model. This remains a preflight chain
 only. It does not write receipts, persist operation evidence, publish, invoke
 adapters, run policy engines, invoke gate, read draft bodies, collect metrics,
-or activate PubPunk or Module Host runtime.
+or activate PubPunk module execution or Module Host runtime.
 
 The current publish receipt write handoff packet can then carry explicit
 preflight, receipt writer, target-path, receipt-bytes, operation-evidence,
@@ -441,14 +441,15 @@ These checks are advisory readiness checks only. They prepare refs for the
 existing Module Host first active local receipt writer. PubPunk does not read
 receipt bytes, write receipts, persist operation evidence, invoke adapters,
 publish, run policy, invoke gate, read draft bodies, collect metrics, or
-activate runtime. The current smoke case exercises the already-existing host
-writer only against an explicit temporary `.punk/runs` target.
+activate PubPunk module execution or Module Host runtime behavior. The current
+smoke case exercises the already-existing host writer only against an explicit
+temporary `.punk/runs` target.
 
 ## Non-goals
 
 This packet does not activate:
 
-- PubPunk runtime;
+- PubPunk module execution through the Punk-owned Module Host;
 - Module Host runtime;
 - generated instruction views;
 - workspace initialization;

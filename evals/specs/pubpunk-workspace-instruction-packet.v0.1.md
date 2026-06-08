@@ -9,7 +9,7 @@ Authority: advisory/design
 Define deterministic expectations for the PubPunk workspace and instruction
 packet before selecting the next PubPunk implementation slice.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, manifest parsing, workspace initialization, filesystem scanning,
 instruction generation, adapter invocation, publishing, metrics collection,
 receipt writing, gate writing, proofpack writing, or acceptance claims.
@@ -92,6 +92,6 @@ pubpunk_workspace_instruction_packet_result:
 
 This spec does not define module code, host code, manifest schema,
 deterministic checker implementation, module registry behavior, Module Host
-runtime, PubPunk runtime, workspace creation, instruction generation, adapter
+runtime, PubPunk module execution, workspace creation, instruction generation, adapter
 behavior, publishing behavior, metrics collection, gate writing, proofpack
 writing, or acceptance claims.

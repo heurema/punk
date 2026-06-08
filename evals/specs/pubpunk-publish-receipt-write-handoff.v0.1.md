@@ -16,7 +16,7 @@ exact-byte receipt write without making PubPunk a receipt writer, reading
 receipt bytes, persisting operation evidence, publishing, invoking adapters,
 mutating event logs, or activating runtime behavior.
 
-This spec does not activate PubPunk runtime, Module Host runtime, module
+This spec does not activate PubPunk module execution, Module Host runtime, module
 loading, filesystem reads by PubPunk, workspace initialization, external
 publishing, metrics collection, adapter invocation, operation-evidence
 persistence, gate writing, proofpack writing, or acceptance claims.
@@ -95,7 +95,7 @@ operation-evidence persistence, proofpack writing, or acceptance claims.
 ### PUBPUNK-PUBLISH-RECEIPT-WRITE-HANDOFF-010: no runtime promotion is implied
 
 Passing this smoke case means only that the local model chain is coherent. It
-does not promote PubPunk to active runtime, public CLI, adapter behavior,
+does not promote PubPunk to active module execution, public CLI, adapter behavior,
 external publishing, metrics collection, persisted publication receipt writer,
 operation-evidence persistence, gate writing, proofpack writing, or acceptance
 authority.

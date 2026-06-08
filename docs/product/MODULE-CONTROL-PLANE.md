@@ -5,7 +5,7 @@ status: active
 authority: canonical
 owner: vitaly
 created_at: 2026-05-21
-updated_at: 2026-05-21
+updated_at: 2026-06-08
 review_after: 2026-06-21
 canonical_for:
   - module-control-manifest-boundary
@@ -547,7 +547,8 @@ cite as behavior provenance.
 
 ## PubPunk fixture
 
-PubPunk can use the contract as a fixture without activating runtime behavior:
+PubPunk can use the contract as a fixture without activating module execution
+or runtime behavior:
 
 ```yaml
 module_control_manifest:
@@ -583,7 +584,8 @@ module_control_manifest:
 ```
 
 This fixture does not publish, collect metrics, read credentials, invoke
-adapters, write receipts, write events, or activate PubPunk runtime.
+adapters, write receipts, write events, or activate PubPunk module execution
+through the Punk-owned Module Host.
 
 ## Non-goals
 

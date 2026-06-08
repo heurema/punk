@@ -10,7 +10,7 @@ Define deterministic review cases for the non-applying PubPunk article hook
 tuning fixture.
 
 This spec checks the full example chain from operator request to resolved
-behavior set without activating PubPunk runtime, user-local config writing,
+behavior set without activating PubPunk module execution, user-local config writing,
 metrics collection, external research, publishing, adapters, browser
 automation, receipts, events, gates, proofpacks, or acceptance claims.
 
@@ -117,7 +117,7 @@ external research activation, secrets, private data, or executable code.
 
 This spec does not define module code, host code, manifest parsing, config
 resolving, user-local config writing, deterministic checker implementation,
-PubPunk runtime, Module Host runtime, workspace creation, filesystem scanning,
+PubPunk module execution, Module Host runtime, workspace creation, filesystem scanning,
 article reads, real metrics collection, external research execution, adapter
 behavior, browser automation, credential access, publishing behavior, receipt
 writing, event writing, gate writing, proofpack writing, or acceptance claims.

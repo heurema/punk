@@ -32,7 +32,7 @@ superseded_by: null
 Define the first PubPunk-specific module control manifest fixture.
 
 This fixture applies the Module Control Plane contract to PubPunk without
-activating PubPunk runtime, reflection, publishing, metrics, adapters,
+activating PubPunk module execution, reflection, publishing, metrics, adapters,
 credential access, receipt writing, event writing, gate writing, proofpack
 writing, or acceptance authority.
 
@@ -257,7 +257,7 @@ This fixture does not add:
 - Rust code;
 - manifest parsing;
 - deterministic checker implementation;
-- PubPunk runtime;
+- PubPunk module execution through the Punk-owned Module Host;
 - Module Host runtime;
 - background reflection;
 - behavior-artifact writing;
@@ -290,4 +290,4 @@ The check verifies that this fixture and
 `evals/specs/pubpunk-control-manifest.v0.1.md` keep the advisory PubPunk
 control manifest, empty grants, denied side effects, disabled reflection,
 non-current tuning, user-local, hook fixture, and promotion boundaries visible
-without activating PubPunk runtime behavior.
+without activating PubPunk module execution behavior.

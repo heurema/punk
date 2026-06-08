@@ -11,7 +11,7 @@ Define deterministic review cases for the PubPunk live tuning runbook.
 This spec covers the manual operator path from live customization request to
 evidence packet, tuning proposal, approval decision, and promotion handoff.
 
-It does not activate PubPunk runtime, manifest parsing, behavior resolving,
+It does not activate PubPunk module execution, manifest parsing, behavior resolving,
 user-local config writing, behavior-artifact writing, article reading, metrics
 collection, external research execution, adapter invocation, publishing, event
 writing, gate writing, proofpack writing, or acceptance claims.
@@ -140,7 +140,7 @@ scripts/check.sh module-control-suite
 
 The commands validate the current live tuning and control-plane marker suites.
 They do not read articles, collect metrics, run research, write config, promote
-artifacts, activate PubPunk runtime, publish, invoke adapters, write gates,
+artifacts, activate PubPunk module execution, publish, invoke adapters, write gates,
 write proofpacks, or claim acceptance.
 
 ## Non-goals
