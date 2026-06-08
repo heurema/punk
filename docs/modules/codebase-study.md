@@ -133,6 +133,83 @@ Invalid request-packet inputs include:
 The deterministic eval target for this boundary is
 `evals/specs/codebase-study-source-observation-request-packet.v0.1.md`.
 
+### Capability and privacy boundary
+
+The capability and privacy boundary is design evidence only. It is not a
+runtime schema, parser, Module Host grant, capability resolver, privacy engine,
+redaction engine, scanner plan, reader plan, lab run, benchmark result, gate
+decision, proof, or acceptance.
+
+The boundary must keep capability requests separate from capability grants:
+
+```yaml
+capability_requests:
+  - scoped_path_observation_over_explicit_refs
+capability_grants: []
+selected_capability_grants: []
+authority: non_authoritative
+non_authority: true
+```
+
+No source-observation capability is selected in this v0.1 boundary.
+
+Denied by default:
+
+- ambient repo discovery;
+- implicit current-working-directory traversal;
+- repo scanning;
+- file walking;
+- source content reading;
+- source snippets or document excerpts;
+- raw environment values;
+- secret-like values;
+- source filesystem hashing;
+- size collection;
+- manifest generation from repository state;
+- source indexing;
+- claim extraction;
+- architecture recovery;
+- intent recovery;
+- AI summaries;
+- runtime `.punk` storage;
+- event-log mutation;
+- CLI behavior;
+- module execution;
+- lab code import;
+- benchmark execution;
+- network access;
+- credential access;
+- adapter invocation;
+- gate decisions;
+- proof writing;
+- acceptance claims.
+
+Future capabilities may be requested, but not granted, for structural advisory
+observation over caller-supplied refs:
+
+- path existence candidate;
+- path kind candidate;
+- basename or extension marker;
+- source-class candidate;
+- generated or vendored candidate;
+- warning;
+- blocker;
+- limitation.
+
+Any future grant requires a later bounded goal with explicit source refs,
+selected capability-grant refs, privacy and redaction refs or resolved
+blockers, expected receipt/evidence refs, evaluation-route refs, conformance
+review, and deterministic eval coverage before implementation.
+
+Privacy and redaction blockers fail closed. Missing privacy policy refs,
+missing redaction policy refs, source snippets, document excerpts, raw
+environment values, secret-like values, credentials, private transcripts, and
+sensitive content requests must produce blockers or refusal. They must not be
+silently normalized into path observation or widened into content reads.
+
+The deterministic eval target for this boundary is
+`evals/specs/codebase-study-capability-privacy-boundary.v0.1.md`.
+
 ## Outputs
 
 A future Codebase Study invocation may return only an advisory source inventory
