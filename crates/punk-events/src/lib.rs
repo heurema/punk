@@ -9,7 +9,7 @@
 //! same event log, but it does not write receipts or evidence artifacts.
 
 use std::fs::{File, OpenOptions};
-use std::io::{self, BufRead, BufReader, Cursor, Write};
+use std::io::{self, Cursor, Write};
 use std::path::Path;
 
 pub const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -49,6 +49,8 @@ pub enum EventKind {
     GuardEvaluated,
     InspectRead,
     ReceiptEvidenceHandoff,
+    // Reserved replay vocabulary. The Phase 1 writer does not emit replay
+    // events and no replay reader is implemented in this crate yet.
     EventReplayStarted,
     EventReplayCompleted,
 }
@@ -307,6 +309,8 @@ impl EventRecord {
 pub enum EventLogError {
     Io(io::Error),
     SequenceOverflow,
+    ExistingLogMissingTrailingNewline,
+    ExistingLogMalformedTail,
 }
 
 impl From<io::Error> for EventLogError {
@@ -550,6 +554,7 @@ fn is_safe_event_artifact_ref(artifact_ref: &str) -> bool {
         || artifact_ref.starts_with('/')
         || artifact_ref.starts_with('~')
         || artifact_ref.contains('\\')
+        || artifact_ref.contains(':')
         || has_url_scheme(artifact_ref)
         || artifact_ref
             .split('/')
@@ -604,25 +609,46 @@ fn ensure_plain_file_or_absent(path: &Path) -> Result<(), LocalEventLogError> {
 }
 
 fn next_sequence_for_existing_log(path: &Path) -> Result<u64, LocalEventLogError> {
-    let file = match File::open(path) {
-        Ok(file) => file,
+    let bytes = match std::fs::read(path) {
+        Ok(bytes) => bytes,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(1),
         Err(error) => return Err(LocalEventLogError::Io(error)),
     };
 
-    let mut lines = 0_u64;
-    for line in BufReader::new(file).lines() {
-        let line = line.map_err(LocalEventLogError::Io)?;
-        if !line.trim().is_empty() {
-            lines = lines.checked_add(1).ok_or(LocalEventLogError::EventLog(
-                EventLogError::SequenceOverflow,
-            ))?;
-        }
+    if bytes.is_empty() {
+        return Ok(1);
     }
 
-    lines.checked_add(1).ok_or(LocalEventLogError::EventLog(
+    if !bytes.ends_with(b"\n") {
+        return Err(LocalEventLogError::EventLog(
+            EventLogError::ExistingLogMissingTrailingNewline,
+        ));
+    }
+
+    let text = std::str::from_utf8(&bytes)
+        .map_err(|_| LocalEventLogError::EventLog(EventLogError::ExistingLogMalformedTail))?;
+    let Some(tail) = text.lines().rev().find(|line| !line.trim().is_empty()) else {
+        return Ok(1);
+    };
+    let sequence = parse_event_record_sequence(tail).ok_or(LocalEventLogError::EventLog(
+        EventLogError::ExistingLogMalformedTail,
+    ))?;
+
+    sequence.checked_add(1).ok_or(LocalEventLogError::EventLog(
         EventLogError::SequenceOverflow,
     ))
+}
+
+fn parse_event_record_sequence(line: &str) -> Option<u64> {
+    let after_key = line.split_once("\"sequence\":")?.1;
+    let digits = after_key
+        .chars()
+        .take_while(char::is_ascii_digit)
+        .collect::<String>();
+    if digits.is_empty() {
+        return None;
+    }
+    digits.parse().ok()
 }
 
 pub fn serialize_event_record(record: &EventRecord) -> String {
@@ -736,8 +762,8 @@ mod tests {
     use super::{
         append_local_flow_event, append_local_receipt_evidence_handoff_event,
         create_new_file_event_log, receipt_evidence_handoff_event_draft, schema_fixture,
-        AppendOnlyEventLog, EventArtifacts, EventCorrelation, EventDraft, EventKind, EventPhase,
-        EventResult, EventSource, EventStatus, FlowTransitionRef, LocalEventLogError,
+        AppendOnlyEventLog, EventArtifacts, EventCorrelation, EventDraft, EventKind, EventLogError,
+        EventPhase, EventResult, EventSource, EventStatus, FlowTransitionRef, LocalEventLogError,
         MemoryEventLog, LOCAL_FLOW_EVENT_LOG_REF,
     };
     use std::fs;
@@ -941,6 +967,56 @@ mod tests {
     }
 
     #[test]
+    fn local_flow_event_writer_derives_next_sequence_from_last_stored_record() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+
+        let event_log_path = temp_path.join(LOCAL_FLOW_EVENT_LOG_REF);
+        fs::create_dir_all(event_log_path.parent().expect("event log has parent"))
+            .expect("event dir should be created");
+        fs::write(
+            &event_log_path,
+            "{\"schema_version\":\"punk.event.v0.1\",\"event_id\":\"evt_0000000000000041\",\"sequence\":41,\"phase\":\"cut\",\"kind\":\"transition_denied\",\"source\":{\"crate\":\"punk-flow\",\"component\":\"transition_guard\"},\"correlation\":{\"flow_id\":\"flow_local_001\",\"goal_ref\":null},\"transition\":{\"from_state\":null,\"command\":\"StartRun\",\"to_state\":null},\"result\":{\"status\":\"denied\",\"guard_code\":\"CUT_REQUIRES_APPROVED_CONTRACT\",\"error_code\":\"E_FLOW_ILLEGAL_TRANSITION\"},\"artifacts\":{\"refs\":[]}}\n",
+        )
+        .expect("seed event log should be written");
+
+        let record = append_local_flow_event(&temp_path, schema_fixture())
+            .expect("append should continue from stored sequence");
+
+        assert_eq!(record.sequence, 42);
+        assert_eq!(record.event_id, "evt_0000000000000042");
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
+    fn local_flow_event_writer_rejects_torn_event_log_tail() {
+        let temp_path = unique_temp_path();
+        fs::create_dir_all(&temp_path).expect("temp dir should be created");
+        write_project_marker(&temp_path);
+
+        let event_log_path = temp_path.join(LOCAL_FLOW_EVENT_LOG_REF);
+        fs::create_dir_all(event_log_path.parent().expect("event log has parent"))
+            .expect("event dir should be created");
+        fs::write(
+            &event_log_path,
+            "{\"schema_version\":\"punk.event.v0.1\",\"event_id\":\"evt_0000000000000001\",\"sequence\":1",
+        )
+        .expect("torn event log should be written");
+
+        let error = append_local_flow_event(&temp_path, schema_fixture())
+            .expect_err("torn tail should block append");
+
+        assert!(matches!(
+            error,
+            LocalEventLogError::EventLog(EventLogError::ExistingLogMissingTrailingNewline)
+        ));
+
+        fs::remove_dir_all(&temp_path).expect("temp dir should be removed");
+    }
+
+    #[test]
     fn local_receipt_evidence_handoff_appends_safe_refs_without_writing_runtime_artifacts() {
         let temp_path = unique_temp_path();
         fs::create_dir_all(&temp_path).expect("temp dir should be created");
@@ -1083,6 +1159,8 @@ mod tests {
             "https://example.com/report.md"
         ));
         assert!(!super::is_safe_event_artifact_ref("file:/tmp/report.md"));
+        assert!(!super::is_safe_event_artifact_ref("C:report.md"));
+        assert!(!super::is_safe_event_artifact_ref("work/C:report.md"));
         assert!(!super::is_safe_event_artifact_ref("work\\report.md"));
     }
 

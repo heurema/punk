@@ -33,7 +33,7 @@ Modules may assess, not decide. Adapters may invoke, not own truth. Project memo
 Today, the executable CLI surface is intentionally limited to:
 
 - `punk init <project-id>`
-- `punk init <project-id> --mode brownfield`
+- `punk init <project-id> --mode <greenfield|brownfield>`
 - `punk flow inspect`
 - `punk publishing locate [--project-root <path>] [--json]`
 - `punk eval run smoke`
@@ -50,6 +50,7 @@ Publishing has one narrow active resolver surface: `punk publishing locate` read
 PubPunk has one incubating library slice: `punk-mod-pubpunk` can assess caller-provided publishing inventory metadata and receipt gaps as advisory module evidence. It has no public CLI, performs no filesystem IO, creates no publication receipts, publishes nothing, invokes no adapters, writes no gate/proof authority, and does not make publishing workspaces project truth.
 
 `punk init <project-id>` is the default greenfield Dogfooding Level 0 compact project-memory scaffold.
+`punk init <project-id> --mode greenfield` is the explicit spelling for the same default mode.
 
 Run it from the target project root. It initializes the current directory in place and does not create a new subdirectory named `<project-id>`.
 

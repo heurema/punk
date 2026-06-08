@@ -8,7 +8,6 @@ publish = false
 
 [dependencies]
 punk-eval = { path = "../punk-eval" }
-punk-events = { path = "../punk-events" }
 punk-flow = { path = "../punk-flow" }
 punk-project = { path = "../punk-project" }
 

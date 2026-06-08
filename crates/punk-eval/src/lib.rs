@@ -122,7 +122,8 @@ use punk_proof::{
     compute_proofpack_manifest_digest, positive_acceptance_preconditions_met,
     proofpack_writer_first_active_write_slice_boundary,
     proofpack_writer_hash_reference_integration_model_boundary,
-    proofpack_writer_write_first_active_slice, PositiveAcceptanceInputs, ProofArtifactDigest,
+    proofpack_writer_write_first_active_slice, PositiveAcceptanceInputs,
+    ProofAcceptanceAuthorityBlocker, ProofAcceptanceAuthorityReport, ProofArtifactDigest,
     ProofArtifactHash, ProofArtifactKind, ProofArtifactRef, ProofBoundaryNote, ProofContractRef,
     ProofCreatedAt, ProofEvalRef, ProofEventRef, ProofGateDecisionRef, ProofOutputArtifactRef,
     ProofRunReceiptRef, Proofpack, ProofpackId, ProofpackWriterAbortState,
@@ -182,6 +183,8 @@ const PROOF_HASH_OUTPUT: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000006";
 
 static SMOKE_TEMP_PATH_COUNTER: AtomicU64 = AtomicU64::new(0);
+pub const EXPECTED_SMOKE_CASE_COUNT: usize = 175;
+const SMOKE_ASSESSMENT_SCOPE: &str = "over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet with resolved connector refs, PubPunk publish receipt write handoff packet with resolved connector refs, PubPunk publish operation evidence handoff packet with resolved connector refs, PubPunk publish receipt/evidence event handoff packet with resolved connector refs, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SmokeEvalStatus {
@@ -662,13 +665,13 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
     } else {
         SmokeEvalStatus::Fail
     };
-    let assessment = if smoke_result == SmokeEvalStatus::Pass {
-        "local deterministic smoke harness passed over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet with resolved connector refs, PubPunk publish receipt write handoff packet with resolved connector refs, PubPunk publish operation evidence handoff packet with resolved connector refs, PubPunk publish receipt/evidence event handoff packet with resolved connector refs, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
-            .to_owned()
+    let assessment_status = if smoke_result == SmokeEvalStatus::Pass {
+        "passed"
     } else {
-        "local deterministic smoke harness found one or more failing cases over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet with resolved connector refs, PubPunk publish receipt write handoff packet with resolved connector refs, PubPunk publish operation evidence handoff packet with resolved connector refs, PubPunk publish receipt/evidence event handoff packet with resolved connector refs, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels"
-            .to_owned()
+        "found one or more failing cases"
     };
+    let assessment =
+        format!("local deterministic smoke harness {assessment_status} {SMOKE_ASSESSMENT_SCOPE}");
 
     SmokeEvalReport {
         summary: SmokeEvalSummary {
@@ -2207,7 +2210,9 @@ fn eval_pubpunk_publish_request_packet_chains_to_host_side_effect_request() -> S
         && side_effect_proposal
             .covered_preconditions
             .contains(&ModuleSideEffectPrecondition::GateOrPolicyApproval)
+        && side_effect_proposal.gate_approval_is_self_asserted_not_verified
         && policy_gate_preflight.status == ModuleHostStatus::Ready
+        && policy_gate_preflight.gate_approval_is_self_asserted_not_verified
         && policy_gate_preflight
             .covered_requirements
             .contains(&ModulePolicyGatePreflightRequirement::ReadySideEffectRequestProposal)
@@ -2884,7 +2889,6 @@ fn eval_pubpunk_publish_receipt_write_handoff_chains_to_host_receipt_writer_writ
         && idempotent.is_idempotent_existing_match()
         && idempotent.is_success()
         && !forbidden_runtime_exists
-        && cleanup_ok
         && write_result.writes_receipt()
         && write_result.writes_punk_runs()
         && write_result.reads_filesystem()
@@ -3362,7 +3366,6 @@ fn eval_pubpunk_publish_operation_evidence_handoff_chains_to_host_operation_evid
         && idempotent.is_idempotent_existing_match()
         && idempotent.is_success()
         && !forbidden_runtime_exists
-        && cleanup_ok
         && !evidence_result.writes_receipt()
         && evidence_result.writes_punk_runs()
         && evidence_result.reads_filesystem()
@@ -3769,6 +3772,7 @@ fn eval_module_host_side_effect_request_proposal_model_is_side_effect_free() -> 
         && side_effect_proposal
             .covered_preconditions
             .contains(&ModuleSideEffectPrecondition::GateOrPolicyApproval)
+        && side_effect_proposal.gate_approval_is_self_asserted_not_verified
         && side_effect_proposal
             .boundary_flags
             .all_side_effect_flags_false();
@@ -3888,6 +3892,7 @@ fn eval_module_host_policy_gate_preflight_model_is_side_effect_free() -> SmokeEv
         && policy_gate_preflight
             .covered_requirements
             .contains(&ModulePolicyGatePreflightRequirement::ProofRequirementRef)
+        && policy_gate_preflight.gate_approval_is_self_asserted_not_verified
         && policy_gate_preflight
             .boundary_flags
             .all_side_effect_flags_false();
@@ -4032,6 +4037,7 @@ fn eval_module_host_side_effect_receipt_writer_preflight_model_is_side_effect_fr
         && receipt_writer_preflight.covered_requirements.contains(
             &ModuleSideEffectReceiptWriterPreflightRequirement::AdapterInvocationReceiptRef,
         )
+        && receipt_writer_preflight.gate_approval_is_self_asserted_not_verified
         && receipt_writer_preflight
             .boundary_flags
             .all_side_effect_flags_false();
@@ -5624,7 +5630,7 @@ fn eval_module_host_side_effect_receipt_writer_first_active_write_slice_writes_r
         && !write_result.writes_proofpack()
         && !write_result.creates_acceptance_claim()
         && !write_result.can_claim_acceptance_by_itself();
-    let no_forbidden_side_effects = !forbidden_runtime_exists && cleanup_ok;
+    let no_forbidden_side_effects = !forbidden_runtime_exists;
 
     if vocabulary_ok && write_ok && boundary_ok && no_forbidden_side_effects {
         SmokeEvalCaseResult::pass(
@@ -5920,7 +5926,7 @@ fn eval_module_host_side_effect_receipt_writer_operation_evidence_write_slice_wr
         && !evidence_result.writes_proofpack()
         && !evidence_result.creates_acceptance_claim()
         && !evidence_result.can_claim_acceptance_by_itself();
-    let no_forbidden_side_effects = !forbidden_runtime_exists && cleanup_ok;
+    let no_forbidden_side_effects = !forbidden_runtime_exists;
 
     if vocabulary_ok && write_ok && boundary_ok && no_forbidden_side_effects {
         SmokeEvalCaseResult::pass(
@@ -6069,8 +6075,7 @@ fn eval_project_init_creates_level0_manual_memory_scaffold() -> SmokeEvalCaseRes
         && goal_ok
         && instruction_index_ok
         && marker_ok
-        && artifact_ok
-        && cleanup_ok;
+        && artifact_ok;
 
     if scaffold_ok {
         SmokeEvalCaseResult::pass(
@@ -6257,8 +6262,7 @@ fn eval_project_init_brownfield_scaffold_shape() -> SmokeEvalCaseResult {
         && marker_ok
         && placeholders_ok
         && instruction_index_ok
-        && artifact_ok
-        && cleanup_ok;
+        && artifact_ok;
 
     if scaffold_ok {
         SmokeEvalCaseResult::pass(
@@ -6328,7 +6332,7 @@ fn eval_project_init_refuses_to_overwrite_existing_memory() -> SmokeEvalCaseResu
         .as_ref()
         .is_ok_and(|text| text == "custom status\n");
 
-    if conflict_ok && preserved_ok && cleanup_ok {
+    if conflict_ok && preserved_ok {
         SmokeEvalCaseResult::pass(
             "eval_project_init_refuses_to_overwrite_existing_memory",
             "project init refuses to overwrite existing project memory",
@@ -6395,7 +6399,7 @@ fn eval_project_init_conflict_is_atomic_noop() -> SmokeEvalCaseResult {
         .as_ref()
         .is_ok_and(|text| text == "custom status\n");
 
-    if conflict_ok && preserved_ok && no_partial_ok && cleanup_ok {
+    if conflict_ok && preserved_ok && no_partial_ok {
         SmokeEvalCaseResult::pass(
             "eval_project_init_conflict_is_atomic_noop",
             "project init conflict leaves no partial scaffold",
@@ -6785,6 +6789,7 @@ fn eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest() -> 
     let storage_root = unique_smoke_temp_path();
     let parent_path = storage_root.join(".punk/memory/reconstruction");
     if let Err(error) = fs::create_dir_all(&parent_path) {
+        let _ = fs::remove_dir_all(&storage_root);
         return SmokeEvalCaseResult::fail(
             "eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest",
             "brownfield source corpus manifest writer first slice writes prepared manifest",
@@ -6897,7 +6902,7 @@ fn eval_source_corpus_manifest_writer_first_slice_writes_prepared_manifest() -> 
         && !result.operation_evidence_is_project_truth()
         && !result.creates_claims()
         && !result.promotes_manifest_authority();
-    let no_forbidden_side_effects = !runtime_exists && !claim_ledger_exists && cleanup_ok;
+    let no_forbidden_side_effects = !runtime_exists && !claim_ledger_exists;
 
     if write_ok && render_ok && blocker_ok && boundary_ok && no_forbidden_side_effects {
         SmokeEvalCaseResult::pass(
@@ -7895,25 +7900,33 @@ fn eval_ready_confirmed_draft_with_unmapped_hard_clause_cannot_approve() -> Smok
 }
 
 fn eval_hard_clause_mapping_does_not_create_gate_decision() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let assessment = assess_hard_clause_mappings(&[ContractClauseBlueprint {
         id: "clause.human",
         gate_review_required: true,
         human_gate_review_reason: Some("manual review required"),
         ..hard_contract_clause("clause.base")
     }]);
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if assessment.ready_for_approval() && !assessment.writes_gate_decision() {
+    if assessment.ready_for_approval()
+        && !assessment.writes_gate_decision()
+        && observable_no_artifacts
+    {
         SmokeEvalCaseResult::pass(
             "eval_hard_clause_mapping_does_not_create_gate_decision",
             "hard-clause mapping writes no gate outcome",
-            "human review mapping declares a future input only and writes no closure authority",
+            "human review mapping declares a future input only and writes no closure authority or boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_hard_clause_mapping_does_not_create_gate_decision",
             "hard-clause mapping writes no gate outcome",
             format!(
-                "gate boundary drifted; writes_gate={}",
+                "gate boundary drifted; writes_gate={} observable_no_artifacts={observable_no_artifacts}",
                 assessment.writes_gate_decision()
             ),
         )
@@ -7921,24 +7934,30 @@ fn eval_hard_clause_mapping_does_not_create_gate_decision() -> SmokeEvalCaseResu
 }
 
 fn eval_hard_clause_mapping_does_not_create_proofpack() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let assessment = assess_hard_clause_mappings(&[ContractClauseBlueprint {
         id: "clause.proof",
         has_proof_requirement_refs: true,
         ..hard_contract_clause("clause.base")
     }]);
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if assessment.ready_for_approval() && !assessment.creates_proofpack() {
+    if assessment.ready_for_approval() && !assessment.creates_proofpack() && observable_no_artifacts
+    {
         SmokeEvalCaseResult::pass(
             "eval_hard_clause_mapping_does_not_create_proofpack",
             "hard-clause mapping creates no proofpack",
-            "proof requirement refs are declarative and do not write proof artifacts",
+            "proof requirement refs are declarative and do not write proof artifacts or boundary storage",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_hard_clause_mapping_does_not_create_proofpack",
             "hard-clause mapping creates no proofpack",
             format!(
-                "proofpack boundary drifted; creates_proofpack={}",
+                "proofpack boundary drifted; creates_proofpack={} observable_no_artifacts={observable_no_artifacts}",
                 assessment.creates_proofpack()
             ),
         )
@@ -7946,24 +7965,29 @@ fn eval_hard_clause_mapping_does_not_create_proofpack() -> SmokeEvalCaseResult {
 }
 
 fn eval_hard_clause_mapping_does_not_invoke_writer() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let assessment = assess_hard_clause_mappings(&[ContractClauseBlueprint {
         id: "clause.validator",
         has_validator_refs: true,
         ..hard_contract_clause("clause.base")
     }]);
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if assessment.ready_for_approval() && !assessment.invokes_writer() {
+    if assessment.ready_for_approval() && !assessment.invokes_writer() && observable_no_artifacts {
         SmokeEvalCaseResult::pass(
             "eval_hard_clause_mapping_does_not_invoke_writer",
             "hard-clause mapping does not invoke Writer",
-            "mapping keeps Writer downstream and cannot authorize Writer behavior",
+            "mapping keeps Writer downstream and cannot authorize Writer behavior or write boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_hard_clause_mapping_does_not_invoke_writer",
             "hard-clause mapping does not invoke Writer",
             format!(
-                "Writer boundary drifted; invokes_writer={}",
+                "Writer boundary drifted; invokes_writer={} observable_no_artifacts={observable_no_artifacts}",
                 assessment.invokes_writer()
             ),
         )
@@ -8671,6 +8695,8 @@ fn eval_duplicate_proof_targets_are_non_conflicting() -> SmokeEvalCaseResult {
 }
 
 fn eval_proof_requirements_do_not_create_proofpack() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let blueprint = contract_proof_requirements_blueprint();
     let proof_requirements = contract_proof_requirements_v0_1();
     let assessment = assess_proof_requirements(&proof_requirements);
@@ -8687,43 +8713,52 @@ fn eval_proof_requirements_do_not_create_proofpack() -> SmokeEvalCaseResult {
         && assessment.proof_requirements_declared()
         && !proof_requirements.creates_proofpack()
         && !assessment.creates_proofpack();
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if links_ok && hashes_ok && boundary_ok {
+    if links_ok && hashes_ok && boundary_ok && observable_no_artifacts {
         SmokeEvalCaseResult::pass(
             "eval_proof_requirements_do_not_create_proofpack",
             "proof requirements stay declarative",
-            "contract proof requirements declare future links and hashes without creating proofpacks or owning closure authority",
+            "contract proof requirements declare future links and hashes without creating proofpacks, boundary artifacts, or owning closure authority",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_proof_requirements_do_not_create_proofpack",
             "proof requirements stay declarative",
             format!(
-                "proof requirements drifted; links_ok={links_ok} hashes_ok={hashes_ok} boundary_ok={boundary_ok}"
+                "proof requirements drifted; links_ok={links_ok} hashes_ok={hashes_ok} boundary_ok={boundary_ok} observable_no_artifacts={observable_no_artifacts}"
             ),
         )
     }
 }
 
 fn eval_proof_requirements_do_not_write_punk_proofs_storage() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let proof_requirements = contract_proof_requirements_v0_1();
     let assessment = assess_proof_requirements(&proof_requirements);
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
     if assessment.proof_requirements_declared()
         && !proof_requirements.writes_punk_proofs_storage()
         && !assessment.writes_punk_proofs_storage()
+        && observable_no_artifacts
     {
         SmokeEvalCaseResult::pass(
             "eval_proof_requirements_do_not_write_punk_proofs_storage",
             "proof requirements write no proof storage",
-            "proof requirements are declarations only and do not write .punk/proofs",
+            "proof requirements are declarations only and do not write .punk/proofs or boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_proof_requirements_do_not_write_punk_proofs_storage",
             "proof requirements write no proof storage",
             format!(
-                "proof storage boundary drifted; model_writes={} assessment_writes={}",
+                "proof storage boundary drifted; model_writes={} assessment_writes={} observable_no_artifacts={observable_no_artifacts}",
                 proof_requirements.writes_punk_proofs_storage(),
                 assessment.writes_punk_proofs_storage()
             ),
@@ -8758,24 +8793,30 @@ fn eval_proof_requirements_do_not_compute_artifact_hashes_from_filesystem() -> S
 }
 
 fn eval_proof_requirements_do_not_write_gate_decision() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let proof_requirements = contract_proof_requirements_v0_1();
     let assessment = assess_proof_requirements(&proof_requirements);
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
     if assessment.proof_requirements_declared()
         && !proof_requirements.writes_gate_decision()
         && !assessment.writes_gate_decision()
+        && observable_no_artifacts
     {
         SmokeEvalCaseResult::pass(
             "eval_proof_requirements_do_not_write_gate_decision",
             "proof requirements write no gate outcome",
-            "proof requirements are downstream declarations and cannot write closure outcomes",
+            "proof requirements are downstream declarations and cannot write closure outcomes or boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_proof_requirements_do_not_write_gate_decision",
             "proof requirements write no gate outcome",
             format!(
-                "gate writer boundary drifted; model_writes={} assessment_writes={}",
+                "gate writer boundary drifted; model_writes={} assessment_writes={} observable_no_artifacts={observable_no_artifacts}",
                 proof_requirements.writes_gate_decision(),
                 assessment.writes_gate_decision()
             ),
@@ -8810,24 +8851,30 @@ fn eval_proof_requirements_do_not_create_acceptance_claim() -> SmokeEvalCaseResu
 }
 
 fn eval_proof_requirements_do_not_invoke_writer() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let proof_requirements = contract_proof_requirements_v0_1();
     let assessment = assess_proof_requirements(&proof_requirements);
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
     if assessment.proof_requirements_declared()
         && !proof_requirements.invokes_writer()
         && !assessment.invokes_writer()
+        && observable_no_artifacts
     {
         SmokeEvalCaseResult::pass(
             "eval_proof_requirements_do_not_invoke_writer",
             "proof requirements do not invoke Writer",
-            "proof requirements do not invoke Writer or authorize writer behavior",
+            "proof requirements do not invoke Writer, authorize writer behavior, or write boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_proof_requirements_do_not_invoke_writer",
             "proof requirements do not invoke Writer",
             format!(
-                "Writer boundary drifted; model_invokes={} assessment_invokes={}",
+                "Writer boundary drifted; model_invokes={} assessment_invokes={} observable_no_artifacts={observable_no_artifacts}",
                 proof_requirements.invokes_writer(),
                 assessment.invokes_writer()
             ),
@@ -9204,24 +9251,30 @@ fn eval_duplicate_gate_input_requirements_are_non_conflicting() -> SmokeEvalCase
 }
 
 fn eval_gate_input_policy_does_not_write_gate_decision() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let policy = contract_gate_input_policy_v0_1();
     let assessment = assess_gate_input_policy(&policy, &complete_gate_input_evidence());
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
     if assessment.ready_for_gate()
         && !policy.writes_gate_decision()
         && !assessment.writes_gate_decision()
+        && observable_no_artifacts
     {
         SmokeEvalCaseResult::pass(
             "eval_gate_input_policy_does_not_write_gate_decision",
             "gate input policy writes no gate outcome",
-            "gate input policy is preflight/evidence modeling only and cannot write closure outcomes",
+            "gate input policy is preflight/evidence modeling only and cannot write closure outcomes or boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_gate_input_policy_does_not_write_gate_decision",
             "gate input policy writes no gate outcome",
             format!(
-                "gate writer boundary drifted; policy_writes={} assessment_writes={}",
+                "gate writer boundary drifted; policy_writes={} assessment_writes={} observable_no_artifacts={observable_no_artifacts}",
                 policy.writes_gate_decision(),
                 assessment.writes_gate_decision()
             ),
@@ -9230,22 +9283,30 @@ fn eval_gate_input_policy_does_not_write_gate_decision() -> SmokeEvalCaseResult 
 }
 
 fn eval_gate_input_policy_does_not_create_proofpack() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let policy = contract_gate_input_policy_v0_1();
     let assessment = assess_gate_input_policy(&policy, &complete_gate_input_evidence());
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if assessment.ready_for_gate() && !policy.creates_proofpack() && !assessment.creates_proofpack()
+    if assessment.ready_for_gate()
+        && !policy.creates_proofpack()
+        && !assessment.creates_proofpack()
+        && observable_no_artifacts
     {
         SmokeEvalCaseResult::pass(
             "eval_gate_input_policy_does_not_create_proofpack",
             "gate input policy creates no proofpack",
-            "proofpack remains downstream of gate outcome and is not created by gate input assessment",
+            "proofpack remains downstream of gate outcome and is not created by gate input assessment or boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_gate_input_policy_does_not_create_proofpack",
             "gate input policy creates no proofpack",
             format!(
-                "proofpack boundary drifted; policy_creates={} assessment_creates={}",
+                "proofpack boundary drifted; policy_creates={} assessment_creates={} observable_no_artifacts={observable_no_artifacts}",
                 policy.creates_proofpack(),
                 assessment.creates_proofpack()
             ),
@@ -9310,26 +9371,32 @@ fn eval_gate_input_policy_does_not_create_acceptance_claim() -> SmokeEvalCaseRes
 }
 
 fn eval_gate_input_policy_does_not_invoke_writer() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let policy = contract_gate_input_policy_v0_1();
     let assessment = assess_gate_input_policy(&policy, &complete_gate_input_evidence());
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
     if assessment.ready_for_gate()
         && !policy.invokes_writer()
         && !assessment.invokes_writer()
         && !assessment.runs_validators()
         && !assessment.writes_storage()
+        && observable_no_artifacts
     {
         SmokeEvalCaseResult::pass(
             "eval_gate_input_policy_does_not_invoke_writer",
             "gate input policy does not invoke Writer",
-            "gate input policy does not invoke Writer, run validators, or write runtime storage",
+            "gate input policy does not invoke Writer, run validators, write runtime storage, or write boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_gate_input_policy_does_not_invoke_writer",
             "gate input policy does not invoke Writer",
             format!(
-                "Writer/runtime boundary drifted; invokes_writer={} runs_validators={} writes_storage={}",
+                "Writer/runtime boundary drifted; invokes_writer={} runs_validators={} writes_storage={} observable_no_artifacts={observable_no_artifacts}",
                 assessment.invokes_writer(),
                 assessment.runs_validators(),
                 assessment.writes_storage()
@@ -9891,6 +9958,8 @@ fn eval_approved_for_run_preserves_side_effect_boundaries() -> SmokeEvalCaseResu
 }
 
 fn eval_user_confirmation_does_not_create_gate_decision() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let result = confirm_contract_draft(
         &ready_user_intent_contract_draft_model(),
         &explicit_draft_confirmation(),
@@ -9900,19 +9969,22 @@ fn eval_user_confirmation_does_not_create_gate_decision() -> SmokeEvalCaseResult
         !approved.creates_gate_acceptance() && !approved.writes_gate_decision()
     }) && !boundary.user_confirmation_is_gate_acceptance
         && !boundary.writes_gate_decision;
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if result.approved_for_run() && no_gate_writing {
+    if result.approved_for_run() && no_gate_writing && observable_no_artifacts {
         SmokeEvalCaseResult::pass(
             "eval_user_confirmation_does_not_create_gate_decision",
             "confirmation creates no gate outcome",
-            "explicit user confirmation approves only bounded run readiness and leaves gate-writing authority untouched",
+            "explicit user confirmation approves only bounded run readiness and leaves gate-writing authority and boundary artifacts untouched",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_user_confirmation_does_not_create_gate_decision",
             "confirmation creates no gate outcome",
             format!(
-                "confirmation gate boundary drifted; outcome={} no_gate_writing={no_gate_writing}",
+                "confirmation gate boundary drifted; outcome={} no_gate_writing={no_gate_writing} observable_no_artifacts={observable_no_artifacts}",
                 result.outcome().as_str()
             ),
         )
@@ -9920,6 +9992,8 @@ fn eval_user_confirmation_does_not_create_gate_decision() -> SmokeEvalCaseResult
 }
 
 fn eval_user_confirmation_does_not_create_proofpack() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let result = confirm_contract_draft(
         &ready_user_intent_contract_draft_model(),
         &explicit_draft_confirmation(),
@@ -9929,19 +10003,22 @@ fn eval_user_confirmation_does_not_create_proofpack() -> SmokeEvalCaseResult {
         .approved()
         .is_some_and(|approved| !approved.creates_proofpack())
         && !boundary.creates_proofpack;
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if result.approved_for_run() && no_proofpack {
+    if result.approved_for_run() && no_proofpack && observable_no_artifacts {
         SmokeEvalCaseResult::pass(
             "eval_user_confirmation_does_not_create_proofpack",
             "confirmation creates no proofpack",
-            "explicit user confirmation does not create proofpack provenance or proof authority",
+            "explicit user confirmation does not create proofpack provenance, proof authority, or boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_user_confirmation_does_not_create_proofpack",
             "confirmation creates no proofpack",
             format!(
-                "confirmation proofpack boundary drifted; outcome={} no_proofpack={no_proofpack}",
+                "confirmation proofpack boundary drifted; outcome={} no_proofpack={no_proofpack} observable_no_artifacts={observable_no_artifacts}",
                 result.outcome().as_str()
             ),
         )
@@ -9949,6 +10026,8 @@ fn eval_user_confirmation_does_not_create_proofpack() -> SmokeEvalCaseResult {
 }
 
 fn eval_user_confirmation_does_not_invoke_writer() -> SmokeEvalCaseResult {
+    let temp_path = unique_smoke_temp_path();
+    let setup_ok = fs::create_dir_all(&temp_path).is_ok();
     let result = confirm_contract_draft(
         &ready_user_intent_contract_draft_model(),
         &explicit_draft_confirmation(),
@@ -9958,19 +10037,22 @@ fn eval_user_confirmation_does_not_invoke_writer() -> SmokeEvalCaseResult {
         .approved()
         .is_some_and(|approved| !approved.invokes_writer())
         && !boundary.invokes_writer;
+    let observable_no_artifacts =
+        setup_ok && boundary_probe_has_no_gate_proof_or_writer_artifacts(&temp_path);
+    let _ = fs::remove_dir_all(&temp_path);
 
-    if result.approved_for_run() && writer_downstream {
+    if result.approved_for_run() && writer_downstream && observable_no_artifacts {
         SmokeEvalCaseResult::pass(
             "eval_user_confirmation_does_not_invoke_writer",
             "confirmation does not invoke Writer",
-            "explicit user confirmation keeps Writer downstream and does not select Writer as an upstream approval mechanism",
+            "explicit user confirmation keeps Writer downstream and does not select Writer as an upstream approval mechanism or write boundary artifacts",
         )
     } else {
         SmokeEvalCaseResult::fail(
             "eval_user_confirmation_does_not_invoke_writer",
             "confirmation does not invoke Writer",
             format!(
-                "confirmation Writer boundary drifted; outcome={} writer_downstream={writer_downstream}",
+                "confirmation Writer boundary drifted; outcome={} writer_downstream={writer_downstream} observable_no_artifacts={observable_no_artifacts}",
                 result.outcome().as_str()
             ),
         )
@@ -10067,6 +10149,29 @@ fn sample_proofpack(decision_ref: &str) -> Proofpack {
             ProofArtifactRef::new("target/debug/punk").expect("artifact ref should be valid"),
             ProofArtifactHash::new(PROOF_HASH_OUTPUT).expect("artifact hash should be valid"),
         ))
+}
+
+fn sample_required_verification_evidence(
+    proofpack: &Proofpack,
+) -> Vec<ProofpackWriterReferencedArtifactVerificationEvidence> {
+    proofpack
+        .required_artifact_digest_refs()
+        .into_iter()
+        .map(|requirement| {
+            let digest = proofpack
+                .artifact_digests()
+                .iter()
+                .find(|digest| digest.satisfies_requirement(&requirement))
+                .expect("sample proofpack should have digest for requirement");
+            let digest = ArtifactDigest::new(digest.artifact_hash().as_str())
+                .expect("sample proofpack digest should satisfy core policy");
+            ProofpackWriterReferencedArtifactVerificationEvidence::verified(
+                requirement,
+                digest.clone(),
+                digest,
+            )
+        })
+        .collect()
 }
 
 fn sample_proofpack_with_partial_integrity(decision_ref: &str) -> Proofpack {
@@ -10191,6 +10296,7 @@ fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> Smoke
     let matching_decision_ref =
         ProofGateDecisionRef::new(decision.id().as_str()).expect("decision ref should be valid");
     let proofpack = sample_proofpack(decision.id().as_str());
+    let verification_evidence = sample_required_verification_evidence(&proofpack);
     let mismatch = ProofGateDecisionRef::new("decision_eval_other")
         .expect("other decision ref should be valid");
 
@@ -10198,24 +10304,32 @@ fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> Smoke
     let ready_matching = proofpack.is_matching_proof_ready_for_acceptance(&matching_decision_ref);
     let mismatching = proofpack.matches_gate_decision_ref(&mismatch);
     let ready_mismatching = proofpack.is_matching_proof_ready_for_acceptance(&mismatch);
+    let authority_report =
+        ProofAcceptanceAuthorityReport::evaluate(&decision, &proofpack, &verification_evidence);
+    let missing_evidence_report =
+        ProofAcceptanceAuthorityReport::evaluate(&decision, &proofpack, &[]);
     let acceptance_allowed = positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
         accepting_gate_decision: decision.outcome().is_accepting(),
-        matching_proofpack: ready_matching,
+        matching_proofpack: authority_report.acceptance_preconditions_met(),
     });
     let missing_decision_blocked =
         !positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
             accepting_gate_decision: false,
-            matching_proofpack: ready_matching,
+            matching_proofpack: authority_report.acceptance_preconditions_met(),
         });
     let missing_proof_blocked = !positive_acceptance_preconditions_met(PositiveAcceptanceInputs {
         accepting_gate_decision: decision.outcome().is_accepting(),
         matching_proofpack: false,
     });
+    let missing_verification_blocked = missing_evidence_report
+        .has_blocker(ProofAcceptanceAuthorityBlocker::MissingRequiredVerification);
 
     if matching
         && ready_matching
         && !mismatching
         && !ready_mismatching
+        && authority_report.acceptance_preconditions_met()
+        && missing_verification_blocked
         && acceptance_allowed
         && missing_decision_blocked
         && missing_proof_blocked
@@ -10230,7 +10344,9 @@ fn eval_acceptance_requires_accepting_decision_and_matching_proofpack() -> Smoke
             "eval_acceptance_requires_accepting_decision_and_matching_proofpack",
             "positive acceptance requires matching decision and proof",
             format!(
-                "acceptance preconditions drifted; matching={matching} ready_matching={ready_matching} mismatching={mismatching} ready_mismatching={ready_mismatching} allowed={acceptance_allowed} missing_decision_blocked={missing_decision_blocked} missing_proof_blocked={missing_proof_blocked}"
+                "acceptance preconditions drifted; matching={matching} ready_matching={ready_matching} mismatching={mismatching} ready_mismatching={ready_mismatching} authority_status={} blockers={:?} missing_verification_blocked={missing_verification_blocked} allowed={acceptance_allowed} missing_decision_blocked={missing_decision_blocked} missing_proof_blocked={missing_proof_blocked}",
+                authority_report.status().as_str(),
+                authority_report.blockers()
             ),
         )
     }
@@ -13071,7 +13187,7 @@ fn eval_proofpack_writer_first_active_write_slice_writes_exact_bytes() -> SmokeE
         && !result.target_path_is_authority()
         && !result.storage_root_path_is_authority()
         && !result.can_claim_acceptance_by_itself();
-    let no_forbidden_side_effects = !punk_runtime_exists && cleanup_ok;
+    let no_forbidden_side_effects = !punk_runtime_exists;
 
     if vocabulary_ok && write_ok && boundary_ok && no_forbidden_side_effects {
         SmokeEvalCaseResult::pass(
@@ -13120,10 +13236,12 @@ fn eval_proofpack_writer_hash_reference_integration_model_is_side_effect_free(
                 .iter()
                 .find(|digest| digest.satisfies_requirement(&requirement))
                 .expect("sample proofpack should have digest for requirement");
+            let digest = ArtifactDigest::new(digest.artifact_hash().as_str())
+                .expect("sample proofpack digest should satisfy core policy");
             ProofpackWriterReferencedArtifactVerificationEvidence::verified(
                 requirement,
-                ArtifactDigest::new(digest.artifact_hash().as_str())
-                    .expect("sample proofpack digest should satisfy core policy"),
+                digest.clone(),
+                digest,
             )
         })
         .collect::<Vec<_>>();
@@ -13131,7 +13249,7 @@ fn eval_proofpack_writer_hash_reference_integration_model_is_side_effect_free(
         &proofpack,
         Some(&canonical),
         declared.clone(),
-        verification,
+        verification.clone(),
         vec![
             ProofBoundaryNote::new("Hash/reference smoke composes explicit evidence only.")
                 .expect("boundary note should be valid"),
@@ -13164,29 +13282,33 @@ fn eval_proofpack_writer_hash_reference_integration_model_is_side_effect_free(
         ],
         vec![],
     );
+    let mut optional_verification = verification;
+    optional_verification.push(
+        ProofpackWriterReferencedArtifactVerificationEvidence::optional(
+            requirements[0].clone(),
+            ProofpackWriterReferencedArtifactVerificationStatus::Unverified,
+            Some(
+                ArtifactDigest::new(PROOF_HASH_GATE_DECISION)
+                    .expect("expected digest should be valid"),
+            ),
+            None,
+            vec![],
+        ),
+    );
+    optional_verification.push(
+        ProofpackWriterReferencedArtifactVerificationEvidence::optional(
+            requirements[1].clone(),
+            ProofpackWriterReferencedArtifactVerificationStatus::NotRequired,
+            None,
+            None,
+            vec![],
+        ),
+    );
     let optional = ProofpackWriterHashReferenceIntegrationModel::evaluate(
         &proofpack,
         Some(&canonical),
         declared,
-        vec![
-            ProofpackWriterReferencedArtifactVerificationEvidence::optional(
-                requirements[0].clone(),
-                ProofpackWriterReferencedArtifactVerificationStatus::Unverified,
-                Some(
-                    ArtifactDigest::new(PROOF_HASH_GATE_DECISION)
-                        .expect("expected digest should be valid"),
-                ),
-                None,
-                vec![],
-            ),
-            ProofpackWriterReferencedArtifactVerificationEvidence::optional(
-                requirements[1].clone(),
-                ProofpackWriterReferencedArtifactVerificationStatus::NotRequired,
-                None,
-                None,
-                vec![],
-            ),
-        ],
+        optional_verification,
         vec![],
     );
     let boundary = proofpack_writer_hash_reference_integration_model_boundary();
@@ -13198,7 +13320,9 @@ fn eval_proofpack_writer_hash_reference_integration_model_is_side_effect_free(
             == "declared_invalid_format"
         && ProofpackWriterReferencedArtifactVerificationStatus::Unverified.as_str() == "unverified"
         && ProofpackWriterHashReferenceIntegrationBlocker::VerificationDigestMismatch.as_str()
-            == "verification_digest_mismatch";
+            == "verification_digest_mismatch"
+        && ProofpackWriterHashReferenceIntegrationBlocker::MissingRequiredVerification.as_str()
+            == "missing_required_verification";
     let ready_ok = ready.schema_version()
         == PROOFPACK_WRITER_HASH_REFERENCE_INTEGRATION_MODEL_SCHEMA_VERSION
         && ready.is_ready()
@@ -13223,10 +13347,22 @@ fn eval_proofpack_writer_hash_reference_integration_model_is_side_effect_free(
         && blocked.blockers_fail_closed();
     let optional_ok = optional.is_ready()
         && optional.has_optional_or_not_required_verification_evidence()
-        && optional.referenced_artifact_verification_evidence()[0].status()
-            == ProofpackWriterReferencedArtifactVerificationStatus::Unverified
-        && optional.referenced_artifact_verification_evidence()[1].status()
-            == ProofpackWriterReferencedArtifactVerificationStatus::NotRequired
+        && optional
+            .referenced_artifact_verification_evidence()
+            .iter()
+            .any(|evidence| {
+                !evidence.is_required()
+                    && evidence.status()
+                        == ProofpackWriterReferencedArtifactVerificationStatus::Unverified
+            })
+        && optional
+            .referenced_artifact_verification_evidence()
+            .iter()
+            .any(|evidence| {
+                !evidence.is_required()
+                    && evidence.status()
+                        == ProofpackWriterReferencedArtifactVerificationStatus::NotRequired
+            })
         && optional.blockers().is_empty();
     let boundary_ok = boundary.models_hash_reference_integration
         && boundary.consumes_explicit_proofpack_refs
@@ -13552,7 +13688,6 @@ fn eval_file_artifact_hashing_helper_hashes_explicit_regular_file() -> SmokeEval
         && invalid_ref_rejected
         && relative_root_rejected
         && boundary_ok
-        && cleanup_ok
     {
         SmokeEvalCaseResult::pass(
             "eval_file_artifact_hashing_helper_hashes_explicit_regular_file",
@@ -13665,7 +13800,6 @@ fn eval_referenced_artifact_verification_helper_compares_expected_digest() -> Sm
         && invalid_ref_rejected
         && invalid_digest_rejected
         && boundary_ok
-        && cleanup_ok
     {
         SmokeEvalCaseResult::pass(
             "eval_referenced_artifact_verification_helper_compares_expected_digest",
@@ -13749,17 +13883,32 @@ fn eval_artifact_hash_policy_helper_boundary_flags() -> SmokeEvalCaseResult {
 }
 
 fn unique_smoke_temp_path() -> std::path::PathBuf {
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be after epoch")
-        .as_nanos();
-    let counter = SMOKE_TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
-    std::env::temp_dir().join(format!(
-        "punk-eval-file-hash-smoke-{}-{}-{}",
-        process::id(),
-        unique,
-        counter
-    ))
+    for _ in 0..100 {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let counter = SMOKE_TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "punk-eval-file-hash-smoke-{}-{}-{}",
+            process::id(),
+            unique,
+            counter
+        ));
+        match fs::create_dir(&path) {
+            Ok(()) => return path,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => panic!("could not create exclusive smoke temp dir: {error:?}"),
+        }
+    }
+    panic!("could not allocate exclusive smoke temp dir after retries")
+}
+
+fn boundary_probe_has_no_gate_proof_or_writer_artifacts(root: &std::path::Path) -> bool {
+    !root.join(".punk/decisions").exists()
+        && !root.join(".punk/proofs").exists()
+        && !root.join(".punk/runs").exists()
+        && count_regular_files(root) == 0
 }
 
 fn count_regular_files(root: &std::path::Path) -> usize {
@@ -13795,7 +13944,7 @@ fn format_commands(commands: &[FlowCommand]) -> String {
 mod tests {
     use super::{
         run_smoke_suite, SmokeEvalCaseResult, SmokeEvalReport, SmokeEvalStatus, SmokeEvalSummary,
-        SMOKE_REPORT_SCHEMA_VERSION, SMOKE_SUITE_ID,
+        EXPECTED_SMOKE_CASE_COUNT, SMOKE_REPORT_SCHEMA_VERSION, SMOKE_SUITE_ID,
     };
 
     #[test]
@@ -13807,7 +13956,7 @@ mod tests {
         assert_eq!(report.mode(), "local-smoke-check");
         assert_eq!(report.runtime_persistence(), "local-event-log-writer");
         assert_eq!(report.report_storage(), "inactive");
-        assert_eq!(report.cases().len(), 175);
+        assert_eq!(report.cases().len(), EXPECTED_SMOKE_CASE_COUNT);
     }
 
     #[test]
@@ -13815,10 +13964,15 @@ mod tests {
         let report = run_smoke_suite();
 
         assert!(report.passed(), "all current smoke cases should pass");
-        assert!(report
-            .cases()
-            .iter()
-            .all(|case| case.status == SmokeEvalStatus::Pass));
+        for case in report.cases() {
+            assert_eq!(
+                case.status,
+                SmokeEvalStatus::Pass,
+                "smoke case failed: {} - {}",
+                case.case_id,
+                case.assessment
+            );
+        }
     }
 
     #[test]

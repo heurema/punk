@@ -6,15 +6,8 @@ This file is a lightweight aid for local coding agents.
 
 It is not a source of Punk product truth, architecture truth, final decisions, or acceptance criteria.
 
-When this file conflicts with canonical docs, the canonical docs win:
-
-1. `docs/product/START-HERE.md`
-2. `docs/product/PUNK-LAWS.md`
-3. `docs/product/ARCHITECTURE.md`
-4. `docs/product/ROADMAP.md`
-5. `docs/product/CRATE-STATUS.md`
-6. `docs/product/RESEARCH-GATE.md`
-7. `docs/product/PROJECT-MEMORY.md`
+When this file conflicts with canonical docs, canonical docs win.
+Use `docs/product/DOCUMENTATION-MAP.md` as the conflict-precedence owner instead of treating this operator-aid file as product authority.
 
 Do not turn repeated executor failures into new global instructions automatically.
 Prefer contract clauses, validators, eval cases, proof requirements, and project-memory artifacts.

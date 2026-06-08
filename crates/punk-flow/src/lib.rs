@@ -51,6 +51,10 @@ impl FlowState {
             Self::Cancelled => "Cancelled",
         }
     }
+
+    pub fn is_acceptance_claim(self) -> bool {
+        false
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -121,6 +125,10 @@ impl FlowInstance {
         }
     }
 
+    /// Attempt a transition with contract guard context.
+    ///
+    /// Contract status and scope are consulted only for the `Approved -> Running`
+    /// cut. Other commands remain owned by the flow transition matrix.
     pub fn attempt_transition_with_contract(
         self,
         command: FlowCommand,
@@ -215,7 +223,6 @@ impl TransitionError {
 }
 
 pub const FLOW_ILLEGAL_TRANSITION_ERROR_CODE: &str = "E_FLOW_ILLEGAL_TRANSITION";
-pub const FLOW_EVENT_MAPPING_ERROR_CODE: &str = "E_FLOW_EVENT_MAPPING";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FlowTransitionAttempt {
@@ -363,20 +370,21 @@ pub fn transition_attempt_event_draft(
         None => EventArtifacts::default(),
     };
 
-    let event = match (
-        attempt.guard_code(),
-        attempt.error_code(),
-        attempt.next_state(),
-    ) {
-        (None, None, Some(_)) => EventDraft::new(
-            EventPhase::Cut,
+    let phase = event_phase_for_command(attempt.attempted_command());
+    let event = match attempt.outcome() {
+        FlowTransitionOutcome::Applied { .. } => EventDraft::new(
+            phase,
             EventKind::TransitionCommitted,
             EventSource::new("punk-flow", "transition_guard"),
             correlation,
             EventResult::new(EventStatus::Succeeded),
         ),
-        (Some(guard_code), Some(error_code), None) => EventDraft::new(
-            EventPhase::Cut,
+        FlowTransitionOutcome::Denied {
+            guard_code,
+            error_code,
+            ..
+        } => EventDraft::new(
+            phase,
             EventKind::TransitionDenied,
             EventSource::new("punk-flow", "transition_guard"),
             correlation,
@@ -384,18 +392,26 @@ pub fn transition_attempt_event_draft(
                 .with_guard_code(guard_code)
                 .with_error_code(error_code),
         ),
-        _ => EventDraft::new(
-            EventPhase::Cut,
-            EventKind::TransitionDenied,
-            EventSource::new("punk-flow", "transition_guard"),
-            correlation,
-            EventResult::new(EventStatus::Denied)
-                .with_guard_code("FLOW_EVENT_MAPPING_ERROR")
-                .with_error_code(FLOW_EVENT_MAPPING_ERROR_CODE),
-        ),
     };
 
     event.with_transition(transition).with_artifacts(artifacts)
+}
+
+pub fn event_phase_for_command(command: FlowCommand) -> EventPhase {
+    match command {
+        FlowCommand::CreateGoal => EventPhase::Init,
+        FlowCommand::DraftContract | FlowCommand::RequestApproval | FlowCommand::Approve => {
+            EventPhase::Plot
+        }
+        FlowCommand::StartRun | FlowCommand::WriteReceipt => EventPhase::Cut,
+        FlowCommand::WriteDecision => EventPhase::Gate,
+        FlowCommand::WriteProof => EventPhase::Eval,
+        FlowCommand::MarkReported
+        | FlowCommand::Close
+        | FlowCommand::Block
+        | FlowCommand::Escalate
+        | FlowCommand::Cancel => EventPhase::Inspect,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -563,14 +579,15 @@ fn next_state_for(state: FlowState, command: FlowCommand) -> Option<FlowState> {
 #[cfg(test)]
 mod tests {
     use super::{
-        transition_attempt_event_draft, FlowCommand, FlowInstance, FlowState, FlowTransitionOutcome,
+        event_phase_for_command, next_state_for, transition_attempt_event_draft, FlowCommand,
+        FlowInstance, FlowState, FlowTransitionOutcome,
     };
     use punk_contract::{
         approve_contract, validate_contract, ContractDraft, ContractError, ContractId,
         ContractScope, ContractStatus,
     };
     use punk_domain::{ContractRef, ProducedAt, RunId, RunReceiptId, RunScopeRef};
-    use punk_events::{EventKind, EventStatus};
+    use punk_events::{EventKind, EventPhase, EventStatus};
 
     fn valid_contract_scope() -> ContractScope {
         ContractScope::new()
@@ -584,6 +601,43 @@ mod tests {
             "Approved contract authorizes run transition",
             valid_contract_scope(),
         )
+    }
+
+    fn all_states() -> [FlowState; 14] {
+        [
+            FlowState::ProjectInitialized,
+            FlowState::GoalCreated,
+            FlowState::ContractDrafted,
+            FlowState::AwaitingApproval,
+            FlowState::Approved,
+            FlowState::Running,
+            FlowState::ReceiptWritten,
+            FlowState::DecisionWritten,
+            FlowState::ProofWritten,
+            FlowState::Reported,
+            FlowState::Closed,
+            FlowState::Blocked,
+            FlowState::Escalated,
+            FlowState::Cancelled,
+        ]
+    }
+
+    fn all_commands() -> [FlowCommand; 13] {
+        [
+            FlowCommand::CreateGoal,
+            FlowCommand::DraftContract,
+            FlowCommand::RequestApproval,
+            FlowCommand::Approve,
+            FlowCommand::StartRun,
+            FlowCommand::WriteReceipt,
+            FlowCommand::WriteDecision,
+            FlowCommand::WriteProof,
+            FlowCommand::MarkReported,
+            FlowCommand::Close,
+            FlowCommand::Block,
+            FlowCommand::Escalate,
+            FlowCommand::Cancel,
+        ]
     }
 
     #[test]
@@ -619,6 +673,123 @@ mod tests {
         assert!(error
             .next_allowed_commands
             .contains(&FlowCommand::WriteDecision));
+    }
+
+    #[test]
+    fn allowed_command_table_matches_transition_matrix_for_every_state_and_command() {
+        for state in all_states() {
+            let allowed = FlowInstance::new(state).allowed_commands();
+            for command in all_commands() {
+                assert_eq!(
+                    allowed.contains(&command),
+                    next_state_for(state, command).is_some(),
+                    "allowed command table drifted for state={} command={}",
+                    state.as_str(),
+                    command.as_str()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn decision_proof_report_close_lifecycle_is_explicitly_covered() {
+        let decision = FlowInstance::new(FlowState::ReceiptWritten)
+            .transition(FlowCommand::WriteDecision)
+            .expect("receipt should allow decision write");
+        let proof = decision
+            .transition(FlowCommand::WriteProof)
+            .expect("decision should allow proof write");
+        let reported = proof
+            .transition(FlowCommand::MarkReported)
+            .expect("proof should allow reporting");
+        let closed = reported
+            .transition(FlowCommand::Close)
+            .expect("reported should allow close");
+
+        assert_eq!(decision.state(), FlowState::DecisionWritten);
+        assert_eq!(proof.state(), FlowState::ProofWritten);
+        assert_eq!(reported.state(), FlowState::Reported);
+        assert_eq!(closed.state(), FlowState::Closed);
+        assert!(!FlowState::Reported.is_acceptance_claim());
+        assert!(!FlowState::Closed.is_acceptance_claim());
+    }
+
+    #[test]
+    fn decision_written_can_report_without_proof_but_does_not_claim_acceptance() {
+        let reported = FlowInstance::new(FlowState::DecisionWritten)
+            .transition(FlowCommand::MarkReported)
+            .expect("flow allows reporting a non-accepting or externally owned decision path");
+
+        assert_eq!(reported.state(), FlowState::Reported);
+        assert!(!reported.state().is_acceptance_claim());
+    }
+
+    #[test]
+    fn block_escalate_cancel_reachability_matrix_is_covered() {
+        let blockable_states = [
+            FlowState::ProjectInitialized,
+            FlowState::GoalCreated,
+            FlowState::ContractDrafted,
+            FlowState::AwaitingApproval,
+            FlowState::Approved,
+            FlowState::Running,
+            FlowState::ReceiptWritten,
+            FlowState::DecisionWritten,
+            FlowState::ProofWritten,
+            FlowState::Reported,
+        ];
+
+        for state in blockable_states {
+            assert_eq!(
+                FlowInstance::new(state)
+                    .transition(FlowCommand::Block)
+                    .expect("state should allow block")
+                    .state(),
+                FlowState::Blocked
+            );
+            assert_eq!(
+                FlowInstance::new(state)
+                    .transition(FlowCommand::Escalate)
+                    .expect("state should allow escalate")
+                    .state(),
+                FlowState::Escalated
+            );
+            assert_eq!(
+                FlowInstance::new(state)
+                    .transition(FlowCommand::Cancel)
+                    .expect("state should allow cancel")
+                    .state(),
+                FlowState::Cancelled
+            );
+        }
+
+        assert_eq!(
+            FlowInstance::new(FlowState::Blocked)
+                .transition(FlowCommand::Escalate)
+                .expect("blocked should allow escalate")
+                .state(),
+            FlowState::Escalated
+        );
+        assert_eq!(
+            FlowInstance::new(FlowState::Blocked)
+                .transition(FlowCommand::Cancel)
+                .expect("blocked should allow cancel")
+                .state(),
+            FlowState::Cancelled
+        );
+        assert_eq!(
+            FlowInstance::new(FlowState::Escalated)
+                .transition(FlowCommand::Cancel)
+                .expect("escalated should allow cancel")
+                .state(),
+            FlowState::Cancelled
+        );
+        assert!(FlowInstance::new(FlowState::Closed)
+            .allowed_commands()
+            .is_empty());
+        assert!(FlowInstance::new(FlowState::Cancelled)
+            .allowed_commands()
+            .is_empty());
     }
 
     #[test]
@@ -674,6 +845,7 @@ mod tests {
             Some("work/goals/goal_connect_flow_transitions_to_event_log.md"),
         );
 
+        assert_eq!(draft.phase, EventPhase::Plot);
         assert_eq!(draft.kind, EventKind::TransitionCommitted);
         assert_eq!(draft.result.status, EventStatus::Succeeded);
         assert_eq!(draft.result.guard_code, None);
@@ -701,6 +873,7 @@ mod tests {
         let draft = transition_attempt_event_draft(&attempt, "flow_local_denied", None);
 
         assert_eq!(instance.state(), FlowState::AwaitingApproval);
+        assert_eq!(draft.phase, EventPhase::Cut);
         assert_eq!(draft.kind, EventKind::TransitionDenied);
         assert_eq!(draft.result.status, EventStatus::Denied);
         assert_eq!(
@@ -719,6 +892,34 @@ mod tests {
         assert_eq!(draft.transition.to_state, None);
         assert!(!draft.kind.as_str().contains("decision"));
         assert!(!draft.kind.as_str().contains("gate"));
+    }
+
+    #[test]
+    fn event_phase_mapping_follows_attempted_command_lifecycle() {
+        assert_eq!(
+            event_phase_for_command(FlowCommand::CreateGoal),
+            EventPhase::Init
+        );
+        assert_eq!(
+            event_phase_for_command(FlowCommand::Approve),
+            EventPhase::Plot
+        );
+        assert_eq!(
+            event_phase_for_command(FlowCommand::StartRun),
+            EventPhase::Cut
+        );
+        assert_eq!(
+            event_phase_for_command(FlowCommand::WriteDecision),
+            EventPhase::Gate
+        );
+        assert_eq!(
+            event_phase_for_command(FlowCommand::WriteProof),
+            EventPhase::Eval
+        );
+        assert_eq!(
+            event_phase_for_command(FlowCommand::MarkReported),
+            EventPhase::Inspect
+        );
     }
 
     #[test]

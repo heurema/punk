@@ -18,6 +18,32 @@ fn non_empty(value: impl Into<String>, error: RunReceiptError) -> Result<String,
     Ok(value)
 }
 
+fn non_empty_safe_ref(
+    value: impl Into<String>,
+    empty_error: RunReceiptError,
+    unsafe_error: RunReceiptError,
+) -> Result<String, RunReceiptError> {
+    let value = non_empty(value, empty_error)?;
+    if !is_safe_run_receipt_ref(&value) {
+        return Err(unsafe_error);
+    }
+    Ok(value)
+}
+
+fn is_safe_run_receipt_ref(value: &str) -> bool {
+    let value = value.trim();
+    !value.is_empty()
+        && !value.starts_with('/')
+        && !value.starts_with('~')
+        && !value.contains('\\')
+        && !value.contains(':')
+        && !value.split('/').any(|segment| {
+            segment.is_empty()
+                || matches!(segment, "." | "..")
+                || segment.chars().any(char::is_control)
+        })
+}
+
 fn optional_non_empty(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let value = value.trim().to_string();
@@ -60,7 +86,11 @@ pub struct WorkGoalRef(String);
 
 impl WorkGoalRef {
     pub fn new(value: impl Into<String>) -> Result<Self, RunReceiptError> {
-        Ok(Self(non_empty(value, RunReceiptError::EmptyWorkGoalRef)?))
+        Ok(Self(non_empty_safe_ref(
+            value,
+            RunReceiptError::EmptyWorkGoalRef,
+            RunReceiptError::UnsafeWorkGoalRef,
+        )?))
     }
 
     pub fn as_str(&self) -> &str {
@@ -143,13 +173,11 @@ pub struct RunScopeRef(String);
 
 impl RunScopeRef {
     pub fn new(value: impl Into<String>) -> Result<Self, RunReceiptError> {
-        let value = value.into().trim().to_string();
-
-        if value.is_empty() {
-            return Err(RunReceiptError::EmptyRunScopeRef);
-        }
-
-        Ok(Self(value))
+        Ok(Self(non_empty_safe_ref(
+            value,
+            RunReceiptError::EmptyRunScopeRef,
+            RunReceiptError::UnsafeRunScopeRef,
+        )?))
     }
 
     pub fn as_str(&self) -> &str {
@@ -162,13 +190,11 @@ pub struct RunArtifactRef(String);
 
 impl RunArtifactRef {
     pub fn new(value: impl Into<String>) -> Result<Self, RunReceiptError> {
-        let value = value.into().trim().to_string();
-
-        if value.is_empty() {
-            return Err(RunReceiptError::EmptyArtifactRef);
-        }
-
-        Ok(Self(value))
+        Ok(Self(non_empty_safe_ref(
+            value,
+            RunReceiptError::EmptyArtifactRef,
+            RunReceiptError::UnsafeArtifactRef,
+        )?))
     }
 
     pub fn as_str(&self) -> &str {
@@ -181,13 +207,11 @@ pub struct EventRef(String);
 
 impl EventRef {
     pub fn new(value: impl Into<String>) -> Result<Self, RunReceiptError> {
-        let value = value.into().trim().to_string();
-
-        if value.is_empty() {
-            return Err(RunReceiptError::EmptyEventRef);
-        }
-
-        Ok(Self(value))
+        Ok(Self(non_empty_safe_ref(
+            value,
+            RunReceiptError::EmptyEventRef,
+            RunReceiptError::UnsafeEventRef,
+        )?))
     }
 
     pub fn as_str(&self) -> &str {
@@ -200,13 +224,11 @@ pub struct EvalReportRef(String);
 
 impl EvalReportRef {
     pub fn new(value: impl Into<String>) -> Result<Self, RunReceiptError> {
-        let value = value.into().trim().to_string();
-
-        if value.is_empty() {
-            return Err(RunReceiptError::EmptyEvalReportRef);
-        }
-
-        Ok(Self(value))
+        Ok(Self(non_empty_safe_ref(
+            value,
+            RunReceiptError::EmptyEvalReportRef,
+            RunReceiptError::UnsafeEvalReportRef,
+        )?))
     }
 
     pub fn as_str(&self) -> &str {
@@ -535,11 +557,16 @@ pub enum RunReceiptError {
     EmptyContractRef,
     EmptyRunId,
     EmptyRunScopeRef,
+    UnsafeRunScopeRef,
     EmptyWorkGoalRef,
+    UnsafeWorkGoalRef,
     EmptyFlowStateRef,
     EmptyArtifactRef,
+    UnsafeArtifactRef,
     EmptyEventRef,
+    UnsafeEventRef,
     EmptyEvalReportRef,
+    UnsafeEvalReportRef,
     EmptyBoundaryNote,
     EmptyValidatorId,
     EmptyValidatorKind,
@@ -695,6 +722,30 @@ mod tests {
         let error = RunScopeRef::new(" ").expect_err("empty scope ref must be rejected");
 
         assert_eq!(error, RunReceiptError::EmptyRunScopeRef);
+    }
+
+    #[test]
+    fn receipt_path_refs_reject_escape_and_drive_like_shapes() {
+        assert_eq!(
+            WorkGoalRef::new("../goal.md"),
+            Err(RunReceiptError::UnsafeWorkGoalRef)
+        );
+        assert_eq!(
+            RunScopeRef::new("/tmp/scope.md"),
+            Err(RunReceiptError::UnsafeRunScopeRef)
+        );
+        assert_eq!(
+            RunArtifactRef::new("C:artifact.json"),
+            Err(RunReceiptError::UnsafeArtifactRef)
+        );
+        assert_eq!(
+            EvalReportRef::new("https://example.com/report.md"),
+            Err(RunReceiptError::UnsafeEvalReportRef)
+        );
+        assert_eq!(
+            EventRef::new("events\\flow.jsonl"),
+            Err(RunReceiptError::UnsafeEventRef)
+        );
     }
 
     #[test]

@@ -67,7 +67,6 @@ name = "punk-cli"
 version = "0.1.0"
 dependencies = [
  "punk-eval",
- "punk-events",
  "punk-flow",
  "punk-project",
 ]
@@ -137,6 +136,7 @@ name = "punk-proof"
 version = "0.1.0"
 dependencies = [
  "punk-core",
+ "punk-gate",
 ]
 
 [[package]]

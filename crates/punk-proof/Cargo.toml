@@ -8,3 +8,4 @@ publish = false
 
 [dependencies]
 punk-core = { path = "../punk-core" }
+punk-gate = { path = "../punk-gate" }

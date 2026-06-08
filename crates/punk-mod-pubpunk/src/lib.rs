@@ -7705,6 +7705,7 @@ fn is_safe_logical_ref_segment(value: &str) -> bool {
         && !value.starts_with('~')
         && !value.contains('\\')
         && !value.contains("://")
+        && !has_windows_drive_like_ref(value)
         && !value.split('/').any(|segment| {
             segment.is_empty()
                 || matches!(segment, "." | "..")
@@ -7719,11 +7720,19 @@ fn is_safe_source_ref(value: &str) -> bool {
         && !value.starts_with('~')
         && !value.contains('\\')
         && !value.contains("://")
+        && !has_windows_drive_like_ref(value)
         && !value.split('/').any(|segment| {
             segment.is_empty()
                 || matches!(segment, "." | "..")
                 || segment.chars().any(char::is_control)
         })
+}
+
+fn has_windows_drive_like_ref(value: &str) -> bool {
+    value.split('/').any(|segment| {
+        let bytes = segment.as_bytes();
+        bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+    })
 }
 
 #[cfg(test)]
@@ -7757,6 +7766,20 @@ mod tests {
         PubPunkPublishRequestPacket, PubPunkPublishRequestPacketFindingCode,
         PubPunkWorkspacePolicy, PUBPUNK_REQUIRED_INSTRUCTION_REFS,
     };
+
+    #[test]
+    fn safe_source_ref_policy_rejects_windows_drive_like_prefixes() {
+        assert!(super::is_safe_source_ref("publishing/posts/example.md"));
+        assert!(!super::is_safe_source_ref("C:foo"));
+        assert!(!super::is_safe_source_ref("C:/foo"));
+        assert!(!super::is_safe_source_ref("publishing/C:foo/example.md"));
+        assert!(super::is_safe_workspace_ref(
+            "punk-publishing://project/goalrail"
+        ));
+        assert!(!super::is_safe_workspace_ref(
+            "punk-publishing://project/C:foo"
+        ));
+    }
 
     fn valid_input() -> PubPunkInventoryInput {
         PubPunkInventoryInput::new(

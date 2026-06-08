@@ -38,12 +38,30 @@ pub struct GateCreatedAt(String);
 
 impl GateCreatedAt {
     pub fn new(value: impl Into<String>) -> Result<Self, GateDecisionError> {
-        Ok(Self(non_empty(value, GateDecisionError::EmptyCreatedAt)?))
+        let value = non_empty(value, GateDecisionError::EmptyCreatedAt)?;
+        if !is_utc_second_timestamp(&value) {
+            return Err(GateDecisionError::InvalidCreatedAt);
+        }
+        Ok(Self(value))
     }
 
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
+
+fn is_utc_second_timestamp(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 20
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && bytes[10] == b'T'
+        && bytes[13] == b':'
+        && bytes[16] == b':'
+        && bytes[19] == b'Z'
+        && bytes.iter().enumerate().all(|(index, byte)| {
+            matches!(index, 4 | 7 | 10 | 13 | 16 | 19) || byte.is_ascii_digit()
+        })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -262,6 +280,7 @@ impl GateDecision {
 pub enum GateDecisionError {
     EmptyDecisionId,
     EmptyCreatedAt,
+    InvalidCreatedAt,
     EmptyContractRef,
     EmptyRunReceiptRef,
     EmptyEvalRef,
@@ -380,6 +399,18 @@ mod tests {
                 Vec::new(),
             ),
             Err(GateDecisionError::MissingBoundaryNotes)
+        );
+    }
+
+    #[test]
+    fn created_at_requires_utc_second_timestamp_shape() {
+        assert_eq!(
+            GateCreatedAt::new("yesterday"),
+            Err(GateDecisionError::InvalidCreatedAt)
+        );
+        assert_eq!(
+            GateCreatedAt::new("2026-04-25 19:00:00"),
+            Err(GateDecisionError::InvalidCreatedAt)
         );
     }
 

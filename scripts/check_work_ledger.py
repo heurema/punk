@@ -164,7 +164,7 @@ def validate_goals(selected_next: str | None, issues: list[str]) -> None:
                 ref_path = validate_repo_ref(str(ref), f"{goal_path.relative_to(REPO)} {key}", issues)
                 if ref_path is None:
                     continue
-                if key in {"report_refs", "decision_refs"} and not ref_path.exists():
+                if key in {"contract_refs", "report_refs", "decision_refs", "proof_refs"} and not ref_path.exists():
                     issues.append(f"{goal_path.relative_to(REPO)} references missing {key[:-5]} artifact: {ref}")
 
         for key in REF_SCALAR_KEYS:
