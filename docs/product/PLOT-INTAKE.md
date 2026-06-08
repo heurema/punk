@@ -37,6 +37,13 @@ It describes how Punk may shape raw work inside `plot` before domain execution.
 
 It does not activate runtime behavior, CLI commands, modules, adapters, storage writers, gate decisions, proofpacks, acceptance claims, publishing, or code execution.
 
+Current code includes only a side-effect-free Plot Intake routing model in
+`punk-contract` with smoke coverage in `punk-eval`. It classifies supported
+slash-command-shaped request text into advisory phase/module route candidates
+without activating a CLI command, harness adapter, module execution, runtime
+storage, provider call, publication, receipt, gate decision, proofpack, or
+acceptance claim.
+
 ## Purpose
 
 Plot Intake is the upstream part of `plot` that turns a raw user request into a bounded, inspectable, evidence-aware candidate for contract drafting.

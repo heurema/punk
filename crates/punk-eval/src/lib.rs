@@ -16,19 +16,21 @@ use punk_contract::{
     contract_draft_confirmation_boundary, contract_gate_input_policy_v0_1,
     contract_gate_policy_blueprint, contract_proof_requirements_blueprint,
     contract_proof_requirements_v0_1, contract_schema_blueprint_v0_1,
-    contract_writer_authority_boundary, validate_contract, ContractClauseBlueprint,
-    ContractClauseKind, ContractClauseMode, ContractClauseSeverity, ContractDraft,
-    ContractDraftApprovalEvidence, ContractDraftConfirmation, ContractDraftConfirmationBlocker,
-    ContractDraftConfirmationOutcome, ContractDraftUnknownDisposition,
-    ContractDraftUnknownHandling, ContractError, ContractGateInputPolicy, ContractId,
-    ContractProofRequirements, ContractReceiptRequirement, ContractSchemaFieldStatus,
-    ContractSchemaSection, ContractScope, ContractStatus, GateInputEvidence, GateInputRequirement,
-    GateInputRequirementSource, GateInputRequirementStatus, HardClauseMappingStatus,
-    HardClauseMappingTarget, ProofRequirement, ProofRequirementSource, ProofRequirementStatus,
-    ReceiptRequirementSource, ReceiptRequirementStatus, UserIntentContractDraftBlocker,
-    UserIntentContractDraftModel, UserIntentContractDraftReadiness, UserIntentDownstreamClosure,
-    UserIntentResearchGate, UserIntentResearchGateClassification, UserIntentUnknown,
-    CONTRACT_GATE_INPUT_POLICY_BASELINE_REQUIREMENTS, CONTRACT_STATUS_VALUES,
+    contract_writer_authority_boundary, route_plot_intake_request, validate_contract,
+    ContractClauseBlueprint, ContractClauseKind, ContractClauseMode, ContractClauseSeverity,
+    ContractDraft, ContractDraftApprovalEvidence, ContractDraftConfirmation,
+    ContractDraftConfirmationBlocker, ContractDraftConfirmationOutcome,
+    ContractDraftUnknownDisposition, ContractDraftUnknownHandling, ContractError,
+    ContractGateInputPolicy, ContractId, ContractProofRequirements, ContractReceiptRequirement,
+    ContractSchemaFieldStatus, ContractSchemaSection, ContractScope, ContractStatus,
+    GateInputEvidence, GateInputRequirement, GateInputRequirementSource,
+    GateInputRequirementStatus, HardClauseMappingStatus, HardClauseMappingTarget,
+    PlotIntakeModuleRoute, PlotIntakePhaseRoute, PlotIntakeRequest, PlotIntakeRouteAuthority,
+    PlotIntakeRouteConfidence, PlotIntakeRouteStatus, ProofRequirement, ProofRequirementSource,
+    ProofRequirementStatus, ReceiptRequirementSource, ReceiptRequirementStatus,
+    UserIntentContractDraftBlocker, UserIntentContractDraftModel, UserIntentContractDraftReadiness,
+    UserIntentDownstreamClosure, UserIntentResearchGate, UserIntentResearchGateClassification,
+    UserIntentUnknown, CONTRACT_GATE_INPUT_POLICY_BASELINE_REQUIREMENTS, CONTRACT_STATUS_VALUES,
 };
 use punk_core::{
     compute_artifact_digest, compute_artifact_file_digest, is_canonical_artifact_digest,
@@ -183,8 +185,8 @@ const PROOF_HASH_OUTPUT: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000006";
 
 static SMOKE_TEMP_PATH_COUNTER: AtomicU64 = AtomicU64::new(0);
-pub const EXPECTED_SMOKE_CASE_COUNT: usize = 175;
-const SMOKE_ASSESSMENT_SCOPE: &str = "over current contract, contract schema blueprint model, user intent-to-contract draft model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet with resolved connector refs, PubPunk publish receipt write handoff packet with resolved connector refs, PubPunk publish operation evidence handoff packet with resolved connector refs, PubPunk publish receipt/evidence event handoff packet with resolved connector refs, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels";
+pub const EXPECTED_SMOKE_CASE_COUNT: usize = 176;
+const SMOKE_ASSESSMENT_SCOPE: &str = "over current contract, contract schema blueprint model, user intent-to-contract draft model, Plot Intake routing model, contract draft confirmation boundary model, hard clause mapping model, contract receipt requirements model, contract gate input policy model, contract proof requirements model, flow, receipt, event, local event writer, local receipt/evidence event handoff, instruction page-index model, publishing locate resolver, PubPunk inventory reader model, PubPunk inventory input packet, PubPunk inventory assessment model, PubPunk connector profile resolution model, PubPunk publish request packet with resolved connector refs, PubPunk publish receipt preflight packet with resolved connector refs, PubPunk publish receipt write handoff packet with resolved connector refs, PubPunk publish operation evidence handoff packet with resolved connector refs, PubPunk publish receipt/evidence event handoff packet with resolved connector refs, PubPunk host handoff chain, module-host invocation envelope, module-host receipt proposal model, module-host side-effect request proposal model, module-host policy gate preflight model, module-host side-effect receipt writer preflight model, module-host side-effect receipt writer active behavior model, module-host side-effect receipt writer file IO plan model, module-host side-effect receipt writer target/storage policy model, module-host side-effect receipt writer host path observation model, module-host side-effect receipt writer concrete path/storage policy model, module-host side-effect receipt writer operation-evidence persistence model, module-host side-effect receipt writer first active write slice, module-host side-effect receipt writer operation-evidence write slice, greenfield and brownfield project init scaffolds, brownfield source corpus manifest side-effect-free model, brownfield source corpus manifest writer preflight model, brownfield source corpus manifest writer first slice, gate, proof, proofpack manifest renderer, proofpack manifest digest helper, proofpack writer canonical artifact model, proofpack writer target artifact ref policy model, proofpack writer operation evidence model, proofpack writer preflight plan model, proofpack writer file IO plan model, proofpack writer file IO outcome model, proofpack writer file IO error reason model, proofpack writer target path policy model, proofpack writer preflight integration model, proofpack writer active behavior model, proofpack writer host path resolution model, proofpack writer concrete path/storage policy model, proofpack writer first active write slice, proofpack writer hash/reference integration model, artifact hash policy, exact-byte hash computation helper, file IO artifact hashing helper, and referenced artifact verification helper kernels";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SmokeEvalStatus {
@@ -612,6 +614,7 @@ pub fn run_smoke_suite() -> SmokeEvalReport {
         eval_user_intent_contract_draft_model_refuses_or_defers(),
         eval_user_intent_contract_draft_model_blocks_missing_evidence(),
         eval_user_intent_contract_draft_model_keeps_writer_downstream(),
+        eval_plot_intake_routing_model_routes_punk_blog_request_without_side_effects(),
         eval_ready_draft_with_explicit_confirmation_becomes_approved_for_run(),
         eval_ready_draft_without_explicit_confirmation_is_not_approved(),
         eval_clarification_required_draft_cannot_be_approved(),
@@ -9657,6 +9660,57 @@ fn eval_user_intent_contract_draft_model_keeps_writer_downstream() -> SmokeEvalC
     }
 }
 
+fn eval_plot_intake_routing_model_routes_punk_blog_request_without_side_effects(
+) -> SmokeEvalCaseResult {
+    let route = route_plot_intake_request(
+        &PlotIntakeRequest::new("/punk напиши пост для блога про X")
+            .with_harness_id("codex-cli")
+            .with_harness_metadata("opaque-session-ref"),
+    );
+    let boundary = route.boundary();
+
+    if route.status() == PlotIntakeRouteStatus::Routed
+        && route.authority() == PlotIntakeRouteAuthority::NonAuthoritative
+        && route.phase_route() == Some(PlotIntakePhaseRoute::Plot)
+        && route.module_route() == Some(PlotIntakeModuleRoute::PubPunk)
+        && route.route_confidence() == PlotIntakeRouteConfidence::High
+        && route.next_handoff() == Some("pubpunk.contract_intake")
+        && route.normalized_request() == "напиши пост для блога про X"
+        && !boundary.side_effects_active
+        && !boundary.module_activated
+        && !boundary.gate_decision_written
+        && !boundary.proofpack_written
+        && !boundary.acceptance_claimed
+        && !boundary.route_hint_is_authority
+    {
+        SmokeEvalCaseResult::pass(
+            "eval_plot_intake_routing_model_routes_punk_blog_request_without_side_effects",
+            "Plot Intake routes Punk blog request to PubPunk advisory intake",
+            "side-effect-free Plot Intake routing separates phase=plot and module=pubpunk without activating PubPunk, adapters, gate, proof, acceptance, CLI, runtime storage, or publishing",
+        )
+    } else {
+        SmokeEvalCaseResult::fail(
+            "eval_plot_intake_routing_model_routes_punk_blog_request_without_side_effects",
+            "Plot Intake routes Punk blog request to PubPunk advisory intake",
+            format!(
+                "route drifted; status={} authority={} phase={:?} module={:?} confidence={} handoff={:?} side_effects={} module_activated={} gate={} proofpack={} acceptance={} hint_authority={}",
+                route.status().as_str(),
+                route.authority().as_str(),
+                route.phase_route().map(PlotIntakePhaseRoute::as_str),
+                route.module_route().map(PlotIntakeModuleRoute::as_str),
+                route.route_confidence().as_str(),
+                route.next_handoff(),
+                boundary.side_effects_active,
+                boundary.module_activated,
+                boundary.gate_decision_written,
+                boundary.proofpack_written,
+                boundary.acceptance_claimed,
+                boundary.route_hint_is_authority
+            ),
+        )
+    }
+}
+
 fn explicit_draft_confirmation() -> ContractDraftConfirmation {
     ContractDraftConfirmation::explicit(
         ContractDraftApprovalEvidence::new("vitaly")
@@ -14179,6 +14233,9 @@ mod tests {
         assert!(rendered
             .contains("  - id: eval_user_intent_contract_draft_model_keeps_writer_downstream"));
         assert!(rendered.contains(
+            "  - id: eval_plot_intake_routing_model_routes_punk_blog_request_without_side_effects"
+        ));
+        assert!(rendered.contains(
             "  - id: eval_ready_draft_with_explicit_confirmation_becomes_approved_for_run"
         ));
         assert!(rendered
@@ -14551,6 +14608,9 @@ mod tests {
         ));
         assert!(rendered.contains(
             "\"case_id\": \"eval_user_intent_contract_draft_model_keeps_writer_downstream\""
+        ));
+        assert!(rendered.contains(
+            "\"case_id\": \"eval_plot_intake_routing_model_routes_punk_blog_request_without_side_effects\""
         ));
         assert!(rendered
             .contains("\"case_id\": \"eval_gate_authority_requires_proof_before_acceptance\""));

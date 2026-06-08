@@ -3110,6 +3110,403 @@ pub const fn user_intent_contract_draft_boundary() -> UserIntentContractDraftBou
     }
 }
 
+pub const PLOT_INTAKE_ROUTING_MODEL_SCHEMA_VERSION: &str = "plot-intake-routing-model.v0.1";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlotIntakeRequest {
+    raw_text: String,
+    harness_id: Option<String>,
+    harness_metadata: Vec<String>,
+}
+
+impl PlotIntakeRequest {
+    pub fn new(raw_text: impl Into<String>) -> Self {
+        Self {
+            raw_text: raw_text.into(),
+            harness_id: None,
+            harness_metadata: Vec::new(),
+        }
+    }
+
+    pub fn with_harness_id(mut self, harness_id: impl Into<String>) -> Self {
+        let harness_id = harness_id.into().trim().to_string();
+        if !harness_id.is_empty() {
+            self.harness_id = Some(harness_id);
+        }
+        self
+    }
+
+    pub fn with_harness_metadata(mut self, metadata_ref: impl Into<String>) -> Self {
+        push_non_empty(&mut self.harness_metadata, metadata_ref);
+        self
+    }
+
+    pub fn raw_text(&self) -> &str {
+        &self.raw_text
+    }
+
+    pub fn harness_id(&self) -> Option<&str> {
+        self.harness_id.as_deref()
+    }
+
+    pub fn harness_metadata(&self) -> &[String] {
+        &self.harness_metadata
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlotIntakeRouteStatus {
+    Routed,
+    ClarificationRequired,
+    NotCaptured,
+}
+
+impl PlotIntakeRouteStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Routed => "routed",
+            Self::ClarificationRequired => "clarification_required",
+            Self::NotCaptured => "not_captured",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlotIntakeRouteAuthority {
+    NonAuthoritative,
+}
+
+impl PlotIntakeRouteAuthority {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NonAuthoritative => "non_authoritative",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlotIntakePhaseRoute {
+    Plot,
+    Cut,
+    Gate,
+    Blocked,
+    Clarify,
+}
+
+impl PlotIntakePhaseRoute {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Plot => "plot",
+            Self::Cut => "cut",
+            Self::Gate => "gate",
+            Self::Blocked => "blocked",
+            Self::Clarify => "clarify",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlotIntakeModuleRoute {
+    Core,
+    PubPunk,
+    DevPunk,
+    FutureModule,
+    External,
+}
+
+impl PlotIntakeModuleRoute {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Core => "core",
+            Self::PubPunk => "pubpunk",
+            Self::DevPunk => "devpunk",
+            Self::FutureModule => "future_module",
+            Self::External => "external",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlotIntakeRouteConfidence {
+    Low,
+    Medium,
+    High,
+}
+
+impl PlotIntakeRouteConfidence {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlotIntakeRouteBlocker {
+    MissingRequestBody,
+    UnclearRequest,
+}
+
+impl PlotIntakeRouteBlocker {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingRequestBody => "missing_request_body",
+            Self::UnclearRequest => "unclear_request",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlotIntakeRouteBoundary {
+    pub side_effects_active: bool,
+    pub module_activated: bool,
+    pub gate_decision_written: bool,
+    pub proofpack_written: bool,
+    pub acceptance_claimed: bool,
+    pub route_hint_is_authority: bool,
+}
+
+impl PlotIntakeRouteBoundary {
+    pub const fn advisory_only() -> Self {
+        Self {
+            side_effects_active: false,
+            module_activated: false,
+            gate_decision_written: false,
+            proofpack_written: false,
+            acceptance_claimed: false,
+            route_hint_is_authority: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlotIntakeRouteResult {
+    status: PlotIntakeRouteStatus,
+    authority: PlotIntakeRouteAuthority,
+    phase_route: Option<PlotIntakePhaseRoute>,
+    module_route: Option<PlotIntakeModuleRoute>,
+    route_confidence: PlotIntakeRouteConfidence,
+    normalized_request: String,
+    rationale: Vec<String>,
+    blockers: Vec<PlotIntakeRouteBlocker>,
+    next_handoff: Option<&'static str>,
+    boundary: PlotIntakeRouteBoundary,
+}
+
+impl PlotIntakeRouteResult {
+    pub fn status(&self) -> PlotIntakeRouteStatus {
+        self.status
+    }
+
+    pub fn authority(&self) -> PlotIntakeRouteAuthority {
+        self.authority
+    }
+
+    pub fn phase_route(&self) -> Option<PlotIntakePhaseRoute> {
+        self.phase_route
+    }
+
+    pub fn module_route(&self) -> Option<PlotIntakeModuleRoute> {
+        self.module_route
+    }
+
+    pub fn route_confidence(&self) -> PlotIntakeRouteConfidence {
+        self.route_confidence
+    }
+
+    pub fn confidence(&self) -> PlotIntakeRouteConfidence {
+        self.route_confidence
+    }
+
+    pub fn normalized_request(&self) -> &str {
+        &self.normalized_request
+    }
+
+    pub fn rationale(&self) -> &[String] {
+        &self.rationale
+    }
+
+    pub fn blockers(&self) -> &[PlotIntakeRouteBlocker] {
+        &self.blockers
+    }
+
+    pub fn has_blocker(&self, blocker: PlotIntakeRouteBlocker) -> bool {
+        self.blockers.contains(&blocker)
+    }
+
+    pub fn next_handoff(&self) -> Option<&'static str> {
+        self.next_handoff
+    }
+
+    pub fn boundary(&self) -> &PlotIntakeRouteBoundary {
+        &self.boundary
+    }
+}
+
+pub fn route_plot_intake_request(request: &PlotIntakeRequest) -> PlotIntakeRouteResult {
+    let trimmed = request.raw_text().trim();
+
+    match split_plot_intake_command(trimmed) {
+        None => not_captured_result(trimmed),
+        Some((PlotIntakeCommand::Punk, body)) => route_punk_command(body),
+        Some((PlotIntakeCommand::PubHint, body)) => route_hint_command(
+            body,
+            PlotIntakeModuleRoute::PubPunk,
+            "pubpunk.contract_intake",
+            "PubPunk route hint is advisory and non-authoritative.",
+        ),
+        Some((PlotIntakeCommand::DevHint, body)) => route_hint_command(
+            body,
+            PlotIntakeModuleRoute::DevPunk,
+            "devpunk.contract_intake",
+            "DevPunk route hint is advisory and non-authoritative.",
+        ),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PlotIntakeCommand {
+    Punk,
+    PubHint,
+    DevHint,
+}
+
+fn split_plot_intake_command(input: &str) -> Option<(PlotIntakeCommand, &str)> {
+    supported_plot_intake_commands()
+        .iter()
+        .find_map(|(prefix, command)| {
+            if input == *prefix {
+                Some((*command, ""))
+            } else {
+                input
+                    .strip_prefix(prefix)
+                    .and_then(|rest| rest.chars().next().filter(|next| next.is_whitespace()))
+                    .map(|_| (*command, input[prefix.len()..].trim()))
+            }
+        })
+}
+
+fn supported_plot_intake_commands() -> &'static [(&'static str, PlotIntakeCommand)] {
+    &[
+        ("/punk", PlotIntakeCommand::Punk),
+        ("/pub", PlotIntakeCommand::PubHint),
+        ("/dev", PlotIntakeCommand::DevHint),
+    ]
+}
+
+fn route_punk_command(body: &str) -> PlotIntakeRouteResult {
+    if body.trim().is_empty() {
+        return clarification_result(body, PlotIntakeRouteBlocker::MissingRequestBody);
+    }
+
+    if looks_like_content_request(body) {
+        return routed_result(
+            body,
+            PlotIntakeModuleRoute::PubPunk,
+            PlotIntakeRouteConfidence::High,
+            "pubpunk.contract_intake",
+            "content request matched PubPunk-shaped contract intake.",
+        );
+    }
+
+    clarification_result(body, PlotIntakeRouteBlocker::UnclearRequest)
+}
+
+fn route_hint_command(
+    body: &str,
+    module_route: PlotIntakeModuleRoute,
+    next_handoff: &'static str,
+    rationale: impl Into<String>,
+) -> PlotIntakeRouteResult {
+    if body.trim().is_empty() {
+        return clarification_result(body, PlotIntakeRouteBlocker::MissingRequestBody);
+    }
+
+    routed_result(
+        body,
+        module_route,
+        PlotIntakeRouteConfidence::Medium,
+        next_handoff,
+        rationale,
+    )
+}
+
+fn routed_result(
+    body: &str,
+    module_route: PlotIntakeModuleRoute,
+    confidence: PlotIntakeRouteConfidence,
+    next_handoff: &'static str,
+    rationale: impl Into<String>,
+) -> PlotIntakeRouteResult {
+    PlotIntakeRouteResult {
+        status: PlotIntakeRouteStatus::Routed,
+        authority: PlotIntakeRouteAuthority::NonAuthoritative,
+        phase_route: Some(PlotIntakePhaseRoute::Plot),
+        module_route: Some(module_route),
+        route_confidence: confidence,
+        normalized_request: body.trim().to_string(),
+        rationale: vec![rationale.into()],
+        blockers: Vec::new(),
+        next_handoff: Some(next_handoff),
+        boundary: PlotIntakeRouteBoundary::advisory_only(),
+    }
+}
+
+fn clarification_result(body: &str, blocker: PlotIntakeRouteBlocker) -> PlotIntakeRouteResult {
+    PlotIntakeRouteResult {
+        status: PlotIntakeRouteStatus::ClarificationRequired,
+        authority: PlotIntakeRouteAuthority::NonAuthoritative,
+        phase_route: Some(PlotIntakePhaseRoute::Clarify),
+        module_route: None,
+        route_confidence: PlotIntakeRouteConfidence::Low,
+        normalized_request: body.trim().to_string(),
+        rationale: vec!["request needs clarification before routing.".to_string()],
+        blockers: vec![blocker],
+        next_handoff: None,
+        boundary: PlotIntakeRouteBoundary::advisory_only(),
+    }
+}
+
+fn not_captured_result(trimmed: &str) -> PlotIntakeRouteResult {
+    PlotIntakeRouteResult {
+        status: PlotIntakeRouteStatus::NotCaptured,
+        authority: PlotIntakeRouteAuthority::NonAuthoritative,
+        phase_route: None,
+        module_route: None,
+        route_confidence: PlotIntakeRouteConfidence::Low,
+        normalized_request: trimmed.to_string(),
+        rationale: vec!["raw text did not use a supported Punk intake command.".to_string()],
+        blockers: Vec::new(),
+        next_handoff: None,
+        boundary: PlotIntakeRouteBoundary::advisory_only(),
+    }
+}
+
+fn looks_like_content_request(body: &str) -> bool {
+    let normalized = body.to_lowercase();
+    [
+        "article",
+        "blog",
+        "content",
+        "draft",
+        "post",
+        "publication",
+        "text",
+        "write",
+        "блог",
+        "напиши",
+        "написать",
+        "пост",
+        "публикац",
+        "стат",
+        "текст",
+    ]
+    .iter()
+    .any(|keyword| normalized.contains(keyword))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserIntentUnknown {
     statement: String,
@@ -4634,6 +5031,92 @@ mod tests {
         assert!(ContractStatus::ApprovedForRun.ready_for_bounded_work());
         assert!(!ContractStatus::Superseded.ready_for_bounded_work());
         assert!(!ContractStatus::Cancelled.ready_for_bounded_work());
+    }
+
+    #[test]
+    fn plot_intake_punk_blog_request_routes_to_pubpunk_advisory_contract_intake() {
+        let request = PlotIntakeRequest::new("/punk напиши пост для блога про X")
+            .with_harness_id("codex-cli")
+            .with_harness_metadata("opaque-session-ref");
+
+        let route = route_plot_intake_request(&request);
+
+        assert_eq!(route.status(), PlotIntakeRouteStatus::Routed);
+        assert_eq!(
+            route.authority(),
+            PlotIntakeRouteAuthority::NonAuthoritative
+        );
+        assert_eq!(route.phase_route(), Some(PlotIntakePhaseRoute::Plot));
+        assert_eq!(route.module_route(), Some(PlotIntakeModuleRoute::PubPunk));
+        assert_eq!(route.route_confidence(), PlotIntakeRouteConfidence::High);
+        assert_eq!(route.normalized_request(), "напиши пост для блога про X");
+        assert_eq!(route.next_handoff(), Some("pubpunk.contract_intake"));
+        assert!(route
+            .rationale()
+            .iter()
+            .any(|reason| reason.contains("content")));
+        assert!(!route.boundary().side_effects_active);
+        assert!(!route.boundary().module_activated);
+        assert!(!route.boundary().gate_decision_written);
+        assert!(!route.boundary().proofpack_written);
+        assert!(!route.boundary().acceptance_claimed);
+    }
+
+    #[test]
+    fn plot_intake_empty_punk_command_requires_clarification() {
+        let route = route_plot_intake_request(&PlotIntakeRequest::new("/punk   "));
+
+        assert_eq!(route.status(), PlotIntakeRouteStatus::ClarificationRequired);
+        assert_eq!(route.phase_route(), Some(PlotIntakePhaseRoute::Clarify));
+        assert_eq!(route.module_route(), None);
+        assert_eq!(route.normalized_request(), "");
+        assert!(route.has_blocker(PlotIntakeRouteBlocker::MissingRequestBody));
+        assert!(!route.boundary().side_effects_active);
+        assert!(!route.boundary().module_activated);
+    }
+
+    #[test]
+    fn plot_intake_plain_text_is_not_captured() {
+        let route = route_plot_intake_request(&PlotIntakeRequest::new("напиши пост для блога"));
+
+        assert_eq!(route.status(), PlotIntakeRouteStatus::NotCaptured);
+        assert_eq!(route.phase_route(), None);
+        assert_eq!(route.module_route(), None);
+        assert_eq!(route.normalized_request(), "напиши пост для блога");
+        assert!(!route.boundary().side_effects_active);
+        assert!(!route.boundary().module_activated);
+    }
+
+    #[test]
+    fn plot_intake_pub_and_dev_shortcuts_are_non_authoritative_hints() {
+        let pub_route = route_plot_intake_request(&PlotIntakeRequest::new("/pub напиши пост"));
+        let dev_route = route_plot_intake_request(&PlotIntakeRequest::new("/dev поправь тест"));
+
+        assert_eq!(pub_route.status(), PlotIntakeRouteStatus::Routed);
+        assert_eq!(pub_route.phase_route(), Some(PlotIntakePhaseRoute::Plot));
+        assert_eq!(
+            pub_route.module_route(),
+            Some(PlotIntakeModuleRoute::PubPunk)
+        );
+        assert_eq!(
+            pub_route.route_confidence(),
+            PlotIntakeRouteConfidence::Medium
+        );
+        assert!(!pub_route.boundary().route_hint_is_authority);
+        assert_eq!(pub_route.next_handoff(), Some("pubpunk.contract_intake"));
+
+        assert_eq!(dev_route.status(), PlotIntakeRouteStatus::Routed);
+        assert_eq!(dev_route.phase_route(), Some(PlotIntakePhaseRoute::Plot));
+        assert_eq!(
+            dev_route.module_route(),
+            Some(PlotIntakeModuleRoute::DevPunk)
+        );
+        assert_eq!(
+            dev_route.route_confidence(),
+            PlotIntakeRouteConfidence::Medium
+        );
+        assert!(!dev_route.boundary().route_hint_is_authority);
+        assert_eq!(dev_route.next_handoff(), Some("devpunk.contract_intake"));
     }
 
     #[test]
